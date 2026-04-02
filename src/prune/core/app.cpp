@@ -1,5 +1,6 @@
 #include "app.hpp"
 
+#include "input.hpp"
 #include "prune/tooling/imgui_layer.hpp"
 #include "time.hpp"
 #include "window.hpp"
@@ -18,6 +19,7 @@ App::App(const AppConfig& config)
 
     m_window = std::make_unique<Window>(config.window);
     m_time = std::make_unique<Time>();
+    m_input = std::make_unique<Input>();
 
     init_opengl();
 
@@ -42,13 +44,13 @@ void App::init_sdl() {
 
 void App::init_opengl() {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void App::shutdown() {
     m_imgui_layer.reset();
+    m_input.reset();
     m_time.reset();
     m_window.reset();
 
@@ -60,13 +62,20 @@ void App::run() {
     m_running = true;
 
     while (m_running) {
+        m_input->begin_frame();
+
         SDL_Event event{};
         while (SDL_PollEvent(&event)) {
             m_imgui_layer->process_event(event);
+            m_input->process_event(event);
 
             if (event.type == SDL_QUIT) {
                 m_running = false;
             }
+        }
+
+        if (m_input->is_key_pressed(SDL_SCANCODE_ESCAPE)) {
+            m_running = false;
         }
 
         m_time->tick();
@@ -80,7 +89,6 @@ void App::run() {
         }
 
         render();
-
         m_window->swap_buffers();
     }
 }
@@ -95,7 +103,7 @@ void App::fixed_update(float fixed_dt) {
 
 void App::render() {
     glViewport(0, 0, m_window->width(), m_window->height());
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
 
     m_imgui_layer->begin_frame();
     m_imgui_layer->render_demo();

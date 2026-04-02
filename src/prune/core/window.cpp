@@ -74,29 +74,6 @@ void Window::create_gl_context() {
     SDL_Log("OpenGL Version: %s", version);
 }
 
-bool Window::poll_events() {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        switch (event.type) {
-            case SDL_QUIT:
-                m_should_close = true;
-                return false;
-
-            case SDL_WINDOWEVENT:
-                if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                    m_width = static_cast<uint32_t>(event.window.data1);
-                    m_height = static_cast<uint32_t>(event.window.data2);
-                }
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    return !m_should_close;
-}
-
 void Window::swap_buffers() {
     SDL_GL_SwapWindow(m_window);
 }

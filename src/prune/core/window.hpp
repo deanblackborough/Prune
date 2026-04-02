@@ -16,7 +16,6 @@ namespace prune {
         Window(Window&&) = delete;
         Window& operator=(Window&&) = delete;
 
-        bool poll_events();
         void swap_buffers();
 
         uint32_t width() const { return m_width; }

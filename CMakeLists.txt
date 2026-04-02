@@ -22,18 +22,7 @@ add_executable(Prune
         src/prune/core/app.cpp
         src/prune/core/window.cpp
         src/prune/core/time.cpp
-        src/prune/tooling/imgui_layer.cpp
-        src/prune/core/app_config.hpp
-        src/prune/core/time.hpp
-        src/prune/core/window.cpp
-        src/prune/core/window.cpp
-        src/prune/core/app.hpp
-        src/prune/core/app.hpp
-        src/prune/core/app.cpp
-        src/prune/core/app.cpp
-        src/prune/tooling/imgui_layer.hpp
-        src/prune/tooling/imgui_layer.hpp
-        src/prune/tooling/imgui_layer.cpp
+        src/prune/core/input.cpp
         src/prune/tooling/imgui_layer.cpp
 )
 

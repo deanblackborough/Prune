@@ -7,6 +7,7 @@ namespace prune {
 
     class Window;
     class Time;
+    class Input;
     class ImGuiLayer;
 
     class App {
@@ -33,6 +34,7 @@ namespace prune {
 
         std::unique_ptr<Window> m_window;
         std::unique_ptr<Time> m_time;
+        std::unique_ptr<Input> m_input;
         std::unique_ptr<ImGuiLayer> m_imgui_layer;
 
         float m_fixed_timestep;
