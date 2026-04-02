@@ -10,22 +10,11 @@ namespace prune {
 
         void tick();
 
-        float delta_time() const { return m_delta_time; }
-        float elapsed_time() const { return m_elapsed_time; }
-        uint64_t frame_count() const { return m_frame_count; }
-
-        float& accumulator() { return m_accumulator; }
-        float accumulator() const { return m_accumulator; }
+        float delta_seconds() const { return m_delta_seconds; }
 
     private:
-        uint64_t m_start_ticks;
-        uint64_t m_last_ticks;
-        uint64_t m_frame_count;
-        float m_delta_time;
-        float m_elapsed_time;
-        float m_accumulator;
-
-        static constexpr float MAX_DELTA_TIME = 0.1f;
+        std::uint64_t m_last_counter = 0;
+        float m_delta_seconds = 0.0f;
     };
 
-} // namespace prune
+}

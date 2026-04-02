@@ -1,14 +1,18 @@
 #pragma once
 
-#include "app_config.hpp"
+#include "window.hpp"
+
 #include <memory>
 
 namespace prune {
 
-    class Window;
     class Time;
-    class Input;
-    class ImGuiLayer;
+    class Scene;
+
+    struct AppConfig {
+        WindowConfig window{};
+        float fixed_timestep = 1.0f / 60.0f;
+    };
 
     class App {
     public:
@@ -17,28 +21,25 @@ namespace prune {
 
         App(const App&) = delete;
         App& operator=(const App&) = delete;
-        App(App&&) = delete;
-        App& operator=(App&&) = delete;
 
         void run();
-        void quit() { m_running = false; }
 
     private:
         void init_sdl();
-        void init_opengl();
-        void shutdown();
+        void shutdown_sdl();
 
+        void process_events();
         void update(float dt);
-        void fixed_update(float fixed_dt);
         void render();
 
+    private:
         std::unique_ptr<Window> m_window;
         std::unique_ptr<Time> m_time;
-        std::unique_ptr<Input> m_input;
-        std::unique_ptr<ImGuiLayer> m_imgui_layer;
+        std::unique_ptr<Scene> m_scene;
 
-        float m_fixed_timestep;
-        bool m_running;
+        float m_fixed_timestep = 1.0f / 60.0f;
+        float m_accumulator = 0.0f;
+        bool m_running = false;
     };
 
-} // namespace prune
+}

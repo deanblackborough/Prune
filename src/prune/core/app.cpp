@@ -1,113 +1,119 @@
 #include "app.hpp"
-
-#include "input.hpp"
-#include "prune/tooling/imgui_layer.hpp"
 #include "time.hpp"
-#include "window.hpp"
+#include "scene.hpp"
+#include "sandbox_scene.hpp"
 
 #include <SDL2/SDL.h>
-#include <SDL_opengl.h>
-
 #include <stdexcept>
 
 namespace prune {
 
-App::App(const AppConfig& config)
-    : m_fixed_timestep(config.fixed_timestep)
-    , m_running(false) {
-    init_sdl();
+    App::App(const AppConfig& config)
+        : m_fixed_timestep(config.fixed_timestep)
+    {
+        init_sdl();
 
-    m_window = std::make_unique<Window>(config.window);
-    m_time = std::make_unique<Time>();
-    m_input = std::make_unique<Input>();
+        m_window = std::make_unique<Window>(config.window);
+        m_time = std::make_unique<Time>();
 
-    init_opengl();
-
-    m_imgui_layer = std::make_unique<ImGuiLayer>(
-        m_window->native_handle(),
-        m_window->gl_context());
-
-    SDL_Log("App initialized");
-}
-
-App::~App() {
-    shutdown();
-}
-
-void App::init_sdl() {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
-        throw std::runtime_error(SDL_GetError());
+        m_scene = std::make_unique<SandboxScene>(
+            m_window->width(),
+            m_window->height()
+        );
+        m_scene->on_enter();
     }
 
-    SDL_Log("SDL initialized");
-}
+    App::~App()
+    {
+        if (m_scene) {
+            m_scene->on_exit();
+        }
 
-void App::init_opengl() {
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
+        m_scene.reset();
+        m_time.reset();
+        m_window.reset();
 
-void App::shutdown() {
-    m_imgui_layer.reset();
-    m_input.reset();
-    m_time.reset();
-    m_window.reset();
+        shutdown_sdl();
+    }
 
-    SDL_Quit();
-    SDL_Log("App shutdown complete");
-}
+    void App::run()
+    {
+        m_running = true;
 
-void App::run() {
-    m_running = true;
+        while (m_running) {
+            m_time->tick();
 
-    while (m_running) {
-        m_input->begin_frame();
+            float frame_time = m_time->delta_seconds();
 
+            if (frame_time > 0.25f) {
+                frame_time = 0.25f;
+            }
+
+            m_accumulator += frame_time;
+
+            process_events();
+
+            while (m_accumulator >= m_fixed_timestep) {
+                update(m_fixed_timestep);
+                m_accumulator -= m_fixed_timestep;
+            }
+
+            render();
+        }
+    }
+
+    void App::init_sdl()
+    {
+        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
+            throw std::runtime_error(std::string("Failed to initialize SDL: ") + SDL_GetError());
+        }
+    }
+
+    void App::shutdown_sdl()
+    {
+        SDL_Quit();
+    }
+
+    void App::process_events()
+    {
         SDL_Event event{};
-        while (SDL_PollEvent(&event)) {
-            m_imgui_layer->process_event(event);
-            m_input->process_event(event);
 
+        while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 m_running = false;
+                return;
+            }
+
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+                m_running = false;
+                return;
+            }
+
+            if (m_scene) {
+                m_scene->handle_event(event);
             }
         }
-
-        if (m_input->is_key_pressed(SDL_SCANCODE_ESCAPE)) {
-            m_running = false;
-        }
-
-        m_time->tick();
-
-        update(m_time->delta_time());
-
-        m_time->accumulator() += m_time->delta_time();
-        while (m_time->accumulator() >= m_fixed_timestep) {
-            fixed_update(m_fixed_timestep);
-            m_time->accumulator() -= m_fixed_timestep;
-        }
-
-        render();
-        m_window->swap_buffers();
     }
+
+    void App::update(float dt)
+    {
+        if (m_scene) {
+            m_scene->update(dt);
+        }
+    }
+
+    void App::render()
+    {
+        SDL_Renderer* renderer = m_window->renderer();
+
+        SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
+        SDL_RenderClear(renderer);
+
+        if (m_scene) {
+            m_scene->render(renderer);
+        }
+
+        SDL_RenderPresent(renderer);
+    }
+
 }
-
-void App::update(float dt) {
-    (void)dt;
-}
-
-void App::fixed_update(float fixed_dt) {
-    (void)fixed_dt;
-}
-
-void App::render() {
-    glViewport(0, 0, m_window->width(), m_window->height());
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    m_imgui_layer->begin_frame();
-    m_imgui_layer->render_demo();
-    m_imgui_layer->end_frame();
-}
-
-} // namespace prune

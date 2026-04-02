@@ -1,10 +1,15 @@
 #pragma once
 
-#include "app_config.hpp"
 #include <SDL2/SDL.h>
-#include <cstdint>
+#include <string>
 
 namespace prune {
+
+    struct WindowConfig {
+        std::string title = "Prune";
+        int width = 1280;
+        int height = 720;
+    };
 
     class Window {
     public:
@@ -13,29 +18,18 @@ namespace prune {
 
         Window(const Window&) = delete;
         Window& operator=(const Window&) = delete;
-        Window(Window&&) = delete;
-        Window& operator=(Window&&) = delete;
 
-        void swap_buffers();
+        SDL_Window* sdl_window() const { return m_window; }
+        SDL_Renderer* renderer() const { return m_renderer; }
 
-        uint32_t width() const { return m_width; }
-        uint32_t height() const { return m_height; }
-        float aspect_ratio() const;
-
-        SDL_Window* native_handle() const { return m_window; }
-        SDL_GLContext gl_context() const { return m_gl_context; }
-
-        bool should_close() const { return m_should_close; }
+        int width() const { return m_width; }
+        int height() const { return m_height; }
 
     private:
-        void create_window(const WindowConfig& config);
-        void create_gl_context();
-
-        SDL_Window* m_window;
-        SDL_GLContext m_gl_context;
-        uint32_t m_width;
-        uint32_t m_height;
-        bool m_should_close;
+        SDL_Window* m_window = nullptr;
+        SDL_Renderer* m_renderer = nullptr;
+        int m_width = 0;
+        int m_height = 0;
     };
 
-} // namespace prune
+}
