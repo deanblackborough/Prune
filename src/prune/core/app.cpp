@@ -3,6 +3,10 @@
 #include "scene.hpp"
 #include "sandbox_scene.hpp"
 
+#include "imgui.h"
+#include "backends/imgui_impl_sdl2.h"
+#include "backends/imgui_impl_sdlrenderer2.h"
+
 #include <SDL2/SDL.h>
 #include <stdexcept>
 
@@ -22,6 +26,8 @@ namespace prune {
             m_window->height()
         );
         m_scene->on_enter();
+
+        init_imgui();
     }
 
     App::~App()
@@ -29,6 +35,8 @@ namespace prune {
         if (m_scene) {
             m_scene->on_exit();
         }
+
+        shutdown_imgui();
 
         m_scene.reset();
         m_time.reset();
@@ -104,8 +112,40 @@ namespace prune {
 
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
+            ImGui_ImplSDL2_ProcessEvent(&event);
             handle_event(event);
-            m_input->process_event(event);
+
+            const ImGuiIO& io = ImGui::GetIO();
+
+            bool forward_to_input = false;
+
+            switch (event.type) {
+                case SDL_KEYUP:
+                    forward_to_input = true;
+                    break;
+
+                case SDL_KEYDOWN:
+                    forward_to_input = !io.WantCaptureKeyboard;
+                    break;
+
+                case SDL_MOUSEBUTTONUP:
+                    forward_to_input = true;
+                    break;
+
+                case SDL_MOUSEBUTTONDOWN:
+                case SDL_MOUSEMOTION:
+                case SDL_MOUSEWHEEL:
+                    forward_to_input = !io.WantCaptureMouse;
+                    break;
+
+                default:
+                    forward_to_input = true;
+                    break;
+            }
+
+            if (forward_to_input) {
+                m_input->process_event(event);
+            }
         }
     }
 
@@ -123,11 +163,49 @@ namespace prune {
         SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
         SDL_RenderClear(renderer);
 
+        begin_imgui_frame();
+
         if (m_scene) {
             m_scene->render(renderer);
+            m_scene->render_imgui();
         }
+
+        ImGui::Render();
+        ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 
         SDL_RenderPresent(renderer);
     }
 
+    void App::init_imgui() {
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGui::StyleColorsDark();
+
+        if (!ImGui_ImplSDL2_InitForSDLRenderer(
+            m_window->sdl_window(),
+            m_window->renderer())) {
+            ImGui::DestroyContext();
+            throw std::runtime_error("Failed to initialise ImGui SDL2 backend");
+        }
+
+        if (!ImGui_ImplSDLRenderer2_Init(m_window->renderer())) {
+            ImGui_ImplSDL2_Shutdown();
+            ImGui::DestroyContext();
+            throw std::runtime_error("Failed to initialise ImGui SDL renderer backend");
+        }
+    }
+
+    void App::shutdown_imgui()
+    {
+        ImGui_ImplSDLRenderer2_Shutdown();
+        ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
+    }
+
+    void App::begin_imgui_frame()
+    {
+        ImGui_ImplSDLRenderer2_NewFrame();
+        ImGui_ImplSDL2_NewFrame();
+        ImGui::NewFrame();
+    }
 }
