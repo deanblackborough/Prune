@@ -29,6 +29,23 @@ namespace prune {
         if (input.is_key_down(SDL_SCANCODE_DOWN) || input.is_key_down(SDL_SCANCODE_S)) {
             m_player.y += speed * dt;
         }
+
+        if (input.was_mouse_button_pressed(SDL_BUTTON_LEFT)) {
+            m_player.x = static_cast<float>(input.mouse_x() - (m_player.size / 2));
+            m_player.y = static_cast<float>(input.mouse_y() - (m_player.size / 2));
+        }
+
+        m_player.x = std::clamp(
+            m_player.x,
+            0.0f,
+            static_cast<float>(m_window_width - m_player.size)
+        );
+
+        m_player.y = std::clamp(
+            m_player.y,
+            0.0f,
+            static_cast<float>(m_window_height - m_player.size)
+        );
     }
 
     void SandboxScene::render(SDL_Renderer* renderer)
