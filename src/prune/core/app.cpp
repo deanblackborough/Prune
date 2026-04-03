@@ -46,6 +46,7 @@ namespace prune {
 
             if (m_input->was_key_pressed(SDL_SCANCODE_ESCAPE)) {
                 m_running = false;
+                break;
             }
 
             m_time->tick();
