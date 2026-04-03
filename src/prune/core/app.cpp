@@ -113,13 +113,37 @@ namespace prune {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL2_ProcessEvent(&event);
-
             handle_event(event);
 
-            ImGuiIO& io = ImGui::GetIO();
+            const ImGuiIO& io = ImGui::GetIO();
 
-            // Only pass to your input system if ImGui is NOT using it
-            if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
+            bool forward_to_input = false;
+
+            switch (event.type) {
+                case SDL_KEYUP:
+                    forward_to_input = true;
+                    break;
+
+                case SDL_KEYDOWN:
+                    forward_to_input = !io.WantCaptureKeyboard;
+                    break;
+
+                case SDL_MOUSEBUTTONUP:
+                    forward_to_input = true;
+                    break;
+
+                case SDL_MOUSEBUTTONDOWN:
+                case SDL_MOUSEMOTION:
+                case SDL_MOUSEWHEEL:
+                    forward_to_input = !io.WantCaptureMouse;
+                    break;
+
+                default:
+                    forward_to_input = true;
+                    break;
+            }
+
+            if (forward_to_input) {
                 m_input->process_event(event);
             }
         }
@@ -152,17 +176,23 @@ namespace prune {
         SDL_RenderPresent(renderer);
     }
 
-    void App::init_imgui()
-    {
+    void App::init_imgui() {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
 
-        ImGui_ImplSDL2_InitForSDLRenderer(
+        if (!ImGui_ImplSDL2_InitForSDLRenderer(
             m_window->sdl_window(),
-            m_window->renderer()
-        );
-        ImGui_ImplSDLRenderer2_Init(m_window->renderer());
+            m_window->renderer())) {
+            ImGui::DestroyContext();
+            throw std::runtime_error("Failed to initialise ImGui SDL2 backend");
+        }
+
+        if (!ImGui_ImplSDLRenderer2_Init(m_window->renderer())) {
+            ImGui_ImplSDL2_Shutdown();
+            ImGui::DestroyContext();
+            throw std::runtime_error("Failed to initialise ImGui SDL renderer backend");
+        }
     }
 
     void App::shutdown_imgui()
