@@ -40,6 +40,8 @@ namespace prune {
             float color[3] = {0.3f, 0.8f, 0.5f};
         };
 
+        void clamp_player_to_window();
+
         Player m_player;
 
         int m_window_width = 0;

@@ -39,17 +39,7 @@ namespace prune {
             m_player.y = mouse_y - half_size;
         }
 
-        m_player.x = std::clamp(
-            m_player.x,
-            0.0f,
-            static_cast<float>(m_window_width - m_player.size)
-        );
-
-        m_player.y = std::clamp(
-            m_player.y,
-            0.0f,
-            static_cast<float>(m_window_height - m_player.size)
-        );
+        clamp_player_to_window();
     }
 
     void SandboxScene::render(SDL_Renderer* renderer)
@@ -89,10 +79,14 @@ namespace prune {
 
             ImGui::ColorEdit3("Colour", m_player.color);
 
-            m_player.x = std::clamp(m_player.x, 0.0f, static_cast<float>(m_window_width - m_player.size));
-            m_player.y = std::clamp(m_player.y, 0.0f, static_cast<float>(m_window_height - m_player.size));
+            clamp_player_to_window();
         }
 
         ImGui::End();
+    }
+
+    void SandboxScene::clamp_player_to_window() {
+        m_player.x = std::clamp(m_player.x, 0.0f, static_cast<float>(m_window_width - m_player.size));
+        m_player.y = std::clamp(m_player.y, 0.0f, static_cast<float>(m_window_height - m_player.size));
     }
 }
