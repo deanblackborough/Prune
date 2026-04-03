@@ -112,8 +112,16 @@ namespace prune {
 
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
+            ImGui_ImplSDL2_ProcessEvent(&event);
+
             handle_event(event);
-            m_input->process_event(event);
+
+            ImGuiIO& io = ImGui::GetIO();
+
+            // Only pass to your input system if ImGui is NOT using it
+            if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
+                m_input->process_event(event);
+            }
         }
     }
 

@@ -1,5 +1,7 @@
 #include "sandbox_scene.hpp"
 #include <algorithm>
+
+#include "imgui.h"
 #include "input.hpp"
 
 namespace prune {
@@ -61,4 +63,24 @@ namespace prune {
         SDL_RenderFillRect(renderer, &rect);
     }
 
+    void SandboxScene::render_imgui() {
+        ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(280.0f, 180.0f), ImGuiCond_FirstUseEver);
+
+        if (ImGui::Begin("Player")) {
+            ImGui::Text("Position");
+            ImGui::Text("X: %.1f", m_player.x);
+            ImGui::Text("Y: %.1f", m_player.y);
+
+            ImGui::Separator();
+
+            ImGui::SliderInt("Size", &m_player.size, 10, 200);
+            ImGui::SliderFloat("Speed", &m_player.speed, 50.0f, 600.0f, "%.1f");
+
+            m_player.x = std::clamp(m_player.x, 0.0f, static_cast<float>(m_window_width - m_player.size));
+            m_player.y = std::clamp(m_player.y, 0.0f, static_cast<float>(m_window_height - m_player.size));
+        }
+
+        ImGui::End();
+    }
 }

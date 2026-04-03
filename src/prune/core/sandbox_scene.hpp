@@ -10,6 +10,7 @@ namespace prune {
 
         void update(float dt, const Input& input) override;
         void render(SDL_Renderer* renderer) override;
+        void render_imgui() override;
 
     private:
         struct Player {
