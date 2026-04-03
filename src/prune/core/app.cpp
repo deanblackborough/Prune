@@ -14,6 +14,7 @@ namespace prune {
         init_sdl();
 
         m_window = std::make_unique<Window>(config.window);
+        m_input = std::make_unique<Input>();
         m_time = std::make_unique<Time>();
 
         m_scene = std::make_unique<SandboxScene>(
@@ -41,6 +42,8 @@ namespace prune {
         m_running = true;
 
         while (m_running) {
+            process_events();
+
             m_time->tick();
 
             float frame_time = m_time->delta_seconds();
@@ -50,8 +53,6 @@ namespace prune {
             }
 
             m_accumulator += frame_time;
-
-            process_events();
 
             while (m_accumulator >= m_fixed_timestep) {
                 update(m_fixed_timestep);
@@ -74,31 +75,39 @@ namespace prune {
         SDL_Quit();
     }
 
+    void App::handle_event(const SDL_Event& event)
+    {
+        switch (event.type) {
+            case SDL_QUIT:
+                m_running = false;
+                break;
+
+            case SDL_WINDOWEVENT:
+                if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+                    m_running = false;
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
     void App::process_events()
     {
-        SDL_Event event{};
+        m_input->begin_frame();
 
+        SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                m_running = false;
-                return;
-            }
-
-            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
-                m_running = false;
-                return;
-            }
-
-            if (m_scene) {
-                m_scene->handle_event(event);
-            }
+            handle_event(event);
+            m_input->process_event(event);
         }
     }
 
     void App::update(float dt)
     {
         if (m_scene) {
-            m_scene->update(dt);
+            m_scene->update(dt, *m_input);
         }
     }
 

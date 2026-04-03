@@ -12,6 +12,7 @@ add_executable(Prune
         src/prune/core/app.cpp
         src/prune/core/window.cpp
         src/prune/core/time.cpp
+        src/prune/core/input.cpp
         src/prune/core/sandbox_scene.cpp
 )
 

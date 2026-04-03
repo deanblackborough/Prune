@@ -8,8 +8,7 @@ namespace prune {
     public:
         SandboxScene(int window_width, int window_height);
 
-        void handle_event(const SDL_Event& event) override;
-        void update(float dt) override;
+        void update(float dt, const Input& input) override;
         void render(SDL_Renderer* renderer) override;
 
     private:
@@ -21,11 +20,6 @@ namespace prune {
         };
 
         Player m_player;
-
-        bool m_left = false;
-        bool m_right = false;
-        bool m_up = false;
-        bool m_down = false;
 
         int m_window_width = 0;
         int m_window_height = 0;
