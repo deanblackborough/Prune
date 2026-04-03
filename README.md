@@ -23,6 +23,8 @@ If it feels “bare”, that’s intentional.
 
 This is a foundation, not a framework.
 
+<img width="1921" height="1124" alt="image" src="https://github.com/user-attachments/assets/4d473438-d5d5-4a78-bd04-ca444f54e61f" />
+
 ---
 
 ## Tech Stack
