@@ -14,27 +14,29 @@ namespace prune {
 
     void SandboxScene::update(float dt, const Input& input)
     {
-        constexpr float speed = 250.0f;
-
         if (input.is_key_down(SDL_SCANCODE_LEFT) || input.is_key_down(SDL_SCANCODE_A)) {
-            m_player.x -= speed * dt;
+            m_player.x -= m_player.speed * dt;
         }
 
         if (input.is_key_down(SDL_SCANCODE_RIGHT) || input.is_key_down(SDL_SCANCODE_D)) {
-            m_player.x += speed * dt;
+            m_player.x += m_player.speed * dt;
         }
 
         if (input.is_key_down(SDL_SCANCODE_UP) || input.is_key_down(SDL_SCANCODE_W)) {
-            m_player.y -= speed * dt;
+            m_player.y -= m_player.speed * dt;
         }
 
         if (input.is_key_down(SDL_SCANCODE_DOWN) || input.is_key_down(SDL_SCANCODE_S)) {
-            m_player.y += speed * dt;
+            m_player.y += m_player.speed * dt;
         }
 
         if (input.was_mouse_button_pressed(SDL_BUTTON_LEFT)) {
-            m_player.x = static_cast<float>(input.mouse_x() - (m_player.size / 2));
-            m_player.y = static_cast<float>(input.mouse_y() - (m_player.size / 2));
+            const auto mouse_x = static_cast<float>(input.mouse_x());
+            const auto mouse_y = static_cast<float>(input.mouse_y());
+            const auto half_size = static_cast<float>(m_player.size) * 0.5f;
+
+            m_player.x = mouse_x - half_size;
+            m_player.y = mouse_y - half_size;
         }
 
         m_player.x = std::clamp(
@@ -59,7 +61,13 @@ namespace prune {
             m_player.size
         };
 
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_SetRenderDrawColor(
+            renderer,
+            static_cast<Uint8>(m_player.color[0] * 255.0f),
+            static_cast<Uint8>(m_player.color[1] * 255.0f),
+            static_cast<Uint8>(m_player.color[2] * 255.0f),
+            255
+        );
         SDL_RenderFillRect(renderer, &rect);
     }
 
@@ -76,6 +84,10 @@ namespace prune {
 
             ImGui::SliderInt("Size", &m_player.size, 10, 200);
             ImGui::SliderFloat("Speed", &m_player.speed, 50.0f, 600.0f, "%.1f");
+
+            ImGui::Separator();
+
+            ImGui::ColorEdit3("Colour", m_player.color);
 
             m_player.x = std::clamp(m_player.x, 0.0f, static_cast<float>(m_window_width - m_player.size));
             m_player.y = std::clamp(m_player.y, 0.0f, static_cast<float>(m_window_height - m_player.size));

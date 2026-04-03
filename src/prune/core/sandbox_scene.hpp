@@ -18,6 +18,7 @@ namespace prune {
             float y = 100.0f;
             float speed = 240.0f;
             int size = 50;
+            float color[3] = {0.3f, 0.8f, 0.5f};
         };
 
         Player m_player;
