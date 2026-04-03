@@ -30,8 +30,8 @@ namespace prune {
         [[nodiscard]] const Input& input() const noexcept { return *m_input; }
 
     private:
-        void init_sdl();
-        void shutdown_sdl();
+        static void init_sdl();
+        static void shutdown_sdl();
 
         void process_events();
         void handle_event(const SDL_Event& event);

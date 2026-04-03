@@ -44,6 +44,10 @@ namespace prune {
         while (m_running) {
             process_events();
 
+            if (m_input->was_key_pressed(SDL_SCANCODE_ESCAPE)) {
+                m_running = false;
+            }
+
             m_time->tick();
 
             float frame_time = m_time->delta_seconds();
