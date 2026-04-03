@@ -3,6 +3,10 @@
 #include "scene.hpp"
 #include "sandbox_scene.hpp"
 
+#include "imgui.h"
+#include "backends/imgui_impl_sdl2.h"
+#include "backends/imgui_impl_sdlrenderer2.h"
+
 #include <SDL2/SDL.h>
 #include <stdexcept>
 
@@ -22,6 +26,8 @@ namespace prune {
             m_window->height()
         );
         m_scene->on_enter();
+
+        init_imgui();
     }
 
     App::~App()
@@ -29,6 +35,8 @@ namespace prune {
         if (m_scene) {
             m_scene->on_exit();
         }
+
+        shutdown_imgui();
 
         m_scene.reset();
         m_time.reset();
@@ -123,11 +131,43 @@ namespace prune {
         SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
         SDL_RenderClear(renderer);
 
+        begin_imgui_frame();
+
         if (m_scene) {
             m_scene->render(renderer);
+            m_scene->render_imgui();
         }
+
+        ImGui::Render();
+        ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 
         SDL_RenderPresent(renderer);
     }
 
+    void App::init_imgui()
+    {
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGui::StyleColorsDark();
+
+        ImGui_ImplSDL2_InitForSDLRenderer(
+            m_window->sdl_window(),
+            m_window->renderer()
+        );
+        ImGui_ImplSDLRenderer2_Init(m_window->renderer());
+    }
+
+    void App::shutdown_imgui()
+    {
+        ImGui_ImplSDLRenderer2_Shutdown();
+        ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
+    }
+
+    void App::begin_imgui_frame()
+    {
+        ImGui_ImplSDLRenderer2_NewFrame();
+        ImGui_ImplSDL2_NewFrame();
+        ImGui::NewFrame();
+    }
 }

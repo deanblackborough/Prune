@@ -14,10 +14,19 @@ add_executable(Prune
         src/prune/core/time.cpp
         src/prune/core/input.cpp
         src/prune/core/sandbox_scene.cpp
+
+        external/imgui/imgui.cpp
+        external/imgui/imgui_draw.cpp
+        external/imgui/imgui_tables.cpp
+        external/imgui/imgui_widgets.cpp
+        external/imgui/backends/imgui_impl_sdl2.cpp
+        external/imgui/backends/imgui_impl_sdlrenderer2.cpp
 )
 
 target_include_directories(Prune PRIVATE
         src
+        external/imgui
+        external/imgui/backends
 )
 
 target_link_libraries(Prune PRIVATE

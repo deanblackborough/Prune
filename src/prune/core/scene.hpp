@@ -15,6 +15,7 @@ namespace prune {
 
         virtual void update(float dt, const Input& input) = 0;
         virtual void render(SDL_Renderer* renderer) = 0;
+        virtual void render_imgui() {}
     };
 
 }

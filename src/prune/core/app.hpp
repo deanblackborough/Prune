@@ -38,7 +38,10 @@ namespace prune {
         void update(float dt);
         void render();
 
-    private:
+        void init_imgui();
+        void shutdown_imgui();
+        void begin_imgui_frame();
+
         std::unique_ptr<Window> m_window;
         std::unique_ptr<Time> m_time;
         std::unique_ptr<Input> m_input;
