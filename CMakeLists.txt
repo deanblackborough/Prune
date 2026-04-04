@@ -14,6 +14,10 @@ add_executable(Prune
         src/prune/core/time.cpp
         src/prune/core/input.cpp
         src/prune/core/sandbox_scene.cpp
+        src/prune/core/game_object.cpp
+        src/prune/core/game_object_manager.cpp
+        src/prune/core/player_controller.cpp
+
         src/prune/tooling/editor_ui.cpp
 
         external/imgui/imgui.cpp

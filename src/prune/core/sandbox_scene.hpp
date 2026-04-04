@@ -1,6 +1,10 @@
 #pragma once
 
+#include "game_object_manager.hpp"
+#include "player_controller.hpp"
 #include "scene.hpp"
+
+#include <cstddef>
 
 namespace prune {
 
@@ -8,49 +12,23 @@ namespace prune {
     public:
         SandboxScene(int window_width, int window_height);
 
-        /**
-         * Updates the scene state.
-         *
-         * This is where gameplay or simulation logic should run for the current
-         * frame or fixed timestep.
-         *
-         * @param dt Delta time in seconds for the current update step.
-         * @param input Read-only access to the application's input state.
-         */
+        void on_enter() override;
         void update(float dt, const Input& input) override;
-
-        /**
-         * Renders the scene using the provided SDL renderer.
-         *
-         * @param renderer SDL renderer used for scene drawing.
-         */
         void render(SDL_Renderer* renderer) override;
-
-        /**
-         * Draws scene-specific content inside the shared inspector panel.
-         */
         void draw_inspector_ui() override;
-
-        /**
-         * Draws scene-specific content inside the shared debug panel.
-         */
         void draw_debug_ui() override;
 
     private:
-        struct Player {
-            float x = 100.0f;
-            float y = 100.0f;
-            float speed = 240.0f;
-            int size = 50;
-            float color[3] = {0.3f, 0.8f, 0.5f};
-        };
+        [[nodiscard]] GameObject* player_object() noexcept;
+        [[nodiscard]] const GameObject* player_object() const noexcept;
 
-        void clamp_player_to_window();
+        GameObjectManager m_objects;
+        PlayerController m_player_controller;
 
-        Player m_player;
+        std::size_t m_player_index = 0;
 
         int m_window_width = 0;
         int m_window_height = 0;
     };
 
-}
+} // namespace prune
