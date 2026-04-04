@@ -1,7 +1,7 @@
 #include "app.hpp"
-#include "time.hpp"
-#include "scene.hpp"
-#include "sandbox_scene.hpp"
+#include "../core/time.hpp"
+#include "../scene/scene.hpp"
+#include "../scene/sandbox_scene.hpp"
 #include "prune/tooling/editor_ui.hpp"
 
 #include "imgui.h"

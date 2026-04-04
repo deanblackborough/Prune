@@ -64,6 +64,10 @@ namespace prune {
 
     void SandboxScene::render(SDL_Renderer* renderer)
     {
+        const GameObjectId selected_id = m_objects.selected_id();
+        SDL_Rect selected_outline{};
+        bool has_selected_outline = false;
+
         for (const auto& object : m_objects.objects()) {
             if (!object.active || !object.visible) {
                 continue;
@@ -85,6 +89,22 @@ namespace prune {
             );
 
             SDL_RenderFillRect(renderer, &rect);
+
+            if (m_highlight_selected && object.id == selected_id) {
+                selected_outline = SDL_Rect{
+                    rect.x - 2,
+                    rect.y - 2,
+                    rect.w + 4,
+                    rect.h + 4
+                };
+
+                has_selected_outline = true;
+            }
+        }
+
+        if (m_highlight_selected && has_selected_outline) {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderDrawRect(renderer, &selected_outline);
         }
     }
 
@@ -94,6 +114,8 @@ namespace prune {
             const Transform spawn = next_block_spawn_position();
             create_block(spawn.x, spawn.y);
         }
+
+        ImGui::Checkbox("Highlight selected", &m_highlight_selected);
 
         ImGui::Separator();
 

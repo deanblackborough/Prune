@@ -1,7 +1,7 @@
 #include "player_controller.hpp"
 
 #include "game_object.hpp"
-#include "input.hpp"
+#include "../core/input.hpp"
 
 #include <SDL2/SDL.h>
 #include <algorithm>

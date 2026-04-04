@@ -35,6 +35,8 @@ namespace prune {
 
         GameObjectId m_player_id = kInvalidGameObjectId;
 
+        bool m_highlight_selected = false;
+
         int m_window_width = 0;
         int m_window_height = 0;
     };
