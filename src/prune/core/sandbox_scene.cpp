@@ -90,6 +90,13 @@ namespace prune {
 
     void SandboxScene::draw_inspector_ui()
     {
+        if (ImGui::Button("Add Block")) {
+            const Transform spawn = next_block_spawn_position();
+            create_block(spawn.x, spawn.y);
+        }
+
+        ImGui::Separator();
+
         draw_object_list_ui();
 
         ImGui::Spacing();
@@ -139,6 +146,57 @@ namespace prune {
                (a_bounds.x + a_bounds.width) > b_bounds.x &&
                a_bounds.y < (b_bounds.y + b_bounds.height) &&
                (a_bounds.y + a_bounds.height) > b_bounds.y;
+    }
+
+    Transform SandboxScene::next_block_spawn_position() const noexcept
+    {
+        constexpr float base_x = 160.0f;
+        constexpr float base_y = 160.0f;
+        constexpr float offset_step = 50.0f;
+        constexpr int block_size = 50;
+
+        const float offset = static_cast<float>(m_objects.count()) * offset_step;
+
+        Transform spawn{
+            base_x + offset,
+            base_y + offset
+        };
+
+        const float max_x = std::max(0.0f, static_cast<float>(m_window_width - block_size));
+        const float max_y = std::max(0.0f, static_cast<float>(m_window_height - block_size));
+
+        spawn.x = std::clamp(spawn.x, 0.0f, max_x);
+        spawn.y = std::clamp(spawn.y, 0.0f, max_y);
+
+        return spawn;
+    }
+
+    GameObjectId SandboxScene::create_block(float x, float y)
+    {
+        GameObject block;
+        block.name = "Block";
+        block.transform.x = x;
+        block.transform.y = y;
+        block.rectangle.width = 50;
+        block.rectangle.height = 50;
+        block.rectangle.color[0] = 0.8f;
+        block.rectangle.color[1] = 0.5f;
+        block.rectangle.color[2] = 0.2f;
+        block.active = true;
+        block.visible = true;
+        block.solid = true;
+        block.is_player = false;
+
+        const GameObjectId id = m_objects.create_object(block);
+
+        if (GameObject* created = m_objects.get_by_id(id)) {
+            created->name = "Block " + std::to_string(id);
+            created->clamp_to_area(m_window_width, m_window_height);
+        }
+
+        m_objects.select(id);
+
+        return id;
     }
 
     void SandboxScene::resolve_player_collisions(GameObject& player)
@@ -214,9 +272,16 @@ namespace prune {
         ImGui::SliderInt("Height", &selected->rectangle.height, 10, 200);
         ImGui::ColorEdit3("Colour", selected->rectangle.color);
 
-        ImGui::Separator();
-
         bool is_player = (selected->id == m_player_id);
+
+        if (is_player) {
+            float speed = m_player_controller.speed();
+            if (ImGui::SliderFloat("Move Speed", &speed, 50.0f, 600.0f, "%.1f")) {
+                m_player_controller.set_speed(speed);
+            }
+        }
+
+        ImGui::Separator();
 
         ImGui::TextUnformatted("Flags");
         ImGui::Checkbox("Active", &selected->active);
@@ -237,13 +302,6 @@ namespace prune {
             ImGui::BeginDisabled();
             ImGui::Checkbox("IsPlayer", &is_player);
             ImGui::EndDisabled();
-        }
-
-        if (selected->id == m_player_id) {
-            float speed = m_player_controller.speed();
-            if (ImGui::SliderFloat("Move Speed", &speed, 50.0f, 600.0f, "%.1f")) {
-                m_player_controller.set_speed(speed);
-            }
         }
 
         selected->clamp_to_area(m_window_width, m_window_height);

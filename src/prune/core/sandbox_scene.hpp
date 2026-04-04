@@ -22,6 +22,9 @@ namespace prune {
         [[nodiscard]] const GameObject* player_object() const noexcept;
 
         [[nodiscard]] bool is_overlapping(const GameObject& a, const GameObject& b) const noexcept;
+        [[nodiscard]] Transform next_block_spawn_position() const noexcept;
+
+        GameObjectId create_block(float x, float y);
 
         void resolve_player_collisions(GameObject& player);
         void draw_object_list_ui();
