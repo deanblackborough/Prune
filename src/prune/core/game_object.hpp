@@ -1,10 +1,19 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace prune {
 
+    using GameObjectId = std::uint32_t;
+    constexpr GameObjectId kInvalidGameObjectId = 0;
+
     struct Transform {
+        float x = 0.0f;
+        float y = 0.0f;
+    };
+
+    struct Velocity {
         float x = 0.0f;
         float y = 0.0f;
     };
@@ -23,9 +32,17 @@ namespace prune {
     };
 
     struct GameObject {
+        GameObjectId id = kInvalidGameObjectId;
         std::string name = "Object";
+
         Transform transform{};
+        Velocity velocity{};
         RectangleVisual rectangle{};
+
+        bool active = true;
+        bool visible = true;
+        bool solid = false;
+        bool is_player = false;
 
         [[nodiscard]] RectF bounds() const noexcept;
         void clamp_to_area(int area_width, int area_height) noexcept;

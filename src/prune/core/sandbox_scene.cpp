@@ -1,37 +1,18 @@
 #include "sandbox_scene.hpp"
 
-#include "imgui.h"
-#include "input.hpp"
-
 #include <SDL2/SDL.h>
-#include <string>
+#include <algorithm>
+#include <cmath>
+#include "imgui.h"
 
 namespace prune {
 
-    /**
-     * @brief Construct a SandboxScene with the given window dimensions.
-     *
-     * Stores the window width and height for use when constraining object positions,
-     * rendering bounds, and inspector UI ranges.
-     *
-     * @param window_width Width of the application window in pixels.
-     * @param window_height Height of the application window in pixels.
-     */
     SandboxScene::SandboxScene(int window_width, int window_height)
         : m_window_width(window_width)
         , m_window_height(window_height)
     {
     }
 
-    /**
-     * @brief Prepare the sandbox scene with its initial objects.
-     *
-     * Clears any existing scene objects, creates a default "Player" GameObject
-     * (positioned at 100,100 with a 50x50 rectangle and color RGB(0.3,0.8,0.5)),
-     * and creates a "Static Block" GameObject (positioned at 420,220 with a 50x50
-     * rectangle and color RGB(0.8,0.5,0.2)). The index of the created player is
-     * stored in m_player_index.
-     */
     void SandboxScene::on_enter()
     {
         m_objects.clear();
@@ -45,8 +26,11 @@ namespace prune {
         player.rectangle.color[0] = 0.3f;
         player.rectangle.color[1] = 0.8f;
         player.rectangle.color[2] = 0.5f;
+        player.visible = true;
+        player.solid = false;
+        player.is_player = true;
 
-        m_player_index = m_objects.create_object(player);
+        m_player_id = m_objects.create_object(player);
 
         GameObject block;
         block.name = "Static Block";
@@ -57,44 +41,34 @@ namespace prune {
         block.rectangle.color[0] = 0.8f;
         block.rectangle.color[1] = 0.5f;
         block.rectangle.color[2] = 0.2f;
+        block.visible = true;
+        block.solid = true;
+        block.is_player = false;
 
         m_objects.create_object(block);
+
+        m_objects.select(m_player_id);
     }
 
-    /**
-     * @brief Advance the player object's simulation for the current frame.
-     *
-     * If a player object exists in the scene, update its movement and state based
-     * on the elapsed time and the current input, constrained to the scene window.
-     * If no player object is present, the call has no effect.
-     *
-     * @param dt Time elapsed since the previous frame, in seconds.
-     * @param input Current input state (keyboard, mouse, controller, etc.) used to drive player behavior.
-     */
     void SandboxScene::update(float dt, const Input& input)
     {
-        if (GameObject* player = player_object()) {
-            m_player_controller.update(
-                *player,
-                dt,
-                input,
-                m_window_width,
-                m_window_height
-            );
+        GameObject* player = player_object();
+        if (!player) {
+            return;
         }
+
+        m_player_controller.update(*player, dt, input);
+        resolve_player_collisions(*player);
+        player->clamp_to_area(m_window_width, m_window_height);
     }
 
-    /**
-     * @brief Renders all scene objects as filled rectangles using their stored transform, size, and color.
-     *
-     * Each object's transform.x/y set the rectangle's top-left position, rectangle.width/height set its size,
-     * and rectangle.color (components in the range [0, 1]) are scaled to 0–255 RGB with full alpha when drawing.
-     *
-     * @param renderer SDL renderer used to draw the objects.
-     */
     void SandboxScene::render(SDL_Renderer* renderer)
     {
         for (const auto& object : m_objects.objects()) {
+            if (!object.active || !object.visible) {
+                continue;
+            }
+
             SDL_Rect rect{
                 static_cast<int>(object.transform.x),
                 static_cast<int>(object.transform.y),
@@ -114,30 +88,16 @@ namespace prune {
         }
     }
 
-    /**
-     * @brief Render and handle the scene inspector UI for selecting and editing scene objects.
-     *
-     * Displays a list of all scene objects, allows the user to select one, and exposes controls to
-     * edit the selected object's position, rectangle size, and color. When the selected object is
-     * the player, also exposes a control to view and adjust the player's movement speed. After
-     * user edits, the selected object is clamped to the scene window bounds.
-     */
     void SandboxScene::draw_inspector_ui()
     {
-        ImGui::TextUnformatted("Objects");
+        if (ImGui::Button("Add Block")) {
+            const Transform spawn = next_block_spawn_position();
+            create_block(spawn.x, spawn.y);
+        }
+
         ImGui::Separator();
 
-        for (std::size_t index = 0; index < m_objects.count(); ++index) {
-            const GameObject* object = m_objects.get(index);
-            if (!object) {
-                continue;
-            }
-
-            const bool is_selected = index == m_objects.selected_index();
-            if (ImGui::Selectable(object->name.c_str(), is_selected)) {
-                m_objects.select(index);
-            }
-        }
+        draw_object_list_ui();
 
         ImGui::Spacing();
 
@@ -147,8 +107,154 @@ namespace prune {
             return;
         }
 
+        draw_selected_object_ui();
+    }
+
+    void SandboxScene::draw_debug_ui()
+    {
+        ImGui::TextUnformatted("Sandbox");
+        ImGui::Text("Window: %d x %d", m_window_width, m_window_height);
+        ImGui::Text("Object count: %d", static_cast<int>(m_objects.count()));
+        ImGui::Text("Selected id: %u", m_objects.selected_id());
+        ImGui::Text("Player id: %u", m_player_id);
+
+        if (const GameObject* player = player_object()) {
+            ImGui::Separator();
+            ImGui::TextUnformatted("Player");
+            ImGui::Text("Position: %.1f, %.1f", player->transform.x, player->transform.y);
+            ImGui::Text("Velocity: %.1f, %.1f", player->velocity.x, player->velocity.y);
+            ImGui::Text("Speed: %.1f", m_player_controller.speed());
+        }
+    }
+
+    GameObject* SandboxScene::player_object() noexcept
+    {
+        return m_objects.get_by_id(m_player_id);
+    }
+
+    const GameObject* SandboxScene::player_object() const noexcept
+    {
+        return m_objects.get_by_id(m_player_id);
+    }
+
+    bool SandboxScene::is_overlapping(const GameObject& a, const GameObject& b) const noexcept
+    {
+        const RectF a_bounds = a.bounds();
+        const RectF b_bounds = b.bounds();
+
+        return a_bounds.x < (b_bounds.x + b_bounds.width) &&
+               (a_bounds.x + a_bounds.width) > b_bounds.x &&
+               a_bounds.y < (b_bounds.y + b_bounds.height) &&
+               (a_bounds.y + a_bounds.height) > b_bounds.y;
+    }
+
+    Transform SandboxScene::next_block_spawn_position() const noexcept
+    {
+        constexpr float base_x = 160.0f;
+        constexpr float base_y = 160.0f;
+        constexpr float offset_step = 50.0f;
+        constexpr int block_size = 50;
+
+        const float offset = static_cast<float>(m_objects.count()) * offset_step;
+
+        Transform spawn{
+            base_x + offset,
+            base_y + offset
+        };
+
+        const float max_x = std::max(0.0f, static_cast<float>(m_window_width - block_size));
+        const float max_y = std::max(0.0f, static_cast<float>(m_window_height - block_size));
+
+        spawn.x = std::clamp(spawn.x, 0.0f, max_x);
+        spawn.y = std::clamp(spawn.y, 0.0f, max_y);
+
+        return spawn;
+    }
+
+    GameObjectId SandboxScene::create_block(float x, float y)
+    {
+        GameObject block;
+        block.name = "Block";
+        block.transform.x = x;
+        block.transform.y = y;
+        block.rectangle.width = 50;
+        block.rectangle.height = 50;
+        block.rectangle.color[0] = 0.8f;
+        block.rectangle.color[1] = 0.5f;
+        block.rectangle.color[2] = 0.2f;
+        block.active = true;
+        block.visible = true;
+        block.solid = true;
+        block.is_player = false;
+
+        const GameObjectId id = m_objects.create_object(block);
+
+        if (GameObject* created = m_objects.get_by_id(id)) {
+            created->name = "Block " + std::to_string(id);
+            created->clamp_to_area(m_window_width, m_window_height);
+        }
+
+        m_objects.select(id);
+
+        return id;
+    }
+
+    void SandboxScene::resolve_player_collisions(GameObject& player)
+    {
+        for (const auto& object : m_objects.objects()) {
+            if (object.id == player.id || !object.active || !object.solid) {
+                continue;
+            }
+
+            if (!is_overlapping(player, object)) {
+                continue;
+            }
+
+            const RectF player_bounds = player.bounds();
+            const RectF block_bounds = object.bounds();
+
+            const float overlap_left = (player_bounds.x + player_bounds.width) - block_bounds.x;
+            const float overlap_right = (block_bounds.x + block_bounds.width) - player_bounds.x;
+            const float overlap_top = (player_bounds.y + player_bounds.height) - block_bounds.y;
+            const float overlap_bottom = (block_bounds.y + block_bounds.height) - player_bounds.y;
+
+            const float resolve_x = (overlap_left < overlap_right) ? -overlap_left : overlap_right;
+            const float resolve_y = (overlap_top < overlap_bottom) ? -overlap_top : overlap_bottom;
+
+            if (std::abs(resolve_x) < std::abs(resolve_y)) {
+                player.transform.x += resolve_x;
+                player.velocity.x = 0.0f;
+            } else {
+                player.transform.y += resolve_y;
+                player.velocity.y = 0.0f;
+            }
+        }
+    }
+
+    void SandboxScene::draw_object_list_ui()
+    {
+        ImGui::TextUnformatted("Objects");
+        ImGui::Separator();
+
+        for (const auto& object : m_objects.objects()) {
+            const bool is_selected = object.id == m_objects.selected_id();
+
+            if (ImGui::Selectable(object.name.c_str(), is_selected)) {
+                m_objects.select(object.id);
+            }
+        }
+    }
+
+    void SandboxScene::draw_selected_object_ui()
+    {
+        GameObject* selected = m_objects.selected_object();
+        if (!selected) {
+            return;
+        }
+
         ImGui::Separator();
         ImGui::Text("Selected: %s", selected->name.c_str());
+        ImGui::Text("Id: %u", selected->id);
 
         ImGui::Spacing();
         ImGui::TextUnformatted("Position");
@@ -166,54 +272,39 @@ namespace prune {
         ImGui::SliderInt("Height", &selected->rectangle.height, 10, 200);
         ImGui::ColorEdit3("Colour", selected->rectangle.color);
 
-        if (m_objects.selected_index() == m_player_index) {
+        bool is_player = (selected->id == m_player_id);
+
+        if (is_player) {
             float speed = m_player_controller.speed();
             if (ImGui::SliderFloat("Move Speed", &speed, 50.0f, 600.0f, "%.1f")) {
                 m_player_controller.set_speed(speed);
             }
         }
 
-        selected->clamp_to_area(m_window_width, m_window_height);
-    }
+        ImGui::Separator();
 
-    /**
-     * @brief Displays runtime debug information in the ImGui interface.
-     *
-     * Shows the current window dimensions and the number of scene objects.
-     * If a player object exists, also displays a "Player" section with the player's position and the configured move speed.
-     */
-    void SandboxScene::draw_debug_ui()
-    {
-        ImGui::TextUnformatted("Sandbox");
-        ImGui::Text("Window: %d x %d", m_window_width, m_window_height);
-        ImGui::Text("Object count: %d", static_cast<int>(m_objects.count()));
+        ImGui::TextUnformatted("Flags");
+        ImGui::Checkbox("Active", &selected->active);
+        ImGui::Checkbox("Visible", &selected->visible);
+        if (is_player) {
+            ImGui::BeginDisabled();
+            ImGui::Checkbox("Solid", &selected->solid);
+            ImGui::EndDisabled();
 
-        if (const GameObject* player = player_object()) {
-            ImGui::Separator();
-            ImGui::TextUnformatted("Player");
-            ImGui::Text("Position: %.1f, %.1f", player->transform.x, player->transform.y);
-            ImGui::Text("Speed: %.1f", m_player_controller.speed());
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                ImGui::SetTooltip("Player solid value not used yet, player checks against game objects only");
+            }
+        } else {
+            ImGui::Checkbox("Solid", &selected->solid);
         }
-    }
 
-    /**
-     * @brief Get the scene's current player GameObject pointer.
-     *
-     * @return GameObject* Pointer to the player GameObject, or `nullptr` if the player index is invalid or the object does not exist.
-     */
-    GameObject* SandboxScene::player_object() noexcept
-    {
-        return m_objects.get(m_player_index);
-    }
+        if (is_player) {
+            ImGui::BeginDisabled();
+            ImGui::Checkbox("IsPlayer", &is_player);
+            ImGui::EndDisabled();
+        }
 
-    /**
-     * @brief Retrieve the scene's player GameObject by its stored index.
-     *
-     * @return const GameObject* Pointer to the player GameObject, or `nullptr` if the stored index is invalid or no player exists.
-     */
-    const GameObject* SandboxScene::player_object() const noexcept
-    {
-        return m_objects.get(m_player_index);
+        selected->clamp_to_area(m_window_width, m_window_height);
     }
 
 } // namespace prune

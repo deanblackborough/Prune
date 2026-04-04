@@ -29,7 +29,7 @@ namespace prune {
             );
 
             ImGui::SetNextWindowSize(
-                ImVec2(panel_width, 260.0f),
+                ImVec2(panel_width, 420.0f),
                 ImGuiCond_FirstUseEver
             );
 
@@ -41,7 +41,7 @@ namespace prune {
 
         if (m_show_debug) {
             ImGui::SetNextWindowPos(ImVec2(10.0f, 34.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(220.0f, 130.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(220.0f, 160.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Debug / Stats", &m_show_debug)) {
                 ImGuiIO& io = ImGui::GetIO();
