@@ -8,6 +8,20 @@
 
 namespace prune {
 
+    /**
+     * @brief Updates a GameObject's transform from keyboard and mouse input and constrains it to the world bounds.
+     *
+     * Processes horizontal movement (Left/A, Right/D) and vertical movement (Up/W, Down/S) by applying
+     * the controller's speed scaled by `dt`. If the left mouse button was pressed, repositions the object
+     * so its rectangle is centered at the mouse position. Finally clamps the object's transform inside
+     * the provided world width and height.
+     *
+     * @param object The game object to update; its transform and position will be modified.
+     * @param dt Time step in seconds used to scale movement.
+     * @param input Input state queried for key and mouse events.
+     * @param world_width Width of the world area used for clamping the object's position (in pixels).
+     * @param world_height Height of the world area used for clamping the object's position (in pixels).
+     */
     void PlayerController::update(
         GameObject& object,
         float dt,
@@ -45,11 +59,23 @@ namespace prune {
         object.clamp_to_area(world_width, world_height);
     }
 
+    /**
+     * @brief Gets the controller's movement speed.
+     *
+     * @return The current movement speed value (guaranteed to be >= 0).
+     */
     float PlayerController::speed() const noexcept
     {
         return m_speed;
     }
 
+    /**
+     * @brief Set the controller's movement speed.
+     *
+     * Updates the movement speed used for player motion. Negative values are clamped to zero.
+     *
+     * @param speed Desired speed in units per second; values less than 0 are treated as 0.
+     */
     void PlayerController::set_speed(float speed) noexcept
     {
         m_speed = std::max(0.0f, speed);
