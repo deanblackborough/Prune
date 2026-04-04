@@ -5,6 +5,7 @@
 
 #include <SDL2/SDL.h>
 #include <algorithm>
+#include <cmath>
 
 namespace prune {
 
@@ -16,20 +17,29 @@ namespace prune {
         int world_height
     ) const
     {
+        float move_x = 0.0f;
+        float move_y = 0.0f;
+
         if (input.is_key_down(SDL_SCANCODE_LEFT) || input.is_key_down(SDL_SCANCODE_A)) {
-            object.transform.x -= m_speed * dt;
+            move_x -= 1.0f;
         }
 
         if (input.is_key_down(SDL_SCANCODE_RIGHT) || input.is_key_down(SDL_SCANCODE_D)) {
-            object.transform.x += m_speed * dt;
+            move_x += 1.0f;
         }
 
         if (input.is_key_down(SDL_SCANCODE_UP) || input.is_key_down(SDL_SCANCODE_W)) {
-            object.transform.y -= m_speed * dt;
+            move_y -= 1.0f;
         }
 
         if (input.is_key_down(SDL_SCANCODE_DOWN) || input.is_key_down(SDL_SCANCODE_S)) {
-            object.transform.y += m_speed * dt;
+            move_y += 1.0f;
+        }
+
+        if (move_x != 0.0f || move_y != 0.0f) {
+            const float length = std::sqrt((move_x * move_x) + (move_y * move_y));
+            object.transform.x += (move_x / length) * m_speed * dt;
+            object.transform.y += (move_y / length) * m_speed * dt;
         }
 
         if (input.was_mouse_button_pressed(SDL_BUTTON_LEFT)) {
