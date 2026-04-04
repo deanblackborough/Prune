@@ -26,10 +26,6 @@ namespace prune {
     {
         m_objects.push_back(object);
 
-        if (m_objects.size() == 1) {
-            m_selected_index = 0;
-        }
-
         return m_objects.size() - 1;
     }
 

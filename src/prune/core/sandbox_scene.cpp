@@ -152,8 +152,12 @@ namespace prune {
 
         ImGui::Spacing();
         ImGui::TextUnformatted("Position");
-        ImGui::SliderFloat("X", &selected->transform.x, 0.0f, static_cast<float>(m_window_width));
-        ImGui::SliderFloat("Y", &selected->transform.y, 0.0f, static_cast<float>(m_window_height));
+
+        const auto max_x = static_cast<float>(m_window_width - selected->rectangle.width);
+        const auto max_y = static_cast<float>(m_window_height - selected->rectangle.height);
+
+        ImGui::SliderFloat("X", &selected->transform.x, 0.0f, std::max(0.0f, max_x));
+        ImGui::SliderFloat("Y", &selected->transform.y, 0.0f, std::max(0.0f, max_y));
 
         ImGui::Separator();
 
