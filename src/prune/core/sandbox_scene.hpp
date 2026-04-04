@@ -1,10 +1,9 @@
 #pragma once
 
+#include "game_object.hpp"
 #include "game_object_manager.hpp"
 #include "player_controller.hpp"
 #include "scene.hpp"
-
-#include <cstddef>
 
 namespace prune {
 
@@ -22,10 +21,16 @@ namespace prune {
         [[nodiscard]] GameObject* player_object() noexcept;
         [[nodiscard]] const GameObject* player_object() const noexcept;
 
+        [[nodiscard]] bool is_overlapping(const GameObject& a, const GameObject& b) const noexcept;
+
+        void resolve_player_collisions(GameObject& player);
+        void draw_object_list_ui();
+        void draw_selected_object_ui();
+
         GameObjectManager m_objects;
         PlayerController m_player_controller;
 
-        std::size_t m_player_index = 0;
+        GameObjectId m_player_id = kInvalidGameObjectId;
 
         int m_window_width = 0;
         int m_window_height = 0;

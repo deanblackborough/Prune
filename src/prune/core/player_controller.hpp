@@ -10,9 +10,7 @@ namespace prune {
         void update(
             GameObject& object,
             float dt,
-            const Input& input,
-            int world_width,
-            int world_height
+            const Input& input
         ) const;
 
         [[nodiscard]] float speed() const noexcept;

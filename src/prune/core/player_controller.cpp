@@ -9,26 +9,10 @@
 
 namespace prune {
 
-    /**
-     * @brief Updates a GameObject's transform from keyboard and mouse input and constrains it to the world bounds.
-     *
-     * Processes horizontal movement (Left/A, Right/D) and vertical movement (Up/W, Down/S) by applying
-     * the controller's speed scaled by `dt`. If the left mouse button was pressed, repositions the object
-     * so its rectangle is centered at the mouse position. Finally clamps the object's transform inside
-     * the provided world width and height.
-     *
-     * @param object The game object to update; its transform and position will be modified.
-     * @param dt Time step in seconds used to scale movement.
-     * @param input Input state queried for key and mouse events.
-     * @param world_width Width of the world area used for clamping the object's position (in pixels).
-     * @param world_height Height of the world area used for clamping the object's position (in pixels).
-     */
     void PlayerController::update(
         GameObject& object,
         float dt,
-        const Input& input,
-        int world_width,
-        int world_height
+        const Input& input
     ) const
     {
         float move_x = 0.0f;
@@ -50,42 +34,25 @@ namespace prune {
             move_y += 1.0f;
         }
 
+        object.velocity.x = 0.0f;
+        object.velocity.y = 0.0f;
+
         if (move_x != 0.0f || move_y != 0.0f) {
             const float length = std::sqrt((move_x * move_x) + (move_y * move_y));
-            object.transform.x += (move_x / length) * m_speed * dt;
-            object.transform.y += (move_y / length) * m_speed * dt;
+
+            object.velocity.x = (move_x / length) * m_speed;
+            object.velocity.y = (move_y / length) * m_speed;
         }
 
-        if (input.was_mouse_button_pressed(SDL_BUTTON_LEFT)) {
-            const auto mouse_x = static_cast<float>(input.mouse_x());
-            const auto mouse_y = static_cast<float>(input.mouse_y());
-            const auto half_width = static_cast<float>(object.rectangle.width) * 0.5f;
-            const auto half_height = static_cast<float>(object.rectangle.height) * 0.5f;
-
-            object.transform.x = mouse_x - half_width;
-            object.transform.y = mouse_y - half_height;
-        }
-
-        object.clamp_to_area(world_width, world_height);
+        object.transform.x += object.velocity.x * dt;
+        object.transform.y += object.velocity.y * dt;
     }
 
-    /**
-     * @brief Gets the controller's movement speed.
-     *
-     * @return The current movement speed value (guaranteed to be >= 0).
-     */
     float PlayerController::speed() const noexcept
     {
         return m_speed;
     }
 
-    /**
-     * @brief Set the controller's movement speed.
-     *
-     * Updates the movement speed used for player motion. Negative values are clamped to zero.
-     *
-     * @param speed Desired speed in units per second; values less than 0 are treated as 0.
-     */
     void PlayerController::set_speed(float speed) noexcept
     {
         m_speed = std::max(0.0f, speed);
