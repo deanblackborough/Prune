@@ -64,6 +64,10 @@ namespace prune {
 
     void SandboxScene::render(SDL_Renderer* renderer)
     {
+        const GameObjectId selected_id = m_objects.selected_id();
+        SDL_Rect selected_outline{};
+        bool has_selected_outline = false;
+
         for (const auto& object : m_objects.objects()) {
             if (!object.active || !object.visible) {
                 continue;
@@ -86,18 +90,21 @@ namespace prune {
 
             SDL_RenderFillRect(renderer, &rect);
 
-            const bool is_selected = object.id == m_objects.selected_id();
-            if (m_highlight_selected && is_selected) {
-                SDL_Rect outline{
+            if (m_highlight_selected && object.id == selected_id) {
+                selected_outline = SDL_Rect{
                     rect.x - 2,
                     rect.y - 2,
                     rect.w + 4,
                     rect.h + 4
                 };
 
-                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                SDL_RenderDrawRect(renderer, &outline);
+                has_selected_outline = true;
             }
+        }
+
+        if (m_highlight_selected && has_selected_outline) {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderDrawRect(renderer, &selected_outline);
         }
     }
 
