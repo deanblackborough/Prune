@@ -14,11 +14,13 @@ add_executable(Prune
         src/prune/core/time.cpp
         src/prune/core/input.cpp
         src/prune/core/sandbox_scene.cpp
+        src/prune/tooling/editor_ui.cpp
 
         external/imgui/imgui.cpp
         external/imgui/imgui_draw.cpp
         external/imgui/imgui_tables.cpp
         external/imgui/imgui_widgets.cpp
+        external/imgui/imgui_demo.cpp
         external/imgui/backends/imgui_impl_sdl2.cpp
         external/imgui/backends/imgui_impl_sdlrenderer2.cpp
 )

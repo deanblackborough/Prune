@@ -10,6 +10,7 @@ namespace prune {
 
     class Time;
     class Scene;
+    class EditorUI;
 
     struct AppConfig {
         WindowConfig window{};
@@ -147,6 +148,7 @@ namespace prune {
         std::unique_ptr<Time> m_time;
         std::unique_ptr<Input> m_input;
         std::unique_ptr<Scene> m_scene;
+        std::unique_ptr<EditorUI> m_editor_ui;
 
         float m_fixed_timestep = 1.0f / 60.0f;
         float m_accumulator = 0.0f;

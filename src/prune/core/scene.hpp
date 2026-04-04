@@ -47,12 +47,20 @@ namespace prune {
         virtual void render(SDL_Renderer* renderer) = 0;
 
         /**
-         * Renders any Dear ImGui controls associated with the scene.
+         * Draws scene-specific content for the inspector panel.
          *
-         * Override this to expose scene-specific debug tools, editors, or runtime
-         * controls. The default implementation does nothing.
+         * The tooling layer owns the actual window. Scenes only provide the
+         * controls shown inside it.
          */
-        virtual void render_imgui() {}
+        virtual void draw_inspector_ui() {}
+
+        /**
+         * Draws scene-specific content for the debug panel.
+         *
+         * The tooling layer owns the actual window. Scenes only provide any
+         * scene-level diagnostics shown inside it.
+         */
+        virtual void draw_debug_ui() {}
     };
 
 }
