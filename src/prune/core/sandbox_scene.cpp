@@ -225,6 +225,10 @@ namespace prune {
             ImGui::BeginDisabled();
             ImGui::Checkbox("Solid", &selected->solid);
             ImGui::EndDisabled();
+
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                ImGui::SetTooltip("Player solid value not used yet, player checks against game objects only");
+            }
         } else {
             ImGui::Checkbox("Solid", &selected->solid);
         }
