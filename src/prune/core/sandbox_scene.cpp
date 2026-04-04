@@ -3,7 +3,7 @@
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include <cmath>
-#include <imgui.h>
+#include "imgui.h"
 
 namespace prune {
 

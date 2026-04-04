@@ -34,6 +34,16 @@ namespace prune {
             move_y += 1.0f;
         }
 
+        if (input.was_mouse_button_pressed(SDL_BUTTON_LEFT)) {
+            const auto mouse_x = static_cast<float>(input.mouse_x());
+            const auto mouse_y = static_cast<float>(input.mouse_y());
+            const auto half_width = static_cast<float>(object.rectangle.width) * 0.5f;
+            const auto half_height = static_cast<float>(object.rectangle.height) * 0.5f;
+
+            object.transform.x = mouse_x - half_width;
+            object.transform.y = mouse_y - half_height;
+        }
+
         object.velocity.x = 0.0f;
         object.velocity.y = 0.0f;
 
