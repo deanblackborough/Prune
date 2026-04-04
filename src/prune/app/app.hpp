@@ -1,7 +1,7 @@
 #pragma once
 
-#include "input.hpp"
-#include "window.hpp"
+#include "../core/input.hpp"
+#include "../core/window.hpp"
 
 #include <SDL2/SDL.h>
 #include <memory>

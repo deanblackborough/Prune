@@ -1,7 +1,7 @@
 #include "prune/tooling/editor_ui.hpp"
 
 #include "imgui.h"
-#include "prune/core/scene.hpp"
+#include "prune/scene/scene.hpp"
 
 namespace prune {
 

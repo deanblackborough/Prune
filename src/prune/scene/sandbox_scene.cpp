@@ -85,6 +85,19 @@ namespace prune {
             );
 
             SDL_RenderFillRect(renderer, &rect);
+
+            const bool is_selected = object.id == m_objects.selected_id();
+            if (m_highlight_selected && is_selected) {
+                SDL_Rect outline{
+                    rect.x - 2,
+                    rect.y - 2,
+                    rect.w + 4,
+                    rect.h + 4
+                };
+
+                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                SDL_RenderDrawRect(renderer, &outline);
+            }
         }
     }
 
@@ -94,6 +107,8 @@ namespace prune {
             const Transform spawn = next_block_spawn_position();
             create_block(spawn.x, spawn.y);
         }
+
+        ImGui::Checkbox("Highlight selected", &m_highlight_selected);
 
         ImGui::Separator();
 

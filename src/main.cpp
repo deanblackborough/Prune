@@ -1,5 +1,5 @@
 #define SDL_MAIN_HANDLED
-#include "prune/core/app.hpp"
+#include "prune/app/app.hpp"
 
 #include <exception>
 #include <iostream>

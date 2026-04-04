@@ -9,14 +9,17 @@ find_package(SDL2 REQUIRED CONFIG)
 
 add_executable(Prune
         src/main.cpp
-        src/prune/core/app.cpp
+
+        src/prune/app/app.cpp
+
         src/prune/core/window.cpp
         src/prune/core/time.cpp
         src/prune/core/input.cpp
-        src/prune/core/sandbox_scene.cpp
-        src/prune/core/game_object.cpp
-        src/prune/core/game_object_manager.cpp
-        src/prune/core/player_controller.cpp
+
+        src/prune/scene/game_object.cpp
+        src/prune/scene/game_object_manager.cpp
+        src/prune/scene/player_controller.cpp
+        src/prune/scene/sandbox_scene.cpp
 
         src/prune/tooling/editor_ui.cpp
 

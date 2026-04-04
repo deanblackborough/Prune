@@ -1,6 +1,6 @@
 #pragma once
 
-#include "window.hpp"
+#include "../core/window.hpp"
 
 namespace prune {
 
