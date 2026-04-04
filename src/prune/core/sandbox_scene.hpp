@@ -27,9 +27,14 @@ namespace prune {
         void render(SDL_Renderer* renderer) override;
 
         /**
-         * Renders any Dear ImGui controls associated with the scene.
+         * Draws scene-specific content inside the shared inspector panel.
          */
-        void render_imgui() override;
+        void draw_inspector_ui() override;
+
+        /**
+         * Draws scene-specific content inside the shared debug panel.
+         */
+        void draw_debug_ui() override;
 
     private:
         struct Player {

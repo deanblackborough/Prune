@@ -61,28 +61,30 @@ namespace prune {
         SDL_RenderFillRect(renderer, &rect);
     }
 
-    void SandboxScene::render_imgui() {
-        ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(280.0f, 180.0f), ImGuiCond_FirstUseEver);
+    void SandboxScene::draw_inspector_ui() {
+        ImGui::TextUnformatted("Player");
 
-        if (ImGui::Begin("Player")) {
-            ImGui::Text("Position");
-            ImGui::Text("X: %.1f", m_player.x);
-            ImGui::Text("Y: %.1f", m_player.y);
+        ImGui::Spacing();
+        ImGui::TextUnformatted("Position");
+        ImGui::Text("X: %.1f", m_player.x);
+        ImGui::Text("Y: %.1f", m_player.y);
 
-            ImGui::Separator();
+        ImGui::Separator();
 
-            ImGui::SliderInt("Size", &m_player.size, 10, 200);
-            ImGui::SliderFloat("Speed", &m_player.speed, 50.0f, 600.0f, "%.1f");
+        ImGui::SliderInt("Size", &m_player.size, 10, 200);
+        ImGui::SliderFloat("Speed", &m_player.speed, 50.0f, 600.0f, "%.1f");
 
-            ImGui::Separator();
+        ImGui::Separator();
 
-            ImGui::ColorEdit3("Colour", m_player.color);
+        ImGui::ColorEdit3("Colour", m_player.color);
 
-            clamp_player_to_window();
-        }
+        clamp_player_to_window();
+    }
 
-        ImGui::End();
+    void SandboxScene::draw_debug_ui() {
+        ImGui::TextUnformatted("Sandbox");
+        ImGui::Text("Window: %d x %d", m_window_width, m_window_height);
+        ImGui::Text("Player size: %d", m_player.size);
     }
 
     void SandboxScene::clamp_player_to_window() {

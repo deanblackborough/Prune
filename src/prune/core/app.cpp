@@ -2,6 +2,7 @@
 #include "time.hpp"
 #include "scene.hpp"
 #include "sandbox_scene.hpp"
+#include "prune/tooling/editor_ui.hpp"
 
 #include "imgui.h"
 #include "backends/imgui_impl_sdl2.h"
@@ -20,11 +21,12 @@ namespace prune {
         m_window = std::make_unique<Window>(config.window);
         m_input = std::make_unique<Input>();
         m_time = std::make_unique<Time>();
-
         m_scene = std::make_unique<SandboxScene>(
             m_window->width(),
             m_window->height()
         );
+        m_editor_ui = std::make_unique<EditorUI>();
+
         m_scene->on_enter();
 
         init_imgui();
@@ -38,7 +40,9 @@ namespace prune {
 
         shutdown_imgui();
 
+        m_editor_ui.reset();
         m_scene.reset();
+        m_input.reset();
         m_time.reset();
         m_window.reset();
 
@@ -167,7 +171,10 @@ namespace prune {
 
         if (m_scene) {
             m_scene->render(renderer);
-            m_scene->render_imgui();
+        }
+
+        if (m_scene && m_editor_ui) {
+            m_editor_ui->render(*m_scene);
         }
 
         ImGui::Render();
