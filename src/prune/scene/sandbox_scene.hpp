@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include "game_object.hpp"
 #include "game_object_manager.hpp"
 #include "player_controller.hpp"
@@ -30,12 +32,19 @@ namespace prune {
         void draw_object_list_ui();
         void draw_selected_object_ui();
 
+        [[nodiscard]] GameObject* pick_object_at(int x, int y) noexcept;
+        void handle_scene_click(const Input& input);
+
+        [[nodiscard]] std::string make_unique_name(std::string desired, GameObjectId ignore_id) const;
+
         GameObjectManager m_objects;
         PlayerController m_player_controller;
 
         GameObjectId m_player_id = kInvalidGameObjectId;
 
-        bool m_highlight_selected = false;
+        bool m_highlight_selected = true;
+
+        std::array<char, 128> m_object_search{};
 
         int m_window_width = 0;
         int m_window_height = 0;
