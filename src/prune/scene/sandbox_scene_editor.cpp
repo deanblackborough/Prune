@@ -96,7 +96,6 @@ namespace prune {
     GameObjectId SandboxScene::create_block(float x, float y)
     {
         GameObject block;
-        block.name = "Block";
         block.transform.x = x;
         block.transform.y = y;
         block.rectangle.width = 50;
