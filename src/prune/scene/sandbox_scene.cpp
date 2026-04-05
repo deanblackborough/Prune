@@ -274,11 +274,43 @@ namespace prune {
             return;
         }
 
+        bool is_player = (selected->id == m_player_id);
+
         ImGui::Separator();
         ImGui::Text("Selected: %s", selected->name.c_str());
         ImGui::Text("Id: %u", selected->id);
 
+        if (!is_player) {
+            if (ImGui::Button("Delete")) {
+                const GameObjectId id_to_remove = selected->id;
+                m_objects.remove_object(id_to_remove);
+                return;
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Clone")) {
+                const std::string source_name = selected->name;
+
+                GameObject clone = *selected;
+                clone.is_player = false;
+                clone.transform.x += 50.0f;
+                clone.transform.y += 50.0f;
+
+                const GameObjectId clone_id = m_objects.create_object(clone);
+
+                if (GameObject* created = m_objects.get_by_id(clone_id)) {
+                    created->name = source_name + " Copy";
+                    created->clamp_to_area(m_window_width, m_window_height);
+                }
+
+                m_objects.select(clone_id);
+                return;
+            }
+        }
+
         ImGui::Spacing();
+
         ImGui::TextUnformatted("Position");
 
         const auto max_x = static_cast<float>(m_window_width - selected->rectangle.width);
@@ -293,8 +325,6 @@ namespace prune {
         ImGui::SliderInt("Width", &selected->rectangle.width, 10, 200);
         ImGui::SliderInt("Height", &selected->rectangle.height, 10, 200);
         ImGui::ColorEdit3("Colour", selected->rectangle.color);
-
-        bool is_player = (selected->id == m_player_id);
 
         if (is_player) {
             float speed = m_player_controller.speed();

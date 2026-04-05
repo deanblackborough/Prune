@@ -23,6 +23,28 @@ namespace prune {
         return copy.id;
     }
 
+    bool GameObjectManager::remove_object(GameObjectId id) noexcept
+    {
+        const std::size_t index = find_index_by_id(id);
+        if (index >= m_objects.size()) {
+            return false;
+        }
+
+        m_objects.erase(m_objects.begin() + static_cast<std::ptrdiff_t>(index));
+
+        if (m_selected_id == id) {
+            if (m_objects.empty()) {
+                m_selected_id = kInvalidGameObjectId;
+            } else if (index < m_objects.size()) {
+                m_selected_id = m_objects[index].id;
+            } else {
+                m_selected_id = m_objects.back().id;
+            }
+        }
+
+        return true;
+    }
+
     std::size_t GameObjectManager::count() const noexcept
     {
         return m_objects.size();

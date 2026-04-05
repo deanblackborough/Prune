@@ -11,6 +11,7 @@ namespace prune {
         void clear() noexcept;
 
         GameObjectId create_object(const GameObject& object);
+        bool remove_object(GameObjectId id) noexcept;
 
         [[nodiscard]] std::size_t count() const noexcept;
         [[nodiscard]] bool empty() const noexcept;
