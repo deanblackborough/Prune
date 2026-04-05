@@ -416,9 +416,7 @@ namespace prune {
             std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
 
             if (ImGui::InputText("Name", name_buffer, sizeof(name_buffer))) {
-                if (name_buffer[0] != '\0') {
-                    selected->name = make_unique_name(name_buffer, selected->id);
-                }
+                selected->name = make_unique_name(name_buffer, selected->id);
             }
         }
 

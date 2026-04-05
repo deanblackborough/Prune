@@ -12,11 +12,14 @@ The goal is not to be feature-rich, but to be clean, understandable, and extensi
 
 This project currently provides:
 
-- SDL window + renderer
+- SDL window + renderer with configurable settings
 - Main application loop (fixed timestep + variable render)
-- Scene system (basic abstraction)
+- Scene system with inspector and debug UI
 - Frame timing (high-resolution, SDL performance counters)
-- Input handling via SDL events
+- Input handling (keyboard + mouse, ImGui-aware)
+- GameObject management with selection and editing
+- Player movement with collision detection
+- Dear ImGui integration (inspector panel, debug stats)
 - Explicit ownership (no globals, no service locator)
 
 If it feels “bare”, that’s intentional.
@@ -31,6 +34,7 @@ This is a foundation, not a framework.
 
 - C++23
 - SDL2 – windowing, input, and rendering
+- Dear ImGui – editor UI and tooling
 - CMake – build system
 
 ---
@@ -46,11 +50,20 @@ This is a foundation, not a framework.
 - **Time**  
   Handles frame timing and fixed timestep updates
 
+- **Input**  
+  Manages keyboard and mouse state with frame-based polling
+
 - **Scene**  
-  Abstract interface for game logic
+  Abstract interface for game logic and rendering
 
 - **SandboxScene**  
-  Example implementation (movable square)
+  Example implementation with player, objects, and collision
+
+- **GameObjectManager**  
+  Manages game objects with selection and ID-based lookup
+
+- **EditorUI**  
+  Dear ImGui-based inspector and debug panels
 
 ---
 
@@ -58,10 +71,13 @@ This is a foundation, not a framework.
 
 Running the project should:
 
-- Open a window
-- Display a square
-- Allow movement using:
-    - Arrow keys or WASD
+- Open a 1280x720 window
+- Display a player (green square) and a static block (orange)
+- Allow player movement using arrow keys or WASD
+- Show an inspector panel on the right with object properties
+- Support object creation, cloning, deletion, and editing
+- Click objects to select them
+- Toggle debug stats via View menu
 
 ---
 
@@ -105,4 +121,3 @@ Add the following CMake option:
 - Sprite rendering
 - Camera system (2D)
 - ECS (e.g. EnTT)
-- Introduce Dear ImGui (SDL renderer backend)
