@@ -44,7 +44,7 @@ namespace prune {
         ImGui::Separator();
 
         ImGui::SetNextItemWidth(-1.0f);
-        ImGui::InputTextWithHint("##object_search", "Search objects...", m_object_search.data(), m_object_search.size());
+        ImGui::InputTextWithHint("##object_search", "Search objects...", m_editor_state.object_search.data(), m_object_search.size());
 
         constexpr int visible_rows = 5;
         const float row_height = ImGui::GetTextLineHeightWithSpacing();
@@ -52,7 +52,7 @@ namespace prune {
             + ImGui::GetStyle().FramePadding.y * 2.0f;
 
         if (ImGui::BeginChild("object_list", ImVec2(0.0f, list_height), true)) {
-            const std::string_view filter = m_object_search.data();
+            const std::string_view filter = m_editor_state.object_search.data();
 
             for (const auto& object : m_objects.objects()) {
                 if (!filter.empty() && !contains_case_insensitive(object.name, filter)) {

@@ -111,7 +111,7 @@ namespace prune {
 
             SDL_RenderFillRect(renderer, &rect);
 
-            if (m_highlight_selected && object.id == selected_id) {
+            if (m_editor_state.highlight_selected && object.id == selected_id) {
                 selected_outline = SDL_Rect{
                     rect.x - 2,
                     rect.y - 2,
@@ -123,7 +123,7 @@ namespace prune {
             }
         }
 
-        if (m_highlight_selected && has_selected_outline) {
+        if (m_editor_state.highlight_selected && has_selected_outline) {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
             SDL_RenderDrawRect(renderer, &selected_outline);
         }
@@ -136,7 +136,7 @@ namespace prune {
             create_block(spawn.x, spawn.y);
         }
 
-        ImGui::Checkbox("Highlight selected", &m_highlight_selected);
+        ImGui::Checkbox("Highlight selected", &m_editor_state.highlight_selected);
 
         ImGui::Separator();
 

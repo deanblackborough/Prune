@@ -8,6 +8,7 @@
 #include "game_object_manager.hpp"
 #include "player_controller.hpp"
 #include "scene.hpp"
+#include "sandbox_scene_editor_state.hpp"
 
 namespace prune {
 
@@ -53,7 +54,8 @@ namespace prune {
 
         GameObjectId m_player_id = kInvalidGameObjectId;
 
-        bool m_highlight_selected = true;
+        SandboxEditorState m_editor_state;
+
         std::array<char, 128> m_object_search{};
 
         // Random number generation
