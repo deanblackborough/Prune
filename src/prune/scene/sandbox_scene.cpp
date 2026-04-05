@@ -19,20 +19,6 @@ namespace prune {
         m_objects.clear();
 
         m_player_id = m_objects.create_object(create_player());
-
-        GameObject block;
-        block.name = "Static Block";
-        block.transform.x = 420.0f;
-        block.transform.y = 220.0f;
-        block.rectangle.width = 50;
-        block.rectangle.height = 50;
-        block.rectangle.color[0] = 0.8f;
-        block.rectangle.color[1] = 0.5f;
-        block.rectangle.color[2] = 0.2f;
-        block.visible = true;
-        block.solid = true;
-        block.is_player = false;
-
         m_objects.create_object(create_initial_block());
 
         m_objects.select(m_player_id);
@@ -76,8 +62,17 @@ namespace prune {
 
     void SandboxScene::update(float dt, const Input& input)
     {
-        handle_scene_click(input);
+        update_editor(input);
+        update_game(dt, input);
+    }
 
+    void SandboxScene::update_game(float dt, const Input& input)
+    {
+        update_player(dt, input);
+    }
+
+    void SandboxScene::update_player(float dt, const Input& input)
+    {
         GameObject* player = player_object();
         if (!player) {
             return;

@@ -36,6 +36,11 @@ namespace prune {
         return nullptr;
     }
 
+    void SandboxScene::update_editor(const Input& input)
+    {
+        handle_scene_click(input);
+    }
+
     void SandboxScene::handle_scene_click(const Input& input)
     {
         if (ImGui::GetIO().WantCaptureMouse) {
