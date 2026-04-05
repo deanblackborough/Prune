@@ -40,11 +40,13 @@ namespace prune {
 
     void SandboxScene::draw_object_list_ui()
     {
-        ImGui::TextUnformatted("Objects");
-        ImGui::Separator();
-
         ImGui::SetNextItemWidth(-1.0f);
-        ImGui::InputTextWithHint("##object_search", "Search objects...", m_editor_state.object_search.data(), m_object_search.size());
+        ImGui::InputTextWithHint(
+            "##object_search",
+            "Search objects...",
+            m_editor_state.object_search.data(),
+            m_editor_state.object_search.size()
+        );
 
         constexpr int visible_rows = 5;
         const float row_height = ImGui::GetTextLineHeightWithSpacing();
@@ -79,9 +81,6 @@ namespace prune {
 
         ImGui::Separator();
 
-        ImGui::TextUnformatted("Selected");
-        ImGui::Separator();
-
         ImGui::Text("Id: %u", selected->id);
 
         if (is_player) {
@@ -97,8 +96,6 @@ namespace prune {
         }
 
         if (!is_player) {
-            ImGui::Separator();
-
             if (ImGui::Button("Delete")) {
                 const GameObjectId id_to_remove = selected->id;
                 m_objects.remove_object(id_to_remove);
@@ -127,53 +124,47 @@ namespace prune {
             }
         }
 
-        ImGui::Separator();
-
-        ImGui::TextUnformatted("Position");
-
-        const auto max_x = static_cast<float>(m_window_width - selected->rectangle.width);
-        const auto max_y = static_cast<float>(m_window_height - selected->rectangle.height);
-
-        ImGui::SliderFloat("X", &selected->transform.x, 0.0f, std::max(0.0f, max_x));
-        ImGui::SliderFloat("Y", &selected->transform.y, 0.0f, std::max(0.0f, max_y));
-
-        ImGui::Separator();
-
-        ImGui::TextUnformatted("Properties");
-        ImGui::SliderInt("Width", &selected->rectangle.width, 10, 200);
-        ImGui::SliderInt("Height", &selected->rectangle.height, 10, 200);
-        ImGui::ColorEdit3("Colour", selected->rectangle.color);
-
-        if (is_player) {
+        if (is_player && ImGui::CollapsingHeader("Player", ImGuiTreeNodeFlags_DefaultOpen)) {
             float speed = m_player_controller.speed();
             if (ImGui::SliderFloat("Move Speed", &speed, 50.0f, 600.0f, "%.1f")) {
                 m_player_controller.set_speed(speed);
             }
         }
 
-        ImGui::Separator();
+        if (ImGui::CollapsingHeader("Position", ImGuiTreeNodeFlags_DefaultOpen)) {
+            const float max_x = static_cast<float>(m_window_width - selected->rectangle.width);
+            const float max_y = static_cast<float>(m_window_height - selected->rectangle.height);
 
-        ImGui::TextUnformatted("Flags");
-        ImGui::Checkbox("Active", &selected->active);
-        ImGui::Checkbox("Visible", &selected->visible);
-
-        if (is_player) {
-            ImGui::BeginDisabled();
-            ImGui::Checkbox("Solid", &selected->solid);
-            ImGui::EndDisabled();
-
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-                ImGui::SetTooltip("Player solid value not used yet, player checks against game objects only");
-            }
-        } else {
-            ImGui::Checkbox("Solid", &selected->solid);
+            ImGui::SliderFloat("X", &selected->transform.x, 0.0f, std::max(0.0f, max_x));
+            ImGui::SliderFloat("Y", &selected->transform.y, 0.0f, std::max(0.0f, max_y));
         }
 
-        if (is_player) {
-            bool player_flag = is_player;
-            ImGui::BeginDisabled();
-            ImGui::Checkbox("IsPlayer", &player_flag);
-            ImGui::EndDisabled();
+        if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::SliderInt("Width", &selected->rectangle.width, 10, 200);
+            ImGui::SliderInt("Height", &selected->rectangle.height, 10, 200);
+            ImGui::ColorEdit3("Colour", selected->rectangle.color);
+        }
+
+        if (ImGui::CollapsingHeader("Flags")) {
+            ImGui::Checkbox("Active", &selected->active);
+            ImGui::Checkbox("Visible", &selected->visible);
+
+            if (is_player) {
+                ImGui::BeginDisabled();
+                ImGui::Checkbox("Solid", &selected->solid);
+                ImGui::EndDisabled();
+
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                    ImGui::SetTooltip("Player solid value not used yet, player checks against game objects only");
+                }
+
+                bool player_flag = true;
+                ImGui::BeginDisabled();
+                ImGui::Checkbox("IsPlayer", &player_flag);
+                ImGui::EndDisabled();
+            } else {
+                ImGui::Checkbox("Solid", &selected->solid);
+            }
         }
 
         selected->clamp_to_area(m_window_width, m_window_height);

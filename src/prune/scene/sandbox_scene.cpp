@@ -136,21 +136,26 @@ namespace prune {
             create_block(spawn.x, spawn.y);
         }
 
+        ImGui::SameLine();
         ImGui::Checkbox("Highlight selected", &m_editor_state.highlight_selected);
-
-        ImGui::Separator();
-
-        draw_object_list_ui();
 
         ImGui::Spacing();
 
+        if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_DefaultOpen)) {
+            draw_object_list_ui();
+        }
+
         GameObject* selected = m_objects.selected_object();
         if (!selected) {
-            ImGui::TextUnformatted("No object selected.");
+            if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::TextUnformatted("No object selected.");
+            }
             return;
         }
 
-        draw_selected_object_ui();
+        if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen)) {
+            draw_selected_object_ui();
+        }
     }
 
     void SandboxScene::draw_debug_ui()

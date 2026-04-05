@@ -56,8 +56,6 @@ namespace prune {
 
         SandboxEditorState m_editor_state;
 
-        std::array<char, 128> m_object_search{};
-
         // Random number generation
         std::mt19937 m_rng{std::random_device{}()};
         std::uniform_real_distribution<float> m_color_dist{0.2f, 1.0f};
