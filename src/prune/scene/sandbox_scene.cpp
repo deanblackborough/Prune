@@ -323,18 +323,65 @@ namespace prune {
         }
     }
 
+    bool contains_case_insensitive(std::string_view text, std::string_view query)
+    {
+        if (query.empty()) {
+            return true;
+        }
+
+        auto to_lower = [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        };
+
+        for (std::size_t i = 0; i + query.size() <= text.size(); ++i) {
+            bool matches = true;
+
+            for (std::size_t j = 0; j < query.size(); ++j) {
+                if (to_lower(static_cast<unsigned char>(text[i + j])) !=
+                    to_lower(static_cast<unsigned char>(query[j]))) {
+                    matches = false;
+                    break;
+                    }
+            }
+
+            if (matches) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     void SandboxScene::draw_object_list_ui()
     {
         ImGui::TextUnformatted("Objects");
         ImGui::Separator();
 
-        for (const auto& object : m_objects.objects()) {
-            const bool is_selected = object.id == m_objects.selected_id();
+        ImGui::SetNextItemWidth(-1.0f);
+        ImGui::InputTextWithHint("##object_search", "Search objects...", m_object_search.data(), m_object_search.size());
 
-            if (ImGui::Selectable(object.name.c_str(), is_selected)) {
-                m_objects.select(object.id);
+        constexpr int visible_rows = 5;
+        const float row_height = ImGui::GetTextLineHeightWithSpacing();
+        const float list_height = row_height * static_cast<float>(visible_rows)
+            + ImGui::GetStyle().FramePadding.y * 2.0f;
+
+        if (ImGui::BeginChild("object_list", ImVec2(0.0f, list_height), true)) {
+            const std::string_view filter = m_object_search.data();
+
+            for (const auto& object : m_objects.objects()) {
+                if (!filter.empty()) {
+                    if (!contains_case_insensitive(object.name, filter)) {
+                        continue;
+                    }
+                }
+
+                const bool is_selected = object.id == m_objects.selected_id();
+                if (ImGui::Selectable(object.name.c_str(), is_selected)) {
+                    m_objects.select(object.id);
+                }
             }
         }
+        ImGui::EndChild();
     }
 
     void SandboxScene::draw_selected_object_ui()
@@ -351,6 +398,8 @@ namespace prune {
         ImGui::TextUnformatted("Selected");
         ImGui::Separator();
 
+        ImGui::Text("Id: %u", selected->id);
+
         if (is_player) {
             ImGui::Text("Name: %s", selected->name.c_str());
         } else {
@@ -363,8 +412,6 @@ namespace prune {
                 }
             }
         }
-
-        ImGui::Text("Id: %u", selected->id);
 
         if (!is_player) {
             ImGui::Separator();

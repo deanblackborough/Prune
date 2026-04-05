@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include "game_object.hpp"
 #include "game_object_manager.hpp"
 #include "player_controller.hpp"
@@ -40,7 +42,9 @@ namespace prune {
 
         GameObjectId m_player_id = kInvalidGameObjectId;
 
-        bool m_highlight_selected = false;
+        bool m_highlight_selected = true;
+
+        std::array<char, 128> m_object_search{};
 
         int m_window_width = 0;
         int m_window_height = 0;
