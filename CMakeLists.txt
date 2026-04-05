@@ -20,6 +20,8 @@ add_executable(Prune
         src/prune/scene/game_object_manager.cpp
         src/prune/scene/player_controller.cpp
         src/prune/scene/sandbox_scene.cpp
+        src/prune/scene/sandbox_scene_editing.cpp
+        src/prune/scene/sandbox_scene_ui.cpp
 
         src/prune/tooling/editor_ui.cpp
 

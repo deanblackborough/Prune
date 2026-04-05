@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <string>
 
 #include "game_object.hpp"
 #include "game_object_manager.hpp"
@@ -26,6 +27,9 @@ namespace prune {
         [[nodiscard]] bool is_overlapping(const GameObject& a, const GameObject& b) const noexcept;
         [[nodiscard]] Transform next_block_spawn_position() const noexcept;
 
+        [[nodiscard]] static GameObject create_player();
+        [[nodiscard]] static GameObject create_initial_block();
+
         GameObjectId create_block(float x, float y);
 
         void resolve_player_collisions(GameObject& player);
@@ -43,7 +47,6 @@ namespace prune {
         GameObjectId m_player_id = kInvalidGameObjectId;
 
         bool m_highlight_selected = true;
-
         std::array<char, 128> m_object_search{};
 
         int m_window_width = 0;
