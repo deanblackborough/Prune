@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include "imgui.h"
+#include "prune/core/input.hpp"
 
 namespace prune {
 
@@ -50,8 +51,55 @@ namespace prune {
         m_objects.select(m_player_id);
     }
 
+    GameObject* SandboxScene::pick_object_at(int x, int y) noexcept
+    {
+        auto& objects = m_objects.objects();
+
+        for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
+            GameObject& object = *it;
+
+            if (!object.active || !object.visible) {
+                continue;
+            }
+
+            const RectF bounds = object.bounds();
+
+            const bool inside =
+                static_cast<float>(x) >= bounds.x &&
+                static_cast<float>(x) < (bounds.x + bounds.width) &&
+                static_cast<float>(y) >= bounds.y &&
+                static_cast<float>(y) < (bounds.y + bounds.height);
+
+            if (inside) {
+                return &object;
+            }
+        }
+
+        return nullptr;
+    }
+
+    void SandboxScene::handle_scene_click(const Input& input)
+    {
+        if (ImGui::GetIO().WantCaptureMouse) {
+            return;
+        }
+
+        if (!input.was_mouse_button_pressed(SDL_BUTTON_LEFT)) {
+            return;
+        }
+
+        GameObject* clicked = pick_object_at(input.mouse_x(), input.mouse_y());
+        if (!clicked) {
+            return;
+        }
+
+        m_objects.select(clicked->id);
+    }
+
     void SandboxScene::update(float dt, const Input& input)
     {
+        handle_scene_click(input);
+
         GameObject* player = player_object();
         if (!player) {
             return;
@@ -170,6 +218,35 @@ namespace prune {
                (a_bounds.y + a_bounds.height) > b_bounds.y;
     }
 
+    std::string SandboxScene::make_unique_name(std::string desired, GameObjectId ignore_id) const
+    {
+        if (desired.empty()) {
+            desired = "Object";
+        }
+
+        auto is_taken = [&](const std::string& name) {
+            for (const auto& obj : m_objects.objects()) {
+                if (obj.id != ignore_id && obj.name == name) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        if (!is_taken(desired)) {
+            return desired;
+        }
+
+        int suffix = 1;
+        std::string candidate;
+
+        do {
+            candidate = desired + " " + std::to_string(suffix++);
+        } while (is_taken(candidate));
+
+        return candidate;
+    }
+
     Transform SandboxScene::next_block_spawn_position() const noexcept
     {
         constexpr float base_x = 160.0f;
@@ -253,18 +330,67 @@ namespace prune {
         }
     }
 
+    namespace { // Anonymous namespace
+        bool contains_case_insensitive(std::string_view text, std::string_view query)
+        {
+            if (query.empty()) {
+                return true;
+            }
+
+            auto to_lower = [](unsigned char c) {
+                return static_cast<char>(std::tolower(c));
+            };
+
+            for (std::size_t i = 0; i + query.size() <= text.size(); ++i) {
+                bool matches = true;
+
+                for (std::size_t j = 0; j < query.size(); ++j) {
+                    if (to_lower(static_cast<unsigned char>(text[i + j])) !=
+                        to_lower(static_cast<unsigned char>(query[j]))) {
+                        matches = false;
+                        break;
+                        }
+                }
+
+                if (matches) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
     void SandboxScene::draw_object_list_ui()
     {
         ImGui::TextUnformatted("Objects");
         ImGui::Separator();
 
-        for (const auto& object : m_objects.objects()) {
-            const bool is_selected = object.id == m_objects.selected_id();
+        ImGui::SetNextItemWidth(-1.0f);
+        ImGui::InputTextWithHint("##object_search", "Search objects...", m_object_search.data(), m_object_search.size());
 
-            if (ImGui::Selectable(object.name.c_str(), is_selected)) {
-                m_objects.select(object.id);
+        constexpr int visible_rows = 5;
+        const float row_height = ImGui::GetTextLineHeightWithSpacing();
+        const float list_height = row_height * static_cast<float>(visible_rows)
+            + ImGui::GetStyle().FramePadding.y * 2.0f;
+
+        if (ImGui::BeginChild("object_list", ImVec2(0.0f, list_height), true)) {
+            const std::string_view filter = m_object_search.data();
+
+            for (const auto& object : m_objects.objects()) {
+                if (!filter.empty()) {
+                    if (!contains_case_insensitive(object.name, filter)) {
+                        continue;
+                    }
+                }
+
+                const bool is_selected = object.id == m_objects.selected_id();
+                if (ImGui::Selectable(object.name.c_str(), is_selected)) {
+                    m_objects.select(object.id);
+                }
             }
         }
+        ImGui::EndChild();
     }
 
     void SandboxScene::draw_selected_object_ui()
@@ -277,10 +403,27 @@ namespace prune {
         bool is_player = (selected->id == m_player_id);
 
         ImGui::Separator();
-        ImGui::Text("Selected: %s", selected->name.c_str());
+
+        ImGui::TextUnformatted("Selected");
+        ImGui::Separator();
+
         ImGui::Text("Id: %u", selected->id);
 
+        if (is_player) {
+            ImGui::Text("Name: %s", selected->name.c_str());
+        } else {
+            char name_buffer[128]{};
+            std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
+
+            ImGui::InputText("Name", name_buffer, sizeof(name_buffer));
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                selected->name = make_unique_name(name_buffer, selected->id);
+            }
+        }
+
         if (!is_player) {
+            ImGui::Separator();
+
             if (ImGui::Button("Delete")) {
                 const GameObjectId id_to_remove = selected->id;
                 m_objects.remove_object(id_to_remove);
@@ -300,7 +443,7 @@ namespace prune {
                 const GameObjectId clone_id = m_objects.create_object(clone);
 
                 if (GameObject* created = m_objects.get_by_id(clone_id)) {
-                    created->name = source_name + " Copy";
+                    created->name = make_unique_name(source_name, clone_id);
                     created->clamp_to_area(m_window_width, m_window_height);
                 }
 
@@ -309,7 +452,7 @@ namespace prune {
             }
         }
 
-        ImGui::Spacing();
+        ImGui::Separator();
 
         ImGui::TextUnformatted("Position");
 
@@ -321,7 +464,7 @@ namespace prune {
 
         ImGui::Separator();
 
-        ImGui::TextUnformatted("Rectangle");
+        ImGui::TextUnformatted("Properties");
         ImGui::SliderInt("Width", &selected->rectangle.width, 10, 200);
         ImGui::SliderInt("Height", &selected->rectangle.height, 10, 200);
         ImGui::ColorEdit3("Colour", selected->rectangle.color);
