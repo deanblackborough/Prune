@@ -30,6 +30,9 @@ namespace prune {
         void draw_object_list_ui();
         void draw_selected_object_ui();
 
+        [[nodiscard]] GameObject* pick_object_at(int x, int y) noexcept;
+        void handle_scene_click(const Input& input);
+
         GameObjectManager m_objects;
         PlayerController m_player_controller;
 

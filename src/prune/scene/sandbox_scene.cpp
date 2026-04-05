@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include "imgui.h"
+#include "prune/core/input.hpp"
 
 namespace prune {
 
@@ -50,8 +51,48 @@ namespace prune {
         m_objects.select(m_player_id);
     }
 
+    GameObject* SandboxScene::pick_object_at(int x, int y) noexcept
+    {
+        auto& objects = m_objects.objects();
+
+        for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
+            GameObject& object = *it;
+
+            if (!object.active || !object.visible) {
+                continue;
+            }
+
+            const RectF bounds = object.bounds();
+
+            const bool inside =
+                static_cast<float>(x) >= bounds.x &&
+                static_cast<float>(x) <= (bounds.x + bounds.width) &&
+                static_cast<float>(y) >= bounds.y &&
+                static_cast<float>(y) <= (bounds.y + bounds.height);
+
+            if (inside) {
+                return &object;
+            }
+        }
+
+        return nullptr;
+    }
+
+    void SandboxScene::handle_scene_click(const Input& input)
+    {
+        if (!input.was_mouse_button_pressed(SDL_BUTTON_LEFT)) {
+            return;
+        }
+
+        if (GameObject* clicked = pick_object_at(input.mouse_x(), input.mouse_y())) {
+            m_objects.select(clicked->id);
+        }
+    }
+
     void SandboxScene::update(float dt, const Input& input)
     {
+        handle_scene_click(input);
+
         GameObject* player = player_object();
         if (!player) {
             return;
