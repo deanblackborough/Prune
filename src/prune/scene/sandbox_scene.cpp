@@ -66,9 +66,9 @@ namespace prune {
 
             const bool inside =
                 static_cast<float>(x) >= bounds.x &&
-                static_cast<float>(x) <= (bounds.x + bounds.width) &&
+                static_cast<float>(x) < (bounds.x + bounds.width) &&
                 static_cast<float>(y) >= bounds.y &&
-                static_cast<float>(y) <= (bounds.y + bounds.height);
+                static_cast<float>(y) < (bounds.y + bounds.height);
 
             if (inside) {
                 return &object;
@@ -415,7 +415,8 @@ namespace prune {
             char name_buffer[128]{};
             std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
 
-            if (ImGui::InputText("Name", name_buffer, sizeof(name_buffer))) {
+            ImGui::InputText("Name", name_buffer, sizeof(name_buffer));
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
                 selected->name = make_unique_name(name_buffer, selected->id);
             }
         }
