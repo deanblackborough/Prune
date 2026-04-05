@@ -442,7 +442,7 @@ namespace prune {
                 const GameObjectId clone_id = m_objects.create_object(clone);
 
                 if (GameObject* created = m_objects.get_by_id(clone_id)) {
-                    created->name = source_name + " Copy";
+                    created->name = make_unique_name(source_name, clone_id);
                     created->clamp_to_area(m_window_width, m_window_height);
                 }
 
