@@ -88,6 +88,11 @@ namespace prune {
         return candidate;
     }
 
+    float SandboxScene::random_color_component()
+    {
+        return m_color_dist(m_rng);
+    }
+
     GameObjectId SandboxScene::create_block(float x, float y)
     {
         GameObject block;
@@ -96,9 +101,9 @@ namespace prune {
         block.transform.y = y;
         block.rectangle.width = 50;
         block.rectangle.height = 50;
-        block.rectangle.color[0] = 0.8f;
-        block.rectangle.color[1] = 0.5f;
-        block.rectangle.color[2] = 0.2f;
+        block.rectangle.color[0] = random_color_component();
+        block.rectangle.color[1] = random_color_component();
+        block.rectangle.color[2] = random_color_component();
         block.active = true;
         block.visible = true;
         block.solid = true;

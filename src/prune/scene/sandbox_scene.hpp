@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <random>
 #include <string>
 
 #include "game_object.hpp"
@@ -31,6 +32,7 @@ namespace prune {
         [[nodiscard]] std::string make_unique_name(std::string desired, GameObjectId ignore_id) const;
 
         GameObjectId create_block(float x, float y);
+        [[nodiscard]] float random_color_component();
 
         // Game logic
         void update_game(float dt, const Input& input);
@@ -53,6 +55,10 @@ namespace prune {
 
         bool m_highlight_selected = true;
         std::array<char, 128> m_object_search{};
+
+        // Random number generation
+        std::mt19937 m_rng{std::random_device{}()};
+        std::uniform_real_distribution<float> m_color_dist{0.2f, 1.0f};
 
         int m_window_width = 0;
         int m_window_height = 0;
