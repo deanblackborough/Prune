@@ -80,13 +80,20 @@ namespace prune {
 
     void SandboxScene::handle_scene_click(const Input& input)
     {
+        if (ImGui::GetIO().WantCaptureMouse) {
+            return;
+        }
+
         if (!input.was_mouse_button_pressed(SDL_BUTTON_LEFT)) {
             return;
         }
 
-        if (GameObject* clicked = pick_object_at(input.mouse_x(), input.mouse_y())) {
-            m_objects.select(clicked->id);
+        GameObject* clicked = pick_object_at(input.mouse_x(), input.mouse_y());
+        if (!clicked) {
+            return;
         }
+
+        m_objects.select(clicked->id);
     }
 
     void SandboxScene::update(float dt, const Input& input)
