@@ -323,33 +323,35 @@ namespace prune {
         }
     }
 
-    bool contains_case_insensitive(std::string_view text, std::string_view query)
-    {
-        if (query.empty()) {
-            return true;
-        }
-
-        auto to_lower = [](unsigned char c) {
-            return static_cast<char>(std::tolower(c));
-        };
-
-        for (std::size_t i = 0; i + query.size() <= text.size(); ++i) {
-            bool matches = true;
-
-            for (std::size_t j = 0; j < query.size(); ++j) {
-                if (to_lower(static_cast<unsigned char>(text[i + j])) !=
-                    to_lower(static_cast<unsigned char>(query[j]))) {
-                    matches = false;
-                    break;
-                    }
-            }
-
-            if (matches) {
+    namespace { // Anonymous namespace
+        bool contains_case_insensitive(std::string_view text, std::string_view query)
+        {
+            if (query.empty()) {
                 return true;
             }
-        }
 
-        return false;
+            auto to_lower = [](unsigned char c) {
+                return static_cast<char>(std::tolower(c));
+            };
+
+            for (std::size_t i = 0; i + query.size() <= text.size(); ++i) {
+                bool matches = true;
+
+                for (std::size_t j = 0; j < query.size(); ++j) {
+                    if (to_lower(static_cast<unsigned char>(text[i + j])) !=
+                        to_lower(static_cast<unsigned char>(query[j]))) {
+                        matches = false;
+                        break;
+                        }
+                }
+
+                if (matches) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     void SandboxScene::draw_object_list_ui()
