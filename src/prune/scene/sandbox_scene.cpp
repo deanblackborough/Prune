@@ -211,6 +211,35 @@ namespace prune {
                (a_bounds.y + a_bounds.height) > b_bounds.y;
     }
 
+    std::string SandboxScene::make_unique_name(std::string desired, GameObjectId ignore_id) const
+    {
+        if (desired.empty()) {
+            desired = "Object";
+        }
+
+        auto is_taken = [&](const std::string& name) {
+            for (const auto& obj : m_objects.objects()) {
+                if (obj.id != ignore_id && obj.name == name) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        if (!is_taken(desired)) {
+            return desired;
+        }
+
+        int suffix = 1;
+        std::string candidate;
+
+        do {
+            candidate = desired + " " + std::to_string(suffix++);
+        } while (is_taken(candidate));
+
+        return candidate;
+    }
+
     Transform SandboxScene::next_block_spawn_position() const noexcept
     {
         constexpr float base_x = 160.0f;
@@ -318,10 +347,28 @@ namespace prune {
         bool is_player = (selected->id == m_player_id);
 
         ImGui::Separator();
-        ImGui::Text("Selected: %s", selected->name.c_str());
+
+        ImGui::TextUnformatted("Selected");
+        ImGui::Separator();
+
+        if (is_player) {
+            ImGui::Text("Name: %s", selected->name.c_str());
+        } else {
+            char name_buffer[128]{};
+            std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
+
+            if (ImGui::InputText("Name", name_buffer, sizeof(name_buffer))) {
+                if (name_buffer[0] != '\0') {
+                    selected->name = make_unique_name(name_buffer, selected->id);
+                }
+            }
+        }
+
         ImGui::Text("Id: %u", selected->id);
 
         if (!is_player) {
+            ImGui::Separator();
+
             if (ImGui::Button("Delete")) {
                 const GameObjectId id_to_remove = selected->id;
                 m_objects.remove_object(id_to_remove);
@@ -350,7 +397,7 @@ namespace prune {
             }
         }
 
-        ImGui::Spacing();
+        ImGui::Separator();
 
         ImGui::TextUnformatted("Position");
 
@@ -362,7 +409,7 @@ namespace prune {
 
         ImGui::Separator();
 
-        ImGui::TextUnformatted("Rectangle");
+        ImGui::TextUnformatted("Properties");
         ImGui::SliderInt("Width", &selected->rectangle.width, 10, 200);
         ImGui::SliderInt("Height", &selected->rectangle.height, 10, 200);
         ImGui::ColorEdit3("Colour", selected->rectangle.color);

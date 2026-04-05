@@ -33,6 +33,8 @@ namespace prune {
         [[nodiscard]] GameObject* pick_object_at(int x, int y) noexcept;
         void handle_scene_click(const Input& input);
 
+        [[nodiscard]] std::string make_unique_name(std::string desired, GameObjectId ignore_id) const;
+
         GameObjectManager m_objects;
         PlayerController m_player_controller;
 
