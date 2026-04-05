@@ -3,8 +3,8 @@
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include <cmath>
+
 #include "imgui.h"
-#include "prune/core/input.hpp"
 
 namespace prune {
 
@@ -18,6 +18,13 @@ namespace prune {
     {
         m_objects.clear();
 
+        m_player_id = m_objects.create_object(create_player());
+        m_objects.create_object(create_initial_block());
+
+        m_objects.select(m_player_id);
+    }
+
+    GameObject SandboxScene::create_player() {
         GameObject player;
         player.name = "Player";
         player.transform.x = 100.0f;
@@ -27,12 +34,15 @@ namespace prune {
         player.rectangle.color[0] = 0.3f;
         player.rectangle.color[1] = 0.8f;
         player.rectangle.color[2] = 0.5f;
+        player.active = true;
         player.visible = true;
         player.solid = false;
         player.is_player = true;
 
-        m_player_id = m_objects.create_object(player);
+        return player;
+    }
 
+    GameObject SandboxScene::create_initial_block() {
         GameObject block;
         block.name = "Static Block";
         block.transform.x = 420.0f;
@@ -42,64 +52,27 @@ namespace prune {
         block.rectangle.color[0] = 0.8f;
         block.rectangle.color[1] = 0.5f;
         block.rectangle.color[2] = 0.2f;
+        block.active = true;
         block.visible = true;
         block.solid = true;
         block.is_player = false;
 
-        m_objects.create_object(block);
-
-        m_objects.select(m_player_id);
-    }
-
-    GameObject* SandboxScene::pick_object_at(int x, int y) noexcept
-    {
-        auto& objects = m_objects.objects();
-
-        for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
-            GameObject& object = *it;
-
-            if (!object.active || !object.visible) {
-                continue;
-            }
-
-            const RectF bounds = object.bounds();
-
-            const bool inside =
-                static_cast<float>(x) >= bounds.x &&
-                static_cast<float>(x) < (bounds.x + bounds.width) &&
-                static_cast<float>(y) >= bounds.y &&
-                static_cast<float>(y) < (bounds.y + bounds.height);
-
-            if (inside) {
-                return &object;
-            }
-        }
-
-        return nullptr;
-    }
-
-    void SandboxScene::handle_scene_click(const Input& input)
-    {
-        if (ImGui::GetIO().WantCaptureMouse) {
-            return;
-        }
-
-        if (!input.was_mouse_button_pressed(SDL_BUTTON_LEFT)) {
-            return;
-        }
-
-        GameObject* clicked = pick_object_at(input.mouse_x(), input.mouse_y());
-        if (!clicked) {
-            return;
-        }
-
-        m_objects.select(clicked->id);
+        return block;
     }
 
     void SandboxScene::update(float dt, const Input& input)
     {
-        handle_scene_click(input);
+        update_editor(input);
+        update_game(dt, input);
+    }
 
+    void SandboxScene::update_game(float dt, const Input& input)
+    {
+        update_player(dt, input);
+    }
+
+    void SandboxScene::update_player(float dt, const Input& input)
+    {
         GameObject* player = player_object();
         if (!player) {
             return;
@@ -138,7 +111,7 @@ namespace prune {
 
             SDL_RenderFillRect(renderer, &rect);
 
-            if (m_highlight_selected && object.id == selected_id) {
+            if (m_editor_state.highlight_selected && object.id == selected_id) {
                 selected_outline = SDL_Rect{
                     rect.x - 2,
                     rect.y - 2,
@@ -150,7 +123,7 @@ namespace prune {
             }
         }
 
-        if (m_highlight_selected && has_selected_outline) {
+        if (m_editor_state.highlight_selected && has_selected_outline) {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
             SDL_RenderDrawRect(renderer, &selected_outline);
         }
@@ -163,21 +136,26 @@ namespace prune {
             create_block(spawn.x, spawn.y);
         }
 
-        ImGui::Checkbox("Highlight selected", &m_highlight_selected);
-
-        ImGui::Separator();
-
-        draw_object_list_ui();
+        ImGui::SameLine();
+        ImGui::Checkbox("Highlight selected", &m_editor_state.highlight_selected);
 
         ImGui::Spacing();
 
+        if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_DefaultOpen)) {
+            draw_object_list_ui();
+        }
+
         GameObject* selected = m_objects.selected_object();
         if (!selected) {
-            ImGui::TextUnformatted("No object selected.");
+            if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::TextUnformatted("No object selected.");
+            }
             return;
         }
 
-        draw_selected_object_ui();
+        if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen)) {
+            draw_selected_object_ui();
+        }
     }
 
     void SandboxScene::draw_debug_ui()
@@ -218,35 +196,6 @@ namespace prune {
                (a_bounds.y + a_bounds.height) > b_bounds.y;
     }
 
-    std::string SandboxScene::make_unique_name(std::string desired, GameObjectId ignore_id) const
-    {
-        if (desired.empty()) {
-            desired = "Object";
-        }
-
-        auto is_taken = [&](const std::string& name) {
-            for (const auto& obj : m_objects.objects()) {
-                if (obj.id != ignore_id && obj.name == name) {
-                    return true;
-                }
-            }
-            return false;
-        };
-
-        if (!is_taken(desired)) {
-            return desired;
-        }
-
-        int suffix = 1;
-        std::string candidate;
-
-        do {
-            candidate = desired + " " + std::to_string(suffix++);
-        } while (is_taken(candidate));
-
-        return candidate;
-    }
-
     Transform SandboxScene::next_block_spawn_position() const noexcept
     {
         constexpr float base_x = 160.0f;
@@ -268,34 +217,6 @@ namespace prune {
         spawn.y = std::clamp(spawn.y, 0.0f, max_y);
 
         return spawn;
-    }
-
-    GameObjectId SandboxScene::create_block(float x, float y)
-    {
-        GameObject block;
-        block.name = "Block";
-        block.transform.x = x;
-        block.transform.y = y;
-        block.rectangle.width = 50;
-        block.rectangle.height = 50;
-        block.rectangle.color[0] = 0.8f;
-        block.rectangle.color[1] = 0.5f;
-        block.rectangle.color[2] = 0.2f;
-        block.active = true;
-        block.visible = true;
-        block.solid = true;
-        block.is_player = false;
-
-        const GameObjectId id = m_objects.create_object(block);
-
-        if (GameObject* created = m_objects.get_by_id(id)) {
-            created->name = "Block " + std::to_string(id);
-            created->clamp_to_area(m_window_width, m_window_height);
-        }
-
-        m_objects.select(id);
-
-        return id;
     }
 
     void SandboxScene::resolve_player_collisions(GameObject& player)
@@ -329,177 +250,4 @@ namespace prune {
             }
         }
     }
-
-    namespace { // Anonymous namespace
-        bool contains_case_insensitive(std::string_view text, std::string_view query)
-        {
-            if (query.empty()) {
-                return true;
-            }
-
-            auto to_lower = [](unsigned char c) {
-                return static_cast<char>(std::tolower(c));
-            };
-
-            for (std::size_t i = 0; i + query.size() <= text.size(); ++i) {
-                bool matches = true;
-
-                for (std::size_t j = 0; j < query.size(); ++j) {
-                    if (to_lower(static_cast<unsigned char>(text[i + j])) !=
-                        to_lower(static_cast<unsigned char>(query[j]))) {
-                        matches = false;
-                        break;
-                        }
-                }
-
-                if (matches) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
-
-    void SandboxScene::draw_object_list_ui()
-    {
-        ImGui::TextUnformatted("Objects");
-        ImGui::Separator();
-
-        ImGui::SetNextItemWidth(-1.0f);
-        ImGui::InputTextWithHint("##object_search", "Search objects...", m_object_search.data(), m_object_search.size());
-
-        constexpr int visible_rows = 5;
-        const float row_height = ImGui::GetTextLineHeightWithSpacing();
-        const float list_height = row_height * static_cast<float>(visible_rows)
-            + ImGui::GetStyle().FramePadding.y * 2.0f;
-
-        if (ImGui::BeginChild("object_list", ImVec2(0.0f, list_height), true)) {
-            const std::string_view filter = m_object_search.data();
-
-            for (const auto& object : m_objects.objects()) {
-                if (!filter.empty()) {
-                    if (!contains_case_insensitive(object.name, filter)) {
-                        continue;
-                    }
-                }
-
-                const bool is_selected = object.id == m_objects.selected_id();
-                if (ImGui::Selectable(object.name.c_str(), is_selected)) {
-                    m_objects.select(object.id);
-                }
-            }
-        }
-        ImGui::EndChild();
-    }
-
-    void SandboxScene::draw_selected_object_ui()
-    {
-        GameObject* selected = m_objects.selected_object();
-        if (!selected) {
-            return;
-        }
-
-        bool is_player = (selected->id == m_player_id);
-
-        ImGui::Separator();
-
-        ImGui::TextUnformatted("Selected");
-        ImGui::Separator();
-
-        ImGui::Text("Id: %u", selected->id);
-
-        if (is_player) {
-            ImGui::Text("Name: %s", selected->name.c_str());
-        } else {
-            char name_buffer[128]{};
-            std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
-
-            ImGui::InputText("Name", name_buffer, sizeof(name_buffer));
-            if (ImGui::IsItemDeactivatedAfterEdit()) {
-                selected->name = make_unique_name(name_buffer, selected->id);
-            }
-        }
-
-        if (!is_player) {
-            ImGui::Separator();
-
-            if (ImGui::Button("Delete")) {
-                const GameObjectId id_to_remove = selected->id;
-                m_objects.remove_object(id_to_remove);
-                return;
-            }
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("Clone")) {
-                const std::string source_name = selected->name;
-
-                GameObject clone = *selected;
-                clone.is_player = false;
-                clone.transform.x += 50.0f;
-                clone.transform.y += 50.0f;
-
-                const GameObjectId clone_id = m_objects.create_object(clone);
-
-                if (GameObject* created = m_objects.get_by_id(clone_id)) {
-                    created->name = make_unique_name(source_name, clone_id);
-                    created->clamp_to_area(m_window_width, m_window_height);
-                }
-
-                m_objects.select(clone_id);
-                return;
-            }
-        }
-
-        ImGui::Separator();
-
-        ImGui::TextUnformatted("Position");
-
-        const auto max_x = static_cast<float>(m_window_width - selected->rectangle.width);
-        const auto max_y = static_cast<float>(m_window_height - selected->rectangle.height);
-
-        ImGui::SliderFloat("X", &selected->transform.x, 0.0f, std::max(0.0f, max_x));
-        ImGui::SliderFloat("Y", &selected->transform.y, 0.0f, std::max(0.0f, max_y));
-
-        ImGui::Separator();
-
-        ImGui::TextUnformatted("Properties");
-        ImGui::SliderInt("Width", &selected->rectangle.width, 10, 200);
-        ImGui::SliderInt("Height", &selected->rectangle.height, 10, 200);
-        ImGui::ColorEdit3("Colour", selected->rectangle.color);
-
-        if (is_player) {
-            float speed = m_player_controller.speed();
-            if (ImGui::SliderFloat("Move Speed", &speed, 50.0f, 600.0f, "%.1f")) {
-                m_player_controller.set_speed(speed);
-            }
-        }
-
-        ImGui::Separator();
-
-        ImGui::TextUnformatted("Flags");
-        ImGui::Checkbox("Active", &selected->active);
-        ImGui::Checkbox("Visible", &selected->visible);
-        if (is_player) {
-            ImGui::BeginDisabled();
-            ImGui::Checkbox("Solid", &selected->solid);
-            ImGui::EndDisabled();
-
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-                ImGui::SetTooltip("Player solid value not used yet, player checks against game objects only");
-            }
-        } else {
-            ImGui::Checkbox("Solid", &selected->solid);
-        }
-
-        if (is_player) {
-            ImGui::BeginDisabled();
-            ImGui::Checkbox("IsPlayer", &is_player);
-            ImGui::EndDisabled();
-        }
-
-        selected->clamp_to_area(m_window_width, m_window_height);
-    }
-
 } // namespace prune
