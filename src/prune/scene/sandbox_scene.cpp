@@ -27,10 +27,10 @@ namespace prune {
     GameObject SandboxScene::create_player() {
         GameObject player;
         player.name = "Player";
-        player.transform.x = 100.0f;
-        player.transform.y = 100.0f;
-        player.rectangle.width = 50;
-        player.rectangle.height = 50;
+        player.transform.x = 128.0f;
+        player.transform.y = 128.0f;
+        player.rectangle.width = 32;
+        player.rectangle.height = 32;
         player.rectangle.color[0] = 0.3f;
         player.rectangle.color[1] = 0.8f;
         player.rectangle.color[2] = 0.5f;
@@ -45,10 +45,10 @@ namespace prune {
     GameObject SandboxScene::create_initial_block() {
         GameObject block;
         block.name = "Static Block";
-        block.transform.x = 420.0f;
-        block.transform.y = 220.0f;
-        block.rectangle.width = 50;
-        block.rectangle.height = 50;
+        block.transform.x = 128.0f;
+        block.transform.y = 256.0f;
+        block.rectangle.width = 32;
+        block.rectangle.height = 32;
         block.rectangle.color[0] = 0.8f;
         block.rectangle.color[1] = 0.5f;
         block.rectangle.color[2] = 0.2f;
@@ -78,13 +78,26 @@ namespace prune {
             return;
         }
 
-        m_player_controller.update(*player, dt, input);
-        resolve_player_collisions(*player);
-        player->clamp_to_area(m_window_width, m_window_height);
+        player->velocity = m_player_controller.movement_velocity(input);
+        move_object(*player, player->velocity.x * dt, player->velocity.y * dt, true);
+    }
+
+    void SandboxScene::move_object(GameObject& object, float delta_x, float delta_y, bool resolve_collisions)
+    {
+        object.transform.x += delta_x;
+        object.transform.y += delta_y;
+
+        if (resolve_collisions && object.is_player) {
+            resolve_player_collisions(object);
+        }
+
+        object.clamp_to_area(m_window_width, m_window_height);
     }
 
     void SandboxScene::render(SDL_Renderer* renderer)
     {
+        draw_grid(renderer);
+
         const GameObjectId selected_id = m_objects.selected_id();
         SDL_Rect selected_outline{};
         bool has_selected_outline = false;
@@ -129,6 +142,36 @@ namespace prune {
         }
     }
 
+    void SandboxScene::draw_grid(SDL_Renderer* renderer) const
+    {
+        if (!m_editor_state.show_grid || m_editor_state.grid_size <= 1) {
+            return;
+        }
+
+        SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
+
+        for (int x = 0; x < m_window_width; x += m_editor_state.grid_size) {
+            SDL_RenderDrawLine(renderer, x, 0, x, m_window_height);
+        }
+
+        for (int y = 0; y < m_window_height; y += m_editor_state.grid_size) {
+            SDL_RenderDrawLine(renderer, 0, y, m_window_width, y);
+        }
+    }
+
+    float SandboxScene::snap_value_to_grid(float value) const noexcept
+    {
+        const int grid_size = std::max(1, m_editor_state.grid_size);
+        return std::round(value / static_cast<float>(grid_size)) * static_cast<float>(grid_size);
+    }
+
+    void SandboxScene::snap_object_to_grid(GameObject& object) const noexcept
+    {
+        object.transform.x = snap_value_to_grid(object.transform.x);
+        object.transform.y = snap_value_to_grid(object.transform.y);
+        object.clamp_to_area(m_window_width, m_window_height);
+    }
+
     void SandboxScene::draw_inspector_ui()
     {
         if (ImGui::Button("Add Block")) {
@@ -141,7 +184,20 @@ namespace prune {
 
         ImGui::Spacing();
 
-        if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader("Editor Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox("Show grid", &m_editor_state.show_grid);
+            ImGui::Checkbox("Snap non-player dobjects to grid", &m_editor_state.snap_to_grid);
+            ImGui::SliderInt("Grid size", &m_editor_state.grid_size, m_editor_state.min_grid_size, m_editor_state.max_grid_size);
+            ImGui::SliderInt("Nudge step", &m_editor_state.nudge_step, m_editor_state.min_nudge_step, m_editor_state.max_nudge_step);
+
+            ImGui::Spacing();
+            ImGui::TextUnformatted("Object Controls:");
+            ImGui::BulletText("WASD moves the player");
+            ImGui::BulletText("Arrow keys move the selected non-player object");
+            ImGui::BulletText("Hold Shift for larger movements");
+        }
+
+        if (ImGui::CollapsingHeader("Game Objects", ImGuiTreeNodeFlags_DefaultOpen)) {
             draw_object_list_ui();
         }
 
@@ -153,7 +209,7 @@ namespace prune {
             return;
         }
 
-        if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader("Selected Object", ImGuiTreeNodeFlags_DefaultOpen)) {
             draw_selected_object_ui();
         }
     }
@@ -165,6 +221,9 @@ namespace prune {
         ImGui::Text("Object count: %d", static_cast<int>(m_objects.count()));
         ImGui::Text("Selected id: %u", m_objects.selected_id());
         ImGui::Text("Player id: %u", m_player_id);
+        ImGui::Text("Grid: %s", m_editor_state.show_grid ? "On" : "Off");
+        ImGui::Text("Snap: %s", m_editor_state.snap_to_grid ? "On" : "Off");
+        ImGui::Text("Grid size: %d", m_editor_state.grid_size);
 
         if (const GameObject* player = player_object()) {
             ImGui::Separator();
@@ -198,10 +257,10 @@ namespace prune {
 
     Transform SandboxScene::next_block_spawn_position() const noexcept
     {
-        constexpr float base_x = 160.0f;
-        constexpr float base_y = 160.0f;
-        constexpr float offset_step = 50.0f;
-        constexpr int block_size = 50;
+        constexpr float base_x = 128.0f;
+        constexpr float base_y = 128.0f;
+        constexpr float offset_step = 32.0f;
+        constexpr int block_size = 32;
 
         const float offset = static_cast<float>(m_objects.count()) * offset_step;
 

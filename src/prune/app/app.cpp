@@ -40,11 +40,7 @@ namespace prune {
 
         shutdown_imgui();
 
-        // Explicit resource release order: ImGui-dependent resources must be
-        // destroyed before the backend systems they rely on. Since shutdown_imgui()
-        // has already torn down the ImGui context and SDL2 backends, we release
-        // m_editor_ui and m_scene first (which may still hold ImGui state), followed
-        // by m_input, m_time, and m_window.
+        // Clean up in reverse order
         m_editor_ui.reset();
         m_scene.reset();
         m_input.reset();

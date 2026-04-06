@@ -38,13 +38,20 @@ namespace prune {
         // Game logic
         void update_game(float dt, const Input& input);
         void update_player(float dt, const Input& input);
+        void move_object(GameObject& object, float delta_x, float delta_y, bool resolve_collisions);
         void resolve_player_collisions(GameObject& player);
         [[nodiscard]] bool is_overlapping(const GameObject& a, const GameObject& b) const noexcept;
 
         // Editor logic
         void update_editor(const Input& input);
         void handle_scene_click(const Input& input);
+        void handle_keyboard_nudge(const Input& input);
         [[nodiscard]] GameObject* pick_object_at(int x, int y) noexcept;
+
+        // Editor grid
+        void draw_grid(SDL_Renderer* renderer) const;
+        [[nodiscard]] float snap_value_to_grid(float value) const noexcept;
+        void snap_object_to_grid(GameObject& object) const noexcept;
 
         void draw_object_list_ui();
         void draw_selected_object_ui();

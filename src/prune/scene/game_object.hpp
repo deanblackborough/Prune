@@ -26,8 +26,8 @@ namespace prune {
     };
 
     struct RectangleVisual {
-        int width = 50;
-        int height = 50;
+        int width = 32;
+        int height = 32;
         float color[3] = {0.3f, 0.8f, 0.5f};
     };
 

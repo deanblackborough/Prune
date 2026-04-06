@@ -2,9 +2,9 @@
 
 ## Minimal C++23 2D engine foundation
 
-Prune is a deliberately small, explicit application layer built on SDL2.
+Prune is a deliberately small game engine/editor, built with C++23 and SDL2.
 
-The goal is not to be feature-rich, but to be clean, understandable, and extensible.
+The goal is a fun little engine my children and I can play with; everything is live all the time
 
 ---
 
@@ -12,19 +12,16 @@ The goal is not to be feature-rich, but to be clean, understandable, and extensi
 
 This project currently provides:
 
-- SDL window + renderer with configurable settings
-- Main application loop (fixed timestep + variable render)
-- Scene system with inspector and debug UI
-- Frame timing (high-resolution, SDL performance counters)
-- Input handling (keyboard + mouse, ImGui-aware)
+- SDL window and renderer with configurable settings
+- Scene system with imgui inspector and debug windows
+- Input handling (keyboard and mouse are ImGui-aware)
+- Game object and manager, ENTT on the way in the future
 - GameObject management with selection and editing
-- Player movement with collision detection
-- Dear ImGui integration (inspector panel, debug stats)
-- Explicit ownership (no globals, no service locator)
+- Player movement with optional collision detection
+- Grid, snapping, and live settings
+- Click to select any object in the scene
 
-If it feels “bare”, that’s intentional.
-
-This is a foundation, not a framework.
+If it feels “bare”, that’s intentional; I'm adding the features we want to use. 
 
 <img width="1921" height="1128" alt="image" src="https://github.com/user-attachments/assets/05166c04-f845-489e-afcb-616cefee6353" />
 
@@ -39,45 +36,41 @@ This is a foundation, not a framework.
 
 ---
 
-## Core Architecture
+## Features
 
-- **App**  
-  Owns lifecycle, main loop, and high-level orchestration
+### Player Movement
+- *WASD* controls for smooth movement
+- Configurable movement speed
+- Collision detection and resolution against solid objects
 
-- **Window**  
-  Wraps SDL window and renderer
+### Editor Grid System
+- Optional visual grid overlay
+- Configurable grid size (16-128 pixels)
+- Toggle snap-to-grid for precise non-player object placement
+- Nudge step configuration for fine control
 
-- **Time**  
-  Handles frame timing and fixed timestep updates
+### Object Management
+- *Arrow Keys* move the selected object
+- *Shift + Arrows* move the selected object with multiplier
+- Click objects to select them in the scene
+- Create new blocks with randomised colours
+- Clone existing objects 
+- Delete non-player objects
+- Rename objects 
+- Search objects by name 
+- Visual selection highlighting
 
-- **Input**  
-  Manages keyboard and mouse state with frame-based polling
+### Inspector Panel
+- Real-time property editing (position, size, colour)
+- Player speed adjustment
+- Object flags (active, visible, solid)
+- Object list with search filtering
 
-- **Scene**  
-  Abstract interface for game logic and rendering
-
-- **SandboxScene**  
-  Example implementation with player, objects, and collision
-
-- **GameObjectManager**  
-  Manages game objects with selection and ID-based lookup
-
-- **EditorUI**  
-  Dear ImGui-based inspector and debug panels
-
----
-
-## What You Should See
-
-Running the project should:
-
-- Open a 1280x720 window
-- Display a player (green square) and a static block (orange)
-- Allow player movement using arrow keys or WASD
-- Show an inspector panel on the right with object properties
-- Support object creation, cloning, deletion, and editing
-- Click objects to select them
-- Toggle debug stats via View menu
+### Debug Panel
+- Frame rate and timing information
+- Object count and selection state
+- Player position and velocity
+- Grid and snap settings
 
 ---
 

@@ -9,43 +9,37 @@
 
 namespace prune {
 
-    void PlayerController::update(
-        GameObject& object,
-        float dt,
-        const Input& input
-    ) const
+    Velocity PlayerController::movement_velocity(const Input& input) const
     {
         float move_x = 0.0f;
         float move_y = 0.0f;
 
-        if (input.is_key_down(SDL_SCANCODE_LEFT) || input.is_key_down(SDL_SCANCODE_A)) {
+        if (input.is_key_down(SDL_SCANCODE_A)) {
             move_x -= 1.0f;
         }
 
-        if (input.is_key_down(SDL_SCANCODE_RIGHT) || input.is_key_down(SDL_SCANCODE_D)) {
+        if (input.is_key_down(SDL_SCANCODE_D)) {
             move_x += 1.0f;
         }
 
-        if (input.is_key_down(SDL_SCANCODE_UP) || input.is_key_down(SDL_SCANCODE_W)) {
+        if (input.is_key_down(SDL_SCANCODE_W)) {
             move_y -= 1.0f;
         }
 
-        if (input.is_key_down(SDL_SCANCODE_DOWN) || input.is_key_down(SDL_SCANCODE_S)) {
+        if (input.is_key_down(SDL_SCANCODE_S)) {
             move_y += 1.0f;
         }
 
-        object.velocity.x = 0.0f;
-        object.velocity.y = 0.0f;
+        Velocity velocity{};
 
         if (move_x != 0.0f || move_y != 0.0f) {
             const float length = std::sqrt((move_x * move_x) + (move_y * move_y));
 
-            object.velocity.x = (move_x / length) * m_speed;
-            object.velocity.y = (move_y / length) * m_speed;
+            velocity.x = (move_x / length) * m_speed;
+            velocity.y = (move_y / length) * m_speed;
         }
 
-        object.transform.x += object.velocity.x * dt;
-        object.transform.y += object.velocity.y * dt;
+        return velocity;
     }
 
     float PlayerController::speed() const noexcept

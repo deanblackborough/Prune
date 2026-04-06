@@ -39,6 +39,7 @@ namespace prune {
     void SandboxScene::update_editor(const Input& input)
     {
         handle_scene_click(input);
+        handle_keyboard_nudge(input);
     }
 
     void SandboxScene::handle_scene_click(const Input& input)
@@ -57,6 +58,69 @@ namespace prune {
         }
 
         m_objects.select(clicked->id);
+    }
+
+    void SandboxScene::handle_keyboard_nudge(const Input& input)
+    {
+        if (ImGui::GetIO().WantCaptureKeyboard) {
+            return;
+        }
+
+        GameObject* selected = m_objects.selected_object();
+        if (!selected) {
+            return;
+        }
+
+        // Arrow key nudging is for editor objects only, not the player.
+        if (selected->is_player) {
+            return;
+        }
+
+        int move_x = 0;
+        int move_y = 0;
+
+        if (input.was_key_pressed(SDL_SCANCODE_LEFT)) {
+            move_x -= 1;
+        }
+
+        if (input.was_key_pressed(SDL_SCANCODE_RIGHT)) {
+            move_x += 1;
+        }
+
+        if (input.was_key_pressed(SDL_SCANCODE_UP)) {
+            move_y -= 1;
+        }
+
+        if (input.was_key_pressed(SDL_SCANCODE_DOWN)) {
+            move_y += 1;
+        }
+
+        if (move_x == 0 && move_y == 0) {
+            return;
+        }
+
+        int step = m_editor_state.snap_to_grid
+            ? std::max(1, m_editor_state.grid_size)
+            : std::max(1, m_editor_state.nudge_step);
+
+        const bool shift_down =
+            input.is_key_down(SDL_SCANCODE_LSHIFT) ||
+            input.is_key_down(SDL_SCANCODE_RSHIFT);
+
+        if (shift_down) {
+            step *= m_editor_state.shift_nudge_steps;
+        }
+
+        move_object(
+            *selected,
+            static_cast<float>(move_x * step),
+            static_cast<float>(move_y * step),
+            false
+        );
+
+        if (m_editor_state.snap_to_grid) {
+            snap_object_to_grid(*selected);
+        }
     }
 
     std::string SandboxScene::make_unique_name(std::string desired, GameObjectId ignore_id) const
@@ -98,8 +162,8 @@ namespace prune {
         GameObject block;
         block.transform.x = x;
         block.transform.y = y;
-        block.rectangle.width = 50;
-        block.rectangle.height = 50;
+        block.rectangle.width = 32;
+        block.rectangle.height = 32;
         block.rectangle.color[0] = random_color_component();
         block.rectangle.color[1] = random_color_component();
         block.rectangle.color[2] = random_color_component();

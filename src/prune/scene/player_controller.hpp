@@ -3,21 +3,17 @@
 namespace prune {
 
     class Input;
-    struct GameObject;
+    struct Velocity;
 
     class PlayerController {
     public:
-        void update(
-            GameObject& object,
-            float dt,
-            const Input& input
-        ) const;
+        [[nodiscard]] Velocity movement_velocity(const Input& input) const;
 
         [[nodiscard]] float speed() const noexcept;
         void set_speed(float speed) noexcept;
 
     private:
-        float m_speed = 240.0f;
+        float m_speed = 256.0f;
     };
 
 } // namespace prune
