@@ -74,6 +74,13 @@ If it feels “bare”, that’s intentional; I'm adding the features we want to
 
 ---
 
+## Next
+- Sprites, static and animated
+- Gizmos for object placement and scaling
+- Save and load
+- Camera system, you should be able to move around a limitless scene
+- ENTT at some point
+
 ## Build Instructions (Windows + CLion)
 
 ### Requirements
@@ -109,8 +116,3 @@ Add the following CMake option:
 - Build the Prune target 
 - Run
 
-## The plan
-- Texture loading (SDL textures)
-- Sprite rendering
-- Camera system (2D)
-- ECS (e.g. EnTT)
