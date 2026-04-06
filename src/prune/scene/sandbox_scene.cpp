@@ -184,17 +184,17 @@ namespace prune {
 
         ImGui::Spacing();
 
-        if (ImGui::CollapsingHeader("Editor Grid")) {
+        if (ImGui::CollapsingHeader("Editor Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Checkbox("Show grid", &m_editor_state.show_grid);
-            ImGui::Checkbox("Snap to grid", &m_editor_state.snap_to_grid);
-            ImGui::SliderInt("Grid size", &m_editor_state.grid_size, 16, 128);
-            ImGui::SliderInt("Nudge step", &m_editor_state.nudge_step, 16, 128);
+            ImGui::Checkbox("Snap non-player dobjects to grid", &m_editor_state.snap_to_grid);
+            ImGui::SliderInt("Grid size", &m_editor_state.grid_size, m_editor_state.min_grid_size, m_editor_state.max_grid_size);
+            ImGui::SliderInt("Nudge step", &m_editor_state.nudge_step, m_editor_state.min_nudge_step, m_editor_state.max_nudge_step);
 
             ImGui::Spacing();
-            ImGui::TextUnformatted("Controls:");
+            ImGui::TextUnformatted("Object Controls:");
             ImGui::BulletText("WASD moves the player");
-            ImGui::BulletText("Arrow keys nudge the selected object");
-            ImGui::BulletText("Hold Shift for a bigger nudge");
+            ImGui::BulletText("Arrow keys move the selected non-player object");
+            ImGui::BulletText("Hold Shift for larger movements");
         }
 
         if (ImGui::CollapsingHeader("Game Objects", ImGuiTreeNodeFlags_DefaultOpen)) {

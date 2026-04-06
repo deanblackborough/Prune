@@ -138,7 +138,7 @@ namespace prune {
             ImGui::SliderFloat("X", &selected->transform.x, 0.0f, std::max(0.0f, max_x));
             ImGui::SliderFloat("Y", &selected->transform.y, 0.0f, std::max(0.0f, max_y));
 
-            if (m_editor_state.snap_to_grid) {
+            if (m_editor_state.snap_to_grid && !is_player) {
                 snap_object_to_grid(*selected);
             } else {
                 selected->clamp_to_area(m_window_width, m_window_height);

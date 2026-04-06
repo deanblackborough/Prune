@@ -71,6 +71,11 @@ namespace prune {
             return;
         }
 
+        // Arrow key nudging is for editor objects only, not the player.
+        if (selected->is_player) {
+            return;
+        }
+
         int move_x = 0;
         int move_y = 0;
 
@@ -103,14 +108,14 @@ namespace prune {
             input.is_key_down(SDL_SCANCODE_RSHIFT);
 
         if (shift_down) {
-            step *= 5;
+            step *= m_editor_state.shift_nudge_steps;
         }
 
         move_object(
             *selected,
             static_cast<float>(move_x * step),
             static_cast<float>(move_y * step),
-            selected->is_player
+            false
         );
 
         if (m_editor_state.snap_to_grid) {
