@@ -23,7 +23,7 @@ This project currently provides:
 
 If it feels “bare”, that’s intentional; I'm adding the features we want to use. 
 
-<img width="1921" height="1128" alt="image" src="https://github.com/user-attachments/assets/05166c04-f845-489e-afcb-616cefee6353" />
+<img width="1919" height="1131" alt="image" src="https://github.com/user-attachments/assets/216bad60-281a-47ca-891c-e217d8962e08" />
 
 ---
 
