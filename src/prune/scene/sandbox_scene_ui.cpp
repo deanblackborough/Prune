@@ -109,8 +109,8 @@ namespace prune {
 
                 GameObject clone = *selected;
                 clone.is_player = false;
-                clone.transform.x += 50.0f;
-                clone.transform.y += 50.0f;
+                clone.transform.x += 32.0f;
+                clone.transform.y += 32.0f;
 
                 const GameObjectId clone_id = m_objects.create_object(clone);
 
@@ -126,7 +126,7 @@ namespace prune {
 
         if (is_player && ImGui::CollapsingHeader("Player", ImGuiTreeNodeFlags_DefaultOpen)) {
             float speed = m_player_controller.speed();
-            if (ImGui::SliderFloat("Move Speed", &speed, 50.0f, 600.0f, "%.1f")) {
+            if (ImGui::SliderFloat("Move Speed", &speed, 32.0f, 512.0f, "%.1f")) {
                 m_player_controller.set_speed(speed);
             }
         }
@@ -137,11 +137,17 @@ namespace prune {
 
             ImGui::SliderFloat("X", &selected->transform.x, 0.0f, std::max(0.0f, max_x));
             ImGui::SliderFloat("Y", &selected->transform.y, 0.0f, std::max(0.0f, max_y));
+
+            if (m_editor_state.snap_to_grid) {
+                snap_object_to_grid(*selected);
+            } else {
+                selected->clamp_to_area(m_window_width, m_window_height);
+            }
         }
 
         if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::SliderInt("Width", &selected->rectangle.width, 10, 200);
-            ImGui::SliderInt("Height", &selected->rectangle.height, 10, 200);
+            ImGui::SliderInt("Width", &selected->rectangle.width, 16, 256);
+            ImGui::SliderInt("Height", &selected->rectangle.height, 16, 256);
             ImGui::ColorEdit3("Colour", selected->rectangle.color);
         }
 
