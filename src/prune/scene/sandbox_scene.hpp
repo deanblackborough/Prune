@@ -43,10 +43,16 @@ namespace prune {
         [[nodiscard]] bool is_overlapping(const GameObject& a, const GameObject& b) const noexcept;
 
         // Editor logic
-        void update_editor(const Input& input);
+        void update_editor(float dt, const Input& input);
+        void update_editor_camera(float dt, const Input& input);
         void handle_scene_click(const Input& input);
         void handle_keyboard_nudge(const Input& input);
-        [[nodiscard]] GameObject* pick_object_at(int x, int y) noexcept;
+        [[nodiscard]] GameObject* pick_object_at_screen(int screen_x, int screen_y) noexcept;
+
+        // Camera logic
+        [[nodiscard]] Transform screen_to_world(int screen_x, int screen_y) const noexcept;
+        [[nodiscard]] SDL_Rect world_to_screen_rect(const GameObject& object) const noexcept;
+        [[nodiscard]] bool is_rect_visible(const SDL_Rect& rect) const noexcept;
 
         // Editor grid
         void draw_grid(SDL_Renderer* renderer) const;

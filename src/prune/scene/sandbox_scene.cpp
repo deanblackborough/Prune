@@ -62,7 +62,7 @@ namespace prune {
 
     void SandboxScene::update(float dt, const Input& input)
     {
-        update_editor(input);
+        update_editor(dt, input);
         update_game(dt, input);
     }
 
@@ -90,8 +90,32 @@ namespace prune {
         if (resolve_collisions && object.is_player) {
             resolve_player_collisions(object);
         }
+    }
 
-        object.clamp_to_area(m_window_width, m_window_height);
+    Transform SandboxScene::screen_to_world(int screen_x, int screen_y) const noexcept
+    {
+        return {
+            static_cast<float>(screen_x) + m_editor_state.camera_x,
+            static_cast<float>(screen_y) + m_editor_state.camera_y
+        };
+    }
+
+    SDL_Rect SandboxScene::world_to_screen_rect(const GameObject& object) const noexcept
+    {
+        return SDL_Rect{
+            static_cast<int>(std::round(object.transform.x - m_editor_state.camera_x)),
+            static_cast<int>(std::round(object.transform.y - m_editor_state.camera_y)),
+            object.rectangle.width,
+            object.rectangle.height
+        };
+    }
+
+    bool SandboxScene::is_rect_visible(const SDL_Rect& rect) const noexcept
+    {
+        return rect.x + rect.w >= 0 &&
+               rect.y + rect.h >= 0 &&
+               rect.x < m_window_width &&
+               rect.y < m_window_height;
     }
 
     void SandboxScene::render(SDL_Renderer* renderer)
@@ -107,12 +131,11 @@ namespace prune {
                 continue;
             }
 
-            SDL_Rect rect{
-                static_cast<int>(object.transform.x),
-                static_cast<int>(object.transform.y),
-                object.rectangle.width,
-                object.rectangle.height
-            };
+            const SDL_Rect rect = world_to_screen_rect(object);
+
+            if (!is_rect_visible(rect)) {
+                continue;
+            }
 
             SDL_SetRenderDrawColor(
                 renderer,
@@ -169,22 +192,27 @@ namespace prune {
     {
         object.transform.x = snap_value_to_grid(object.transform.x);
         object.transform.y = snap_value_to_grid(object.transform.y);
-        object.clamp_to_area(m_window_width, m_window_height);
     }
 
     void SandboxScene::draw_inspector_ui()
     {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
+
         if (ImGui::Button("Add Block")) {
             const Transform spawn = next_block_spawn_position();
             create_block(spawn.x, spawn.y);
         }
+
+        ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
         ImGui::Checkbox("Highlight selected", &m_editor_state.highlight_selected);
 
         ImGui::Spacing();
 
-        if (ImGui::CollapsingHeader("Editor Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader("Editor Grid")) {
             ImGui::Checkbox("Show grid", &m_editor_state.show_grid);
             ImGui::Checkbox("Snap non-player dobjects to grid", &m_editor_state.snap_to_grid);
             ImGui::SliderInt("Grid size", &m_editor_state.grid_size, m_editor_state.min_grid_size, m_editor_state.max_grid_size);
@@ -195,6 +223,15 @@ namespace prune {
             ImGui::BulletText("WASD moves the player");
             ImGui::BulletText("Arrow keys move the selected non-player object");
             ImGui::BulletText("Hold Shift for larger movements");
+        }
+
+        if (ImGui::CollapsingHeader("Editor Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::SliderFloat("Camera X", &m_editor_state.camera_x, -4096.0f, 4096.0f);
+            ImGui::SliderFloat("Camera Y", &m_editor_state.camera_y, -4096.0f, 4096.0f);
+            ImGui::SliderFloat("Camera Speed", &m_editor_state.camera_speed, 64.0f, 512.0f);
+
+            ImGui::TextUnformatted("Camera Controls:");
+            ImGui::BulletText("IJKL moves the editor camera");
         }
 
         if (ImGui::CollapsingHeader("Game Objects", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -224,11 +261,13 @@ namespace prune {
         ImGui::Text("Grid: %s", m_editor_state.show_grid ? "On" : "Off");
         ImGui::Text("Snap: %s", m_editor_state.snap_to_grid ? "On" : "Off");
         ImGui::Text("Grid size: %d", m_editor_state.grid_size);
+        ImGui::Text("Camera: %.1f, %.1f", m_editor_state.camera_x, m_editor_state.camera_y);
+        ImGui::Text("Camera speed: %.1f", m_editor_state.camera_speed);
 
         if (const GameObject* player = player_object()) {
             ImGui::Separator();
             ImGui::TextUnformatted("Player");
-            ImGui::Text("Position: %.1f, %.1f", player->transform.x, player->transform.y);
+            ImGui::Text("World Position: %.1f, %.1f", player->transform.x, player->transform.y);
             ImGui::Text("Velocity: %.1f, %.1f", player->velocity.x, player->velocity.y);
             ImGui::Text("Speed: %.1f", m_player_controller.speed());
         }
@@ -257,25 +296,14 @@ namespace prune {
 
     Transform SandboxScene::next_block_spawn_position() const noexcept
     {
-        constexpr float base_x = 128.0f;
-        constexpr float base_y = 128.0f;
         constexpr float offset_step = 32.0f;
-        constexpr int block_size = 32;
 
         const float offset = static_cast<float>(m_objects.count()) * offset_step;
 
-        Transform spawn{
-            base_x + offset,
-            base_y + offset
+        return Transform{
+            m_editor_state.camera_x + offset,
+            m_editor_state.camera_y + offset
         };
-
-        const float max_x = std::max(0.0f, static_cast<float>(m_window_width - block_size));
-        const float max_y = std::max(0.0f, static_cast<float>(m_window_height - block_size));
-
-        spawn.x = std::clamp(spawn.x, 0.0f, max_x);
-        spawn.y = std::clamp(spawn.y, 0.0f, max_y);
-
-        return spawn;
     }
 
     void SandboxScene::resolve_player_collisions(GameObject& player)

@@ -45,7 +45,6 @@ namespace prune {
         bool is_player = false;
 
         [[nodiscard]] RectF bounds() const noexcept;
-        void clamp_to_area(int area_width, int area_height) noexcept;
     };
 
 } // namespace prune

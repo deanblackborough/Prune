@@ -19,5 +19,10 @@ namespace prune {
         int shift_nudge_steps = 4;
         int min_nudge_step = 1;
         int max_nudge_step = 32;
+
+        // Camera controls
+        float camera_x = 0.0f;
+        float camera_y = 0.0f;
+        float camera_speed = 256.0f;
     };
 }

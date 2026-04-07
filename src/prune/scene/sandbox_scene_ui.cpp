@@ -104,6 +104,10 @@ namespace prune {
 
             ImGui::SameLine();
 
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
+
             if (ImGui::Button("Clone")) {
                 const std::string source_name = selected->name;
 
@@ -116,34 +120,36 @@ namespace prune {
 
                 if (GameObject* created = m_objects.get_by_id(clone_id)) {
                     created->name = make_unique_name(source_name, clone_id);
-                    created->clamp_to_area(m_window_width, m_window_height);
                 }
 
                 m_objects.select(clone_id);
+
+                ImGui::PopStyleColor(3);
                 return;
             }
+            ImGui::PopStyleColor(3);
         }
 
-        if (is_player && ImGui::CollapsingHeader("Player", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (is_player) {
             float speed = m_player_controller.speed();
-            if (ImGui::SliderFloat("Move Speed", &speed, 32.0f, 512.0f, "%.1f")) {
+            if (ImGui::SliderFloat("Object Speed", &speed, 32.0f, 512.0f)) {
                 m_player_controller.set_speed(speed);
             }
         }
 
-        if (ImGui::CollapsingHeader("Position", ImGuiTreeNodeFlags_DefaultOpen)) {
-            const float max_x = static_cast<float>(m_window_width - selected->rectangle.width);
-            const float max_y = static_cast<float>(m_window_height - selected->rectangle.height);
+        ImGui::DragFloat("Object X", &selected->transform.x, 1.0f);
+        ImGui::DragFloat("Object Y", &selected->transform.y, 1.0f);
 
-            ImGui::SliderFloat("X", &selected->transform.x, 0.0f, std::max(0.0f, max_x));
-            ImGui::SliderFloat("Y", &selected->transform.y, 0.0f, std::max(0.0f, max_y));
-
-            if (m_editor_state.snap_to_grid && !is_player) {
-                snap_object_to_grid(*selected);
-            } else {
-                selected->clamp_to_area(m_window_width, m_window_height);
-            }
+        if (m_editor_state.snap_to_grid && !is_player) {
+            snap_object_to_grid(*selected);
         }
+
+        const Transform screen_pos = {
+            selected->transform.x - m_editor_state.camera_x,
+            selected->transform.y - m_editor_state.camera_y
+        };
+
+        ImGui::Text("Screen Position: %.1f, %.1f", screen_pos.x, screen_pos.y);
 
         if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::SliderInt("Width", &selected->rectangle.width, 16, 256);
@@ -172,8 +178,6 @@ namespace prune {
                 ImGui::Checkbox("Solid", &selected->solid);
             }
         }
-
-        selected->clamp_to_area(m_window_width, m_window_height);
     }
 
 } // namespace prune

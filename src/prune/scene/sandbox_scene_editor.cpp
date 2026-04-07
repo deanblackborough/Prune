@@ -9,8 +9,9 @@
 
 namespace prune {
 
-    GameObject* SandboxScene::pick_object_at(int x, int y) noexcept
+    GameObject* SandboxScene::pick_object_at_screen(int screen_x, int screen_y) noexcept
     {
+        const Transform world = screen_to_world(screen_x, screen_y);
         auto& objects = m_objects.objects();
 
         for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
@@ -23,10 +24,10 @@ namespace prune {
             const RectF bounds = object.bounds();
 
             const bool inside =
-                static_cast<float>(x) >= bounds.x &&
-                static_cast<float>(x) < (bounds.x + bounds.width) &&
-                static_cast<float>(y) >= bounds.y &&
-                static_cast<float>(y) < (bounds.y + bounds.height);
+                world.x >= bounds.x &&
+                world.x < (bounds.x + bounds.width) &&
+                world.y >= bounds.y &&
+                world.y < (bounds.y + bounds.height);
 
             if (inside) {
                 return &object;
@@ -36,10 +37,45 @@ namespace prune {
         return nullptr;
     }
 
-    void SandboxScene::update_editor(const Input& input)
+    void SandboxScene::update_editor(float dt, const Input& input)
     {
+        update_editor_camera(dt, input);
         handle_scene_click(input);
         handle_keyboard_nudge(input);
+    }
+
+    void SandboxScene::update_editor_camera(float dt, const Input& input)
+    {
+        if (ImGui::GetIO().WantCaptureKeyboard) {
+            return;
+        }
+
+        float move_x = 0.0f;
+        float move_y = 0.0f;
+
+        if (input.is_key_down(SDL_SCANCODE_J)) {
+            move_x -= 1.0f;
+        }
+
+        if (input.is_key_down(SDL_SCANCODE_L)) {
+            move_x += 1.0f;
+        }
+
+        if (input.is_key_down(SDL_SCANCODE_I)) {
+            move_y -= 1.0f;
+        }
+
+        if (input.is_key_down(SDL_SCANCODE_K)) {
+            move_y += 1.0f;
+        }
+
+        if (move_x == 0.0f && move_y == 0.0f) {
+            return;
+        }
+
+        const float move_amount = m_editor_state.camera_speed * dt;
+        m_editor_state.camera_x += move_x * move_amount;
+        m_editor_state.camera_y += move_y * move_amount;
     }
 
     void SandboxScene::handle_scene_click(const Input& input)
@@ -52,7 +88,7 @@ namespace prune {
             return;
         }
 
-        GameObject* clicked = pick_object_at(input.mouse_x(), input.mouse_y());
+        GameObject* clicked = pick_object_at_screen(input.mouse_x(), input.mouse_y());
         if (!clicked) {
             return;
         }
@@ -176,7 +212,6 @@ namespace prune {
 
         if (GameObject* created = m_objects.get_by_id(id)) {
             created->name = "Block " + std::to_string(id);
-            created->clamp_to_area(m_window_width, m_window_height);
         }
 
         m_objects.select(id);
