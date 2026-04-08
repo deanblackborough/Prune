@@ -194,7 +194,30 @@ namespace prune {
         object.transform.y = snap_value_to_grid(object.transform.y);
     }
 
-    void SandboxScene::draw_inspector_ui()
+    void SandboxScene::draw_scene_panel()
+    {
+        if (ImGui::CollapsingHeader("Editor Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox("Show grid", &m_editor_state.show_grid);
+            ImGui::Checkbox("Snap non-player objects to grid", &m_editor_state.snap_to_grid);
+            ImGui::SliderInt("Grid size", &m_editor_state.grid_size, m_editor_state.min_grid_size, m_editor_state.max_grid_size);
+            ImGui::SliderInt("Nudge step", &m_editor_state.nudge_step, m_editor_state.min_nudge_step, m_editor_state.max_nudge_step);
+        }
+
+        if (ImGui::CollapsingHeader("Editor Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::SliderFloat("Camera X", &m_editor_state.camera_x, -4096.0f, 4096.0f);
+            ImGui::SliderFloat("Camera Y", &m_editor_state.camera_y, -4096.0f, 4096.0f);
+            ImGui::SliderFloat("Speed", &m_editor_state.camera_speed, 64.0f, 512.0f);
+        }
+
+        if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::TextWrapped("- WASD keys move the player");
+            ImGui::TextWrapped("- Arrow keys move select non-player object");
+            ImGui::TextWrapped("- Hold Shift for larger movements");
+            ImGui::TextWrapped("- IJKL keys move the editor camera");
+        }
+    }
+
+    void SandboxScene::draw_objects_panel()
     {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
@@ -210,31 +233,7 @@ namespace prune {
         ImGui::SameLine();
         ImGui::Checkbox("Highlight selected", &m_editor_state.highlight_selected);
 
-        ImGui::Spacing();
-
-        if (ImGui::CollapsingHeader("Editor Grid")) {
-            ImGui::Checkbox("Show grid", &m_editor_state.show_grid);
-            ImGui::Checkbox("Snap non-player dobjects to grid", &m_editor_state.snap_to_grid);
-            ImGui::SliderInt("Grid size", &m_editor_state.grid_size, m_editor_state.min_grid_size, m_editor_state.max_grid_size);
-            ImGui::SliderInt("Nudge step", &m_editor_state.nudge_step, m_editor_state.min_nudge_step, m_editor_state.max_nudge_step);
-
-            ImGui::Spacing();
-            ImGui::TextUnformatted("Object Controls:");
-            ImGui::BulletText("WASD moves the player");
-            ImGui::BulletText("Arrow keys move the selected non-player object");
-            ImGui::BulletText("Hold Shift for larger movements");
-        }
-
-        if (ImGui::CollapsingHeader("Editor Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::SliderFloat("Camera X", &m_editor_state.camera_x, -4096.0f, 4096.0f);
-            ImGui::SliderFloat("Camera Y", &m_editor_state.camera_y, -4096.0f, 4096.0f);
-            ImGui::SliderFloat("Camera Speed", &m_editor_state.camera_speed, 64.0f, 512.0f);
-
-            ImGui::TextUnformatted("Camera Controls:");
-            ImGui::BulletText("IJKL moves the editor camera");
-        }
-
-        if (ImGui::CollapsingHeader("Game Objects", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_DefaultOpen)) {
             draw_object_list_ui();
         }
 
@@ -246,7 +245,7 @@ namespace prune {
             return;
         }
 
-        if (ImGui::CollapsingHeader("Selected Object", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen)) {
             draw_selected_object_ui();
         }
     }

@@ -8,7 +8,8 @@ namespace prune {
     void EditorUI::render(Scene& scene) {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("View")) {
-                ImGui::MenuItem("Inspector", nullptr, &m_show_inspector);
+                ImGui::MenuItem("Scene Panel", nullptr, &m_show_scene_panel);
+                ImGui::MenuItem("Objects Panel", nullptr, &m_show_object_panel);
                 ImGui::MenuItem("Debug / Stats", nullptr, &m_show_debug);
                 ImGui::MenuItem("ImGui Demo", nullptr, &m_show_imgui_demo);
                 ImGui::EndMenu();
@@ -17,24 +18,22 @@ namespace prune {
             ImGui::EndMainMenuBar();
         }
 
-        if (m_show_inspector) {
-            const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        if (m_show_scene_panel) {
+            ImGui::SetNextWindowPos(ImVec2(10.0f, 30.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(300.0f, 350.0f), ImGuiCond_FirstUseEver);
 
-            constexpr float panel_width = 360.0f;
-            constexpr float top_offset = 24.0f;
+            if (ImGui::Begin("Scene Panel", &m_show_scene_panel)) {
+                scene.draw_scene_panel();
+            }
+            ImGui::End();
+        }
 
-            ImGui::SetNextWindowPos(
-                ImVec2(viewport->WorkPos.x + viewport->WorkSize.x - panel_width, viewport->WorkPos.y + top_offset),
-                ImGuiCond_FirstUseEver
-            );
+        if (m_show_object_panel) {
+            ImGui::SetNextWindowPos(ImVec2(900.0f, 30.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(350.0f, 600.0f), ImGuiCond_FirstUseEver);
 
-            ImGui::SetNextWindowSize(
-                ImVec2(panel_width, 420.0f),
-                ImGuiCond_FirstUseEver
-            );
-
-            if (ImGui::Begin("Inspector", &m_show_inspector)) {
-                scene.draw_inspector_ui();
+            if (ImGui::Begin("Objects Panel", &m_show_object_panel)) {
+                scene.draw_objects_panel();
             }
             ImGui::End();
         }

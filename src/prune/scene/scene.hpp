@@ -18,7 +18,9 @@ namespace prune {
 
         virtual void render(SDL_Renderer* renderer) = 0;
 
-        virtual void draw_inspector_ui() {}
+        virtual void draw_scene_panel() {}
+
+        virtual void draw_objects_panel() {}
 
         virtual void draw_debug_ui() {}
     };

@@ -19,7 +19,8 @@ namespace prune {
         void on_enter() override;
         void update(float dt, const Input& input) override;
         void render(SDL_Renderer* renderer) override;
-        void draw_inspector_ui() override;
+        void draw_scene_panel() override;
+        void draw_objects_panel() override;
         void draw_debug_ui() override;
 
     private:
