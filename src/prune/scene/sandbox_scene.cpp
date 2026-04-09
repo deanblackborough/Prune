@@ -239,13 +239,6 @@ namespace prune {
             ImGui::SliderFloat("Camera Y", &camera_y, -4096.0f, 4096.0f);
             ImGui::SliderFloat("Speed", &camera_speed, 64.0f, 512.0f);
         }
-
-        if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::TextWrapped("- WASD keys move the player");
-            ImGui::TextWrapped("- Arrow keys move select non-player object");
-            ImGui::TextWrapped("- Hold Shift for larger movements");
-            ImGui::TextWrapped("- IJKL keys move the editor camera");
-        }
     }
 
     void SandboxScene::draw_outline_panel()
@@ -283,7 +276,7 @@ namespace prune {
 
             if (is_player) {
                 float speed = m_player_controller.speed();
-                if (ImGui::SliderFloat("Object Speed", &speed, 32.0f, 512.0f)) {
+                if (ImGui::SliderFloat("Speed", &speed, 32.0f, 512.0f)) {
                     m_player_controller.set_speed(speed);
                 }
             }

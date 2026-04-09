@@ -16,12 +16,17 @@ namespace prune {
                 ImGui::EndMenu();
             }
 
+            if (ImGui::BeginMenu("Help")) {
+                ImGui::MenuItem("Control", nullptr, &m_show_controls_panel);
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMainMenuBar();
         }
 
         if (m_show_viewport_panel) {
-            ImGui::SetNextWindowPos(ImVec2(10.0f, 30.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(300.0f, 350.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(10.0f, 450.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(270.0f, 260.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Viewport Panel", &m_show_viewport_panel)) {
                 scene.draw_viewport_panel();
@@ -30,8 +35,8 @@ namespace prune {
         }
 
         if (m_show_outline_panel) {
-            ImGui::SetNextWindowPos(ImVec2(10.0f, 30.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(300.0f, 350.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(1000.0f, 10.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(270.0f, 300.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Outline Panel", &m_show_outline_panel)) {
                 scene.draw_outline_panel();
@@ -40,12 +45,33 @@ namespace prune {
         }
 
         if (m_show_object_panel) {
-            ImGui::SetNextWindowPos(ImVec2(900.0f, 30.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(350.0f, 600.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(970.0f, 330.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(300.0f, 380.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Object Panel", &m_show_object_panel)) {
                 scene.draw_object_panel();
             }
+            ImGui::End();
+        }
+
+        if (m_show_controls_panel) {
+
+            ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+            ImGui::SetNextWindowPos(
+                viewport->GetCenter(),
+                ImGuiCond_FirstUseEver,
+                ImVec2(0.5f, 0.5f)
+            );
+            ImGui::SetNextWindowSize(ImVec2(350.0f, 150.0f), ImGuiCond_FirstUseEver);
+
+            ImGui::Begin("Controls Help", &m_show_controls_panel);
+
+            ImGui::TextWrapped("WASD keys move the player");
+            ImGui::TextWrapped("Arrow keys move selected non-player object");
+            ImGui::TextWrapped("Hold Shift for larger movements");
+            ImGui::TextWrapped("IJKL keys move the editor camera");
+
             ImGui::End();
         }
 
