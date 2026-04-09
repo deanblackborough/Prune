@@ -194,16 +194,16 @@ namespace prune {
         object.transform.y = snap_value_to_grid(object.transform.y);
     }
 
-    void SandboxScene::draw_scene_panel()
+    void SandboxScene::draw_viewport_panel()
     {
-        if (ImGui::CollapsingHeader("Editor Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Checkbox("Show grid", &m_editor_state.show_grid);
-            ImGui::Checkbox("Snap non-player objects to grid", &m_editor_state.snap_to_grid);
+        if (ImGui::CollapsingHeader("Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox("Show", &m_editor_state.show_grid);
+            ImGui::Checkbox("Snap to grid", &m_editor_state.snap_to_grid);
             ImGui::SliderInt("Grid size", &m_editor_state.grid_size, m_editor_state.min_grid_size, m_editor_state.max_grid_size);
             ImGui::SliderInt("Nudge step", &m_editor_state.nudge_step, m_editor_state.min_nudge_step, m_editor_state.max_nudge_step);
         }
 
-        if (ImGui::CollapsingHeader("Editor Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::SliderFloat("Camera X", &m_editor_state.camera_x, -4096.0f, 4096.0f);
             ImGui::SliderFloat("Camera Y", &m_editor_state.camera_y, -4096.0f, 4096.0f);
             ImGui::SliderFloat("Speed", &m_editor_state.camera_speed, 64.0f, 512.0f);
@@ -217,7 +217,7 @@ namespace prune {
         }
     }
 
-    void SandboxScene::draw_objects_panel()
+    void SandboxScene::draw_outline_panel()
     {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
@@ -236,17 +236,68 @@ namespace prune {
         if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_DefaultOpen)) {
             draw_object_list_ui();
         }
+    }
 
+    void SandboxScene::draw_object_panel()
+    {
         GameObject* selected = m_objects.selected_object();
         if (!selected) {
-            if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::TextUnformatted("No object selected.");
-            }
+            ImGui::TextUnformatted("No object selected.");
             return;
         }
 
         if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen)) {
-            draw_selected_object_ui();
+
+            const bool is_player = (selected->id == m_player_id);
+
+            if (is_player) {
+                float speed = m_player_controller.speed();
+                if (ImGui::SliderFloat("Object Speed", &speed, 32.0f, 512.0f)) {
+                    m_player_controller.set_speed(speed);
+                }
+            }
+
+            ImGui::DragFloat("Object X", &selected->transform.x, 1.0f);
+            ImGui::DragFloat("Object Y", &selected->transform.y, 1.0f);
+
+            if (m_editor_state.snap_to_grid && !is_player) {
+                snap_object_to_grid(*selected);
+            }
+
+            const Transform screen_pos = {
+                selected->transform.x - m_editor_state.camera_x,
+                selected->transform.y - m_editor_state.camera_y
+            };
+
+            ImGui::Text("Screen Position: %.1f, %.1f", screen_pos.x, screen_pos.y);
+
+            if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::SliderInt("Width", &selected->rectangle.width, 16, 256);
+                ImGui::SliderInt("Height", &selected->rectangle.height, 16, 256);
+                ImGui::ColorEdit3("Colour", selected->rectangle.color);
+            }
+
+            if (ImGui::CollapsingHeader("Flags")) {
+                ImGui::Checkbox("Active", &selected->active);
+                ImGui::Checkbox("Visible", &selected->visible);
+
+                if (is_player) {
+                    ImGui::BeginDisabled();
+                    ImGui::Checkbox("Solid", &selected->solid);
+                    ImGui::EndDisabled();
+
+                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                        ImGui::SetTooltip("Player solid value not used yet, player checks against game objects only");
+                    }
+
+                    bool player_flag = true;
+                    ImGui::BeginDisabled();
+                    ImGui::Checkbox("IsPlayer", &player_flag);
+                    ImGui::EndDisabled();
+                } else {
+                    ImGui::Checkbox("Solid", &selected->solid);
+                }
+            }
         }
     }
 

@@ -19,8 +19,9 @@ namespace prune {
         void on_enter() override;
         void update(float dt, const Input& input) override;
         void render(SDL_Renderer* renderer) override;
-        void draw_scene_panel() override;
-        void draw_objects_panel() override;
+        void draw_viewport_panel() override;
+        void draw_outline_panel() override;
+        void draw_object_panel() override;
         void draw_debug_ui() override;
 
     private:
@@ -61,7 +62,6 @@ namespace prune {
         void snap_object_to_grid(GameObject& object) const noexcept;
 
         void draw_object_list_ui();
-        void draw_selected_object_ui();
 
         GameObjectManager m_objects;
         PlayerController m_player_controller;

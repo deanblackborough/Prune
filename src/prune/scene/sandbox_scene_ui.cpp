@@ -68,10 +68,7 @@ namespace prune {
             }
         }
         ImGui::EndChild();
-    }
 
-    void SandboxScene::draw_selected_object_ui()
-    {
         GameObject* selected = m_objects.selected_object();
         if (!selected) {
             return;
@@ -128,55 +125,6 @@ namespace prune {
                 return;
             }
             ImGui::PopStyleColor(3);
-        }
-
-        if (is_player) {
-            float speed = m_player_controller.speed();
-            if (ImGui::SliderFloat("Object Speed", &speed, 32.0f, 512.0f)) {
-                m_player_controller.set_speed(speed);
-            }
-        }
-
-        ImGui::DragFloat("Object X", &selected->transform.x, 1.0f);
-        ImGui::DragFloat("Object Y", &selected->transform.y, 1.0f);
-
-        if (m_editor_state.snap_to_grid && !is_player) {
-            snap_object_to_grid(*selected);
-        }
-
-        const Transform screen_pos = {
-            selected->transform.x - m_editor_state.camera_x,
-            selected->transform.y - m_editor_state.camera_y
-        };
-
-        ImGui::Text("Screen Position: %.1f, %.1f", screen_pos.x, screen_pos.y);
-
-        if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::SliderInt("Width", &selected->rectangle.width, 16, 256);
-            ImGui::SliderInt("Height", &selected->rectangle.height, 16, 256);
-            ImGui::ColorEdit3("Colour", selected->rectangle.color);
-        }
-
-        if (ImGui::CollapsingHeader("Flags")) {
-            ImGui::Checkbox("Active", &selected->active);
-            ImGui::Checkbox("Visible", &selected->visible);
-
-            if (is_player) {
-                ImGui::BeginDisabled();
-                ImGui::Checkbox("Solid", &selected->solid);
-                ImGui::EndDisabled();
-
-                if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-                    ImGui::SetTooltip("Player solid value not used yet, player checks against game objects only");
-                }
-
-                bool player_flag = true;
-                ImGui::BeginDisabled();
-                ImGui::Checkbox("IsPlayer", &player_flag);
-                ImGui::EndDisabled();
-            } else {
-                ImGui::Checkbox("Solid", &selected->solid);
-            }
         }
     }
 
