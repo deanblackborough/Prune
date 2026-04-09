@@ -73,9 +73,9 @@ namespace prune {
             return;
         }
 
-        const float move_amount = m_editor_state.camera_speed * dt;
-        m_editor_state.camera_x += move_x * move_amount;
-        m_editor_state.camera_y += move_y * move_amount;
+        const float move_amount = camera_speed * dt;
+        camera_x += move_x * move_amount;
+        camera_y += move_y * move_amount;
     }
 
     void SandboxScene::handle_scene_click(const Input& input)
@@ -135,16 +135,16 @@ namespace prune {
             return;
         }
 
-        int step = m_editor_state.snap_to_grid
-            ? std::max(1, m_editor_state.grid_size)
-            : std::max(1, m_editor_state.nudge_step);
+        int step = snap_to_grid
+            ? std::max(1, grid_size)
+            : std::max(1, nudge_step);
 
         const bool shift_down =
             input.is_key_down(SDL_SCANCODE_LSHIFT) ||
             input.is_key_down(SDL_SCANCODE_RSHIFT);
 
         if (shift_down) {
-            step *= m_editor_state.shift_nudge_steps;
+            step *= shift_nudge_steps;
         }
 
         move_object(
@@ -154,7 +154,7 @@ namespace prune {
             false
         );
 
-        if (m_editor_state.snap_to_grid) {
+        if (snap_to_grid) {
             snap_object_to_grid(*selected);
         }
     }

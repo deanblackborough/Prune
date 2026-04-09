@@ -8,6 +8,37 @@
 
 namespace prune {
 
+    namespace {
+        bool contains_case_insensitive(std::string_view text, std::string_view query)
+        {
+            if (query.empty()) {
+                return true;
+            }
+
+            auto to_lower = [](unsigned char c) {
+                return static_cast<char>(std::tolower(c));
+            };
+
+            for (std::size_t i = 0; i + query.size() <= text.size(); ++i) {
+                bool matches = true;
+
+                for (std::size_t j = 0; j < query.size(); ++j) {
+                    if (to_lower(static_cast<unsigned char>(text[i + j])) !=
+                        to_lower(static_cast<unsigned char>(query[j]))) {
+                        matches = false;
+                        break;
+                        }
+                }
+
+                if (matches) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
     SandboxScene::SandboxScene(int window_width, int window_height)
         : m_window_width(window_width)
         , m_window_height(window_height)
@@ -95,16 +126,16 @@ namespace prune {
     Transform SandboxScene::screen_to_world(int screen_x, int screen_y) const noexcept
     {
         return {
-            static_cast<float>(screen_x) + m_editor_state.camera_x,
-            static_cast<float>(screen_y) + m_editor_state.camera_y
+            static_cast<float>(screen_x) + camera_x,
+            static_cast<float>(screen_y) + camera_y
         };
     }
 
     SDL_Rect SandboxScene::world_to_screen_rect(const GameObject& object) const noexcept
     {
         return SDL_Rect{
-            static_cast<int>(std::round(object.transform.x - m_editor_state.camera_x)),
-            static_cast<int>(std::round(object.transform.y - m_editor_state.camera_y)),
+            static_cast<int>(std::round(object.transform.x - camera_x)),
+            static_cast<int>(std::round(object.transform.y - camera_y)),
             object.rectangle.width,
             object.rectangle.height
         };
@@ -147,7 +178,7 @@ namespace prune {
 
             SDL_RenderFillRect(renderer, &rect);
 
-            if (m_editor_state.highlight_selected && object.id == selected_id) {
+            if (highlight_selected && object.id == selected_id) {
                 selected_outline = SDL_Rect{
                     rect.x - 2,
                     rect.y - 2,
@@ -159,7 +190,7 @@ namespace prune {
             }
         }
 
-        if (m_editor_state.highlight_selected && has_selected_outline) {
+        if (highlight_selected && has_selected_outline) {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
             SDL_RenderDrawRect(renderer, &selected_outline);
         }
@@ -167,25 +198,25 @@ namespace prune {
 
     void SandboxScene::draw_grid(SDL_Renderer* renderer) const
     {
-        if (!m_editor_state.show_grid || m_editor_state.grid_size <= 1) {
+        if (!show_grid || grid_size <= 1) {
             return;
         }
 
         SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
 
-        for (int x = 0; x < m_window_width; x += m_editor_state.grid_size) {
+        for (int x = 0; x < m_window_width; x += grid_size) {
             SDL_RenderDrawLine(renderer, x, 0, x, m_window_height);
         }
 
-        for (int y = 0; y < m_window_height; y += m_editor_state.grid_size) {
+        for (int y = 0; y < m_window_height; y += grid_size) {
             SDL_RenderDrawLine(renderer, 0, y, m_window_width, y);
         }
     }
 
     float SandboxScene::snap_value_to_grid(float value) const noexcept
     {
-        const int grid_size = std::max(1, m_editor_state.grid_size);
-        return std::round(value / static_cast<float>(grid_size)) * static_cast<float>(grid_size);
+        const int scene_grid_size = std::max(1, grid_size);
+        return std::round(value / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
     }
 
     void SandboxScene::snap_object_to_grid(GameObject& object) const noexcept
@@ -197,16 +228,16 @@ namespace prune {
     void SandboxScene::draw_viewport_panel()
     {
         if (ImGui::CollapsingHeader("Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Checkbox("Show", &m_editor_state.show_grid);
-            ImGui::Checkbox("Snap to grid", &m_editor_state.snap_to_grid);
-            ImGui::SliderInt("Grid size", &m_editor_state.grid_size, m_editor_state.min_grid_size, m_editor_state.max_grid_size);
-            ImGui::SliderInt("Nudge step", &m_editor_state.nudge_step, m_editor_state.min_nudge_step, m_editor_state.max_nudge_step);
+            ImGui::Checkbox("Show", &show_grid);
+            ImGui::Checkbox("Snap to grid", &snap_to_grid);
+            ImGui::SliderInt("Grid size", &grid_size, min_grid_size, max_grid_size);
+            ImGui::SliderInt("Nudge step", &nudge_step, min_nudge_step, max_nudge_step);
         }
 
         if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::SliderFloat("Camera X", &m_editor_state.camera_x, -4096.0f, 4096.0f);
-            ImGui::SliderFloat("Camera Y", &m_editor_state.camera_y, -4096.0f, 4096.0f);
-            ImGui::SliderFloat("Speed", &m_editor_state.camera_speed, 64.0f, 512.0f);
+            ImGui::SliderFloat("Camera X", &camera_x, -4096.0f, 4096.0f);
+            ImGui::SliderFloat("Camera Y", &camera_y, -4096.0f, 4096.0f);
+            ImGui::SliderFloat("Speed", &camera_speed, 64.0f, 512.0f);
         }
 
         if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -231,7 +262,7 @@ namespace prune {
         ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
-        ImGui::Checkbox("Highlight selected", &m_editor_state.highlight_selected);
+        ImGui::Checkbox("Highlight selected", &highlight_selected);
 
         if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_DefaultOpen)) {
             draw_object_list_ui();
@@ -260,13 +291,13 @@ namespace prune {
             ImGui::DragFloat("Object X", &selected->transform.x, 1.0f);
             ImGui::DragFloat("Object Y", &selected->transform.y, 1.0f);
 
-            if (m_editor_state.snap_to_grid && !is_player) {
+            if (snap_to_grid && !is_player) {
                 snap_object_to_grid(*selected);
             }
 
             const Transform screen_pos = {
-                selected->transform.x - m_editor_state.camera_x,
-                selected->transform.y - m_editor_state.camera_y
+                selected->transform.x - camera_x,
+                selected->transform.y - camera_y
             };
 
             ImGui::Text("Screen Position: %.1f, %.1f", screen_pos.x, screen_pos.y);
@@ -308,11 +339,11 @@ namespace prune {
         ImGui::Text("Object count: %d", static_cast<int>(m_objects.count()));
         ImGui::Text("Selected id: %u", m_objects.selected_id());
         ImGui::Text("Player id: %u", m_player_id);
-        ImGui::Text("Grid: %s", m_editor_state.show_grid ? "On" : "Off");
-        ImGui::Text("Snap: %s", m_editor_state.snap_to_grid ? "On" : "Off");
-        ImGui::Text("Grid size: %d", m_editor_state.grid_size);
-        ImGui::Text("Camera: %.1f, %.1f", m_editor_state.camera_x, m_editor_state.camera_y);
-        ImGui::Text("Camera speed: %.1f", m_editor_state.camera_speed);
+        ImGui::Text("Grid: %s", show_grid ? "On" : "Off");
+        ImGui::Text("Snap: %s", snap_to_grid ? "On" : "Off");
+        ImGui::Text("Grid size: %d", grid_size);
+        ImGui::Text("Camera: %.1f, %.1f", camera_x, camera_y);
+        ImGui::Text("Camera speed: %.1f", camera_speed);
 
         if (const GameObject* player = player_object()) {
             ImGui::Separator();
@@ -351,8 +382,8 @@ namespace prune {
         const float offset = static_cast<float>(m_objects.count()) * offset_step;
 
         return Transform{
-            m_editor_state.camera_x + offset,
-            m_editor_state.camera_y + offset
+            camera_x + offset,
+            camera_y + offset
         };
     }
 
@@ -385,6 +416,96 @@ namespace prune {
                 player.transform.y += resolve_y;
                 player.velocity.y = 0.0f;
             }
+        }
+    }
+
+    void SandboxScene::draw_object_list_ui()
+    {
+        ImGui::SetNextItemWidth(-1.0f);
+        ImGui::InputTextWithHint(
+            "##object_search",
+            "Search objects...",
+            object_search.data(),
+            object_search.size()
+        );
+
+        constexpr int visible_rows = 5;
+        const float row_height = ImGui::GetTextLineHeightWithSpacing();
+        const float list_height = row_height * static_cast<float>(visible_rows)
+            + ImGui::GetStyle().FramePadding.y * 2.0f;
+
+        if (ImGui::BeginChild("object_list", ImVec2(0.0f, list_height), true)) {
+            const std::string_view filter = object_search.data();
+
+            for (const auto& object : m_objects.objects()) {
+                if (!filter.empty() && !contains_case_insensitive(object.name, filter)) {
+                    continue;
+                }
+
+                const bool is_selected = object.id == m_objects.selected_id();
+                if (ImGui::Selectable(object.name.c_str(), is_selected)) {
+                    m_objects.select(object.id);
+                }
+            }
+        }
+        ImGui::EndChild();
+
+        GameObject* selected = m_objects.selected_object();
+        if (!selected) {
+            return;
+        }
+
+        const bool is_player = (selected->id == m_player_id);
+
+        ImGui::Separator();
+
+        ImGui::Text("Id: %u", selected->id);
+
+        if (is_player) {
+            ImGui::Text("Name: %s", selected->name.c_str());
+        } else {
+            char name_buffer[128]{};
+            std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
+
+            ImGui::InputText("Name", name_buffer, sizeof(name_buffer));
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                selected->name = make_unique_name(name_buffer, selected->id);
+            }
+        }
+
+        if (!is_player) {
+            if (ImGui::Button("Delete")) {
+                const GameObjectId id_to_remove = selected->id;
+                m_objects.remove_object(id_to_remove);
+                return;
+            }
+
+            ImGui::SameLine();
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
+
+            if (ImGui::Button("Clone")) {
+                const std::string source_name = selected->name;
+
+                GameObject clone = *selected;
+                clone.is_player = false;
+                clone.transform.x += 32.0f;
+                clone.transform.y += 32.0f;
+
+                const GameObjectId clone_id = m_objects.create_object(clone);
+
+                if (GameObject* created = m_objects.get_by_id(clone_id)) {
+                    created->name = make_unique_name(source_name, clone_id);
+                }
+
+                m_objects.select(clone_id);
+
+                ImGui::PopStyleColor(3);
+                return;
+            }
+            ImGui::PopStyleColor(3);
         }
     }
 } // namespace prune

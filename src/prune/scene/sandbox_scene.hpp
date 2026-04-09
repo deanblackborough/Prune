@@ -8,7 +8,6 @@
 #include "game_object_manager.hpp"
 #include "player_controller.hpp"
 #include "scene.hpp"
-#include "sandbox_scene_editor_state.hpp"
 
 namespace prune {
 
@@ -68,13 +67,31 @@ namespace prune {
 
         GameObjectId m_player_id = kInvalidGameObjectId;
 
-        SandboxEditorState m_editor_state;
-
         // Random number generation
         std::mt19937 m_rng{std::random_device{}()};
         std::uniform_real_distribution<float> m_color_dist{0.2f, 1.0f};
 
         int m_window_width = 0;
         int m_window_height = 0;
+
+        bool highlight_selected = true;
+
+        std::array<char, 128> object_search{};
+
+        // Grid controls
+        bool show_grid = true;
+        bool snap_to_grid = false;
+        int grid_size = 32;
+        int min_grid_size = 16;
+        int max_grid_size = 128;
+        int nudge_step = 4;
+        int shift_nudge_steps = 4;
+        int min_nudge_step = 1;
+        int max_nudge_step = 32;
+
+        // Camera controls
+        float camera_x = 0.0f;
+        float camera_y = 0.0f;
+        float camera_speed = 256.0f;
     };
 }
