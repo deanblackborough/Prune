@@ -202,14 +202,39 @@ namespace prune {
             return;
         }
 
+        const int scene_grid_size = std::max(1, grid_size);
+
+        const float left_world = camera_x;
+        const float right_world = camera_x + static_cast<float>(m_window_width);
+        const float top_world = camera_y;
+        const float bottom_world = camera_y + static_cast<float>(m_window_height);
+
+        const float first_vertical_world =
+            std::floor(left_world / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
+
+        const float first_horizontal_world =
+            std::floor(top_world / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
+
         SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
 
-        for (int x = 0; x < m_window_width; x += grid_size) {
-            SDL_RenderDrawLine(renderer, x, 0, x, m_window_height);
+        const int vertical_line_count = static_cast<int>(std::ceil((right_world - first_vertical_world) / static_cast<float>(scene_grid_size))) + 1;
+        for (int i = 0; i < vertical_line_count; ++i) {
+            const float world_x = first_vertical_world + static_cast<float>(i * scene_grid_size);
+            if (world_x > right_world) {
+                break;
+            }
+            const int screen_x = static_cast<int>(std::round(world_x - camera_x));
+            SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, m_window_height);
         }
 
-        for (int y = 0; y < m_window_height; y += grid_size) {
-            SDL_RenderDrawLine(renderer, 0, y, m_window_width, y);
+        const int horizontal_line_count = static_cast<int>(std::ceil((bottom_world - first_horizontal_world) / static_cast<float>(scene_grid_size))) + 1;
+        for (int i = 0; i < horizontal_line_count; ++i) {
+            const float world_y = first_horizontal_world + static_cast<float>(i * scene_grid_size);
+            if (world_y > bottom_world) {
+                break;
+            }
+            const int screen_y = static_cast<int>(std::round(world_y - camera_y));
+            SDL_RenderDrawLine(renderer, 0, screen_y, m_window_width, screen_y);
         }
     }
 
@@ -225,8 +250,12 @@ namespace prune {
         object.transform.y = snap_value_to_grid(object.transform.y);
     }
 
-    void SandboxScene::draw_viewport_panel()
+    void SandboxScene::draw_view_grid_options()
     {
+        if (ImGui::CollapsingHeader("View", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox("Highlight selected", &highlight_selected);
+        }
+
         if (ImGui::CollapsingHeader("Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Checkbox("Show", &show_grid);
             ImGui::Checkbox("Snap to grid", &snap_to_grid);
@@ -241,28 +270,25 @@ namespace prune {
         }
     }
 
-    void SandboxScene::draw_outline_panel()
+    void SandboxScene::draw_outliner()
     {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
 
-        if (ImGui::Button("Add Block")) {
+        if (ImGui::Button("Add Object (Temp)")) {
             const Transform spawn = next_block_spawn_position();
             create_block(spawn.x, spawn.y);
         }
 
         ImGui::PopStyleColor(3);
 
-        ImGui::SameLine();
-        ImGui::Checkbox("Highlight selected", &highlight_selected);
+        ImGui::Separator();
 
-        if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_DefaultOpen)) {
-            draw_object_list_ui();
-        }
+        draw_object_search();
     }
 
-    void SandboxScene::draw_object_panel()
+    void SandboxScene::draw_inspector()
     {
         GameObject* selected = m_objects.selected_object();
         if (!selected) {
@@ -270,10 +296,61 @@ namespace prune {
             return;
         }
 
-        if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen)) {
 
-            const bool is_player = (selected->id == m_player_id);
+        const bool is_player = (selected->id == m_player_id);
 
+        ImGui::Text("Id: %u", selected->id);
+
+        if (is_player) {
+            ImGui::Text("Name: %s", selected->name.c_str());
+        } else {
+            char name_buffer[128]{};
+            std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
+
+            ImGui::InputText("Name", name_buffer, sizeof(name_buffer));
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                selected->name = make_unique_name(name_buffer, selected->id);
+            }
+        }
+
+        if (!is_player) {
+            if (ImGui::Button("Delete")) {
+                const GameObjectId id_to_remove = selected->id;
+                m_objects.remove_object(id_to_remove);
+                return;
+            }
+
+            ImGui::SameLine();
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
+
+            if (ImGui::Button("Clone")) {
+                const std::string source_name = selected->name;
+
+                GameObject clone = *selected;
+                clone.is_player = false;
+                clone.transform.x += 32.0f;
+                clone.transform.y += 32.0f;
+
+                const GameObjectId clone_id = m_objects.create_object(clone);
+
+                if (GameObject* created = m_objects.get_by_id(clone_id)) {
+                    created->name = make_unique_name(source_name, clone_id);
+                }
+
+                m_objects.select(clone_id);
+
+                ImGui::PopStyleColor(3);
+                return;
+            }
+            ImGui::PopStyleColor(3);
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
             if (is_player) {
                 float speed = m_player_controller.speed();
                 if (ImGui::SliderFloat("Speed", &speed, 32.0f, 512.0f)) {
@@ -288,39 +365,39 @@ namespace prune {
                 snap_object_to_grid(*selected);
             }
 
+            ImGui::SliderInt("Width", &selected->rectangle.width, 16, 256);
+            ImGui::SliderInt("Height", &selected->rectangle.height, 16, 256);
+            ImGui::ColorEdit3("Colour", selected->rectangle.color);
+        }
+
+        if (ImGui::CollapsingHeader("Computed")) {
             const Transform screen_pos = {
                 selected->transform.x - camera_x,
                 selected->transform.y - camera_y
             };
 
             ImGui::Text("Screen Position: %.1f, %.1f", screen_pos.x, screen_pos.y);
+        }
 
-            if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::SliderInt("Width", &selected->rectangle.width, 16, 256);
-                ImGui::SliderInt("Height", &selected->rectangle.height, 16, 256);
-                ImGui::ColorEdit3("Colour", selected->rectangle.color);
-            }
+        if (ImGui::CollapsingHeader("Flags")) {
+            ImGui::Checkbox("Active", &selected->active);
+            ImGui::Checkbox("Visible", &selected->visible);
 
-            if (ImGui::CollapsingHeader("Flags")) {
-                ImGui::Checkbox("Active", &selected->active);
-                ImGui::Checkbox("Visible", &selected->visible);
+            if (is_player) {
+                ImGui::BeginDisabled();
+                ImGui::Checkbox("Solid", &selected->solid);
+                ImGui::EndDisabled();
 
-                if (is_player) {
-                    ImGui::BeginDisabled();
-                    ImGui::Checkbox("Solid", &selected->solid);
-                    ImGui::EndDisabled();
-
-                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-                        ImGui::SetTooltip("Player solid value not used yet, player checks against game objects only");
-                    }
-
-                    bool player_flag = true;
-                    ImGui::BeginDisabled();
-                    ImGui::Checkbox("IsPlayer", &player_flag);
-                    ImGui::EndDisabled();
-                } else {
-                    ImGui::Checkbox("Solid", &selected->solid);
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                    ImGui::SetTooltip("Player solid value not used yet, player checks against game objects only");
                 }
+
+                bool player_flag = true;
+                ImGui::BeginDisabled();
+                ImGui::Checkbox("IsPlayer", &player_flag);
+                ImGui::EndDisabled();
+            } else {
+                ImGui::Checkbox("Solid", &selected->solid);
             }
         }
     }
@@ -375,8 +452,8 @@ namespace prune {
         const float offset = static_cast<float>(m_objects.count()) * offset_step;
 
         return Transform{
-            camera_x + offset,
-            camera_y + offset
+            camera_x + (static_cast<float>(m_window_width) * 0.5f) + offset,
+            camera_y + (static_cast<float>(m_window_height) * 0.5f) + offset
         };
     }
 
@@ -412,7 +489,7 @@ namespace prune {
         }
     }
 
-    void SandboxScene::draw_object_list_ui()
+    void SandboxScene::draw_object_search()
     {
         ImGui::SetNextItemWidth(-1.0f);
         ImGui::InputTextWithHint(
@@ -422,7 +499,7 @@ namespace prune {
             object_search.size()
         );
 
-        constexpr int visible_rows = 5;
+        constexpr int visible_rows = 10;
         const float row_height = ImGui::GetTextLineHeightWithSpacing();
         const float list_height = row_height * static_cast<float>(visible_rows)
             + ImGui::GetStyle().FramePadding.y * 2.0f;
@@ -442,7 +519,10 @@ namespace prune {
             }
         }
         ImGui::EndChild();
+    }
 
+    void SandboxScene::draw_selected_object()
+    {
         GameObject* selected = m_objects.selected_object();
         if (!selected) {
             return;
@@ -465,6 +545,16 @@ namespace prune {
                 selected->name = make_unique_name(name_buffer, selected->id);
             }
         }
+    }
+
+    void SandboxScene::draw_delete_and_clone()
+    {
+        GameObject* selected = m_objects.selected_object();
+        if (!selected) {
+            return;
+        }
+
+        const bool is_player = (selected->id == m_player_id);
 
         if (!is_player) {
             if (ImGui::Button("Delete")) {

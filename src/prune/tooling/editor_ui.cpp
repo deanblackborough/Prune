@@ -7,54 +7,64 @@ namespace prune {
 
     void EditorUI::render(Scene& scene) {
         if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("Options")) {
+                ImGui::MenuItem("Viewport & Grid", nullptr, &m_show_view_grid_options);
+                ImGui::EndMenu();
+            }
+
             if (ImGui::BeginMenu("View")) {
-                ImGui::MenuItem("Viewport Panels", nullptr, &m_show_viewport_panel);
-                ImGui::MenuItem("Outline Panel", nullptr, &m_show_outline_panel);
-                ImGui::MenuItem("Object Panel", nullptr, &m_show_object_panel);
-                ImGui::MenuItem("Debug / Stats", nullptr, &m_show_debug);
-                ImGui::MenuItem("ImGui Demo", nullptr, &m_show_imgui_demo);
+                ImGui::MenuItem("Outliner", nullptr, &m_show_outliner);
+                ImGui::MenuItem("Inspector", nullptr, &m_show_inspector);
+                ImGui::MenuItem("Status", nullptr, &m_show_status);
                 ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("Help")) {
-                ImGui::MenuItem("Control", nullptr, &m_show_controls_panel);
+                ImGui::MenuItem("Controls", nullptr, &m_show_controls);
+                ImGui::MenuItem("ImGui Demo", nullptr, &m_show_imgui_demo);
                 ImGui::EndMenu();
             }
 
             ImGui::EndMainMenuBar();
         }
 
-        if (m_show_viewport_panel) {
-            ImGui::SetNextWindowPos(ImVec2(10.0f, 450.0f), ImGuiCond_FirstUseEver);
+        if (m_show_view_grid_options) {
+            ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+            ImGui::SetNextWindowPos(
+                viewport->GetCenter(),
+                ImGuiCond_FirstUseEver,
+                ImVec2(0.5f, 0.5f)
+            );
             ImGui::SetNextWindowSize(ImVec2(270.0f, 260.0f), ImGuiCond_FirstUseEver);
 
-            if (ImGui::Begin("Viewport Panel", &m_show_viewport_panel)) {
-                scene.draw_viewport_panel();
+            if (ImGui::Begin("View & Grid Options", &m_show_view_grid_options)) {
+                scene.draw_view_grid_options();
             }
             ImGui::End();
         }
 
-        if (m_show_outline_panel) {
+        if (m_show_outliner) {
             ImGui::SetNextWindowPos(ImVec2(1000.0f, 10.0f), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(270.0f, 300.0f), ImGuiCond_FirstUseEver);
 
-            if (ImGui::Begin("Outline Panel", &m_show_outline_panel)) {
-                scene.draw_outline_panel();
+            if (ImGui::Begin("Outliner", &m_show_outliner)) {
+                scene.draw_outliner();
             }
             ImGui::End();
         }
 
-        if (m_show_object_panel) {
+        if (m_show_inspector) {
             ImGui::SetNextWindowPos(ImVec2(970.0f, 330.0f), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(300.0f, 380.0f), ImGuiCond_FirstUseEver);
 
-            if (ImGui::Begin("Object Panel", &m_show_object_panel)) {
-                scene.draw_object_panel();
+            if (ImGui::Begin("Inspector", &m_show_inspector)) {
+                scene.draw_inspector();
             }
             ImGui::End();
         }
 
-        if (m_show_controls_panel) {
+        if (m_show_controls) {
 
             ImGuiViewport* viewport = ImGui::GetMainViewport();
 
@@ -65,7 +75,7 @@ namespace prune {
             );
             ImGui::SetNextWindowSize(ImVec2(350.0f, 150.0f), ImGuiCond_FirstUseEver);
 
-            ImGui::Begin("Controls Help", &m_show_controls_panel);
+            ImGui::Begin("Controls", &m_show_controls);
 
             ImGui::TextWrapped("WASD keys move the player");
             ImGui::TextWrapped("Arrow keys move selected non-player object");
@@ -75,11 +85,11 @@ namespace prune {
             ImGui::End();
         }
 
-        if (m_show_debug) {
+        if (m_show_status) {
             ImGui::SetNextWindowPos(ImVec2(10.0f, 34.0f), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(220.0f, 160.0f), ImGuiCond_FirstUseEver);
 
-            if (ImGui::Begin("Debug / Stats", &m_show_debug)) {
+            if (ImGui::Begin("Debug / Stats", &m_show_status)) {
                 ImGuiIO& io = ImGui::GetIO();
 
                 ImGui::Text("FPS: %.1f", io.Framerate);

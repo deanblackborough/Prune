@@ -18,9 +18,9 @@ namespace prune {
         void on_enter() override;
         void update(float dt, const Input& input) override;
         void render(SDL_Renderer* renderer) override;
-        void draw_viewport_panel() override;
-        void draw_outline_panel() override;
-        void draw_object_panel() override;
+        void draw_view_grid_options() override;
+        void draw_outliner() override;
+        void draw_inspector() override;
         void draw_debug_ui() override;
 
     private:
@@ -60,7 +60,9 @@ namespace prune {
         [[nodiscard]] float snap_value_to_grid(float value) const noexcept;
         void snap_object_to_grid(GameObject& object) const noexcept;
 
-        void draw_object_list_ui();
+        void draw_object_search();
+        void draw_selected_object();
+        void draw_delete_and_clone();
 
         GameObjectManager m_objects;
         PlayerController m_player_controller;
@@ -80,13 +82,13 @@ namespace prune {
 
         // Grid controls
         bool show_grid = true;
-        bool snap_to_grid = false;
+        bool snap_to_grid = true;
         int grid_size = 32;
-        int min_grid_size = 16;
+        int min_grid_size = 32;
         int max_grid_size = 128;
-        int nudge_step = 4;
+        int nudge_step = 8;
         int shift_nudge_steps = 4;
-        int min_nudge_step = 1;
+        int min_nudge_step = 8;
         int max_nudge_step = 32;
 
         // Camera controls

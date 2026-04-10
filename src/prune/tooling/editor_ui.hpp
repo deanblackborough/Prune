@@ -9,11 +9,11 @@ namespace prune {
         void render(Scene& scene);
 
     private:
-        bool m_show_viewport_panel = true;
-        bool m_show_outline_panel = true;
-        bool m_show_object_panel = true;
-        bool m_show_controls_panel = false;
-        bool m_show_debug = false;
+        bool m_show_view_grid_options = false;
+        bool m_show_outliner = true;
+        bool m_show_inspector = true;
+        bool m_show_controls = false;
+        bool m_show_status = false;
         bool m_show_imgui_demo = false;
     };
 

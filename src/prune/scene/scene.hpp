@@ -18,11 +18,11 @@ namespace prune {
 
         virtual void render(SDL_Renderer* renderer) = 0;
 
-        virtual void draw_viewport_panel() {}
+        virtual void draw_view_grid_options() {}
 
-        virtual void draw_outline_panel() {}
+        virtual void draw_outliner() {}
 
-        virtual void draw_object_panel() {}
+        virtual void draw_inspector() {}
 
         virtual void draw_debug_ui() {}
     };
