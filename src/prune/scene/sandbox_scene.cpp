@@ -55,6 +55,10 @@ namespace prune {
         m_objects.select(m_player_id);
     }
 
+    void SandboxScene::on_exit() {
+        m_objects.clear();
+    }
+
     GameObject SandboxScene::create_player() {
         GameObject player;
         player.name = "Player";

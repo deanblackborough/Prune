@@ -1,6 +1,5 @@
 #include "app.hpp"
 #include "../core/time.hpp"
-#include "../scene/scene.hpp"
 #include "../scene/sandbox_scene.hpp"
 #include "prune/tooling/editor_ui.hpp"
 

@@ -2,6 +2,7 @@
 
 #include "../core/input.hpp"
 #include "../core/window.hpp"
+#include "../scene/sandbox_scene.hpp"
 
 #include <SDL2/SDL.h>
 #include <memory>
@@ -56,7 +57,7 @@ namespace prune {
         std::unique_ptr<Window> m_window;
         std::unique_ptr<Time> m_time;
         std::unique_ptr<Input> m_input;
-        std::unique_ptr<Scene> m_scene;
+        std::unique_ptr<SandboxScene> m_scene;
         std::unique_ptr<EditorUI> m_editor_ui;
 
         float m_fixed_timestep = 1.0f / 60.0f;

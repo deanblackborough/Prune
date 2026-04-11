@@ -2,11 +2,11 @@
 
 namespace prune {
 
-    class Scene;
+    class SandboxScene;
 
     class EditorUI {
     public:
-        void render(Scene& scene);
+        void render(SandboxScene& scene);
 
     private:
         bool m_show_view_grid_options = false;

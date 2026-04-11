@@ -4,24 +4,26 @@
 #include <random>
 #include <string>
 
+#include <SDL2/SDL.h>
+
 #include "game_object.hpp"
 #include "game_object_manager.hpp"
 #include "player_controller.hpp"
-#include "scene.hpp"
 
 namespace prune {
 
-    class SandboxScene final : public Scene {
+    class SandboxScene {
     public:
         SandboxScene(int window_width, int window_height);
 
-        void on_enter() override;
-        void update(float dt, const Input& input) override;
-        void render(SDL_Renderer* renderer) override;
-        void draw_view_grid_options() override;
-        void draw_outliner() override;
-        void draw_inspector() override;
-        void draw_debug_ui() override;
+        void on_enter();
+        void on_exit();
+        void update(float dt, const Input& input);
+        void render(SDL_Renderer* renderer);
+        void draw_view_grid_options();
+        void draw_outliner();
+        void draw_inspector();
+        void draw_debug_ui();
 
     private:
         [[nodiscard]] GameObject* player_object() noexcept;
