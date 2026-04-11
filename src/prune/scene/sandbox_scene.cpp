@@ -95,6 +95,18 @@ namespace prune {
         return block;
     }
 
+    GameObjectManager& SandboxScene::get_object_manager() {
+        return m_objects;
+    }
+
+    GameObjectId SandboxScene::get_player_id() const {
+        return m_player_id;
+    }
+
+    PlayerController & SandboxScene::get_player_controller() {
+        return m_player_controller;
+    }
+
     void SandboxScene::update(float dt, const Input& input)
     {
         update_editor(dt, input);
@@ -292,120 +304,6 @@ namespace prune {
         draw_object_search();
     }
 
-    void SandboxScene::draw_inspector()
-    {
-        GameObject* selected = m_objects.selected_object();
-        if (!selected) {
-            ImGui::TextUnformatted("No object selected.");
-            return;
-        }
-
-
-        const bool is_player = (selected->id == m_player_id);
-
-        ImGui::Text("Id: %u", selected->id);
-
-        if (is_player) {
-            ImGui::Text("Name: %s", selected->name.c_str());
-        } else {
-            char name_buffer[128]{};
-            std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
-
-            ImGui::InputText("Name", name_buffer, sizeof(name_buffer));
-            if (ImGui::IsItemDeactivatedAfterEdit()) {
-                selected->name = make_unique_name(name_buffer, selected->id);
-            }
-        }
-
-        if (!is_player) {
-            if (ImGui::Button("Delete")) {
-                const GameObjectId id_to_remove = selected->id;
-                m_objects.remove_object(id_to_remove);
-                return;
-            }
-
-            ImGui::SameLine();
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
-
-            if (ImGui::Button("Clone")) {
-                const std::string source_name = selected->name;
-
-                GameObject clone = *selected;
-                clone.is_player = false;
-                clone.transform.x += 32.0f;
-                clone.transform.y += 32.0f;
-
-                const GameObjectId clone_id = m_objects.create_object(clone);
-
-                if (GameObject* created = m_objects.get_by_id(clone_id)) {
-                    created->name = make_unique_name(source_name, clone_id);
-                }
-
-                m_objects.select(clone_id);
-
-                ImGui::PopStyleColor(3);
-                return;
-            }
-            ImGui::PopStyleColor(3);
-        }
-
-        ImGui::Separator();
-
-        if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
-            if (is_player) {
-                float speed = m_player_controller.speed();
-                if (ImGui::SliderFloat("Speed", &speed, 32.0f, 512.0f)) {
-                    m_player_controller.set_speed(speed);
-                }
-            }
-
-            ImGui::DragFloat("Object X", &selected->transform.x, 1.0f);
-            ImGui::DragFloat("Object Y", &selected->transform.y, 1.0f);
-
-            if (snap_to_grid && !is_player) {
-                snap_object_to_grid(*selected);
-            }
-
-            ImGui::SliderInt("Width", &selected->rectangle.width, 16, 256);
-            ImGui::SliderInt("Height", &selected->rectangle.height, 16, 256);
-            ImGui::ColorEdit3("Colour", selected->rectangle.color);
-        }
-
-        if (ImGui::CollapsingHeader("Computed")) {
-            const Transform screen_pos = {
-                selected->transform.x - camera_x,
-                selected->transform.y - camera_y
-            };
-
-            ImGui::Text("Screen Position: %.1f, %.1f", screen_pos.x, screen_pos.y);
-        }
-
-        if (ImGui::CollapsingHeader("Flags")) {
-            ImGui::Checkbox("Active", &selected->active);
-            ImGui::Checkbox("Visible", &selected->visible);
-
-            if (is_player) {
-                ImGui::BeginDisabled();
-                ImGui::Checkbox("Solid", &selected->solid);
-                ImGui::EndDisabled();
-
-                if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-                    ImGui::SetTooltip("Player solid value not used yet, player checks against game objects only");
-                }
-
-                bool player_flag = true;
-                ImGui::BeginDisabled();
-                ImGui::Checkbox("IsPlayer", &player_flag);
-                ImGui::EndDisabled();
-            } else {
-                ImGui::Checkbox("Solid", &selected->solid);
-            }
-        }
-    }
-
     void SandboxScene::draw_debug_ui()
     {
         ImGui::TextUnformatted("Sandbox");
@@ -546,7 +444,7 @@ namespace prune {
 
             ImGui::InputText("Name", name_buffer, sizeof(name_buffer));
             if (ImGui::IsItemDeactivatedAfterEdit()) {
-                selected->name = make_unique_name(name_buffer, selected->id);
+                selected->name = m_objects.make_unique_name(name_buffer, selected->id);
             }
         }
     }
@@ -584,7 +482,7 @@ namespace prune {
                 const GameObjectId clone_id = m_objects.create_object(clone);
 
                 if (GameObject* created = m_objects.get_by_id(clone_id)) {
-                    created->name = make_unique_name(source_name, clone_id);
+                    created->name = m_objects.make_unique_name(source_name, clone_id);
                 }
 
                 m_objects.select(clone_id);

@@ -107,6 +107,34 @@ namespace prune {
         return m_objects;
     }
 
+    std::string GameObjectManager::make_unique_name(std::string desired, GameObjectId ignore_id) const {
+        if (desired.empty()) {
+            desired = "Object";
+        }
+
+        auto is_taken = [&](const std::string& name) {
+            for (const auto& obj : objects()) {
+                if (obj.id != ignore_id && obj.name == name) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        if (!is_taken(desired)) {
+            return desired;
+        }
+
+        int suffix = 1;
+        std::string candidate;
+
+        do {
+            candidate = desired + " " + std::to_string(suffix++);
+        } while (is_taken(candidate));
+
+        return candidate;
+    }
+
     std::size_t GameObjectManager::find_index_by_id(GameObjectId id) const noexcept
     {
         if (id == kInvalidGameObjectId) {

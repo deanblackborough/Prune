@@ -22,8 +22,10 @@ namespace prune {
         void render(SDL_Renderer* renderer);
         void draw_view_grid_options();
         void draw_outliner();
-        void draw_inspector();
         void draw_debug_ui();
+        GameObjectManager& get_object_manager();
+        [[nodiscard]] GameObjectId get_player_id() const;
+        PlayerController& get_player_controller();
 
     private:
         [[nodiscard]] GameObject* player_object() noexcept;
@@ -33,7 +35,6 @@ namespace prune {
         [[nodiscard]] static GameObject create_initial_block();
 
         [[nodiscard]] Transform next_block_spawn_position() const noexcept;
-        [[nodiscard]] std::string make_unique_name(std::string desired, GameObjectId ignore_id) const;
 
         GameObjectId create_block(float x, float y);
         [[nodiscard]] float random_color_component();

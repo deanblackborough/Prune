@@ -1,5 +1,7 @@
 #pragma once
 
+#include "inspector.hpp"
+
 namespace prune {
 
     class SandboxScene;
@@ -9,6 +11,8 @@ namespace prune {
         void render(SandboxScene& scene);
 
     private:
+        Inspector m_inspector;
+
         bool m_show_view_grid_options = false;
         bool m_show_outliner = true;
         bool m_show_inspector = true;

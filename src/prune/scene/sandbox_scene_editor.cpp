@@ -159,35 +159,6 @@ namespace prune {
         }
     }
 
-    std::string SandboxScene::make_unique_name(std::string desired, GameObjectId ignore_id) const
-    {
-        if (desired.empty()) {
-            desired = "Object";
-        }
-
-        auto is_taken = [&](const std::string& name) {
-            for (const auto& obj : m_objects.objects()) {
-                if (obj.id != ignore_id && obj.name == name) {
-                    return true;
-                }
-            }
-            return false;
-        };
-
-        if (!is_taken(desired)) {
-            return desired;
-        }
-
-        int suffix = 1;
-        std::string candidate;
-
-        do {
-            candidate = desired + " " + std::to_string(suffix++);
-        } while (is_taken(candidate));
-
-        return candidate;
-    }
-
     float SandboxScene::random_color_component()
     {
         return m_color_dist(m_rng);

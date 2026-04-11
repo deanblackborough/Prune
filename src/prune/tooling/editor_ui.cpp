@@ -1,7 +1,8 @@
-#include "prune/tooling/editor_ui.hpp"
-
 #include "imgui.h"
+
 #include "prune/scene/sandbox_scene.hpp"
+#include "prune/tooling/editor_ui.hpp"
+#include "prune/tooling/inspector.hpp"
 
 namespace prune {
 
@@ -59,7 +60,11 @@ namespace prune {
             ImGui::SetNextWindowSize(ImVec2(300.0f, 380.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Inspector", &m_show_inspector)) {
-                scene.draw_inspector();
+                m_inspector.draw(
+                    scene.get_object_manager(),
+                    scene.get_player_id(),
+                    scene.get_player_controller()
+                );
             }
             ImGui::End();
         }
