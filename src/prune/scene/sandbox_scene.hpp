@@ -10,6 +10,19 @@
 
 namespace prune {
 
+    struct GridOptions {
+        bool show_grid = true;
+        bool snap_to_grid = true;
+        int grid_size = 32;
+        int nudge_step = 8;
+        int shift_nudge_steps = 4;
+
+        int min_grid_size = 32;
+        int max_grid_size = 128;
+        int min_nudge_step = 8;
+        int max_nudge_step = 32;
+    };
+
     class SandboxScene {
     public:
         SandboxScene(int window_width, int window_height);
@@ -18,10 +31,11 @@ namespace prune {
         void on_exit();
         void update(float dt, const Input& input);
         void render(SDL_Renderer* renderer);
-        void draw_view_grid_options();
+
         GameObjectManager& get_object_manager();
         [[nodiscard]] GameObjectId get_player_id() const;
         PlayerController& get_player_controller();
+        GridOptions& get_grid_options();
 
     private:
         [[nodiscard]] GameObject* player_object() noexcept;
@@ -64,16 +78,7 @@ namespace prune {
 
         bool highlight_selected = true;
 
-        // Grid controls
-        bool show_grid = true;
-        bool snap_to_grid = true;
-        int grid_size = 32;
-        int min_grid_size = 32;
-        int max_grid_size = 128;
-        int nudge_step = 8;
-        int shift_nudge_steps = 4;
-        int min_nudge_step = 8;
-        int max_nudge_step = 32;
+        GridOptions m_grid_options;
 
         // Camera controls
         float camera_x = 0.0f;

@@ -4,6 +4,7 @@
 #include "prune/tooling/inspector.hpp"
 #include "prune/tooling/controls.hpp"
 #include "prune/tooling/stats.hpp"
+#include "prune/tooling/options.hpp"
 
 namespace prune {
 
@@ -18,6 +19,7 @@ namespace prune {
         Inspector m_inspector;
         Controls m_controls;
         Stats m_stats;
+        Options m_options;
 
         bool m_show_view_grid_options = false;
         bool m_show_outliner = true;

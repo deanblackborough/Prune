@@ -39,7 +39,7 @@ namespace prune {
             ImGui::SetNextWindowSize(ImVec2(270.0f, 260.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("View & Grid Options", &m_show_view_grid_options)) {
-                scene.draw_view_grid_options();
+                m_options.draw(scene.get_grid_options());
             }
             ImGui::End();
         }

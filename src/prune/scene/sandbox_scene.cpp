@@ -8,37 +8,6 @@
 
 namespace prune {
 
-    namespace {
-        bool contains_case_insensitive(std::string_view text, std::string_view query)
-        {
-            if (query.empty()) {
-                return true;
-            }
-
-            auto to_lower = [](unsigned char c) {
-                return static_cast<char>(std::tolower(c));
-            };
-
-            for (std::size_t i = 0; i + query.size() <= text.size(); ++i) {
-                bool matches = true;
-
-                for (std::size_t j = 0; j < query.size(); ++j) {
-                    if (to_lower(static_cast<unsigned char>(text[i + j])) !=
-                        to_lower(static_cast<unsigned char>(query[j]))) {
-                        matches = false;
-                        break;
-                        }
-                }
-
-                if (matches) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
-
     SandboxScene::SandboxScene(int window_width, int window_height)
         : m_window_width(window_width)
         , m_window_height(window_height)
@@ -105,6 +74,10 @@ namespace prune {
 
     PlayerController & SandboxScene::get_player_controller() {
         return m_player_controller;
+    }
+
+    GridOptions& SandboxScene::get_grid_options() {
+        return m_grid_options;
     }
 
     void SandboxScene::update(float dt, const Input& input)
@@ -214,11 +187,11 @@ namespace prune {
 
     void SandboxScene::draw_grid(SDL_Renderer* renderer) const
     {
-        if (!show_grid || grid_size <= 1) {
+        if (!m_grid_options.show_grid || m_grid_options.grid_size <= 1) {
             return;
         }
 
-        const int scene_grid_size = std::max(1, grid_size);
+        const int scene_grid_size = std::max(1, m_grid_options.grid_size);
 
         const float left_world = camera_x;
         const float right_world = camera_x + static_cast<float>(m_window_width);
@@ -256,7 +229,7 @@ namespace prune {
 
     float SandboxScene::snap_value_to_grid(float value) const noexcept
     {
-        const int scene_grid_size = std::max(1, grid_size);
+        const int scene_grid_size = std::max(1, m_grid_options.grid_size);
         return std::round(value / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
     }
 
@@ -264,26 +237,6 @@ namespace prune {
     {
         object.transform.x = snap_value_to_grid(object.transform.x);
         object.transform.y = snap_value_to_grid(object.transform.y);
-    }
-
-    void SandboxScene::draw_view_grid_options()
-    {
-        if (ImGui::CollapsingHeader("View", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Checkbox("Highlight selected", &highlight_selected);
-        }
-
-        if (ImGui::CollapsingHeader("Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Checkbox("Show", &show_grid);
-            ImGui::Checkbox("Snap to grid", &snap_to_grid);
-            ImGui::SliderInt("Grid size", &grid_size, min_grid_size, max_grid_size);
-            ImGui::SliderInt("Nudge step", &nudge_step, min_nudge_step, max_nudge_step);
-        }
-
-        if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::SliderFloat("Camera X", &camera_x, -4096.0f, 4096.0f);
-            ImGui::SliderFloat("Camera Y", &camera_y, -4096.0f, 4096.0f);
-            ImGui::SliderFloat("Speed", &camera_speed, 64.0f, 512.0f);
-        }
     }
 
     GameObject* SandboxScene::player_object() noexcept

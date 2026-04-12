@@ -135,16 +135,16 @@ namespace prune {
             return;
         }
 
-        int step = snap_to_grid
-            ? std::max(1, grid_size)
-            : std::max(1, nudge_step);
+        int step = m_grid_options.snap_to_grid
+            ? std::max(1, m_grid_options.grid_size)
+            : std::max(1, m_grid_options.nudge_step);
 
         const bool shift_down =
             input.is_key_down(SDL_SCANCODE_LSHIFT) ||
             input.is_key_down(SDL_SCANCODE_RSHIFT);
 
         if (shift_down) {
-            step *= shift_nudge_steps;
+            step *= m_grid_options.shift_nudge_steps;
         }
 
         move_object(
@@ -154,7 +154,7 @@ namespace prune {
             false
         );
 
-        if (snap_to_grid) {
+        if (m_grid_options.snap_to_grid) {
             snap_object_to_grid(*selected);
         }
     }
