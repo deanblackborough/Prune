@@ -51,7 +51,6 @@ namespace prune {
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
                 m_outliner.draw(scene.get_object_manager(), 1.0f, 1.0f);
-                //scene.draw_outliner();
             }
             ImGui::End();
         }
@@ -81,13 +80,9 @@ namespace prune {
             );
             ImGui::SetNextWindowSize(ImVec2(350.0f, 150.0f), ImGuiCond_FirstUseEver);
 
-            ImGui::Begin("Controls", &m_show_controls);
-
-            ImGui::TextWrapped("WASD keys move the player");
-            ImGui::TextWrapped("Arrow keys move selected non-player object");
-            ImGui::TextWrapped("Hold Shift for larger movements");
-            ImGui::TextWrapped("IJKL keys move the editor camera");
-
+            if (ImGui::Begin("Controls", &m_show_controls)) {
+                m_controls.draw();
+            }
             ImGui::End();
         }
 

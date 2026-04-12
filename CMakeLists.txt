@@ -25,6 +25,7 @@ add_executable(Prune
         src/prune/tooling/editor_ui.cpp
         src/prune/tooling/outliner.cpp
         src/prune/tooling/inspector.cpp
+        src/prune/tooling/controls.cpp
 
         external/imgui/imgui.cpp
         external/imgui/imgui_draw.cpp

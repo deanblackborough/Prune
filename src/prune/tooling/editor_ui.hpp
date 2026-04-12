@@ -1,7 +1,9 @@
 #pragma once
 
+#include "controls.hpp"
 #include "prune/tooling/outliner.hpp"
 #include "prune/tooling/inspector.hpp"
+#include "prune/tooling/controls.hpp"
 
 namespace prune {
 
@@ -14,6 +16,7 @@ namespace prune {
     private:
         Outliner m_outliner;
         Inspector m_inspector;
+        Controls m_controls;
 
         bool m_show_view_grid_options = false;
         bool m_show_outliner = true;
