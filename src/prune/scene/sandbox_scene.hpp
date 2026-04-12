@@ -10,6 +10,10 @@
 
 namespace prune {
 
+    struct SceneOptions {
+        bool highlight_selected = true;
+    };
+
     struct GridOptions {
         bool show_grid = true;
         bool snap_to_grid = true;
@@ -36,6 +40,7 @@ namespace prune {
         [[nodiscard]] GameObjectId get_player_id() const;
         PlayerController& get_player_controller();
         GridOptions& get_grid_options();
+        SceneOptions& get_scene_options();
 
     private:
         [[nodiscard]] GameObject* player_object() noexcept;
@@ -76,9 +81,8 @@ namespace prune {
         int m_window_width = 0;
         int m_window_height = 0;
 
-        bool highlight_selected = true;
-
         GridOptions m_grid_options;
+        SceneOptions m_scene_options;
 
         // Camera controls
         float camera_x = 0.0f;

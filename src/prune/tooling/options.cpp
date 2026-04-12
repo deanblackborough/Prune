@@ -5,12 +5,13 @@
 namespace prune {
 
     void Options::draw(
+        SceneOptions& scene_options,
         GridOptions& grid_options
     )
     {
-        /*if (ImGui::CollapsingHeader("View", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Checkbox("Highlight selected", &highlight_selected);
-        }*/
+        if (ImGui::CollapsingHeader("View", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox("Highlight selected", &scene_options.highlight_selected);
+        }
 
         if (ImGui::CollapsingHeader("Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Checkbox("Show", &grid_options.show_grid);
