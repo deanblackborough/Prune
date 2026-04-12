@@ -19,7 +19,6 @@ namespace prune {
         void update(float dt, const Input& input);
         void render(SDL_Renderer* renderer);
         void draw_view_grid_options();
-        void draw_debug_ui();
         GameObjectManager& get_object_manager();
         [[nodiscard]] GameObjectId get_player_id() const;
         PlayerController& get_player_controller();

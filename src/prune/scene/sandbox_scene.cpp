@@ -286,28 +286,6 @@ namespace prune {
         }
     }
 
-    void SandboxScene::draw_debug_ui()
-    {
-        ImGui::TextUnformatted("Sandbox");
-        ImGui::Text("Window: %d x %d", m_window_width, m_window_height);
-        ImGui::Text("Object count: %d", static_cast<int>(m_objects.count()));
-        ImGui::Text("Selected id: %u", m_objects.selected_id());
-        ImGui::Text("Player id: %u", m_player_id);
-        ImGui::Text("Grid: %s", show_grid ? "On" : "Off");
-        ImGui::Text("Snap: %s", snap_to_grid ? "On" : "Off");
-        ImGui::Text("Grid size: %d", grid_size);
-        ImGui::Text("Camera: %.1f, %.1f", camera_x, camera_y);
-        ImGui::Text("Camera speed: %.1f", camera_speed);
-
-        if (const GameObject* player = player_object()) {
-            ImGui::Separator();
-            ImGui::TextUnformatted("Player");
-            ImGui::Text("World Position: %.1f, %.1f", player->transform.x, player->transform.y);
-            ImGui::Text("Velocity: %.1f, %.1f", player->velocity.x, player->velocity.y);
-            ImGui::Text("Speed: %.1f", m_player_controller.speed());
-        }
-    }
-
     GameObject* SandboxScene::player_object() noexcept
     {
         return m_objects.get_by_id(m_player_id);

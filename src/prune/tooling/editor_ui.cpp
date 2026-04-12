@@ -2,7 +2,6 @@
 
 #include "prune/scene/sandbox_scene.hpp"
 #include "prune/tooling/editor_ui.hpp"
-#include "prune/tooling/inspector.hpp"
 
 namespace prune {
 
@@ -16,7 +15,7 @@ namespace prune {
             if (ImGui::BeginMenu("View")) {
                 ImGui::MenuItem("Outliner", nullptr, &m_show_outliner);
                 ImGui::MenuItem("Inspector", nullptr, &m_show_inspector);
-                ImGui::MenuItem("Status", nullptr, &m_show_status);
+                ImGui::MenuItem("Stats", nullptr, &m_show_stats);
                 ImGui::EndMenu();
             }
 
@@ -86,18 +85,12 @@ namespace prune {
             ImGui::End();
         }
 
-        if (m_show_status) {
+        if (m_show_stats) {
             ImGui::SetNextWindowPos(ImVec2(10.0f, 34.0f), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(220.0f, 160.0f), ImGuiCond_FirstUseEver);
 
-            if (ImGui::Begin("Debug / Stats", &m_show_status)) {
-                ImGuiIO& io = ImGui::GetIO();
-
-                ImGui::Text("FPS: %.1f", io.Framerate);
-                ImGui::Text("Frame time: %.3f ms", 1000.0f / io.Framerate);
-                ImGui::Separator();
-
-                scene.draw_debug_ui();
+            if (ImGui::Begin("Stats", &m_show_inspector)) {
+                m_stats.draw(scene.get_object_manager(), scene.get_player_id());
             }
             ImGui::End();
         }
