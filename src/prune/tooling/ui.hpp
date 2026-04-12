@@ -1,16 +1,15 @@
 #pragma once
 
-#include "controls.hpp"
-#include "stats.hpp"
 #include "prune/tooling/outliner.hpp"
 #include "prune/tooling/inspector.hpp"
 #include "prune/tooling/controls.hpp"
+#include "prune/tooling/stats.hpp"
 
 namespace prune {
 
     class SandboxScene;
 
-    class EditorUI {
+    class Ui {
     public:
         void render(SandboxScene& scene);
 

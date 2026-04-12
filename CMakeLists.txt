@@ -22,7 +22,7 @@ add_executable(Prune
         src/prune/scene/sandbox_scene.cpp
         src/prune/scene/sandbox_scene_editor.cpp
 
-        src/prune/tooling/editor_ui.cpp
+        src/prune/tooling/ui.cpp
         src/prune/tooling/outliner.cpp
         src/prune/tooling/inspector.cpp
         src/prune/tooling/controls.cpp

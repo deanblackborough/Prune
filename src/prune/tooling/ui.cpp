@@ -1,11 +1,11 @@
 #include "imgui.h"
 
 #include "prune/scene/sandbox_scene.hpp"
-#include "prune/tooling/editor_ui.hpp"
+#include "prune/tooling/ui.hpp"
 
 namespace prune {
 
-    void EditorUI::render(SandboxScene& scene) {
+    void Ui::render(SandboxScene& scene) {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Options")) {
                 ImGui::MenuItem("Viewport & Grid", nullptr, &m_show_view_grid_options);
