@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../scene/game_object.hpp"
-#include "../scene/game_object_manager.hpp"
-#include "../scene/player_controller.hpp"
+#include "prune/scene/game_object.hpp"
+#include "prune/scene/game_object_manager.hpp"
+#include "prune/scene/player_controller.hpp"
 
 namespace prune {
 

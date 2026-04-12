@@ -1,4 +1,4 @@
-#include "time.hpp"
+#include "prune/core/time.hpp"
 #include <SDL2/SDL.h>
 
 namespace prune {

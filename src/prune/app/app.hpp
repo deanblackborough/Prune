@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../core/input.hpp"
-#include "../core/window.hpp"
-#include "../scene/sandbox_scene.hpp"
+#include "prune/core/input.hpp"
+#include "prune/core/window.hpp"
+#include "prune/scene/sandbox_scene.hpp"
 
 #include <SDL2/SDL.h>
 #include <memory>

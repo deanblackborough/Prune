@@ -1,10 +1,10 @@
-#include "sandbox_scene.hpp"
-
-#include <SDL2/SDL.h>
 #include <algorithm>
 #include <string>
 
+#include <SDL2/SDL.h>
 #include "imgui.h"
+
+#include "prune/scene/sandbox_scene.hpp"
 #include "prune/core/input.hpp"
 
 namespace prune {
@@ -158,36 +158,4 @@ namespace prune {
             snap_object_to_grid(*selected);
         }
     }
-
-    float SandboxScene::random_color_component()
-    {
-        return m_color_dist(m_rng);
-    }
-
-    GameObjectId SandboxScene::create_block(float x, float y)
-    {
-        GameObject block;
-        block.transform.x = x;
-        block.transform.y = y;
-        block.rectangle.width = 32;
-        block.rectangle.height = 32;
-        block.rectangle.color[0] = random_color_component();
-        block.rectangle.color[1] = random_color_component();
-        block.rectangle.color[2] = random_color_component();
-        block.active = true;
-        block.visible = true;
-        block.solid = true;
-        block.is_player = false;
-
-        const GameObjectId id = m_objects.create_object(block);
-
-        if (GameObject* created = m_objects.get_by_id(id)) {
-            created->name = "Block " + std::to_string(id);
-        }
-
-        m_objects.select(id);
-
-        return id;
-    }
-
 } // namespace prune

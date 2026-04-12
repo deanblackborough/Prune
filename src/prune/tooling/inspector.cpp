@@ -1,6 +1,6 @@
 #include "imgui.h"
 
-#include "inspector.hpp"
+#include "prune/tooling/inspector.hpp"
 
 namespace prune {
 

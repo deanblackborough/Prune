@@ -1,4 +1,4 @@
-#include "window.hpp"
+#include "prune/core/window.hpp"
 #include <stdexcept>
 
 namespace prune {

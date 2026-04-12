@@ -1,6 +1,7 @@
 #pragma once
 
-#include "inspector.hpp"
+#include "prune/tooling/outliner.hpp"
+#include "prune/tooling/inspector.hpp"
 
 namespace prune {
 
@@ -11,6 +12,7 @@ namespace prune {
         void render(SandboxScene& scene);
 
     private:
+        Outliner m_outliner;
         Inspector m_inspector;
 
         bool m_show_view_grid_options = false;

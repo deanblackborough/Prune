@@ -50,7 +50,8 @@ namespace prune {
             ImGui::SetNextWindowSize(ImVec2(270.0f, 300.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
-                scene.draw_outliner();
+                m_outliner.draw(scene.get_object_manager(), 1.0f, 1.0f);
+                //scene.draw_outliner();
             }
             ImGui::End();
         }

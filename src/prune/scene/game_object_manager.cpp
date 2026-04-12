@@ -1,4 +1,4 @@
-#include "game_object_manager.hpp"
+#include "prune/scene/game_object_manager.hpp"
 
 namespace prune {
 

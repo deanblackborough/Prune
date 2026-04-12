@@ -1,14 +1,12 @@
 #pragma once
 
 #include <array>
-#include <random>
-#include <string>
 
 #include <SDL2/SDL.h>
 
-#include "game_object.hpp"
-#include "game_object_manager.hpp"
-#include "player_controller.hpp"
+#include "prune/scene/game_object.hpp"
+#include "prune/scene/game_object_manager.hpp"
+#include "prune/scene/player_controller.hpp"
 
 namespace prune {
 
@@ -21,7 +19,6 @@ namespace prune {
         void update(float dt, const Input& input);
         void render(SDL_Renderer* renderer);
         void draw_view_grid_options();
-        void draw_outliner();
         void draw_debug_ui();
         GameObjectManager& get_object_manager();
         [[nodiscard]] GameObjectId get_player_id() const;
@@ -35,9 +32,6 @@ namespace prune {
         [[nodiscard]] static GameObject create_initial_block();
 
         [[nodiscard]] Transform next_block_spawn_position() const noexcept;
-
-        GameObjectId create_block(float x, float y);
-        [[nodiscard]] float random_color_component();
 
         // Game logic
         void update_game(float dt, const Input& input);
@@ -63,18 +57,10 @@ namespace prune {
         [[nodiscard]] float snap_value_to_grid(float value) const noexcept;
         void snap_object_to_grid(GameObject& object) const noexcept;
 
-        void draw_object_search();
-        void draw_selected_object();
-        void draw_delete_and_clone();
-
         GameObjectManager m_objects;
         PlayerController m_player_controller;
 
         GameObjectId m_player_id = kInvalidGameObjectId;
-
-        // Random number generation
-        std::mt19937 m_rng{std::random_device{}()};
-        std::uniform_real_distribution<float> m_color_dist{0.2f, 1.0f};
 
         int m_window_width = 0;
         int m_window_height = 0;

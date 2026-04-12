@@ -1,6 +1,6 @@
 #pragma once
 
-#include "game_object.hpp"
+#include "prune/scene/game_object.hpp"
 
 #include <vector>
 

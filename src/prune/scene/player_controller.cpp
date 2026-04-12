@@ -1,7 +1,7 @@
-#include "player_controller.hpp"
+#include "prune/scene/player_controller.hpp"
 
-#include "game_object.hpp"
-#include "../core/input.hpp"
+#include "prune/scene/game_object.hpp"
+#include "prune/core/input.hpp"
 
 #include <SDL2/SDL.h>
 #include <algorithm>
