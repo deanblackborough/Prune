@@ -31,8 +31,6 @@ namespace prune {
         [[nodiscard]] static GameObject create_player();
         [[nodiscard]] static GameObject create_initial_block();
 
-        [[nodiscard]] Transform next_block_spawn_position() const noexcept;
-
         // Game logic
         void update_game(float dt, const Input& input);
         void update_player(float dt, const Input& input);
@@ -66,8 +64,6 @@ namespace prune {
         int m_window_height = 0;
 
         bool highlight_selected = true;
-
-        std::array<char, 128> object_search{};
 
         // Grid controls
         bool show_grid = true;

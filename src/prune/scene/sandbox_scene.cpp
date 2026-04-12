@@ -329,18 +329,6 @@ namespace prune {
                (a_bounds.y + a_bounds.height) > b_bounds.y;
     }
 
-    Transform SandboxScene::next_block_spawn_position() const noexcept
-    {
-        constexpr float offset_step = 32.0f;
-
-        const float offset = static_cast<float>(m_objects.count()) * offset_step;
-
-        return Transform{
-            camera_x + (static_cast<float>(m_window_width) * 0.5f) + offset,
-            camera_y + (static_cast<float>(m_window_height) * 0.5f) + offset
-        };
-    }
-
     void SandboxScene::resolve_player_collisions(GameObject& player)
     {
         for (const auto& object : m_objects.objects()) {
