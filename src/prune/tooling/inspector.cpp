@@ -7,11 +7,12 @@ namespace prune {
     void Inspector::draw(
         GameObjectManager& objects,
         GameObjectId player_id,
-        PlayerController& player_controller
+        PlayerController& player_controller,
+        GridOptions& grid_options
     ) {
         draw_selected(objects, player_id);
         draw_actions(objects, player_id);
-        draw_properties(objects, player_id, player_controller);
+        draw_properties(objects, player_id, player_controller, grid_options);
         draw_computed(objects);
         draw_flags(objects, player_id);
     }
@@ -94,7 +95,8 @@ namespace prune {
     void Inspector::draw_properties(
         GameObjectManager& objects,
         GameObjectId player_id,
-        PlayerController& player_controller
+        PlayerController& player_controller,
+        GridOptions& grid_options
     ) {
         GameObject* selected = objects.selected_object();
         if (!selected) {
@@ -107,20 +109,18 @@ namespace prune {
         if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
             if (is_player) {
                 float speed = player_controller.speed();
-                if (ImGui::SliderFloat("Speed", &speed, 32.0f, 512.0f)) {
+                if (ImGui::SliderFloat("Speed", &speed, 0.0f, 512.0f, "%.2f")) {
                     player_controller.set_speed(speed);
                 }
             }
 
-            ImGui::DragFloat("Object X", &selected->transform.x, 1.0f);
-            ImGui::DragFloat("Object Y", &selected->transform.y, 1.0f);
+            ImGui::SliderFloat("Object X", &selected->transform.x, -4096.0f, 4096.0f, "%.2f");
+            ImGui::SliderFloat("Object Y", &selected->transform.y, -4096.0f, 4096.0f, "%.2f");
 
-            /*
-             * @todo We need to get this to work
-            if (snap_to_grid && !is_player) {
-                snap_object_to_grid(*selected);
+            if (grid_options.snap_to_grid && !is_player) {
+                // @todo We need to get this working
+                //snap_object_to_grid(*selected);
             }
-            */
 
             ImGui::SliderInt("Width", &selected->rectangle.width, 16, 256);
             ImGui::SliderInt("Height", &selected->rectangle.height, 16, 256);

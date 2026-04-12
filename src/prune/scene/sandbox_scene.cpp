@@ -84,6 +84,10 @@ namespace prune {
         return m_scene_options;
     }
 
+    Camera& SandboxScene::get_camera() {
+        return m_camera;
+    }
+
     void SandboxScene::update(float dt, const Input& input)
     {
         update_editor(dt, input);
@@ -119,16 +123,16 @@ namespace prune {
     Transform SandboxScene::screen_to_world(int screen_x, int screen_y) const noexcept
     {
         return {
-            static_cast<float>(screen_x) + camera_x,
-            static_cast<float>(screen_y) + camera_y
+            static_cast<float>(screen_x) + m_camera.x,
+            static_cast<float>(screen_y) + m_camera.y
         };
     }
 
     SDL_Rect SandboxScene::world_to_screen_rect(const GameObject& object) const noexcept
     {
         return SDL_Rect{
-            static_cast<int>(std::round(object.transform.x - camera_x)),
-            static_cast<int>(std::round(object.transform.y - camera_y)),
+            static_cast<int>(std::round(object.transform.x - m_camera.x)),
+            static_cast<int>(std::round(object.transform.y - m_camera.y)),
             object.rectangle.width,
             object.rectangle.height
         };
@@ -197,10 +201,10 @@ namespace prune {
 
         const int scene_grid_size = std::max(1, m_grid_options.grid_size);
 
-        const float left_world = camera_x;
-        const float right_world = camera_x + static_cast<float>(m_window_width);
-        const float top_world = camera_y;
-        const float bottom_world = camera_y + static_cast<float>(m_window_height);
+        const float left_world = m_camera.x;
+        const float right_world = m_camera.x + static_cast<float>(m_window_width);
+        const float top_world = m_camera.y;
+        const float bottom_world = m_camera.y + static_cast<float>(m_window_height);
 
         const float first_vertical_world =
             std::floor(left_world / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
@@ -216,7 +220,7 @@ namespace prune {
             if (world_x > right_world) {
                 break;
             }
-            const int screen_x = static_cast<int>(std::round(world_x - camera_x));
+            const int screen_x = static_cast<int>(std::round(world_x - m_camera.x));
             SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, m_window_height);
         }
 
@@ -226,7 +230,7 @@ namespace prune {
             if (world_y > bottom_world) {
                 break;
             }
-            const int screen_y = static_cast<int>(std::round(world_y - camera_y));
+            const int screen_y = static_cast<int>(std::round(world_y - m_camera.y));
             SDL_RenderDrawLine(renderer, 0, screen_y, m_window_width, screen_y);
         }
     }

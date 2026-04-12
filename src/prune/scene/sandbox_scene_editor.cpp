@@ -73,9 +73,9 @@ namespace prune {
             return;
         }
 
-        const float move_amount = camera_speed * dt;
-        camera_x += move_x * move_amount;
-        camera_y += move_y * move_amount;
+        const float move_amount = m_camera.speed * dt;
+        m_camera.x += move_x * move_amount;
+        m_camera.y += move_y * move_amount;
     }
 
     void SandboxScene::handle_scene_click(const Input& input)

@@ -39,7 +39,7 @@ namespace prune {
             ImGui::SetNextWindowSize(ImVec2(270.0f, 260.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("View & Grid Options", &m_show_view_grid_options)) {
-                m_options.draw(scene.get_scene_options(), scene.get_grid_options());
+                m_options.draw(scene.get_scene_options(), scene.get_grid_options(), scene.get_camera());
             }
             ImGui::End();
         }
@@ -62,7 +62,8 @@ namespace prune {
                 m_inspector.draw(
                     scene.get_object_manager(),
                     scene.get_player_id(),
-                    scene.get_player_controller()
+                    scene.get_player_controller(),
+                    scene.get_grid_options()
                 );
             }
             ImGui::End();
