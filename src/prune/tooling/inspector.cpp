@@ -1,6 +1,7 @@
 #include "imgui.h"
 
 #include "prune/tooling/inspector.hpp"
+#include "prune/tooling/imgui/property_table.hpp"
 
 namespace prune {
 
@@ -107,6 +108,22 @@ namespace prune {
         const bool is_player = (selected->id == player_id);
 
         if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+            if (tooling::imgui::property_table::begin("Properties")) {
+                tooling::imgui::property_table::slider_float("X", "##x", selected->transform.x, -4096.0f, 4096.0f, "%.2f");
+                tooling::imgui::property_table::slider_float("Y", "##y", selected->transform.y, -4096.0f, 4096.0f, "%.2f");
+
+                ImGui::Separator();
+
+                tooling::imgui::property_table::slider_int("Width", "##width", selected->rectangle.width, 16, 256);
+                tooling::imgui::property_table::slider_int("Height", "##height", selected->rectangle.height, 16, 256);
+
+                ImGui::Separator();
+
+                tooling::imgui::property_table::color3("Colour", "##colour", selected->rectangle.color);
+                tooling::imgui::property_table::end();
+            }
+
             if (is_player) {
                 float speed = player_controller.speed();
                 if (ImGui::SliderFloat("Speed", &speed, 0.0f, 512.0f, "%.2f")) {

@@ -29,6 +29,8 @@ add_executable(Prune
         src/prune/tooling/options.cpp
         src/prune/tooling/stats.cpp
 
+        src/prune/tooling/imgui/property_table.cpp
+
         external/imgui/imgui.cpp
         external/imgui/imgui_draw.cpp
         external/imgui/imgui_tables.cpp
