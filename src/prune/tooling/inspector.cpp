@@ -12,7 +12,6 @@ namespace prune {
         GridOptions& grid_options
     ) {
         draw_selected(objects, player_id);
-        draw_actions(objects, player_id);
         draw_properties(objects, player_id, player_controller, grid_options);
         draw_computed(objects);
         draw_flags(objects, player_id);
@@ -23,6 +22,7 @@ namespace prune {
         GameObjectId player_id
     ) {
         GameObject* selected = objects.selected_object();
+
         if (!selected) {
             ImGui::TextUnformatted("No object selected.");
             return;
@@ -30,66 +30,64 @@ namespace prune {
 
         const bool is_player = (selected->id == player_id);
 
-        ImGui::Text("Id: %u", selected->id);
+        if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (tooling::imgui::property_table::begin("Selected")) {
 
-        if (is_player) {
-            ImGui::Text("Name: %s", selected->name.c_str());
-        } else {
-            char name_buffer[128]{};
-            std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
+                tooling::imgui::property_table::text("Id", std::to_string(selected->id).c_str());
 
-            ImGui::InputText("Name", name_buffer, sizeof(name_buffer));
-            if (ImGui::IsItemDeactivatedAfterEdit()) {
-                selected->name = objects.make_unique_name(name_buffer, selected->id);
-            }
-        }
-    }
+                if (is_player) {
+                    tooling::imgui::property_table::text("Name", selected->name.c_str());
+                }
+                else {
+                    char name_buffer[128]{};
+                    std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
 
-    void Inspector::draw_actions(
-        GameObjectManager& objects,
-        GameObjectId player_id
-    ) {
-        GameObject* selected = objects.selected_object();
-        if (!selected) {
-            ImGui::TextUnformatted("No object selected.");
-            return;
-        }
+                    tooling::imgui::property_table::input_text("Name", "##name", name_buffer, sizeof(name_buffer));
 
-        const bool is_player = (selected->id == player_id);
-
-        if (!is_player) {
-            if (ImGui::Button("Delete")) {
-                const GameObjectId id_to_remove = selected->id;
-                objects.remove_object(id_to_remove);
-                return;
-            }
-
-            ImGui::SameLine();
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
-
-            if (ImGui::Button("Clone")) {
-                const std::string source_name = selected->name;
-
-                GameObject clone = *selected;
-                clone.is_player = false;
-                clone.transform.x += 32.0f;
-                clone.transform.y += 32.0f;
-
-                const GameObjectId clone_id = objects.create_object(clone);
-
-                if (GameObject* created = objects.get_by_id(clone_id)) {
-                    created->name = objects.make_unique_name(source_name, clone_id);
+                    if (ImGui::IsItemDeactivatedAfterEdit()) {
+                        selected->name = objects.make_unique_name(name_buffer, selected->id);
+                    }
                 }
 
-                objects.select(clone_id);
+                if (!is_player) {
 
-                ImGui::PopStyleColor(3);
-                return;
+                    if (tooling::imgui::property_table::button("Actions", "Delete")) {
+                        const GameObjectId id_to_remove = selected->id;
+                        objects.remove_object(id_to_remove);
+
+                        tooling::imgui::property_table::end();
+                        return;
+                    }
+
+                    prune::tooling::imgui::property_table::ButtonStyle purple_style{
+                        .normal = ImVec4(0.4f, 0.2f, 0.6f, 1.0f),
+                        .hovered = ImVec4(0.5f, 0.3f, 0.7f, 1.0f),
+                        .active = ImVec4(0.3f, 0.1f, 0.5f, 1.0f)
+                    };
+
+                    if (tooling::imgui::property_table::button("Actions", "Clone", &purple_style)) {
+                        const std::string source_name = selected->name;
+
+                        GameObject clone = *selected;
+                        clone.is_player = false;
+                        clone.transform.x += 32.0f;
+                        clone.transform.y += 32.0f;
+
+                        const GameObjectId clone_id = objects.create_object(clone);
+
+                        if (GameObject* created = objects.get_by_id(clone_id)) {
+                            created->name = objects.make_unique_name(source_name, clone_id);
+                        }
+
+                        objects.select(clone_id);
+
+                        tooling::imgui::property_table::end();
+                        return;
+                    }
+                }
+
+                tooling::imgui::property_table::end();
             }
-            ImGui::PopStyleColor(3);
         }
     }
 
@@ -107,42 +105,44 @@ namespace prune {
 
         const bool is_player = (selected->id == player_id);
 
-        if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
-
-            if (tooling::imgui::property_table::begin("Properties")) {
+        if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (tooling::imgui::property_table::begin("##transform")) {
                 tooling::imgui::property_table::slider_float("X", "##x", selected->transform.x, -4096.0f, 4096.0f, "%.2f");
                 tooling::imgui::property_table::slider_float("Y", "##y", selected->transform.y, -4096.0f, 4096.0f, "%.2f");
+                tooling::imgui::property_table::end();
+            }
+        }
 
-                ImGui::Separator();
-
+        if (ImGui::CollapsingHeader("Size", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (tooling::imgui::property_table::begin("##size")) {
                 tooling::imgui::property_table::slider_int("Width", "##width", selected->rectangle.width, 16, 256);
                 tooling::imgui::property_table::slider_int("Height", "##height", selected->rectangle.height, 16, 256);
+                tooling::imgui::property_table::end();
+            }
+        }
 
-                ImGui::Separator();
-
+        if (ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (tooling::imgui::property_table::begin("##rendering")) {
                 tooling::imgui::property_table::color3("Colour", "##colour", selected->rectangle.color);
                 tooling::imgui::property_table::end();
             }
+        }
 
-            if (is_player) {
-                float speed = player_controller.speed();
-                if (ImGui::SliderFloat("Speed", &speed, 0.0f, 512.0f, "%.2f")) {
-                    player_controller.set_speed(speed);
+        if (is_player) {
+            if (ImGui::CollapsingHeader("Player", ImGuiTreeNodeFlags_DefaultOpen)) {
+                if (tooling::imgui::property_table::begin("##player")) {
+                    float speed = player_controller.speed();
+                    tooling::imgui::property_table::slider_float("Speed", "##speed", speed, 0.0f, 512.0f, "%.2f");
+                    tooling::imgui::property_table::end();
                 }
             }
-
-            ImGui::SliderFloat("Object X", &selected->transform.x, -4096.0f, 4096.0f, "%.2f");
-            ImGui::SliderFloat("Object Y", &selected->transform.y, -4096.0f, 4096.0f, "%.2f");
-
-            if (grid_options.snap_to_grid && !is_player) {
-                // @todo We need to get this working
-                //snap_object_to_grid(*selected);
-            }
-
-            ImGui::SliderInt("Width", &selected->rectangle.width, 16, 256);
-            ImGui::SliderInt("Height", &selected->rectangle.height, 16, 256);
-            ImGui::ColorEdit3("Colour", selected->rectangle.color);
         }
+
+        if (grid_options.snap_to_grid && !is_player) {
+            // @todo We need to get this working
+            //snap_object_to_grid(*selected);
+        }
+ 
     }
 
     void Inspector::draw_computed(
