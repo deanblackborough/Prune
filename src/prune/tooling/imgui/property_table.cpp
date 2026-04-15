@@ -105,4 +105,32 @@ namespace prune::tooling::imgui::property_table
 
         return result;
     }
+
+    bool button_raw(const char* text, const ButtonStyle* style)
+    {
+        int color_count = 0;
+
+        if (style) {
+            if (style->normal.has_value()) {
+                ImGui::PushStyleColor(ImGuiCol_Button, style->normal.value());
+                ++color_count;
+            }
+            if (style->hovered.has_value()) {
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, style->hovered.value());
+                ++color_count;
+            }
+            if (style->active.has_value()) {
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, style->active.value());
+                ++color_count;
+            }
+        }
+
+        const bool result = ImGui::Button(text);
+
+        if (color_count > 0) {
+            ImGui::PopStyleColor(color_count);
+        }
+
+        return result;
+    }
 }

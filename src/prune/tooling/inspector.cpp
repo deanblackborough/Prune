@@ -51,7 +51,11 @@ namespace prune {
 
                 if (!is_player) {
 
-                    if (tooling::imgui::property_table::button("Actions", "Delete")) {
+                    ImGui::Separator();
+
+                    tooling::imgui::property_table::begin_row("Actions");
+
+                    if (tooling::imgui::property_table::button_raw("Delete")) {
                         const GameObjectId id_to_remove = selected->id;
                         objects.remove_object(id_to_remove);
 
@@ -59,13 +63,9 @@ namespace prune {
                         return;
                     }
 
-                    prune::tooling::imgui::property_table::ButtonStyle purple_style{
-                        .normal = ImVec4(0.4f, 0.2f, 0.6f, 1.0f),
-                        .hovered = ImVec4(0.5f, 0.3f, 0.7f, 1.0f),
-                        .active = ImVec4(0.3f, 0.1f, 0.5f, 1.0f)
-                    };
+                    ImGui::SameLine();
 
-                    if (tooling::imgui::property_table::button("Actions", "Clone", &purple_style)) {
+                    if (tooling::imgui::property_table::button_raw("Clone")) {
                         const std::string source_name = selected->name;
 
                         GameObject clone = *selected;

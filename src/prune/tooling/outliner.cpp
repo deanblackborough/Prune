@@ -38,7 +38,7 @@ namespace prune {
             object_search.size()
         );
 
-        constexpr int visible_rows = 10;
+        constexpr int visible_rows = 8;
         const float row_height = ImGui::GetTextLineHeightWithSpacing();
         const float list_height = row_height * static_cast<float>(visible_rows)
             + ImGui::GetStyle().FramePadding.y * 2.0f;
@@ -52,12 +52,20 @@ namespace prune {
                 }
 
                 const bool is_selected = object.id == objects.selected_id();
-                if (ImGui::Selectable(object.name.c_str(), is_selected)) {
+                const std::string label = object_label(object);
+
+                if (ImGui::Selectable(label.c_str(), is_selected)) {
                     objects.select(object.id);
                 }
             }
         }
         ImGui::EndChild();
+    }
+
+    std::string Outliner::object_label(const GameObject& object)
+    {
+        const char* type = object.is_player ? "[Player]" : "[Block]";
+        return std::string(type) + " " + object.name;
     }
 
     GameObjectId Outliner::create_block(GameObjectManager& objects, float x, float y)

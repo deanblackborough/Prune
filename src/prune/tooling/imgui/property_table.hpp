@@ -25,5 +25,6 @@ namespace prune::tooling::imgui::property_table {
     bool checkbox(const char* label, const char* id, bool& value);
     bool color3(const char* label, const char* id, float color[3]);
     bool button(const char* label, const char* text, const ButtonStyle* style = nullptr);
+    bool button_raw(const char* text, const ButtonStyle* style = nullptr);
 
 }

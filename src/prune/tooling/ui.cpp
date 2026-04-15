@@ -45,8 +45,8 @@ namespace prune {
         }
 
         if (m_show_outliner) {
-            ImGui::SetNextWindowPos(ImVec2(1000.0f, 10.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(270.0f, 300.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(970.0f, 23.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(310.0f, 230.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
                 m_outliner.draw(scene.get_object_manager(), 1.0f, 1.0f);
@@ -55,8 +55,8 @@ namespace prune {
         }
 
         if (m_show_inspector) {
-            ImGui::SetNextWindowPos(ImVec2(970.0f, 330.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(300.0f, 380.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(970.0f, 260.f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(310.0f, 460.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Inspector", &m_show_inspector)) {
                 m_inspector.draw(
