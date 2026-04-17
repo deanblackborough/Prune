@@ -26,7 +26,8 @@ This project currently provides:
 
 If it feels "bare", that's intentional;
 
-<img width="1919" height="1131" alt="image" src="https://github.com/user-attachments/assets/216bad60-281a-47ca-891c-e217d8962e08" />
+<img width="1917" height="1125" alt="image" src="https://github.com/user-attachments/assets/9bdae32a-2827-4505-ab2c-c84557b33b25" />
+
 
 ---
 
