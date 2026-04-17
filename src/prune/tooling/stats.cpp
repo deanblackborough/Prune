@@ -1,24 +1,25 @@
-#include "imgui.h"
-
 #include "prune/tooling/stats.hpp"
+#include "prune/tooling/imgui/layout.hpp"
+#include "prune/tooling/imgui/property_table.hpp"
 
 namespace prune {
 
     void Stats::draw(GameObjectManager& objects, GameObjectId player_id) {
         ImGuiIO& io = ImGui::GetIO();
 
-        ImGui::Text("FPS: %.1f", io.Framerate);
-        ImGui::Text("Frame time: %.3f ms", 1000.0f / io.Framerate);
-        ImGui::Separator();
+        if (tooling::imgui::layout::collapsing_header("Performance")) {
+			tooling::imgui::property_table::begin("##performance");
+			tooling::imgui::property_table::text("FPS", std::to_string(io.Framerate).c_str());
+			tooling::imgui::property_table::text("Frame time", std::to_string(1000.0f / io.Framerate).c_str());
+			tooling::imgui::property_table::end();
+        }
 
-        ImGui::TextUnformatted("Sandbox");
-        ImGui::Text("Object count: %d", static_cast<int>(objects.count()));
-        ImGui::Text("Selected id: %u", objects.selected_id());
-        ImGui::Text("Player id: %u", player_id);
-
-        // @todo We need to make these work
-        //ImGui::Text("Grid: %s", show_grid ? "On" : "Off");
-        //ImGui::Text("Snap: %s", snap_to_grid ? "On" : "Off");
-        //ImGui::Text("Grid size: %d", grid_size);
+        if (tooling::imgui::layout::collapsing_header("Scene")) {
+			tooling::imgui::property_table::begin("##scene");
+			tooling::imgui::property_table::text("Object count", std::to_string(objects.count()).c_str());
+			tooling::imgui::property_table::text("Selected id", std::to_string(objects.selected_id()).c_str());
+			tooling::imgui::property_table::text("Player id", std::to_string(player_id).c_str());
+			tooling::imgui::property_table::end();
+        }
     }
 }
