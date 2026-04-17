@@ -1,4 +1,4 @@
-#include "input.hpp"
+#include "prune/core/input.hpp"
 
 namespace prune {
 

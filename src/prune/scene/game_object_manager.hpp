@@ -1,6 +1,6 @@
 #pragma once
 
-#include "game_object.hpp"
+#include "prune/scene/game_object.hpp"
 
 #include <vector>
 
@@ -27,6 +27,8 @@ namespace prune {
 
         [[nodiscard]] std::vector<GameObject>& objects() noexcept;
         [[nodiscard]] const std::vector<GameObject>& objects() const noexcept;
+
+        [[nodiscard]] std::string make_unique_name(std::string desired, GameObjectId ignore_id) const;
 
     private:
         [[nodiscard]] std::size_t find_index_by_id(GameObjectId id) const noexcept;

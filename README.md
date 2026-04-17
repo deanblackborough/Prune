@@ -75,10 +75,14 @@ If it feels “bare”, that’s intentional; I'm adding the features we want to
 ---
 
 ## Next
-- Sprites, static and animated
-- Gizmos for object placement and scaling
+- Camera and limitless world space foundation
+- Static sprites
+- Gizmos for object movement
 - Save and load
-- Camera system, you should be able to move around a limitless scene
+- Animated sprites
+- Editor camera 
+- Player camera
+- Gizmos for scaling the selected object
 - ENTT at some point
 
 ## Build Instructions (Windows + CLion)

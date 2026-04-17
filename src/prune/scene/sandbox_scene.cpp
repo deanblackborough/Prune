@@ -1,4 +1,4 @@
-#include "sandbox_scene.hpp"
+#include "prune/scene/sandbox_scene.hpp"
 
 #include <SDL2/SDL.h>
 #include <algorithm>
@@ -22,6 +22,10 @@ namespace prune {
         m_objects.create_object(create_initial_block());
 
         m_objects.select(m_player_id);
+    }
+
+    void SandboxScene::on_exit() {
+        m_objects.clear();
     }
 
     GameObject SandboxScene::create_player() {
@@ -60,9 +64,33 @@ namespace prune {
         return block;
     }
 
+    GameObjectManager& SandboxScene::get_object_manager() {
+        return m_objects;
+    }
+
+    GameObjectId SandboxScene::get_player_id() const {
+        return m_player_id;
+    }
+
+    PlayerController & SandboxScene::get_player_controller() {
+        return m_player_controller;
+    }
+
+    GridOptions& SandboxScene::get_grid_options() {
+        return m_grid_options;
+    }
+
+    SceneOptions& SandboxScene::get_scene_options() {
+        return m_scene_options;
+    }
+
+    Camera& SandboxScene::get_camera() {
+        return m_camera;
+    }
+
     void SandboxScene::update(float dt, const Input& input)
     {
-        update_editor(input);
+        update_editor(dt, input);
         update_game(dt, input);
     }
 
@@ -90,8 +118,32 @@ namespace prune {
         if (resolve_collisions && object.is_player) {
             resolve_player_collisions(object);
         }
+    }
 
-        object.clamp_to_area(m_window_width, m_window_height);
+    Transform SandboxScene::screen_to_world(int screen_x, int screen_y) const noexcept
+    {
+        return {
+            static_cast<float>(screen_x) + m_camera.x,
+            static_cast<float>(screen_y) + m_camera.y
+        };
+    }
+
+    SDL_Rect SandboxScene::world_to_screen_rect(const GameObject& object) const noexcept
+    {
+        return SDL_Rect{
+            static_cast<int>(std::round(object.transform.x - m_camera.x)),
+            static_cast<int>(std::round(object.transform.y - m_camera.y)),
+            object.rectangle.width,
+            object.rectangle.height
+        };
+    }
+
+    bool SandboxScene::is_rect_visible(const SDL_Rect& rect) const noexcept
+    {
+        return rect.x + rect.w >= 0 &&
+               rect.y + rect.h >= 0 &&
+               rect.x < m_window_width &&
+               rect.y < m_window_height;
     }
 
     void SandboxScene::render(SDL_Renderer* renderer)
@@ -107,12 +159,11 @@ namespace prune {
                 continue;
             }
 
-            SDL_Rect rect{
-                static_cast<int>(object.transform.x),
-                static_cast<int>(object.transform.y),
-                object.rectangle.width,
-                object.rectangle.height
-            };
+            const SDL_Rect rect = world_to_screen_rect(object);
+
+            if (!is_rect_visible(rect)) {
+                continue;
+            }
 
             SDL_SetRenderDrawColor(
                 renderer,
@@ -124,7 +175,7 @@ namespace prune {
 
             SDL_RenderFillRect(renderer, &rect);
 
-            if (m_editor_state.highlight_selected && object.id == selected_id) {
+            if (m_scene_options.highlight_selected && object.id == selected_id) {
                 selected_outline = SDL_Rect{
                     rect.x - 2,
                     rect.y - 2,
@@ -136,7 +187,7 @@ namespace prune {
             }
         }
 
-        if (m_editor_state.highlight_selected && has_selected_outline) {
+        if (m_scene_options.highlight_selected && has_selected_outline) {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
             SDL_RenderDrawRect(renderer, &selected_outline);
         }
@@ -144,94 +195,56 @@ namespace prune {
 
     void SandboxScene::draw_grid(SDL_Renderer* renderer) const
     {
-        if (!m_editor_state.show_grid || m_editor_state.grid_size <= 1) {
+        if (!m_grid_options.show_grid || m_grid_options.grid_size <= 1) {
             return;
         }
 
+        const int scene_grid_size = std::max(1, m_grid_options.grid_size);
+
+        const float left_world = m_camera.x;
+        const float right_world = m_camera.x + static_cast<float>(m_window_width);
+        const float top_world = m_camera.y;
+        const float bottom_world = m_camera.y + static_cast<float>(m_window_height);
+
+        const float first_vertical_world =
+            std::floor(left_world / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
+
+        const float first_horizontal_world =
+            std::floor(top_world / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
+
         SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
 
-        for (int x = 0; x < m_window_width; x += m_editor_state.grid_size) {
-            SDL_RenderDrawLine(renderer, x, 0, x, m_window_height);
+        const int vertical_line_count = static_cast<int>(std::ceil((right_world - first_vertical_world) / static_cast<float>(scene_grid_size))) + 1;
+        for (int i = 0; i < vertical_line_count; ++i) {
+            const float world_x = first_vertical_world + static_cast<float>(i * scene_grid_size);
+            if (world_x > right_world) {
+                break;
+            }
+            const int screen_x = static_cast<int>(std::round(world_x - m_camera.x));
+            SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, m_window_height);
         }
 
-        for (int y = 0; y < m_window_height; y += m_editor_state.grid_size) {
-            SDL_RenderDrawLine(renderer, 0, y, m_window_width, y);
+        const int horizontal_line_count = static_cast<int>(std::ceil((bottom_world - first_horizontal_world) / static_cast<float>(scene_grid_size))) + 1;
+        for (int i = 0; i < horizontal_line_count; ++i) {
+            const float world_y = first_horizontal_world + static_cast<float>(i * scene_grid_size);
+            if (world_y > bottom_world) {
+                break;
+            }
+            const int screen_y = static_cast<int>(std::round(world_y - m_camera.y));
+            SDL_RenderDrawLine(renderer, 0, screen_y, m_window_width, screen_y);
         }
     }
 
     float SandboxScene::snap_value_to_grid(float value) const noexcept
     {
-        const int grid_size = std::max(1, m_editor_state.grid_size);
-        return std::round(value / static_cast<float>(grid_size)) * static_cast<float>(grid_size);
+        const int scene_grid_size = std::max(1, m_grid_options.grid_size);
+        return std::round(value / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
     }
 
     void SandboxScene::snap_object_to_grid(GameObject& object) const noexcept
     {
         object.transform.x = snap_value_to_grid(object.transform.x);
         object.transform.y = snap_value_to_grid(object.transform.y);
-        object.clamp_to_area(m_window_width, m_window_height);
-    }
-
-    void SandboxScene::draw_inspector_ui()
-    {
-        if (ImGui::Button("Add Block")) {
-            const Transform spawn = next_block_spawn_position();
-            create_block(spawn.x, spawn.y);
-        }
-
-        ImGui::SameLine();
-        ImGui::Checkbox("Highlight selected", &m_editor_state.highlight_selected);
-
-        ImGui::Spacing();
-
-        if (ImGui::CollapsingHeader("Editor Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Checkbox("Show grid", &m_editor_state.show_grid);
-            ImGui::Checkbox("Snap non-player dobjects to grid", &m_editor_state.snap_to_grid);
-            ImGui::SliderInt("Grid size", &m_editor_state.grid_size, m_editor_state.min_grid_size, m_editor_state.max_grid_size);
-            ImGui::SliderInt("Nudge step", &m_editor_state.nudge_step, m_editor_state.min_nudge_step, m_editor_state.max_nudge_step);
-
-            ImGui::Spacing();
-            ImGui::TextUnformatted("Object Controls:");
-            ImGui::BulletText("WASD moves the player");
-            ImGui::BulletText("Arrow keys move the selected non-player object");
-            ImGui::BulletText("Hold Shift for larger movements");
-        }
-
-        if (ImGui::CollapsingHeader("Game Objects", ImGuiTreeNodeFlags_DefaultOpen)) {
-            draw_object_list_ui();
-        }
-
-        GameObject* selected = m_objects.selected_object();
-        if (!selected) {
-            if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::TextUnformatted("No object selected.");
-            }
-            return;
-        }
-
-        if (ImGui::CollapsingHeader("Selected Object", ImGuiTreeNodeFlags_DefaultOpen)) {
-            draw_selected_object_ui();
-        }
-    }
-
-    void SandboxScene::draw_debug_ui()
-    {
-        ImGui::TextUnformatted("Sandbox");
-        ImGui::Text("Window: %d x %d", m_window_width, m_window_height);
-        ImGui::Text("Object count: %d", static_cast<int>(m_objects.count()));
-        ImGui::Text("Selected id: %u", m_objects.selected_id());
-        ImGui::Text("Player id: %u", m_player_id);
-        ImGui::Text("Grid: %s", m_editor_state.show_grid ? "On" : "Off");
-        ImGui::Text("Snap: %s", m_editor_state.snap_to_grid ? "On" : "Off");
-        ImGui::Text("Grid size: %d", m_editor_state.grid_size);
-
-        if (const GameObject* player = player_object()) {
-            ImGui::Separator();
-            ImGui::TextUnformatted("Player");
-            ImGui::Text("Position: %.1f, %.1f", player->transform.x, player->transform.y);
-            ImGui::Text("Velocity: %.1f, %.1f", player->velocity.x, player->velocity.y);
-            ImGui::Text("Speed: %.1f", m_player_controller.speed());
-        }
     }
 
     GameObject* SandboxScene::player_object() noexcept
@@ -253,29 +266,6 @@ namespace prune {
                (a_bounds.x + a_bounds.width) > b_bounds.x &&
                a_bounds.y < (b_bounds.y + b_bounds.height) &&
                (a_bounds.y + a_bounds.height) > b_bounds.y;
-    }
-
-    Transform SandboxScene::next_block_spawn_position() const noexcept
-    {
-        constexpr float base_x = 128.0f;
-        constexpr float base_y = 128.0f;
-        constexpr float offset_step = 32.0f;
-        constexpr int block_size = 32;
-
-        const float offset = static_cast<float>(m_objects.count()) * offset_step;
-
-        Transform spawn{
-            base_x + offset,
-            base_y + offset
-        };
-
-        const float max_x = std::max(0.0f, static_cast<float>(m_window_width - block_size));
-        const float max_y = std::max(0.0f, static_cast<float>(m_window_height - block_size));
-
-        spawn.x = std::clamp(spawn.x, 0.0f, max_x);
-        spawn.y = std::clamp(spawn.y, 0.0f, max_y);
-
-        return spawn;
     }
 
     void SandboxScene::resolve_player_collisions(GameObject& player)

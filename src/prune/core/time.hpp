@@ -10,7 +10,7 @@ namespace prune {
 
         void tick();
 
-        float delta_seconds() const { return m_delta_seconds; }
+        [[nodiscard]] float delta_seconds() const { return m_delta_seconds; }
 
     private:
         std::uint64_t m_last_counter = 0;
