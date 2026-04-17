@@ -12,65 +12,103 @@ The goal is a fun little engine my children and I can play with; everything is l
 
 This project currently provides:
 
-- SDL window and renderer with configurable settings
-- Scene system with imgui inspector and debug windows
-- Input handling (keyboard and mouse are ImGui-aware)
-- Game object and manager, ENTT on the way in the future
-- GameObject management with selection and editing
-- Player movement with optional collision detection
-- Grid, snapping, and live settings
-- Click to select any object in the scene
+- SDL2 window and renderer with configurable settings
+- Scene system with ImGui-based editor UI
+- Input handling (keyboard and mouse, ImGui-aware)
+- GameObject system with manager (ENTT planned for future)
+- Live inspector with property editing
+- Player movement with collision detection
+- Grid system with snapping and visual overlay
+- Camera system with editor controls
+- Click-to-select object picking
+- Object cloning and deletion
+- Custom ImGui abstraction layer for consistent UI
 
-If it feels “bare”, that’s intentional; I'm adding the features we want to use. 
+If it feels "bare", that's intentional;
 
 <img width="1919" height="1131" alt="image" src="https://github.com/user-attachments/assets/216bad60-281a-47ca-891c-e217d8962e08" />
 
 ---
 
-## Tech Stack
+## Tech
 
-- C++23
-- SDL2 – windowing, input, and rendering
-- Dear ImGui – editor UI and tooling
-- CMake – build system
+- **C++23** – Modern C++ with modules-ready structure
+- **SDL2** – Windowing, input, and rendering
+- **Dear ImGui** – Editor UI and tooling
+- **CMake** – Build system with vcpkg integration
+- **MSVC** – Primary compiler (Visual Studio 2022+)
 
 ---
 
 ## Features
 
 ### Player Movement
-- *WASD* controls for smooth movement
-- Configurable movement speed
+- **WASD** controls for smooth movement
+- Configurable movement speed (adjustable in Inspector)
 - Collision detection and resolution against solid objects
+- Velocity display in debug panel
+
+### Editor Camera System
+- **IJKL** to pan the camera
+- **Shift + Arrow Keys** for faster camera movement
+- Configurable camera speed
+- Live camera position editing in Options panel
+- Independent from player movement
 
 ### Editor Grid System
 - Optional visual grid overlay
-- Configurable grid size (16-128 pixels)
-- Toggle snap-to-grid for precise non-player object placement
-- Nudge step configuration for fine control
+- Configurable grid size (32-128 pixels)
+- Toggle snap-to-grid for precise object placement
+- Nudge step configuration (8-32 pixels)
+- Grid settings persist during editing session
 
 ### Object Management
-- *Arrow Keys* move the selected object
-- *Shift + Arrows* move the selected object with multiplier
-- Click objects to select them in the scene
-- Create new blocks with randomised colours
-- Clone existing objects 
+- **Left Click** to select objects in the scene
+- **Arrow Keys** to nudge selected object (respects nudge step)
+- **Shift + Arrow Keys** for multi-step nudging
+- Create new blocks with randomized colors
+- Clone existing objects (maintains properties)
 - Delete non-player objects
-- Rename objects 
-- Search objects by name 
-- Visual selection highlighting
+- Rename objects with automatic unique naming
+- Search objects by name in Outliner
+- Visual selection highlighting (toggleable)
 
 ### Inspector Panel
-- Real-time property editing (position, size, colour)
-- Player speed adjustment
-- Object flags (active, visible, solid)
-- Object list with search filtering
+- Real-time property editing:
+  - Transform (X, Y position with sliders)
+  - Size (Width, Height)
+  - Rendering (RGB color picker)
+  - Player-specific speed control
+- Object flags (Active, Visible, Solid)
+- Computed properties (screen position)
+- Player flag (read-only for player object)
+- Clone and Delete actions with styled buttons
 
-### Debug Panel
-- Frame rate and timing information
+### Outliner Panel
+- Hierarchical object list
+- Real-time search/filter
+- Click to select objects
+- Visual indication of selected object
+- Object count display
+
+### Options Panel
+- Scene options (selection highlighting)
+- Grid configuration (show, snap, size, nudge step)
+- Camera settings (X, Y, speed)
+- Live updates to scene behavior
+
+### Stats/Debug Panel
+- Frame rate and delta time
 - Object count and selection state
 - Player position and velocity
 - Grid and snap settings
+- Performance metrics
+
+### Custom UI System
+- `property_table` – Two-column label/value layouts
+- `layout` – Structural helpers (headers, separators)
+- Minimal ImGui exposure in game code
+- Reusable, styled UI components
 
 ---
 
@@ -83,16 +121,18 @@ If it feels “bare”, that’s intentional; I'm adding the features we want to
 - Editor camera 
 - Player camera
 - Gizmos for scaling the selected object
+- Undo/redo system
 - ENTT at some point
+- Multi-scene support, game type per scene (top-down, platformer, etc)
 
-## Build Instructions (Windows + CLion)
+## Build Instructions (Visual Studio + CLion)
 
 ### Requirements
 
-- Visual Studio 2022 (MSVC toolchain)
-- CMake (CLion bundled is fine)
-- Git
-- vcpkg
+- **Visual Studio 2022** or later (MSVC toolchain with C++23 support)
+- **CMake 3.20+** (bundled with VS or standalone)
+- **Git**
+- **vcpkg** (C++ package manager)
 
 ---
 
