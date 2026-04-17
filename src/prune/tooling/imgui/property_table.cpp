@@ -23,8 +23,8 @@ namespace prune::tooling::imgui::property_table
             return false;
         }
 
-        ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch, 0.4f);
-        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0.6f);
+        ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch, 0.5f);
+        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0.5f);
 
         return true;
     }
@@ -44,6 +44,13 @@ namespace prune::tooling::imgui::property_table
 		begin_row(label);
 		ImGui::TextUnformatted(value);
 		return true;
+	}
+
+    bool text_wrapped(const char* label, const char* value)
+    {
+        begin_row(label);
+        ImGui::TextWrapped(value);
+        return true;
 	}
 
 	bool input_text(const char* label, const char* id, char* buffer, size_t buffer_size)
@@ -69,6 +76,15 @@ namespace prune::tooling::imgui::property_table
         begin_row(label);
         return ImGui::Checkbox(id, &value);
     }
+
+    bool checkbox_readonly(const char* label, const char* id, bool& value)
+    {
+        begin_row(label);
+        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+        const bool result = ImGui::Checkbox(id, &value);
+        ImGui::PopItemFlag();
+        return result;
+	}
 
     bool color3(const char* label, const char* id, float color[3])
     {
@@ -105,6 +121,12 @@ namespace prune::tooling::imgui::property_table
 
         return result;
     }
+
+    bool text_wrapped_raw(const char* text)
+    {
+        ImGui::TextWrapped(text);
+        return true;
+	}
 
     bool button_raw(const char* text, const ButtonStyle* style)
     {

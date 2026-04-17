@@ -30,6 +30,7 @@ add_executable(Prune
         src/prune/tooling/stats.cpp
 
         src/prune/tooling/imgui/property_table.cpp
+        src/prune/tooling/imgui/layout.cpp
 
         external/imgui/imgui.cpp
         external/imgui/imgui_draw.cpp

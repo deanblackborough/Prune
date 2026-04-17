@@ -7,8 +7,8 @@ namespace prune {
 
     void Ui::render(SandboxScene& scene) {
         if (ImGui::BeginMainMenuBar()) {
-            if (ImGui::BeginMenu("Options")) {
-                ImGui::MenuItem("Viewport & Grid", nullptr, &m_show_view_grid_options);
+            if (ImGui::BeginMenu("File")) {
+                ImGui::MenuItem("Options", nullptr, &m_show_view_grid_options);
                 ImGui::EndMenu();
             }
 
@@ -38,7 +38,7 @@ namespace prune {
             );
             ImGui::SetNextWindowSize(ImVec2(270.0f, 260.0f), ImGuiCond_FirstUseEver);
 
-            if (ImGui::Begin("View & Grid Options", &m_show_view_grid_options)) {
+            if (ImGui::Begin("Options", &m_show_view_grid_options)) {
                 m_options.draw(scene.get_scene_options(), scene.get_grid_options(), scene.get_camera());
             }
             ImGui::End();
@@ -90,7 +90,7 @@ namespace prune {
             ImGui::SetNextWindowPos(ImVec2(10.0f, 34.0f), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(220.0f, 160.0f), ImGuiCond_FirstUseEver);
 
-            if (ImGui::Begin("Stats", &m_show_inspector)) {
+            if (ImGui::Begin("Stats", &m_show_stats)) {
                 m_stats.draw(scene.get_object_manager(), scene.get_player_id());
             }
             ImGui::End();
