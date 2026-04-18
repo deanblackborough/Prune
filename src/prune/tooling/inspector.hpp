@@ -20,7 +20,7 @@ namespace prune {
         );
 
     private:
-        void draw_selected(GameObjectManager& objects, GameObjectId player_id);
+        void draw_selected(GameObjectManager& objects, GameObjectId player_id, GridOptions& grid_options);
         void draw_properties(
             GameObjectManager& objects,
             GameObjectId player_id,

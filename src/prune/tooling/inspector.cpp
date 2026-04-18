@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "imgui.h"
 
 #include "prune/tooling/inspector.hpp"
@@ -12,7 +14,7 @@ namespace prune {
         PlayerController& player_controller,
         GridOptions& grid_options
     ) {
-        draw_selected(objects, player_id);
+        draw_selected(objects, player_id, grid_options);
         draw_properties(objects, player_id, player_controller, grid_options);
         draw_computed(objects);
         draw_flags(objects, player_id);
@@ -20,7 +22,8 @@ namespace prune {
 
     void Inspector::draw_selected(
         GameObjectManager& objects,
-        GameObjectId player_id
+        GameObjectId player_id,
+        GridOptions& grid_options
     ) {
         GameObject* selected = objects.selected_object();
 
@@ -62,7 +65,7 @@ namespace prune {
 
                 if (!is_player) {
 
-					tooling::imgui::layout::separator();
+                    tooling::imgui::layout::separator();
 
                     tooling::imgui::property_table::begin_row("Actions");
 
@@ -81,8 +84,13 @@ namespace prune {
 
                         GameObject clone = *selected;
                         clone.is_player = false;
-                        clone.transform.x += 32.0f;
-                        clone.transform.y += 32.0f;
+
+                        const float step = grid_options.snap_to_grid
+                            ? static_cast<float>(std::max(1, grid_options.grid_size))
+                            : 32.0f;
+
+                        clone.transform.x += step;
+                        clone.transform.y += step;
 
                         const GameObjectId clone_id = objects.create_object(clone);
 
