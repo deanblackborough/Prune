@@ -74,7 +74,8 @@ namespace prune {
                     scene.get_object_manager(),
                     scene.get_player_id(),
                     scene.get_player_controller(),
-                    scene.get_grid_options()
+                    scene.get_grid_options(),
+                    scene.get_camera()
                 );
             }
             ImGui::End();

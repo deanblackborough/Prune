@@ -12,11 +12,12 @@ namespace prune {
         GameObjectManager& objects,
         GameObjectId player_id,
         PlayerController& player_controller,
-        GridOptions& grid_options
+        GridOptions& grid_options,
+        const Camera& camera
     ) {
         draw_selected(objects, player_id, grid_options);
         draw_properties(objects, player_id, player_controller, grid_options);
-        draw_computed(objects);
+        draw_computed(objects, camera);
         draw_flags(objects, player_id);
     }
 
@@ -162,7 +163,8 @@ namespace prune {
     }
 
     void Inspector::draw_computed(
-        GameObjectManager& objects
+        GameObjectManager& objects,
+        const Camera& camera
     ) {
         GameObject* selected = objects.selected_object();
         if (!selected) {
@@ -170,21 +172,22 @@ namespace prune {
             return;
         }
 
-        /*
-         *@todo This is a hack until we have the camera structs
-         */
-        int camera_x = 0;
-        int camera_y = 0;
-
         if (tooling::imgui::layout::collapsing_header("Computed", false)) {
             if (tooling::imgui::property_table::begin("##computed")) {
                 const Transform screen_pos = {
-                    selected->transform.x - camera_x,
-                    selected->transform.y - camera_y
+                    selected->transform.x - camera.x,
+                    selected->transform.y - camera.y
                 };
 
                 char screen_pos_buffer[64];
-                std::snprintf(screen_pos_buffer, sizeof(screen_pos_buffer), "x %.1f, y %.1f", screen_pos.x, screen_pos.y);
+                std::snprintf(
+                    screen_pos_buffer,
+                    sizeof(screen_pos_buffer),
+                    "x %.1f, y %.1f",
+                    screen_pos.x,
+                    screen_pos.y
+                );
+
                 tooling::imgui::property_table::text("Screen Position", screen_pos_buffer);
                 tooling::imgui::property_table::end();
             }

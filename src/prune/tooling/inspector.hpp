@@ -16,7 +16,8 @@ namespace prune {
             GameObjectManager& objects,
             GameObjectId player_id,
             PlayerController& player_controller,
-            GridOptions& grid_options
+            GridOptions& grid_options,
+            const Camera& camera
         );
 
     private:
@@ -27,7 +28,7 @@ namespace prune {
             PlayerController& player_controller,
             GridOptions& grid_options
         );
-        void draw_computed(GameObjectManager& objects);
+        void draw_computed(GameObjectManager& objects, const Camera& camera);
         void draw_flags(GameObjectManager& objects, GameObjectId player_id);
 
         void sync_rename_buffer(const GameObject* selected);
