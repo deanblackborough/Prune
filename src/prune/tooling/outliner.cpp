@@ -4,8 +4,6 @@
 #include "prune/scene/game_object_manager.hpp"
 #include "prune/tooling/outliner.hpp"
 
-#include <array>
-
 namespace prune {
 
     void Outliner::draw(GameObjectManager& objects, float camera_x, float camera_y) {
@@ -28,14 +26,12 @@ namespace prune {
 
         ImGui::Separator();
 
-        std::array<char, 128> object_search{};
-
         ImGui::SetNextItemWidth(-1.0f);
         ImGui::InputTextWithHint(
             "##object_search",
             "Search objects...",
-            object_search.data(),
-            object_search.size()
+            m_object_search.data(),
+            m_object_search.size()
         );
 
         constexpr int visible_rows = 8;
@@ -44,7 +40,7 @@ namespace prune {
             + ImGui::GetStyle().FramePadding.y * 2.0f;
 
         if (ImGui::BeginChild("object_list", ImVec2(0.0f, list_height), true)) {
-            const std::string_view filter = object_search.data();
+            const std::string_view filter = m_object_search.data();
 
             for (const auto& object : objects.objects()) {
                 if (!filter.empty() && !contains_case_insensitive(object.name, filter)) {
@@ -117,7 +113,7 @@ namespace prune {
         };
     }
 
-    bool Outliner::contains_case_insensitive(std::string_view text, std::string_view query)
+    bool Outliner::contains_case_insensitive(std::string_view text, std::string_view query) const
     {
         if (query.empty()) {
             return true;
