@@ -42,6 +42,10 @@ namespace prune {
         void update(float dt, const Input& input);
         void render(SDL_Renderer* renderer);
 
+		void set_viewport_size(int width, int height) noexcept;
+		[[nodiscard]] int get_viewport_width() const noexcept { return m_window_width; }
+		[[nodiscard]] int get_viewport_height() const noexcept { return m_window_height; }
+
         GameObjectManager& get_object_manager();
         [[nodiscard]] GameObjectId get_player_id() const;
         PlayerController& get_player_controller();

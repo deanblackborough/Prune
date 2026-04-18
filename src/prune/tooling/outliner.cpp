@@ -4,23 +4,40 @@
 #include "prune/scene/game_object_manager.hpp"
 #include "prune/tooling/outliner.hpp"
 
-#include <array>
-
 namespace prune {
 
-    void Outliner::draw(GameObjectManager& objects, float camera_x, float camera_y) {
+    void Outliner::draw(
+        GameObjectManager& objects,
+        float camera_x,
+        float camera_y,
+        int viewport_width,
+        int viewport_height,
+        bool snap_to_grid,
+        int grid_size
+    ) {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
 
         if (ImGui::Button("Add Object (Temp)")) {
-            const Transform spawn = next_block_spawn_position(
+            const Transform base = next_block_spawn_position(
                 objects,
-                ImGui::GetWindowSize().x,
-                ImGui::GetWindowWidth(),
+                static_cast<float>(viewport_width),
+                static_cast<float>(viewport_height),
                 camera_x,
                 camera_y
             );
+
+            const Transform spawn = find_spawn_position(
+                objects,
+                base.x,
+                base.y,
+                snap_to_grid,
+                grid_size,
+                32,
+                32
+            );
+
             create_block(objects, spawn.x, spawn.y);
         }
 
@@ -28,14 +45,12 @@ namespace prune {
 
         ImGui::Separator();
 
-        std::array<char, 128> object_search{};
-
         ImGui::SetNextItemWidth(-1.0f);
         ImGui::InputTextWithHint(
             "##object_search",
             "Search objects...",
-            object_search.data(),
-            object_search.size()
+            m_object_search.data(),
+            m_object_search.size()
         );
 
         constexpr int visible_rows = 8;
@@ -44,7 +59,7 @@ namespace prune {
             + ImGui::GetStyle().FramePadding.y * 2.0f;
 
         if (ImGui::BeginChild("object_list", ImVec2(0.0f, list_height), true)) {
-            const std::string_view filter = object_search.data();
+            const std::string_view filter = m_object_search.data();
 
             for (const auto& object : objects.objects()) {
                 if (!filter.empty() && !contains_case_insensitive(object.name, filter)) {
@@ -100,24 +115,103 @@ namespace prune {
     }
 
     Transform Outliner::next_block_spawn_position(
-        GameObjectManager& objects,
-        float width_height,
-        float window_width,
+        GameObjectManager&,
+        float viewport_width,
+        float viewport_height,
         float camera_x,
         float camera_y
     ) const
     {
-        constexpr float offset_step = 32.0f;
-
-        const float offset = static_cast<float>(objects.count()) * offset_step;
-
         return Transform{
-            camera_x + (width_height * 0.5f) + offset,
-            camera_y + (window_width * 0.5f) + offset
+            camera_x + (viewport_width * 0.5f),
+            camera_y + (viewport_height * 0.5f)
         };
     }
 
-    bool Outliner::contains_case_insensitive(std::string_view text, std::string_view query)
+    Transform Outliner::find_spawn_position(
+        const GameObjectManager& objects,
+        float base_x,
+        float base_y,
+        bool snap_to_grid,
+        int grid_size,
+        int object_width,
+        int object_height
+    ) const
+    {
+        const float step = snap_to_grid
+            ? static_cast<float>(std::max(1, grid_size))
+            : 32.0f;
+
+        float start_x = base_x;
+        float start_y = base_y;
+
+        if (snap_to_grid) {
+            start_x = std::round(start_x / step) * step;
+            start_y = std::round(start_y / step) * step;
+        }
+
+        if (is_space_free(objects, start_x, start_y, object_width, object_height)) {
+            return Transform{ start_x, start_y };
+        }
+
+        for (int ring = 1; ring <= 8; ++ring) {
+            for (int dy = -ring; dy <= ring; ++dy) {
+                for (int dx = -ring; dx <= ring; ++dx) {
+                    if (std::abs(dx) != ring && std::abs(dy) != ring) {
+                        continue;
+                    }
+
+                    const float candidate_x = start_x + (static_cast<float>(dx) * step);
+                    const float candidate_y = start_y + (static_cast<float>(dy) * step);
+
+                    if (is_space_free(objects, candidate_x, candidate_y, object_width, object_height)) {
+                        return Transform{ candidate_x, candidate_y };
+                    }
+                }
+            }
+        }
+
+        return Transform{ start_x, start_y };
+    }
+
+    bool Outliner::is_space_free(
+        const GameObjectManager& objects,
+        float x,
+        float y,
+        int width,
+        int height
+    ) const
+    {
+        const float left_a = x;
+        const float right_a = x + static_cast<float>(width);
+        const float top_a = y;
+        const float bottom_a = y + static_cast<float>(height);
+
+        for (const auto& object : objects.objects()) {
+            if (!object.active) {
+                continue;
+            }
+
+            const float left_b = object.transform.x;
+            const float right_b = object.transform.x + static_cast<float>(object.rectangle.width);
+            const float top_b = object.transform.y;
+            const float bottom_b = object.transform.y + static_cast<float>(object.rectangle.height);
+
+            const bool overlaps =
+                left_a < right_b &&
+                right_a > left_b &&
+                top_a < bottom_b &&
+                bottom_a > top_b;
+
+            if (overlaps) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool Outliner::contains_case_insensitive(std::string_view text, std::string_view query) const
     {
         if (query.empty()) {
             return true;

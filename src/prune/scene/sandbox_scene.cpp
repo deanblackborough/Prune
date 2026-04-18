@@ -14,6 +14,12 @@ namespace prune {
     {
     }
 
+    void SandboxScene::set_viewport_size(int width, int height) noexcept
+    {
+        m_window_width = width;
+        m_window_height = height;
+	}
+
     void SandboxScene::on_enter()
     {
         m_objects.clear();

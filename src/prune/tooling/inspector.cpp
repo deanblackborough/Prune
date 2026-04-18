@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "imgui.h"
 
 #include "prune/tooling/inspector.hpp"
@@ -10,17 +12,19 @@ namespace prune {
         GameObjectManager& objects,
         GameObjectId player_id,
         PlayerController& player_controller,
-        GridOptions& grid_options
+        GridOptions& grid_options,
+        const Camera& camera
     ) {
-        draw_selected(objects, player_id);
+        draw_selected(objects, player_id, grid_options);
         draw_properties(objects, player_id, player_controller, grid_options);
-        draw_computed(objects);
+        draw_computed(objects, camera);
         draw_flags(objects, player_id);
     }
 
     void Inspector::draw_selected(
         GameObjectManager& objects,
-        GameObjectId player_id
+        GameObjectId player_id,
+        GridOptions& grid_options
     ) {
         GameObject* selected = objects.selected_object();
 
@@ -40,19 +44,29 @@ namespace prune {
                     tooling::imgui::property_table::text("Name", selected->name.c_str());
                 }
                 else {
-                    char name_buffer[128]{};
-                    std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
+                    sync_rename_buffer(selected);
 
-                    tooling::imgui::property_table::input_text("Name", "##name", name_buffer, sizeof(name_buffer));
+                    tooling::imgui::property_table::input_text(
+                        "Name",
+                        "##name",
+                        m_rename_buffer.data(),
+                        m_rename_buffer.size()
+                    );
 
                     if (ImGui::IsItemDeactivatedAfterEdit()) {
-                        selected->name = objects.make_unique_name(name_buffer, selected->id);
+                        selected->name = objects.make_unique_name(m_rename_buffer.data(), selected->id);
+                        std::snprintf(
+                            m_rename_buffer.data(),
+                            m_rename_buffer.size(),
+                            "%s",
+                            selected->name.c_str()
+                        );
                     }
                 }
 
                 if (!is_player) {
 
-					tooling::imgui::layout::separator();
+                    tooling::imgui::layout::separator();
 
                     tooling::imgui::property_table::begin_row("Actions");
 
@@ -71,8 +85,13 @@ namespace prune {
 
                         GameObject clone = *selected;
                         clone.is_player = false;
-                        clone.transform.x += 32.0f;
-                        clone.transform.y += 32.0f;
+
+                        const float step = grid_options.snap_to_grid
+                            ? static_cast<float>(std::max(1, grid_options.grid_size))
+                            : 32.0f;
+
+                        clone.transform.x += step;
+                        clone.transform.y += step;
 
                         const GameObjectId clone_id = objects.create_object(clone);
 
@@ -133,7 +152,10 @@ namespace prune {
             if (tooling::imgui::layout::collapsing_header("Player")) {
                 if (tooling::imgui::property_table::begin("##player")) {
                     float speed = player_controller.speed();
-                    tooling::imgui::property_table::slider_float("Speed", "##speed", speed, 0.0f, 512.0f, "%.2f");
+
+                    if (tooling::imgui::property_table::slider_float("Speed", "##speed", speed, 0.0f, 512.0f, "%.2f")) {
+						player_controller.set_speed(speed);
+                    }
                     tooling::imgui::property_table::end();
                 }
             }
@@ -141,7 +163,8 @@ namespace prune {
     }
 
     void Inspector::draw_computed(
-        GameObjectManager& objects
+        GameObjectManager& objects,
+        const Camera& camera
     ) {
         GameObject* selected = objects.selected_object();
         if (!selected) {
@@ -149,21 +172,22 @@ namespace prune {
             return;
         }
 
-        /*
-         *@todo This is a hack until we have the camera structs
-         */
-        int camera_x = 0;
-        int camera_y = 0;
-
         if (tooling::imgui::layout::collapsing_header("Computed", false)) {
             if (tooling::imgui::property_table::begin("##computed")) {
                 const Transform screen_pos = {
-                    selected->transform.x - camera_x,
-                    selected->transform.y - camera_y
+                    selected->transform.x - camera.x,
+                    selected->transform.y - camera.y
                 };
 
                 char screen_pos_buffer[64];
-                std::snprintf(screen_pos_buffer, sizeof(screen_pos_buffer), "x %.1f, y %.1f", screen_pos.x, screen_pos.y);
+                std::snprintf(
+                    screen_pos_buffer,
+                    sizeof(screen_pos_buffer),
+                    "x %.1f, y %.1f",
+                    screen_pos.x,
+                    screen_pos.y
+                );
+
                 tooling::imgui::property_table::text("Screen Position", screen_pos_buffer);
                 tooling::imgui::property_table::end();
             }
@@ -196,5 +220,20 @@ namespace prune {
 				tooling::imgui::property_table::end();
             }
         }
+    }
+    void Inspector::sync_rename_buffer(const GameObject* selected)
+    {
+        if (!selected) {
+            m_rename_target_id.reset();
+            m_rename_buffer[0] = '\0';
+            return;
+        }
+
+        if (m_rename_target_id.has_value() && m_rename_target_id.value() == selected->id) {
+            return;
+        }
+
+        m_rename_target_id = selected->id;
+        std::snprintf(m_rename_buffer.data(), m_rename_buffer.size(), "%s", selected->name.c_str());
     }
 }

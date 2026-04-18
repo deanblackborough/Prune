@@ -99,8 +99,23 @@ namespace prune {
                 break;
 
             case SDL_WINDOWEVENT:
-                if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+                switch (event.window.event) {
+                case SDL_WINDOWEVENT_CLOSE:
                     m_running = false;
+                    break;
+
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    if (m_window) {
+                        m_window->refresh_size();
+                    }
+
+                    if (m_scene && m_window) {
+                        m_scene->set_viewport_size(m_window->width(), m_window->height());
+                    }
+                    break;
+
+                default:
+                    break;
                 }
                 break;
 
