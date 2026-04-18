@@ -19,7 +19,7 @@ namespace prune {
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
 
-        if (ImGui::Button("Add Object (Temp)")) {
+        if (ImGui::Button("Add Block")) {
             const Transform base = next_block_spawn_position(
                 static_cast<float>(viewport_width),
                 static_cast<float>(viewport_height),
