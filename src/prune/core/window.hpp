@@ -30,6 +30,8 @@ namespace prune {
         [[nodiscard]] int width() const { return m_width; }
         [[nodiscard]] int height() const { return m_height; }
 
+        void refresh_size();
+
     private:
         SDL_Window* m_window = nullptr;
         SDL_Renderer* m_renderer = nullptr;

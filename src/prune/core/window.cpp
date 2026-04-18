@@ -7,13 +7,19 @@ namespace prune {
         : m_width(config.width)
         , m_height(config.height)
     {
+		Uint32 window_flags = SDL_WINDOW_SHOWN;
+
+        if (config.resizable) {
+            window_flags |= SDL_WINDOW_RESIZABLE;
+		}
+
         m_window = SDL_CreateWindow(
             config.title.c_str(),
             SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED,
             config.width,
             config.height,
-            SDL_WINDOW_SHOWN
+            window_flags
         );
 
         if (!m_window) {
@@ -31,6 +37,23 @@ namespace prune {
             m_window = nullptr;
             throw std::runtime_error(std::string("Failed to create SDL renderer: ") + SDL_GetError());
         }
+
+		refresh_size();
+    }
+
+    void Window::refresh_size()
+    {
+        if (!m_window) {
+            m_width = 0;
+            m_height = 0;
+            return;
+        }
+
+		if (m_renderer && SDL_GetRendererOutputSize(m_renderer, &m_width, &m_height) == 0) {
+            return;
+        }
+
+		SDL_GetWindowSize(m_window, &m_width, &m_height);
     }
 
     Window::~Window()
@@ -45,5 +68,4 @@ namespace prune {
             m_window = nullptr;
         }
     }
-
 }

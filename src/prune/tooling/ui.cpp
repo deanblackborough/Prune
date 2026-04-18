@@ -91,7 +91,7 @@ namespace prune {
             ImGui::SetNextWindowSize(ImVec2(250.0f, 240.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Stats", &m_show_stats)) {
-                m_stats.draw(scene.get_object_manager(), scene.get_player_id());
+                m_stats.draw(scene.get_object_manager(), scene.get_player_id(), scene.get_viewport_width(), scene.get_viewport_height());
             }
             ImGui::End();
         }
@@ -100,5 +100,4 @@ namespace prune {
             ImGui::ShowDemoWindow(&m_show_imgui_demo);
         }
     }
-
-} // namespace prune
+} 

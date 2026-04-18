@@ -4,7 +4,7 @@
 
 namespace prune {
 
-    void Stats::draw(GameObjectManager& objects, GameObjectId player_id) {
+    void Stats::draw(GameObjectManager& objects, GameObjectId player_id, int viewport_width, int viewport_height) {
         ImGuiIO& io = ImGui::GetIO();
 
         if (tooling::imgui::layout::collapsing_header("Performance")) {
@@ -21,5 +21,12 @@ namespace prune {
 			tooling::imgui::property_table::text("Player id", std::to_string(player_id).c_str());
 			tooling::imgui::property_table::end();
         }
+
+		if (tooling::imgui::layout::collapsing_header("Viewport")) {
+			tooling::imgui::property_table::begin("##viewport");
+			tooling::imgui::property_table::text("X", std::to_string(viewport_width).c_str());
+			tooling::imgui::property_table::text("Y", std::to_string(viewport_height).c_str());
+			tooling::imgui::property_table::end();
+		}
     }
 }
