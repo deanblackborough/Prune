@@ -143,7 +143,10 @@ namespace prune {
             if (tooling::imgui::layout::collapsing_header("Player")) {
                 if (tooling::imgui::property_table::begin("##player")) {
                     float speed = player_controller.speed();
-                    tooling::imgui::property_table::slider_float("Speed", "##speed", speed, 0.0f, 512.0f, "%.2f");
+
+                    if (tooling::imgui::property_table::slider_float("Speed", "##speed", speed, 0.0f, 512.0f, "%.2f")) {
+						player_controller.set_speed(speed);
+                    }
                     tooling::imgui::property_table::end();
                 }
             }

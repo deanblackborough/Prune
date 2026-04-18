@@ -1,10 +1,12 @@
 #pragma once
 
+#include <array>
+#include <optional>
+
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
 #include "prune/scene/sandbox_scene.hpp"
 #include "prune/scene/player_controller.hpp"
-#include <optional>
 
 namespace prune {
 
