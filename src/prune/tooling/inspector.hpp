@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "prune/scene/game_object.hpp"
@@ -28,5 +27,10 @@ namespace prune {
         );
         void draw_computed(GameObjectManager& objects);
         void draw_flags(GameObjectManager& objects, GameObjectId player_id);
+
+        void sync_rename_buffer(const GameObject* selected);
+
+        std::optional<GameObjectId> m_rename_target_id;
+		std::array<char, 128> m_rename_buffer{};
     };
 }

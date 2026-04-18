@@ -40,13 +40,23 @@ namespace prune {
                     tooling::imgui::property_table::text("Name", selected->name.c_str());
                 }
                 else {
-                    char name_buffer[128]{};
-                    std::snprintf(name_buffer, sizeof(name_buffer), "%s", selected->name.c_str());
+                    sync_rename_buffer(selected);
 
-                    tooling::imgui::property_table::input_text("Name", "##name", name_buffer, sizeof(name_buffer));
+                    tooling::imgui::property_table::input_text(
+                        "Name",
+                        "##name",
+                        m_rename_buffer.data(),
+                        m_rename_buffer.size()
+                    );
 
                     if (ImGui::IsItemDeactivatedAfterEdit()) {
-                        selected->name = objects.make_unique_name(name_buffer, selected->id);
+                        selected->name = objects.make_unique_name(m_rename_buffer.data(), selected->id);
+                        std::snprintf(
+                            m_rename_buffer.data(),
+                            m_rename_buffer.size(),
+                            "%s",
+                            selected->name.c_str()
+                        );
                     }
                 }
 
@@ -196,5 +206,20 @@ namespace prune {
 				tooling::imgui::property_table::end();
             }
         }
+    }
+    void Inspector::sync_rename_buffer(const GameObject* selected)
+    {
+        if (!selected) {
+            m_rename_target_id.reset();
+            m_rename_buffer[0] = '\0';
+            return;
+        }
+
+        if (m_rename_target_id.has_value() && m_rename_target_id.value() == selected->id) {
+            return;
+        }
+
+        m_rename_target_id = selected->id;
+        std::snprintf(m_rename_buffer.data(), m_rename_buffer.size(), "%s", selected->name.c_str());
     }
 }
