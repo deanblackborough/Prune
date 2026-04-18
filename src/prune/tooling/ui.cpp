@@ -49,7 +49,8 @@ namespace prune {
             ImGui::SetNextWindowSize(ImVec2(310.0f, 230.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
-                m_outliner.draw(scene.get_object_manager(), 1.0f, 1.0f);
+				Camera& camera = scene.get_camera();
+                m_outliner.draw(scene.get_object_manager(), camera.x, camera.y);
             }
             ImGui::End();
         }

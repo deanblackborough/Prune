@@ -12,10 +12,12 @@ namespace prune {
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
 
         if (ImGui::Button("Add Object (Temp)")) {
+            const ImVec2 window_size = ImGui::GetWindowSize();
+
             const Transform spawn = next_block_spawn_position(
                 objects,
-                ImGui::GetWindowSize().x,
-                ImGui::GetWindowWidth(),
+                window_size.x,
+                window_size.y,
                 camera_x,
                 camera_y
             );
@@ -97,8 +99,8 @@ namespace prune {
 
     Transform Outliner::next_block_spawn_position(
         GameObjectManager& objects,
-        float width_height,
         float window_width,
+        float window_height,
         float camera_x,
         float camera_y
     ) const
@@ -108,8 +110,8 @@ namespace prune {
         const float offset = static_cast<float>(objects.count()) * offset_step;
 
         return Transform{
-            camera_x + (width_height * 0.5f) + offset,
-            camera_y + (window_width * 0.5f) + offset
+            camera_x + (window_width * 0.5f) + offset,
+            camera_y + (window_height * 0.5f) + offset
         };
     }
 
