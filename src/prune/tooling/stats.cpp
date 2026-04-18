@@ -24,8 +24,8 @@ namespace prune {
 
 		if (tooling::imgui::layout::collapsing_header("Viewport")) {
 			tooling::imgui::property_table::begin("##viewport");
-			tooling::imgui::property_table::text("X", std::to_string(viewport_width).c_str());
-			tooling::imgui::property_table::text("Y", std::to_string(viewport_height).c_str());
+			tooling::imgui::property_table::text("Width", std::to_string(viewport_width).c_str());
+			tooling::imgui::property_table::text("Height", std::to_string(viewport_height).c_str());
 			tooling::imgui::property_table::end();
 		}
     }

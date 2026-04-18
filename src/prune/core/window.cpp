@@ -13,6 +13,10 @@ namespace prune {
             window_flags |= SDL_WINDOW_RESIZABLE;
 		}
 
+        if (config.fullscreen) {
+            window_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+        }
+
         m_window = SDL_CreateWindow(
             config.title.c_str(),
             SDL_WINDOWPOS_CENTERED,
