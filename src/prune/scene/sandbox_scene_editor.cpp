@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <string>
 
 #include <SDL2/SDL.h>
@@ -71,6 +72,13 @@ namespace prune {
 
         if (move_x == 0.0f && move_y == 0.0f) {
             return;
+        }
+
+        const float length = std::sqrt((move_x * move_x) + (move_y * move_y));
+
+        if (length > 0.0f) {
+            move_x /= length;
+            move_y /= length;
         }
 
         const float move_amount = m_camera.speed * dt;

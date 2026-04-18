@@ -87,6 +87,11 @@ namespace prune {
 
     void GameObjectManager::select(GameObjectId id) noexcept
     {
+        if (id == kInvalidGameObjectId) {
+            m_selected_id = kInvalidGameObjectId;
+            return;
+        }
+
         if (get_by_id(id) != nullptr) {
             m_selected_id = id;
         }

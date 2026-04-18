@@ -23,6 +23,12 @@ namespace prune {
     void SandboxScene::on_enter()
     {
         m_objects.clear();
+        m_player_id = kInvalidGameObjectId;
+
+        m_camera = {};
+        m_grid_options = {};
+        m_scene_options = {};
+        m_player_controller = {};
 
         m_player_id = m_objects.create_object(create_player());
         m_objects.create_object(create_initial_block());
@@ -32,6 +38,7 @@ namespace prune {
 
     void SandboxScene::on_exit() {
         m_objects.clear();
+        m_player_id = kInvalidGameObjectId;
     }
 
     GameObject SandboxScene::create_player() {
