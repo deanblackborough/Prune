@@ -1,16 +1,23 @@
+#include <string>
+
 #include "prune/tooling/stats.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
 
 namespace prune {
 
-    void Stats::draw(GameObjectManager& objects, GameObjectId player_id, int viewport_width, int viewport_height) {
+    void Stats::draw(GameObjectManager& objects, GameObjectId player_id, int viewport_width, int viewport_height) 
+	{
         ImGuiIO& io = ImGui::GetIO();
 
         if (tooling::imgui::layout::collapsing_header("Performance")) {
 			tooling::imgui::property_table::begin("##performance");
-			tooling::imgui::property_table::text("FPS", std::to_string(io.Framerate).c_str());
-			tooling::imgui::property_table::text("Frame time", std::to_string(1000.0f / io.Framerate).c_str());
+
+			const float fps = io.Framerate;
+			const float frame_time_ms = (fps > 0.0f) ? (1000.0f / fps) : 0.0f;
+
+			tooling::imgui::property_table::text("FPS", std::to_string(fps).c_str());
+			tooling::imgui::property_table::text("Frame time", std::to_string(frame_time_ms).c_str());
 			tooling::imgui::property_table::end();
         }
 

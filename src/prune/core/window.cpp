@@ -30,10 +30,16 @@ namespace prune {
             throw std::runtime_error(std::string("Failed to create SDL window: ") + SDL_GetError());
         }
 
+        Uint32 renderer_flags = SDL_RENDERER_ACCELERATED;
+
+        if (config.vsync) {
+            renderer_flags |= SDL_RENDERER_PRESENTVSYNC;
+        }
+
         m_renderer = SDL_CreateRenderer(
             m_window,
             -1,
-            SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
+            renderer_flags
         );
 
         if (!m_renderer) {

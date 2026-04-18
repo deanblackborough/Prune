@@ -24,7 +24,6 @@ namespace prune {
         GameObjectId create_block(GameObjectManager& objects, float x, float y);
         float random_color_component();
         Transform next_block_spawn_position(
-            GameObjectManager& objects,
             float viewport_width,
             float viewport_height,
             float camera_x,

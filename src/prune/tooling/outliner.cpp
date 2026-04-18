@@ -21,7 +21,6 @@ namespace prune {
 
         if (ImGui::Button("Add Object (Temp)")) {
             const Transform base = next_block_spawn_position(
-                objects,
                 static_cast<float>(viewport_width),
                 static_cast<float>(viewport_height),
                 camera_x,
@@ -115,7 +114,6 @@ namespace prune {
     }
 
     Transform Outliner::next_block_spawn_position(
-        GameObjectManager&,
         float viewport_width,
         float viewport_height,
         float camera_x,
