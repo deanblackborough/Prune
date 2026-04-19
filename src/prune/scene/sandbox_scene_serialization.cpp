@@ -139,7 +139,26 @@ namespace prune {
             return true;
         }
 
-    } // namespace
+        bool parse_camera_mode(const YAML::Node& node, CameraMode& out)
+        {
+            if (!node) {
+                return false;
+            }
+
+            const std::string value = node.as<std::string>();
+            if (value == "editor") {
+                out = CameraMode::Editor;
+                return true;
+            }
+
+            if (value == "game") {
+                out = CameraMode::Game;
+                return true;
+            }
+
+            return false;
+        }
+    }
 
     bool SandboxScene::save_to_file(std::string_view path, std::string& error) const
     {
@@ -153,8 +172,16 @@ namespace prune {
                 root["scene"]["selected_object_id"] = m_objects.selected_id();
             }
 
-            root["camera"]["x"] = m_camera.x;
-            root["camera"]["y"] = m_camera.y;
+            root["cameras"]["mode"] = (m_cameras.mode == CameraMode::Editor) ? "editor" : "game";
+
+            root["cameras"]["editor"]["x"] = m_cameras.editor.x;
+            root["cameras"]["editor"]["y"] = m_cameras.editor.y;
+            root["cameras"]["editor"]["speed"] = m_cameras.editor.speed;
+
+            root["cameras"]["game"]["x"] = m_cameras.game.x;
+            root["cameras"]["game"]["y"] = m_cameras.game.y;
+            root["cameras"]["game"]["speed"] = m_cameras.game.speed;
+            root["cameras"]["game"]["follow_player"] = m_cameras.game_options.follow_player;
 
             root["grid"]["show_grid"] = m_grid_options.show_grid;
             root["grid"]["snap_to_grid"] = m_grid_options.snap_to_grid;
@@ -196,12 +223,13 @@ namespace prune {
             const YAML::Node root = YAML::LoadFile(std::string(path));
 
             const YAML::Node scene = root["scene"];
-            const YAML::Node camera = root["camera"];
+            const YAML::Node cameras = root["cameras"];
+            const YAML::Node legacy_camera = root["camera"];
             const YAML::Node grid = root["grid"];
             const YAML::Node options = root["options"];
             const YAML::Node objects = root["objects"];
 
-            if (!scene || !camera || !grid || !options || !objects || !objects.IsSequence()) {
+            if (!scene || !grid || !options || !objects || !objects.IsSequence()) {
                 error = "Save file is missing required top-level sections.";
                 return false;
             }
@@ -226,9 +254,50 @@ namespace prune {
                 loaded_selected_id = scene["selected_object_id"].as<GameObjectId>();
             }
 
-            if (!read_required_float(camera, "x", m_camera.x) ||
-                !read_required_float(camera, "y", m_camera.y)) {
-                error = "camera is incomplete.";
+            if (cameras) {
+                const YAML::Node editor = cameras["editor"];
+                const YAML::Node game = cameras["game"];
+
+                if (!editor || !game) {
+                    error = "cameras section is incomplete.";
+                    return false;
+                }
+
+                if (!parse_camera_mode(cameras["mode"], m_cameras.mode)) {
+                    error = "cameras.mode is invalid.";
+                    return false;
+                }
+
+                if (!read_required_float(editor, "x", m_cameras.editor.x) ||
+                    !read_required_float(editor, "y", m_cameras.editor.y) ||
+                    !read_required_float(editor, "speed", m_cameras.editor.speed)) {
+                    error = "cameras.editor is incomplete.";
+                    return false;
+                }
+
+                if (!read_required_float(game, "x", m_cameras.game.x) ||
+                    !read_required_float(game, "y", m_cameras.game.y) ||
+                    !read_required_float(game, "speed", m_cameras.game.speed) ||
+                    !read_required_bool(game, "follow_player", m_cameras.game_options.follow_player)) {
+                    error = "cameras.game is incomplete.";
+                    return false;
+                }
+            }
+            else if (legacy_camera) {
+                if (!read_required_float(legacy_camera, "x", m_cameras.editor.x) ||
+                    !read_required_float(legacy_camera, "y", m_cameras.editor.y)) {
+                    error = "legacy camera is incomplete.";
+                    return false;
+                }
+
+                m_cameras.editor.speed = 256.0f;
+                m_cameras.game.speed = 256.0f;
+                m_cameras.mode = CameraMode::Editor;
+                m_cameras.game_options.follow_player = true;
+                update_game_camera();
+            }
+            else {
+                error = "Save file is missing cameras section.";
                 return false;
             }
 

@@ -83,7 +83,7 @@ namespace prune {
             ImGui::SetNextWindowSize(ImVec2(320.0f, 375.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Options", &m_show_view_grid_options)) {
-                m_options.draw(scene.get_scene_options(), scene.get_grid_options(), scene.get_camera());
+                m_options.draw(scene.get_scene_options(), scene.get_grid_options(), scene.get_camera_state());
             }
             ImGui::End();
         }
@@ -93,7 +93,7 @@ namespace prune {
             ImGui::SetNextWindowSize(ImVec2(310.0f, 230.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
-                Camera& camera = scene.get_camera();
+                const Camera& camera = scene.get_active_camera();
                 GridOptions& grid_options = scene.get_grid_options();
 
                 m_outliner.draw(
@@ -119,7 +119,7 @@ namespace prune {
                     scene.get_player_id(),
                     scene.get_player_controller(),
                     scene.get_grid_options(),
-                    scene.get_camera()
+                    scene.get_active_camera()
                 );
             }
             ImGui::End();
@@ -144,10 +144,16 @@ namespace prune {
 
         if (m_show_stats) {
             ImGui::SetNextWindowPos(ImVec2(10.0f, 34.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(250.0f, 240.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(300.0f, 320.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Stats", &m_show_stats)) {
-                m_stats.draw(scene.get_object_manager(), scene.get_player_id(), scene.get_viewport_width(), scene.get_viewport_height());
+                m_stats.draw(
+                    scene.get_object_manager(),
+                    scene.get_player_id(),
+                    scene.get_viewport_width(),
+                    scene.get_viewport_height(),
+                    scene.get_camera_state()
+                );
             }
             ImGui::End();
         }

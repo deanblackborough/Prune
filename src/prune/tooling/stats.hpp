@@ -8,7 +8,13 @@ namespace prune {
 
     class Stats {
     public:
-        void draw(GameObjectManager& objects, GameObjectId player_id, int viewport_width, int viewport_height);
+        void draw(
+            GameObjectManager& objects,
+            GameObjectId player_id,
+            int viewport_width,
+            int viewport_height,
+            const CameraState& cameras
+        );
     private:
 
     };
