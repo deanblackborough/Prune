@@ -16,19 +16,12 @@ jobs:
 
       - name: Set up vcpkg
         uses: lukka/run-vcpkg@v11
+
+      - name: Configure and Build
+        uses: lukka/run-cmake@v10
         with:
-          vcpkgGitCommitId: 'latest'
-
-      - name: Install dependencies
-        run: |
-          vcpkg install sdl2:x64-windows
-          vcpkg install yaml-cpp:x64-windows
-
-      - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build
-        run: cmake --build build --config Release
+          configurePreset: 'default'
+          buildPreset: 'default'
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
