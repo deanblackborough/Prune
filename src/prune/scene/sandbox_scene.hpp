@@ -42,6 +42,9 @@ namespace prune {
         void update(float dt, const Input& input);
         void render(SDL_Renderer* renderer);
 
+        [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) const;
+        [[nodiscard]] bool load_from_file(std::string_view path, std::string& error);
+
 		void set_viewport_size(int width, int height) noexcept;
 		[[nodiscard]] int get_viewport_width() const noexcept { return m_window_width; }
 		[[nodiscard]] int get_viewport_height() const noexcept { return m_window_height; }
@@ -54,6 +57,9 @@ namespace prune {
         Camera& get_camera();
 
     private:
+        void reset_runtime_state();
+        void restore_defaults();
+
         [[nodiscard]] GameObject* player_object() noexcept;
         [[nodiscard]] const GameObject* player_object() const noexcept;
 

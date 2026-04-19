@@ -8,7 +8,44 @@ namespace prune {
     void Ui::render(SandboxScene& scene) {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
+
+                if (ImGui::MenuItem("Save Scene")) {
+                    std::string error;
+                    if (scene.save_to_file(kSceneFilePath, error)) {
+                        m_file_status = "Saved scene to sandbox_scene.yml";
+                        m_file_status_is_error = false;
+                    }
+                    else {
+                        m_file_status = "Save failed: " + error;
+                        m_file_status_is_error = true;
+                    }
+                }
+
+                if (ImGui::MenuItem("Load Scene")) {
+                    std::string error;
+                    if (scene.load_from_file(kSceneFilePath, error)) {
+                        m_file_status = "Loaded scene from sandbox_scene.yml";
+                        m_file_status_is_error = false;
+                    }
+                    else {
+                        m_file_status = "Load failed: " + error;
+                        m_file_status_is_error = true;
+                    }
+                }
+
+                ImGui::Separator();
                 ImGui::MenuItem("Options", nullptr, &m_show_view_grid_options);
+
+                if (!m_file_status.empty()) {
+                    ImGui::Separator();
+                    if (m_file_status_is_error) {
+                        ImGui::TextWrapped("Status: %s", m_file_status.c_str());
+                    }
+                    else {
+                        ImGui::TextWrapped("Status: %s", m_file_status.c_str());
+                    }
+                }
+
                 ImGui::EndMenu();
             }
 

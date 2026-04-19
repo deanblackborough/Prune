@@ -22,18 +22,7 @@ namespace prune {
 
     void SandboxScene::on_enter()
     {
-        m_objects.clear();
-        m_player_id = kInvalidGameObjectId;
-
-        m_camera = {};
-        m_grid_options = {};
-        m_scene_options = {};
-        m_player_controller = {};
-
-        m_player_id = m_objects.create_object(create_player());
-        m_objects.create_object(create_initial_block());
-
-        m_objects.select(m_player_id);
+        restore_defaults();
     }
 
     void SandboxScene::on_exit() {
@@ -312,4 +301,24 @@ namespace prune {
             }
         }
     }
-} // namespace prune
+
+    void SandboxScene::reset_runtime_state()
+    {
+        m_objects.clear();
+        m_player_id = kInvalidGameObjectId;
+
+        m_camera = {};
+        m_grid_options = {};
+        m_scene_options = {};
+        m_player_controller = {};
+    }
+
+    void SandboxScene::restore_defaults()
+    {
+        reset_runtime_state();
+
+        m_player_id = m_objects.create_object(create_player());
+        m_objects.create_object(create_initial_block());
+        m_objects.select(m_player_id);
+    }
+}

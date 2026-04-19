@@ -36,6 +36,7 @@ If it feels "bare", that's intentional;
 - **C++23** – Modern C++ with modules-ready structure
 - **SDL2** – Windowing, input, and rendering
 - **Dear ImGui** – Editor UI and tooling
+- **Yaml-cpp** – A YAML parser
 - **CMake** – Build system with vcpkg integration
 - **MSVC** – Primary compiler (Visual Studio 2022+)
 
@@ -147,6 +148,7 @@ git clone https://github.com/microsoft/vcpkg.git
 cd vcpkg
 bootstrap-vcpkg.bat
 vcpkg install sdl2:x64-windows
+vcpkg install yaml-cpp:x64-windows
 ```
 
 ### 2. Configure CLion
