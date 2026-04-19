@@ -1,3 +1,4 @@
+#include <format>
 #include <string>
 
 #include "prune/tooling/stats.hpp"
@@ -6,7 +7,13 @@
 
 namespace prune {
 
-    void Stats::draw(GameObjectManager& objects, GameObjectId player_id, int viewport_width, int viewport_height) 
+	void Stats::draw(
+		GameObjectManager& objects,
+		GameObjectId player_id,
+		int viewport_width,
+		int viewport_height,
+		const CameraState& cameras
+	)
 	{
         ImGuiIO& io = ImGui::GetIO();
 
@@ -33,6 +40,23 @@ namespace prune {
 			tooling::imgui::property_table::begin("##viewport");
 			tooling::imgui::property_table::text("Width", std::to_string(viewport_width).c_str());
 			tooling::imgui::property_table::text("Height", std::to_string(viewport_height).c_str());
+			tooling::imgui::property_table::end();
+		}
+
+		if (tooling::imgui::layout::collapsing_header("Camera")) {
+			tooling::imgui::property_table::begin("##camera");
+			tooling::imgui::property_table::text("Active", cameras.mode == CameraMode::Editor ? "Editor" : "Game");
+			tooling::imgui::property_table::text("Editor X", std::format("{:.2f}", cameras.editor.x).c_str());
+			tooling::imgui::property_table::text("Editor Y", std::format("{:.2f}", cameras.editor.y).c_str());
+			tooling::imgui::property_table::text("Game X", std::format("{:.2f}", cameras.game.x).c_str());
+			tooling::imgui::property_table::text("Game Y", std::format("{:.2f}", cameras.game.y).c_str());
+			tooling::imgui::property_table::text("Follow player", cameras.game_options.follow_player ? "true" : "false");
+
+			if (const GameObject* player = objects.get_by_id(player_id)) {
+				tooling::imgui::property_table::text("Player X", std::format("{:.2f}", player->transform.x).c_str());
+				tooling::imgui::property_table::text("Player Y", std::format("{:.2f}", player->transform.y).c_str());
+			}
+
 			tooling::imgui::property_table::end();
 		}
     }

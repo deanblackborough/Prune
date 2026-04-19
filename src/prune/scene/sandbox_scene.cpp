@@ -86,14 +86,54 @@ namespace prune {
         return m_scene_options;
     }
 
-    Camera& SandboxScene::get_camera() {
-        return m_camera;
+
+    CameraState& SandboxScene::get_camera_state() noexcept {
+        return m_cameras;
+    }
+
+    const CameraState& SandboxScene::get_camera_state() const noexcept {
+        return m_cameras;
+    }
+
+    Camera& SandboxScene::get_editor_camera() noexcept {
+        return m_cameras.editor;
+    }
+
+    const Camera& SandboxScene::get_editor_camera() const noexcept {
+        return m_cameras.editor;
+    }
+
+    Camera& SandboxScene::get_game_camera() noexcept {
+        return m_cameras.game;
+    }
+
+    const Camera& SandboxScene::get_game_camera() const noexcept {
+        return m_cameras.game;
+    }
+
+    Camera& SandboxScene::get_active_camera() noexcept {
+        return (m_cameras.mode == CameraMode::Editor) ? m_cameras.editor : m_cameras.game;
+    }
+
+    const Camera& SandboxScene::get_active_camera() const noexcept {
+        return (m_cameras.mode == CameraMode::Editor) ? m_cameras.editor : m_cameras.game;
+    }
+
+    void SandboxScene::activate_editor_camera() noexcept
+    {
+        m_cameras.mode = CameraMode::Editor;
+    }
+
+    void SandboxScene::activate_game_camera() noexcept
+    {
+        m_cameras.mode = CameraMode::Game;
     }
 
     void SandboxScene::update(float dt, const Input& input)
     {
-        update_editor(dt, input);
         update_game(dt, input);
+        update_editor(dt, input);
+		update_cameras();
     }
 
     void SandboxScene::update_game(float dt, const Input& input)
@@ -109,7 +149,42 @@ namespace prune {
         }
 
         player->velocity = m_player_controller.movement_velocity(input);
+
+        const bool is_moving =
+            player->velocity.x != 0.0f ||
+            player->velocity.y != 0.0f;
+
+        if (is_moving) {
+            activate_game_camera();
+        }
+
         move_object(*player, player->velocity.x * dt, player->velocity.y * dt, true);
+    }
+
+    void SandboxScene::update_cameras()
+    {
+        update_game_camera();
+    }
+
+    void SandboxScene::update_game_camera() noexcept
+    {
+        const GameObject* player = player_object();
+        if (!player) {
+            return;
+        }
+
+        if (!m_cameras.game_options.follow_player) {
+            return;
+        }
+
+        const float player_center_x =
+            player->transform.x + (static_cast<float>(player->rectangle.width) * 0.5f);
+
+        const float player_center_y =
+            player->transform.y + (static_cast<float>(player->rectangle.height) * 0.5f);
+
+        m_cameras.game.x = player_center_x - (static_cast<float>(m_window_width) * 0.5f);
+        m_cameras.game.y = player_center_y - (static_cast<float>(m_window_height) * 0.5f);
     }
 
     void SandboxScene::move_object(GameObject& object, float delta_x, float delta_y, bool resolve_collisions)
@@ -124,17 +199,21 @@ namespace prune {
 
     Transform SandboxScene::screen_to_world(int screen_x, int screen_y) const noexcept
     {
+        const Camera& camera = get_active_camera();
+
         return {
-            static_cast<float>(screen_x) + m_camera.x,
-            static_cast<float>(screen_y) + m_camera.y
+            static_cast<float>(screen_x) + camera.x,
+            static_cast<float>(screen_y) + camera.y
         };
     }
 
     SDL_Rect SandboxScene::world_to_screen_rect(const GameObject& object) const noexcept
     {
+        const Camera& camera = get_active_camera();
+
         return SDL_Rect{
-            static_cast<int>(std::round(object.transform.x - m_camera.x)),
-            static_cast<int>(std::round(object.transform.y - m_camera.y)),
+            static_cast<int>(std::round(object.transform.x - camera.x)),
+            static_cast<int>(std::round(object.transform.y - camera.y)),
             object.rectangle.width,
             object.rectangle.height
         };
@@ -203,10 +282,12 @@ namespace prune {
 
         const int scene_grid_size = std::max(1, m_grid_options.grid_size);
 
-        const float left_world = m_camera.x;
-        const float right_world = m_camera.x + static_cast<float>(m_window_width);
-        const float top_world = m_camera.y;
-        const float bottom_world = m_camera.y + static_cast<float>(m_window_height);
+        const Camera& camera = get_active_camera();
+
+        const float left_world = camera.x;
+        const float right_world = camera.x + static_cast<float>(m_window_width);
+        const float top_world = camera.y;
+        const float bottom_world = camera.y + static_cast<float>(m_window_height);
 
         const float first_vertical_world =
             std::floor(left_world / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
@@ -222,7 +303,7 @@ namespace prune {
             if (world_x > right_world) {
                 break;
             }
-            const int screen_x = static_cast<int>(std::round(world_x - m_camera.x));
+            const int screen_x = static_cast<int>(std::round(world_x - camera.x));
             SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, m_window_height);
         }
 
@@ -232,7 +313,7 @@ namespace prune {
             if (world_y > bottom_world) {
                 break;
             }
-            const int screen_y = static_cast<int>(std::round(world_y - m_camera.y));
+            const int screen_y = static_cast<int>(std::round(world_y - camera.y));
             SDL_RenderDrawLine(renderer, 0, screen_y, m_window_width, screen_y);
         }
     }
@@ -307,7 +388,12 @@ namespace prune {
         m_objects.clear();
         m_player_id = kInvalidGameObjectId;
 
-        m_camera = {};
+        m_cameras = {};
+        m_cameras.editor.speed = 256.0f;
+        m_cameras.game.speed = 256.0f;
+        m_cameras.mode = CameraMode::Editor;
+        m_cameras.game_options.follow_player = true;
+
         m_grid_options = {};
         m_scene_options = {};
         m_player_controller = {};
@@ -320,10 +406,14 @@ namespace prune {
         m_player_id = m_objects.create_object(create_player());
         m_objects.create_object(create_initial_block());
         m_objects.select(m_player_id);
+
+		update_game_camera();
     }
 
     void SandboxScene::new_scene()
     {
         restore_defaults();
+
+        update_game_camera();
     }
 }

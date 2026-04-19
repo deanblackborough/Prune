@@ -29,7 +29,6 @@ namespace prune {
         GameObject* selected = objects.selected_object();
 
         if (!selected) {
-            tooling::imgui::layout::text("No object selected.");
             return;
         }
 
@@ -119,7 +118,34 @@ namespace prune {
     ) {
         GameObject* selected = objects.selected_object();
         if (!selected) {
-            tooling::imgui::layout::text("No object selected.");
+
+            const char* title = "No object selected";
+            const char* hint1 = "Click an object in the scene";
+            const char* hint2 = "or select one from the Outliner";
+
+            const float window_width = ImGui::GetContentRegionAvail().x;
+
+            auto center_text = [&](const char* text) {
+                const float text_width = ImGui::CalcTextSize(text).x;
+                ImGui::SetCursorPosX((window_width - text_width) * 0.5f);
+                ImGui::TextUnformatted(text);
+            };
+
+            center_text(title);
+
+            ImGui::Spacing();
+            ImGui::Spacing();
+
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+
+            center_text(hint1);
+            center_text(hint2);
+
+            ImGui::PopStyleColor();
+
+            ImGui::Spacing();
+            ImGui::Separator();
+
             return;
         }
 
@@ -127,8 +153,8 @@ namespace prune {
 
         if (tooling::imgui::layout::collapsing_header("Transform")) {
             if (tooling::imgui::property_table::begin("##transform")) {
-                tooling::imgui::property_table::slider_float("X", "##x", selected->transform.x, -4096.0f, 4096.0f, "%.2f");
-                tooling::imgui::property_table::slider_float("Y", "##y", selected->transform.y, -4096.0f, 4096.0f, "%.2f");
+                tooling::imgui::property_table::drag_float("X", "transform_x", selected->transform.x, 1.0f);
+                tooling::imgui::property_table::drag_float("Y", "transform_y", selected->transform.y, 1.0f);
                 tooling::imgui::property_table::end();
             }
         }
@@ -168,7 +194,6 @@ namespace prune {
     ) {
         GameObject* selected = objects.selected_object();
         if (!selected) {
-            tooling::imgui::layout::text("No object selected.");
             return;
         }
 
@@ -200,7 +225,6 @@ namespace prune {
     ) {
         GameObject* selected = objects.selected_object();
         if (!selected) {
-            tooling::imgui::layout::text("No object selected.");
             return;
         }
 

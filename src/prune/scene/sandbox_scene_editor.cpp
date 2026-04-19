@@ -74,6 +74,8 @@ namespace prune {
             return;
         }
 
+        activate_editor_camera();
+
         const float length = std::sqrt((move_x * move_x) + (move_y * move_y));
 
         if (length > 0.0f) {
@@ -81,9 +83,11 @@ namespace prune {
             move_y /= length;
         }
 
-        const float move_amount = m_camera.speed * dt;
-        m_camera.x += move_x * move_amount;
-        m_camera.y += move_y * move_amount;
+        Camera& camera = get_editor_camera();
+
+        const float move_amount = camera.speed * dt;
+        camera.x += move_x * move_amount;
+        camera.y += move_y * move_amount;
     }
 
     void SandboxScene::handle_scene_click(const Input& input)
@@ -96,12 +100,13 @@ namespace prune {
             return;
         }
 
-        GameObject* clicked = pick_object_at_screen(input.mouse_x(), input.mouse_y());
-        if (!clicked) {
-            return;
-        }
+        GameObject* picked = pick_object_at_screen(input.mouse_x(), input.mouse_y());
 
-        m_objects.select(clicked->id);
+        if (picked) {
+            m_objects.select(picked->id);
+        } else {
+            m_objects.set_selected_id(kInvalidGameObjectId);
+        }
     }
 
     void SandboxScene::handle_keyboard_nudge(const Input& input)

@@ -20,6 +20,22 @@ namespace prune {
         float speed = 256.0f;
     };
 
+    enum class CameraMode {
+        Editor = 0,
+		Game = 1
+    };
+
+    struct GameCameraOptions {
+		bool follow_player = true;
+    };
+
+    struct CameraState {
+        Camera editor;
+        Camera game;
+		CameraMode mode = CameraMode::Editor;
+		GameCameraOptions game_options;
+    };
+
     struct GridOptions {
         bool show_grid = true;
         bool snap_to_grid = true;
@@ -56,7 +72,18 @@ namespace prune {
         PlayerController& get_player_controller();
         GridOptions& get_grid_options();
         SceneOptions& get_scene_options();
-        Camera& get_camera();
+
+        CameraState& get_camera_state() noexcept;
+        const CameraState& get_camera_state() const noexcept;
+
+        Camera& get_editor_camera() noexcept;
+        const Camera& get_editor_camera() const noexcept;
+
+        Camera& get_game_camera() noexcept;
+        const Camera& get_game_camera() const noexcept;
+
+        Camera& get_active_camera() noexcept;
+        const Camera& get_active_camera() const noexcept;;
 
     private:
         void reset_runtime_state();
@@ -71,6 +98,12 @@ namespace prune {
         // Game logic
         void update_game(float dt, const Input& input);
         void update_player(float dt, const Input& input);
+        void update_cameras();
+        void update_game_camera() noexcept;
+
+        void activate_editor_camera() noexcept;
+        void activate_game_camera() noexcept;
+
         void move_object(GameObject& object, float delta_x, float delta_y, bool resolve_collisions);
         void resolve_player_collisions(GameObject& player);
         [[nodiscard]] bool is_overlapping(const GameObject& a, const GameObject& b) const noexcept;
@@ -103,6 +136,6 @@ namespace prune {
         GridOptions m_grid_options;
         SceneOptions m_scene_options;
 
-        Camera m_camera;
+        CameraState m_cameras;
     };
 }

@@ -39,6 +39,29 @@ namespace prune::tooling::imgui::property_table
         begin_row(text);
     }
 
+    bool combo(
+        const char* label,
+        const char* id,
+        int& current_item,
+        const char* const items[],
+        int items_count
+    )
+    {
+        ImGui::TableNextRow();
+
+        // Label column
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted(label);
+
+        // Value column
+        ImGui::TableSetColumnIndex(1);
+        ImGui::PushID(id);
+        const bool changed = ImGui::Combo("##value", &current_item, items, items_count);
+        ImGui::PopID();
+
+        return changed;
+    }
+
 	bool text(const char* label, const char* value)
 	{
 		begin_row(label);
@@ -69,6 +92,40 @@ namespace prune::tooling::imgui::property_table
     {
         begin_row(label);
         return ImGui::SliderInt(id, &value, min, max);
+    }
+
+    bool drag_float(
+        const char* label,
+        const char* id,
+        float& value,
+        float speed,
+        float min,
+        float max,
+        const char* format
+    )
+    {
+        ImGui::TableNextRow();
+
+        // Label column
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted(label);
+
+        // Value column
+        ImGui::TableSetColumnIndex(1);
+        ImGui::PushID(id);
+
+        const bool changed = ImGui::DragFloat(
+            "##value",
+            &value,
+            speed,
+            min,
+            max,
+            format
+        );
+
+        ImGui::PopID();
+
+        return changed;
     }
 
     bool checkbox(const char* label, const char* id, bool& value)
