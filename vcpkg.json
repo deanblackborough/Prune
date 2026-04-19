@@ -4,6 +4,5 @@
   "dependencies": [
     "sdl2",
     "yaml-cpp"
-  ],
-  "builtin-baseline": "3508985146f1b1d248c67abb13a0f0b329a3c3f6"
+  ]
 }

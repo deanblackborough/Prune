@@ -13,11 +13,11 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          submodules: true
 
       - name: Set up vcpkg
         uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '01f602195983451bc83e72f4214af2cbc495aa94'
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
@@ -29,6 +29,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: prune-windows
-          path: |
-            build/Release/Prune.exe
+          path: build/Release/Prune.exe
           retention-days: 30
