@@ -104,28 +104,8 @@ namespace prune::tooling::imgui::property_table
         const char* format
     )
     {
-        ImGui::TableNextRow();
-
-        // Label column
-        ImGui::TableSetColumnIndex(0);
-        ImGui::TextUnformatted(label);
-
-        // Value column
-        ImGui::TableSetColumnIndex(1);
-        ImGui::PushID(id);
-
-        const bool changed = ImGui::DragFloat(
-            "##value",
-            &value,
-            speed,
-            min,
-            max,
-            format
-        );
-
-        ImGui::PopID();
-
-        return changed;
+        begin_row(label);
+        return ImGui::DragFloat(id, &value, speed, min, max, format);
     }
 
     bool checkbox(const char* label, const char* id, bool& value)
