@@ -1,0 +1,9 @@
+{
+  "name": "prune",
+  "version": "0.1.0",
+  "dependencies": [
+    "sdl2",
+    "yaml-cpp"
+  ],
+  "builtin-baseline": "cb2981c4e03d421fa03b9bb5044cd1986180e7e4"
+}

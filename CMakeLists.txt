@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.10...3.31)
 project(Prune)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(SDL2 REQUIRED CONFIG)
+find_package(yaml-cpp REQUIRED CONFIG)
 
 add_executable(Prune
         src/main.cpp
@@ -21,6 +22,7 @@ add_executable(Prune
         src/prune/scene/player_controller.cpp
         src/prune/scene/sandbox_scene.cpp
         src/prune/scene/sandbox_scene_editor.cpp
+        src/prune/scene/sandbox_scene_serialization.cpp
 
         src/prune/tooling/ui.cpp
         src/prune/tooling/outliner.cpp
@@ -49,6 +51,7 @@ target_include_directories(Prune PRIVATE
 
 target_link_libraries(Prune PRIVATE
         SDL2::SDL2
+        yaml-cpp::yaml-cpp
 )
 
 if(MSVC)

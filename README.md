@@ -28,7 +28,6 @@ If it feels "bare", that's intentional;
 
 <img width="1917" height="1125" alt="image" src="https://github.com/user-attachments/assets/9bdae32a-2827-4505-ab2c-c84557b33b25" />
 
-
 ---
 
 ## Tech
@@ -36,6 +35,7 @@ If it feels "bare", that's intentional;
 - **C++23** – Modern C++ with modules-ready structure
 - **SDL2** – Windowing, input, and rendering
 - **Dear ImGui** – Editor UI and tooling
+- **Yaml-cpp** – A YAML parser
 - **CMake** – Build system with vcpkg integration
 - **MSVC** – Primary compiler (Visual Studio 2022+)
 
@@ -111,20 +111,79 @@ If it feels "bare", that's intentional;
 - Minimal ImGui exposure in game code
 - Reusable, styled UI components
 
+## Scene Persistence
+
+Prune supports basic scene save/load using YAML.
+
+### Save / Load
+
+Scenes are saved to a local file: `sandbox_scene.yml`
+
+Use the **File** menu:
+
+- **New Scene** – resets the scene to defaults
+- **Save Scene** – writes the current scene to disk
+- **Load Scene** – replaces the current scene with the saved file
+
+Load is immediate and replaces all current state.
+
+### What is saved
+
+Scene state:
+
+- next object id
+- player id
+- selected object id (if any)
+- camera position
+- grid settings
+- scene options
+
+Per object:
+
+- id
+- name
+- transform (x, y)
+- rectangle (width, height)
+- colour
+- active / visible / solid flags
+- is_player flag
+
+### What is not saved (v1)
+
+- velocity
+- editor UI state (panel visibility, layout, etc.)
+- assets or external resources
+- multiple scene types
+
+### Notes
+
+- The save format is human-readable YAML.
+- Loading requires a valid file; invalid data will fail to load and leave the current scene unchanged.
+- Exactly one player object must exist in a valid scene file.
+
 ---
 
 ## Next
-- Camera and limitless world space foundation
+### Foundation
+- Camera and limitless world space
+- Editor camera vs player camera separation
+- Object types (player, blocks, platforms, hazards, etc.)
 - Static sprites
+
+### Editing tools
 - Gizmos for object movement
-- Save and load
-- Animated sprites
-- Editor camera 
-- Player camera
 - Gizmos for scaling the selected object
+
+### Core systems
 - Undo/redo system
-- ENTT at some point
-- Multi-scene support, game type per scene (top-down, platformer, etc)
+- Improved save and load (v2)
+
+### Content
+- Animated sprites
+
+### Architecture
+- Multi-scene support (scene types: platformer, top-down, etc.)
+- ENTT (ECS integration)
 
 ## Build Instructions (Visual Studio + CLion)
 
@@ -147,6 +206,7 @@ git clone https://github.com/microsoft/vcpkg.git
 cd vcpkg
 bootstrap-vcpkg.bat
 vcpkg install sdl2:x64-windows
+vcpkg install yaml-cpp:x64-windows
 ```
 
 ### 2. Configure CLion

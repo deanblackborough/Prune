@@ -11,6 +11,7 @@ namespace prune {
         void clear() noexcept;
 
         GameObjectId create_object(const GameObject& object);
+        bool add_loaded_object(const GameObject& object);
         bool remove_object(GameObjectId id) noexcept;
 
         [[nodiscard]] std::size_t count() const noexcept;
@@ -23,7 +24,11 @@ namespace prune {
         [[nodiscard]] const GameObject* selected_object() const noexcept;
 
         void select(GameObjectId id) noexcept;
+        void set_selected_id(GameObjectId id) noexcept;
         [[nodiscard]] GameObjectId selected_id() const noexcept;
+
+        void set_next_id(GameObjectId next_id) noexcept;
+        [[nodiscard]] GameObjectId next_id() const noexcept;
 
         [[nodiscard]] std::vector<GameObject>& objects() noexcept;
         [[nodiscard]] const std::vector<GameObject>& objects() const noexcept;

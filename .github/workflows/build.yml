@@ -13,14 +13,16 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
-      - name: Set up SDL2
-        uses: libsdl-org/setup-sdl@v1
         with:
-          version: 2-latest
+          fetch-depth: 0
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: "cb2981c4e03d421fa03b9bb5044cd1986180e7e4"
 
       - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: Build
         run: cmake --build build --config Release
@@ -29,7 +31,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: prune-windows
-          path: |
-            build/Release/Prune.exe
-            build/Prune.exe
+          path: build/Release/Prune.exe
           retention-days: 30
