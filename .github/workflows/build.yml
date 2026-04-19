@@ -13,15 +13,17 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Set up vcpkg
         uses: lukka/run-vcpkg@v11
 
-      - name: Configure and Build
-        uses: lukka/run-cmake@v10
-        with:
-          configurePreset: 'default'
-          buildPreset: 'default'
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+      - name: Build
+        run: cmake --build build --config Release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -29,5 +31,4 @@ jobs:
           name: prune-windows
           path: |
             build/Release/Prune.exe
-            build/Prune.exe
           retention-days: 30
