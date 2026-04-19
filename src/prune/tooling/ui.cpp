@@ -8,6 +8,13 @@ namespace prune {
     void Ui::render(SandboxScene& scene) {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("New Scene")) {
+                    scene.new_scene();
+                    m_file_status = "Created new scene";
+                    m_file_status_is_error = false;
+                }
+
+                ImGui::Separator();
 
                 if (ImGui::MenuItem("Save Scene")) {
                     std::string error;

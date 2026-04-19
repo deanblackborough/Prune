@@ -22,7 +22,7 @@ namespace prune {
 
     void SandboxScene::on_enter()
     {
-        restore_defaults();
+        new_scene();
     }
 
     void SandboxScene::on_exit() {
@@ -320,5 +320,10 @@ namespace prune {
         m_player_id = m_objects.create_object(create_player());
         m_objects.create_object(create_initial_block());
         m_objects.select(m_player_id);
+    }
+
+    void SandboxScene::new_scene()
+    {
+        restore_defaults();
     }
 }

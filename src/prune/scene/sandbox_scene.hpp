@@ -42,6 +42,8 @@ namespace prune {
         void update(float dt, const Input& input);
         void render(SDL_Renderer* renderer);
 
+        void new_scene();
+
         [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) const;
         [[nodiscard]] bool load_from_file(std::string_view path, std::string& error);
 
