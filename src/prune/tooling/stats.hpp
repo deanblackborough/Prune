@@ -11,8 +11,7 @@ namespace prune {
         void draw(
             GameObjectManager& objects,
             GameObjectId player_id,
-            int viewport_width,
-            int viewport_height,
+            const SceneViewport& viewport,
             const CameraState& cameras
         );
     private:

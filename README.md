@@ -1,70 +1,85 @@
-
 # Prune
 
-Prune is a small C++23 2D engine/editor experiment built with SDL2, Dear ImGui, and YAML.
+Prune is a C++ 2D editor/runtime experiment built around a live play-and-build workflow.
 
-The goal is not a traditional “edit here, play there” workflow. The long-term aim is a live 2D play-and-build system where editing and gameplay coexist, and where different scene types can define their own tools and behaviour instead of being forced into one editor model.
+The aim is not a traditional engine with a separate editor bolted on afterwards. 
+The editor is part of the experience: scenes are live, editing and gameplay coexist, and 
+different scene types should eventually be able to define their own tools, inspectors, and 
+behaviour instead of being forced into one fixed editor model.
+
+This project is intentionally focused on architecture and tooling foundations first: 
+viewport ownership, input routing, scene/world separation, object editing, and persistence.
+
+## Why this exists
+
+My earlier attempt [`prune-2d`](https://github.com/deanblackborough/prune-2d) leaned too far 
+towards “build engine pieces first and hope the game and editor appeared later”.
+
+Prune is take two.
+
+The goal here is to build the runtime, editor, and interaction model together from the start 
+so the project grows around live editing rather adding tooling later. That means solving 
+editor problems early: scene view ownership, input focus, picking, object inspection, 
+save/load, and the separation between editor behaviour and game behaviour.
 
 <img width="1917" height="1125" alt="image" src="https://github.com/user-attachments/assets/9bdae32a-2827-4505-ab2c-c84557b33b25" />
 
+## Design principles
+
+Prune is being created based on a few simple rules:
+
+- **Editor-first, not editor-later**  
+  The scene should live inside the tooling UI, not the other way round.
+
+- **Live state over mode switching**  
+  The long-term goal is a system where editing and gameplay coexist rather than a strict 
+  “edit mode” vs “play mode” split, no play buttons and no separate editor process.
+
+- **Explicit over magical**  
+  Ownership, input routing, camera behaviour, and scene interaction should stay understandable.
+
+- **Small steps over premature architecture**  
+  New systems are added when I need them, not because “engines usually have one”, I made that mistake before.
+
+- **Scene-specific tooling later**  
+  Different scene types will eventually be able to define different tools and inspectors instead of 
+  sharing a one-size-fits-all editor, the goal is a scene type for top down games, another for platformers with gravity, 
+  another for card games, etc.
+
 ## Current state
 
-Prune currently includes:
+Prune is still small on purpose.
 
-- SDL2 window and renderer
-- live ImGui editor UI
-- object selection and inspection
-- player movement and collision
-- editor grid with optional snapping
-- basic camera movement
-- object creation, cloning, renaming, and deletion
-- YAML scene save/load
+The project is currently focused on getting the editor/runtime foundation right before 
+moving into richer content or more advanced rendering. The main concern right now is not 
+“how many features can be added?”, but whether the core structure is correct enough to 
+support scene viewports, gizmos, scene-specific tools, and live editing without 
+fighting the architecture later.
 
-It is intentionally still small. The focus is on building a clear tooling foundation first.
+## Implemented so far
 
-## Tech
+### Scene editing
+- object selection
+- object inspection
+- object renaming with uniqueness handling
+- object cloning and deletion
+- outliner search
+- selected object highlighting
 
-- C++23
-- SDL2
-- Dear ImGui
-- yaml-cpp
-- CMake
-- vcpkg
-- MSVC / Visual Studio 2022+
+### Runtime interaction
+- player movement
+- collision against solid objects
+- live player speed editing
 
-## Current features
-
-### Scene and object editing
-- Select objects with the mouse
-- Edit transform, size, colour, and flags
-- Rename objects with unique naming
-- Clone and delete non-player objects
-- Search objects in the outliner
-- Highlight the selected object
-
-### Player and world interaction
-- WASD player movement
-- Collision detection against solid objects
-- Live player speed editing
-
-### Editor tools
-- Grid overlay
-- Optional snap-to-grid
-- Keyboard nudging for selected objects
-- Editor camera movement
-- Stats, controls, and options panels
+### Editor support
+- editor grid
+- optional snap-to-grid
+- keyboard nudging
+- editor camera movement
+- stats and options panels
 
 ### Persistence
-- Save the current scene to YAML
-- Load a saved scene from YAML
-
-The save currently includes:
-
-- scene ids and selection
-- camera position
-- grid settings
-- scene options
-- object data and flags
+- YAML save/load for scene state, object data, grid settings, and camera data
 
 ## Controls
 
@@ -76,21 +91,33 @@ The save currently includes:
 
 ## Roadmap
 
-Near term:
+### Next
+- proper scene viewport inside the editor UI
+- viewport-owned input and picking
+- cleaner object/render type foundations
+- static sprite support
+- movement/transform gizmos
 
-- finish world space and camera properly
-- separate editor camera from player camera
-- improve object and scene type foundations
-- add static sprites
-- add gizmos for movement and scaling
-
-Longer term:
-
-- multiple scene types
-- richer save/load
+### After that
+- scene-specific inspectors and tools
+- richer persistence
 - animated sprites
 - undo/redo
-- ECS integration with EnTT
+- ECS integration where it genuinely helps rather than by default
+
+### Long-term direction
+- multiple scene types with different editing models
+- a live play-and-build workflow where editor and runtime remain part of the same experience
+
+## Tech
+
+- C++23
+- SDL2
+- Dear ImGui
+- yaml-cpp
+- CMake
+- vcpkg
+- MSVC / Visual Studio 2022+
 
 ## Build
 
