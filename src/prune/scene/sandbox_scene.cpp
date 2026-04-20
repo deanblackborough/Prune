@@ -9,16 +9,20 @@
 namespace prune {
 
     SandboxScene::SandboxScene(int window_width, int window_height)
-        : m_window_width(window_width)
-        , m_window_height(window_height)
     {
+        m_viewport.width = window_width;
+        m_viewport.height = window_height;
     }
 
-    void SandboxScene::set_viewport_size(int width, int height) noexcept
+    void SandboxScene::set_viewport(const SceneViewport& viewport) noexcept
     {
-        m_window_width = width;
-        m_window_height = height;
-	}
+        m_viewport = viewport;
+    }
+
+    bool SandboxScene::scene_input_enabled() const noexcept
+    {
+        return m_viewport.focused && m_viewport.has_area();
+    }
 
     void SandboxScene::on_enter()
     {
@@ -148,6 +152,11 @@ namespace prune {
             return;
         }
 
+        if (!scene_input_enabled()) {
+            player->velocity = {};
+            return;
+        }
+
         player->velocity = m_player_controller.movement_velocity(input);
 
         const bool is_moving =
@@ -183,8 +192,12 @@ namespace prune {
         const float player_center_y =
             player->transform.y + (static_cast<float>(player->rectangle.height) * 0.5f);
 
-        m_cameras.game.x = player_center_x - (static_cast<float>(m_window_width) * 0.5f);
-        m_cameras.game.y = player_center_y - (static_cast<float>(m_window_height) * 0.5f);
+        if (!m_viewport.has_area()) {
+            return;
+        }
+
+        m_cameras.game.x = player_center_x - (static_cast<float>(m_viewport.width) * 0.5f);
+        m_cameras.game.y = player_center_y - (static_cast<float>(m_viewport.height) * 0.5f);
     }
 
     void SandboxScene::move_object(GameObject& object, float delta_x, float delta_y, bool resolve_collisions)
@@ -201,9 +214,12 @@ namespace prune {
     {
         const Camera& camera = get_active_camera();
 
+        const int local_x = screen_x - m_viewport.screen_x;
+        const int local_y = screen_y - m_viewport.screen_y;
+
         return {
-            static_cast<float>(screen_x) + camera.x,
-            static_cast<float>(screen_y) + camera.y
+            static_cast<float>(local_x) + camera.x,
+            static_cast<float>(local_y) + camera.y
         };
     }
 
@@ -222,13 +238,17 @@ namespace prune {
     bool SandboxScene::is_rect_visible(const SDL_Rect& rect) const noexcept
     {
         return rect.x + rect.w >= 0 &&
-               rect.y + rect.h >= 0 &&
-               rect.x < m_window_width &&
-               rect.y < m_window_height;
+            rect.y + rect.h >= 0 &&
+            rect.x < m_viewport.width &&
+            rect.y < m_viewport.height;
     }
 
     void SandboxScene::render(SDL_Renderer* renderer)
     {
+        if (!m_viewport.has_area()) {
+            return;
+        }
+
         draw_grid(renderer);
 
         const GameObjectId selected_id = m_objects.selected_id();
@@ -285,9 +305,9 @@ namespace prune {
         const Camera& camera = get_active_camera();
 
         const float left_world = camera.x;
-        const float right_world = camera.x + static_cast<float>(m_window_width);
+        const float right_world = camera.x + static_cast<float>(m_viewport.width);
         const float top_world = camera.y;
-        const float bottom_world = camera.y + static_cast<float>(m_window_height);
+        const float bottom_world = camera.y + static_cast<float>(m_viewport.height);
 
         const float first_vertical_world =
             std::floor(left_world / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
@@ -304,7 +324,7 @@ namespace prune {
                 break;
             }
             const int screen_x = static_cast<int>(std::round(world_x - camera.x));
-            SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, m_window_height);
+            SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, m_viewport.height);
         }
 
         const int horizontal_line_count = static_cast<int>(std::ceil((bottom_world - first_horizontal_world) / static_cast<float>(scene_grid_size))) + 1;
@@ -314,7 +334,7 @@ namespace prune {
                 break;
             }
             const int screen_y = static_cast<int>(std::round(world_y - camera.y));
-            SDL_RenderDrawLine(renderer, 0, screen_y, m_window_width, screen_y);
+            SDL_RenderDrawLine(renderer, 0, screen_y, m_viewport.width, screen_y);
         }
     }
 

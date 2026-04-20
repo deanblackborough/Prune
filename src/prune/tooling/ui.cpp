@@ -5,7 +5,15 @@
 
 namespace prune {
 
-    void Ui::render(SandboxScene& scene) {
+    Ui::~Ui()
+    {
+        destroy_scene_render_target();
+    }
+
+    void Ui::render(SandboxScene& scene, SDL_Renderer* renderer) 
+    {
+        draw_scene_viewport(scene, renderer);
+
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New Scene")) {
@@ -57,6 +65,7 @@ namespace prune {
             }
 
             if (ImGui::BeginMenu("View")) {
+                ImGui::MenuItem("Scene", nullptr, &m_show_scene_viewport);
                 ImGui::MenuItem("Outliner", nullptr, &m_show_outliner);
                 ImGui::MenuItem("Inspector", nullptr, &m_show_inspector);
                 ImGui::MenuItem("Stats", nullptr, &m_show_stats);
@@ -150,8 +159,7 @@ namespace prune {
                 m_stats.draw(
                     scene.get_object_manager(),
                     scene.get_player_id(),
-                    scene.get_viewport_width(),
-                    scene.get_viewport_height(),
+                    scene.get_viewport(),
                     scene.get_camera_state()
                 );
             }
@@ -161,5 +169,104 @@ namespace prune {
         if (m_show_imgui_demo) {
             ImGui::ShowDemoWindow(&m_show_imgui_demo);
         }
+    }
+
+    void Ui::destroy_scene_render_target()
+    {
+        if (m_scene_render_target) {
+            SDL_DestroyTexture(m_scene_render_target);
+            m_scene_render_target = nullptr;
+        }
+
+        m_scene_render_target_width = 0;
+        m_scene_render_target_height = 0;
+    }
+
+    void Ui::ensure_scene_render_target(SDL_Renderer* renderer, int width, int height)
+    {
+        width = std::max(1, width);
+        height = std::max(1, height);
+
+        if (m_scene_render_target &&
+            m_scene_render_target_width == width &&
+            m_scene_render_target_height == height) {
+            return;
+        }
+
+        destroy_scene_render_target();
+
+        m_scene_render_target = SDL_CreateTexture(
+            renderer,
+            SDL_PIXELFORMAT_RGBA8888,
+            SDL_TEXTUREACCESS_TARGET,
+            width,
+            height
+        );
+
+        if (!m_scene_render_target) {
+            return;
+        }
+
+        SDL_SetTextureBlendMode(m_scene_render_target, SDL_BLENDMODE_BLEND);
+
+        m_scene_render_target_width = width;
+        m_scene_render_target_height = height;
+    }
+
+    void Ui::draw_scene_viewport(SandboxScene& scene, SDL_Renderer* renderer)
+    {
+        if (!m_show_scene_viewport) {
+            return;
+        }
+
+        ImGui::SetNextWindowPos(ImVec2(320.0f, 23.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(620.0f, 690.0f), ImGuiCond_FirstUseEver);
+
+        if (!ImGui::Begin("Scene", &m_show_scene_viewport, ImGuiWindowFlags_NoScrollbar)) {
+            scene.set_viewport({});
+            ImGui::End();
+            return;
+        }
+
+        const ImVec2 viewport_pos = ImGui::GetCursorScreenPos();
+        ImVec2 viewport_size = ImGui::GetContentRegionAvail();
+
+        viewport_size.x = std::max(viewport_size.x, 1.0f);
+        viewport_size.y = std::max(viewport_size.y, 1.0f);
+
+        SceneViewport viewport{};
+        viewport.screen_x = static_cast<int>(viewport_pos.x);
+        viewport.screen_y = static_cast<int>(viewport_pos.y);
+        viewport.width = static_cast<int>(viewport_size.x);
+        viewport.height = static_cast<int>(viewport_size.y);
+        viewport.hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
+        viewport.focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+
+        scene.set_viewport(viewport);
+
+        ensure_scene_render_target(renderer, viewport.width, viewport.height);
+
+        if (m_scene_render_target) {
+            SDL_Texture* previous_target = SDL_GetRenderTarget(renderer);
+
+            SDL_SetRenderTarget(renderer, m_scene_render_target);
+            SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
+            SDL_RenderClear(renderer);
+
+            scene.render(renderer);
+
+            SDL_SetRenderTarget(renderer, previous_target);
+
+            ImGui::Image(
+                reinterpret_cast<ImTextureID>(m_scene_render_target),
+                viewport_size
+            );
+        }
+        else {
+            ImGui::Dummy(viewport_size);
+            ImGui::TextUnformatted("Failed to create scene render target.");
+        }
+
+        ImGui::End();
     }
 } 

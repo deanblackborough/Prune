@@ -35,6 +35,9 @@ void Input::process_event(const SDL_Event& event)
         }
 
         case SDL_MOUSEBUTTONDOWN: {
+            m_mouse_x = event.button.x;
+            m_mouse_y = event.button.y;
+
             const auto button = static_cast<std::size_t>(event.button.button);
             if (button < kMouseButtonCount) {
                 m_mouse_down[button] = true;
@@ -44,6 +47,9 @@ void Input::process_event(const SDL_Event& event)
         }
 
         case SDL_MOUSEBUTTONUP: {
+            m_mouse_x = event.button.x;
+            m_mouse_y = event.button.y;
+
             const auto button = static_cast<std::size_t>(event.button.button);
             if (button < kMouseButtonCount) {
                 m_mouse_down[button] = false;

@@ -10,6 +10,26 @@
 
 namespace prune {
 
+    struct SceneViewport {
+        int screen_x = 0;
+        int screen_y = 0;
+        int width = 0;
+        int height = 0;
+        bool hovered = false;
+        bool focused = false;
+
+        [[nodiscard]] bool has_area() const noexcept {
+            return width > 0 && height > 0;
+        }
+
+        [[nodiscard]] bool contains(int x, int y) const noexcept {
+            return x >= screen_x &&
+                y >= screen_y &&
+                x < (screen_x + width) &&
+                y < (screen_y + height);
+        }
+    };
+
     struct SceneOptions {
         bool highlight_selected = true;
     };
@@ -63,9 +83,10 @@ namespace prune {
         [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) const;
         [[nodiscard]] bool load_from_file(std::string_view path, std::string& error);
 
-		void set_viewport_size(int width, int height) noexcept;
-		[[nodiscard]] int get_viewport_width() const noexcept { return m_window_width; }
-		[[nodiscard]] int get_viewport_height() const noexcept { return m_window_height; }
+        void set_viewport(const SceneViewport& viewport) noexcept;
+        [[nodiscard]] const SceneViewport& get_viewport() const noexcept { return m_viewport; }
+        [[nodiscard]] int get_viewport_width() const noexcept { return m_viewport.width; }
+        [[nodiscard]] int get_viewport_height() const noexcept { return m_viewport.height; }
 
         GameObjectManager& get_object_manager();
         [[nodiscard]] GameObjectId get_player_id() const;
@@ -88,6 +109,8 @@ namespace prune {
     private:
         void reset_runtime_state();
         void restore_defaults();
+
+        [[nodiscard]] bool scene_input_enabled() const noexcept;
 
         [[nodiscard]] GameObject* player_object() noexcept;
         [[nodiscard]] const GameObject* player_object() const noexcept;
@@ -130,8 +153,7 @@ namespace prune {
 
         GameObjectId m_player_id = kInvalidGameObjectId;
 
-        int m_window_width = 0;
-        int m_window_height = 0;
+        SceneViewport m_viewport{};
 
         GridOptions m_grid_options;
         SceneOptions m_scene_options;

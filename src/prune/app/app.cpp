@@ -25,7 +25,7 @@ namespace prune {
             m_window->height()
         );
         m_scene->on_enter();
-        ui = std::make_unique<Ui>();
+        m_ui = std::make_unique<Ui>();
 
         init_imgui();
     }
@@ -40,7 +40,7 @@ namespace prune {
 
         // Clean up in reverse order
         m_scene.reset();
-        ui.reset();
+        m_ui.reset();
         m_input.reset();
         m_time.reset();
         m_window.reset();
@@ -109,8 +109,8 @@ namespace prune {
                         m_window->refresh_size();
                     }
 
-                    if (m_scene && m_window) {
-                        m_scene->set_viewport_size(m_window->width(), m_window->height());
+                    if (m_window) {
+                        m_window->refresh_size();
                     }
                     break;
 
@@ -133,37 +133,7 @@ namespace prune {
             ImGui_ImplSDL2_ProcessEvent(&event);
             handle_event(event);
 
-            const ImGuiIO& io = ImGui::GetIO();
-
-            bool forward_to_input = false;
-
-            switch (event.type) {
-                case SDL_KEYUP:
-                    forward_to_input = true;
-                    break;
-
-                case SDL_KEYDOWN:
-                    forward_to_input = !io.WantCaptureKeyboard;
-                    break;
-
-                case SDL_MOUSEBUTTONUP:
-                    forward_to_input = true;
-                    break;
-
-                case SDL_MOUSEBUTTONDOWN:
-                case SDL_MOUSEMOTION:
-                case SDL_MOUSEWHEEL:
-                    forward_to_input = !io.WantCaptureMouse;
-                    break;
-
-                default:
-                    forward_to_input = true;
-                    break;
-            }
-
-            if (forward_to_input) {
-                m_input->process_event(event);
-            }
+            m_input->process_event(event);
         }
     }
 
@@ -183,12 +153,8 @@ namespace prune {
 
         begin_imgui_frame();
 
-        if (m_scene) {
-            m_scene->render(renderer);
-        }
-
-        if (m_scene && ui) {
-            ui->render(*m_scene);
+        if (m_scene && m_ui) {
+            m_ui->render(*m_scene, renderer);
         }
 
         ImGui::Render();

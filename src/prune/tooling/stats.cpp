@@ -10,8 +10,7 @@ namespace prune {
 	void Stats::draw(
 		GameObjectManager& objects,
 		GameObjectId player_id,
-		int viewport_width,
-		int viewport_height,
+		const SceneViewport& viewport,
 		const CameraState& cameras
 	)
 	{
@@ -38,8 +37,12 @@ namespace prune {
 
 		if (tooling::imgui::layout::collapsing_header("Viewport")) {
 			tooling::imgui::property_table::begin("##viewport");
-			tooling::imgui::property_table::text("Width", std::to_string(viewport_width).c_str());
-			tooling::imgui::property_table::text("Height", std::to_string(viewport_height).c_str());
+			tooling::imgui::property_table::text("Screen X", std::to_string(viewport.screen_x).c_str());
+			tooling::imgui::property_table::text("Screen Y", std::to_string(viewport.screen_y).c_str());
+			tooling::imgui::property_table::text("Width", std::to_string(viewport.width).c_str());
+			tooling::imgui::property_table::text("Height", std::to_string(viewport.height).c_str());
+			tooling::imgui::property_table::text("Hovered", viewport.hovered ? "true" : "false");
+			tooling::imgui::property_table::text("Focused", viewport.focused ? "true" : "false");
 			tooling::imgui::property_table::end();
 		}
 
