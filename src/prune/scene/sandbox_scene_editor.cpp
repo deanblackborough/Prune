@@ -18,7 +18,7 @@ namespace prune {
         for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
             GameObject& object = *it;
 
-            if (!object.active || !object.visible) {
+            if (!object.active || !object.render.visible) {
                 continue;
             }
 
@@ -125,7 +125,7 @@ namespace prune {
         }
 
         // Arrow key nudging is for editor objects only, not the player.
-        if (selected->is_player) {
+        if (selected->kind == GameObjectKind::Player) {
             return;
         }
 

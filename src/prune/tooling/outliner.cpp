@@ -78,24 +78,30 @@ namespace prune {
 
     std::string Outliner::object_label(const GameObject& object)
     {
-        const char* type = object.is_player ? "[Player]" : "[Block]";
-        return std::string(type) + " " + object.name;
+        const char* type = "[Generic]";
+        switch (object.kind) {
+            case GameObjectKind::Player: type = "[Player]"; break;
+            case GameObjectKind::Block: type = "[Block]"; break;
+            case GameObjectKind::Generic: type = "[Object]"; break;
+        }
+
+		return std::string(type) + " " + object.name;
     }
 
     GameObjectId Outliner::create_block(GameObjectManager& objects, float x, float y)
     {
         GameObject block;
+        block.kind = GameObjectKind::Block;
         block.transform.x = x;
         block.transform.y = y;
-        block.rectangle.width = 32;
-        block.rectangle.height = 32;
-        block.rectangle.color[0] = random_color_component();
-        block.rectangle.color[1] = random_color_component();
-        block.rectangle.color[2] = random_color_component();
+        block.size.width = 32;
+        block.size.height = 32;
+        block.render.rectangle.color[0] = random_color_component();
+        block.render.rectangle.color[1] = random_color_component();
+        block.render.rectangle.color[2] = random_color_component();
         block.active = true;
-        block.visible = true;
-        block.solid = true;
-        block.is_player = false;
+        block.render.visible = true;
+        block.collision.solid = true;
 
         const GameObjectId id = objects.create_object(block);
 
@@ -191,9 +197,9 @@ namespace prune {
             }
 
             const float left_b = object.transform.x;
-            const float right_b = object.transform.x + static_cast<float>(object.rectangle.width);
+            const float right_b = object.transform.x + static_cast<float>(object.size.width);
             const float top_b = object.transform.y;
-            const float bottom_b = object.transform.y + static_cast<float>(object.rectangle.height);
+            const float bottom_b = object.transform.y + static_cast<float>(object.size.height);
 
             const bool overlaps =
                 left_a < right_b &&

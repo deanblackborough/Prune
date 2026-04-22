@@ -8,6 +8,17 @@ namespace prune {
     using GameObjectId = std::uint32_t;
     constexpr GameObjectId kInvalidGameObjectId = 0;
 
+    enum class GameObjectKind {
+        Generic = 0,
+        Player,
+        Block
+    };
+
+    enum class RenderType {
+        Rectangle = 0,
+        Sprite
+    };
+
     struct Transform {
         float x = 0.0f;
         float y = 0.0f;
@@ -25,26 +36,47 @@ namespace prune {
         float height = 0.0f;
     };
 
-    struct RectangleVisual {
+    struct Size {
         int width = 32;
         int height = 32;
-        float color[3] = {0.3f, 0.8f, 0.5f};
+    };
+
+    struct CollisionSettings {
+        bool solid = false;
+    };
+
+    struct RectangleVisual {
+        float color[3] = { 0.3f, 0.8f, 0.5f };
+    };
+
+    struct SpriteVisual {
+        std::string texture_path;
+    };
+
+    struct RenderData {
+        RenderType type = RenderType::Rectangle;
+        bool visible = true;
+
+        RectangleVisual rectangle{};
+        SpriteVisual sprite{};
     };
 
     struct GameObject {
         GameObjectId id = kInvalidGameObjectId;
         std::string name = "Object";
 
+        GameObjectKind kind = GameObjectKind::Generic;
+
         Transform transform{};
         Velocity velocity{};
-        RectangleVisual rectangle{};
+        Size size{};
+
+        CollisionSettings collision{};
+        RenderData render{};
 
         bool active = true;
-        bool visible = true;
-        bool solid = false;
-        bool is_player = false;
 
         [[nodiscard]] RectF bounds() const noexcept;
     };
 
-} // namespace prune
+}

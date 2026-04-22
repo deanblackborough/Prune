@@ -83,7 +83,6 @@ namespace prune {
                         const std::string source_name = selected->name;
 
                         GameObject clone = *selected;
-                        clone.is_player = false;
 
                         const float step = grid_options.snap_to_grid
                             ? static_cast<float>(std::max(1, grid_options.grid_size))
@@ -161,15 +160,15 @@ namespace prune {
 
         if (tooling::imgui::layout::collapsing_header("Size")) {
             if (tooling::imgui::property_table::begin("##size")) {
-                tooling::imgui::property_table::slider_int("Width", "##width", selected->rectangle.width, 16, 256);
-                tooling::imgui::property_table::slider_int("Height", "##height", selected->rectangle.height, 16, 256);
+                tooling::imgui::property_table::slider_int("Width", "##width", selected->size.width, 16, 256);
+                tooling::imgui::property_table::slider_int("Height", "##height", selected->size.height, 16, 256);
                 tooling::imgui::property_table::end();
             }
         }
 
         if (tooling::imgui::layout::collapsing_header("Rendering")) {
             if (tooling::imgui::property_table::begin("##rendering")) {
-                tooling::imgui::property_table::color3("Colour", "##colour", selected->rectangle.color);
+                tooling::imgui::property_table::color3("Colour", "##colour", selected->render.rectangle.color);
                 tooling::imgui::property_table::end();
             }
         }
@@ -228,18 +227,14 @@ namespace prune {
             return;
         }
 
-        const bool is_player = (selected->id == player_id);
+        const bool is_player = (selected->kind == GameObjectKind::Player);
 
         if (tooling::imgui::layout::collapsing_header("Flags", false)) {
             if (tooling::imgui::property_table::begin("##computed")) {
-
-                if (is_player) {
-                    tooling::imgui::property_table::checkbox_readonly("Is Player", "##is_player", selected->is_player);
-                }
 				tooling::imgui::property_table::checkbox("Active", "##active", selected->active);
-				tooling::imgui::property_table::checkbox("Visible", "##visible", selected->visible);
+				tooling::imgui::property_table::checkbox("Visible", "##visible", selected->render.visible);
                 if (!is_player) {
-                    tooling::imgui::property_table::checkbox("Solid", "##solid", selected->solid);
+                    tooling::imgui::property_table::checkbox("Solid", "##solid", selected->collision.solid);
                 }
 				tooling::imgui::property_table::end();
             }

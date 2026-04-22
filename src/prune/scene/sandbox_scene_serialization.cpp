@@ -18,19 +18,19 @@ namespace prune {
             node["transform"]["x"] = object.transform.x;
             node["transform"]["y"] = object.transform.y;
 
-            node["rectangle"]["width"] = object.rectangle.width;
-            node["rectangle"]["height"] = object.rectangle.height;
+            node["rectangle"]["width"] = object.size.width;
+            node["rectangle"]["height"] = object.size.height;
 
             YAML::Node colour;
-            colour.push_back(object.rectangle.color[0]);
-            colour.push_back(object.rectangle.color[1]);
-            colour.push_back(object.rectangle.color[2]);
+            colour.push_back(object.render.rectangle.color[0]);
+            colour.push_back(object.render.rectangle.color[1]);
+            colour.push_back(object.render.rectangle.color[2]);
             node["colour"] = colour;
 
             node["active"] = object.active;
-            node["visible"] = object.visible;
-            node["solid"] = object.solid;
-            node["is_player"] = object.is_player;
+            node["visible"] = object.render.visible;
+            node["solid"] = object.collision.solid;
+            node["is_player"] = object.kind == GameObjectKind::Player;
 
             return node;
         }
@@ -111,8 +111,8 @@ namespace prune {
                 return false;
             }
 
-            if (!read_required_int(rectangle, "width", object.rectangle.width) ||
-                !read_required_int(rectangle, "height", object.rectangle.height)) {
+            if (!read_required_int(rectangle, "width", object.size.width) ||
+                !read_required_int(rectangle, "height", object.size.height)) {
                 error = "Object rectangle is incomplete.";
                 return false;
             }
@@ -123,14 +123,16 @@ namespace prune {
                 return false;
             }
 
-            object.rectangle.color[0] = colour[0].as<float>();
-            object.rectangle.color[1] = colour[1].as<float>();
-            object.rectangle.color[2] = colour[2].as<float>();
+            object.render.rectangle.color[0] = colour[0].as<float>();
+            object.render.rectangle.color[1] = colour[1].as<float>();
+            object.render.rectangle.color[2] = colour[2].as<float>();
+
+            bool kind_int = object.kind == GameObjectKind::Player;
 
             if (!read_required_bool(node, "active", object.active) ||
-                !read_required_bool(node, "visible", object.visible) ||
-                !read_required_bool(node, "solid", object.solid) ||
-                !read_required_bool(node, "is_player", object.is_player)) {
+                !read_required_bool(node, "visible", object.render.visible) ||
+                !read_required_bool(node, "solid", object.collision.solid) ||
+                !read_required_bool(node, "is_player", kind_int)) {
                 error = "Object flags are incomplete.";
                 return false;
             }
@@ -328,7 +330,7 @@ namespace prune {
                     return false;
                 }
 
-                if (object.is_player) {
+                if (object.kind == GameObjectKind::Player) {
                     ++player_count;
                 }
             }
@@ -351,7 +353,7 @@ namespace prune {
                 return false;
             }
 
-            if (!player->is_player) {
+            if (player->kind != GameObjectKind::Player) {
                 error = "Saved player_id does not point to a player object.";
                 return false;
             }
