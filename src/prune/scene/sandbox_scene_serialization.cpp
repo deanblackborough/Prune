@@ -568,8 +568,8 @@ namespace prune {
 
             loaded.player_id = loaded_player_id;
 
-            const GameObject* player = loaded.objects.get_by_id(loaded.player_id);
-            if (!player) {
+            const GameObject* player_object = loaded.objects.get_by_id(loaded.player_id);
+            if (!player_object) {
                 error = "Saved player_id does not exist.";
                 return false;
             }
