@@ -127,16 +127,18 @@ namespace prune {
             object.render.rectangle.color[1] = colour[1].as<float>();
             object.render.rectangle.color[2] = colour[2].as<float>();
 
-            bool kind_int = object.kind == GameObjectKind::Player;
+            bool is_player = false;
 
             if (!read_required_bool(node, "active", object.active) ||
                 !read_required_bool(node, "visible", object.render.visible) ||
                 !read_required_bool(node, "solid", object.collision.solid) ||
-                !read_required_bool(node, "is_player", kind_int)) {
+                !read_required_bool(node, "is_player", is_player)) {
                 error = "Object flags are incomplete.";
                 return false;
             }
 
+            object.kind = is_player ? GameObjectKind::Player : GameObjectKind::Block;
+            object.render.type = RenderType::Rectangle;
             object.velocity = {};
             return true;
         }
