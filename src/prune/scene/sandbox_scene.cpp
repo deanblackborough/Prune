@@ -19,9 +19,19 @@ namespace prune {
         m_viewport = viewport;
     }
 
-    bool SandboxScene::scene_input_enabled() const noexcept
+    bool SandboxScene::scene_keyboard_input_enabled() const noexcept
     {
         return m_viewport.focused && m_viewport.has_area();
+    }
+
+    bool SandboxScene::scene_mouse_input_enabled() const noexcept
+    {
+        return m_viewport.hovered && m_viewport.has_area();
+    }
+
+    bool SandboxScene::scene_input_enabled() const noexcept
+    {
+        return scene_keyboard_input_enabled();
     }
 
     void SandboxScene::on_enter()
@@ -61,6 +71,7 @@ namespace prune {
         block.transform.y = 256.0f;
         block.size.width = 32;
         block.size.height = 32;
+        block.render.type = RenderType::Rectangle;
         block.render.rectangle.color[0] = 0.8f;
         block.render.rectangle.color[1] = 0.5f;
         block.render.rectangle.color[2] = 0.2f;
@@ -289,10 +300,6 @@ namespace prune {
                         has_selected_outline = true;
                     }
 
-                    if (m_scene_options.highlight_selected && has_selected_outline) {
-                        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                        SDL_RenderDrawRect(renderer, &selected_outline);
-                    }
                     break;
                 }
                 case RenderType::Sprite: {
@@ -300,6 +307,11 @@ namespace prune {
                     continue;
                 }
 			}
+        }
+
+        if (m_scene_options.highlight_selected && has_selected_outline) {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderDrawRect(renderer, &selected_outline);
         }
     }
 

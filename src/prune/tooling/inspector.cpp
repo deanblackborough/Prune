@@ -18,7 +18,14 @@ namespace prune {
         draw_selected(objects, player_id, grid_options);
         draw_properties(objects, player_id, player_controller, grid_options);
         draw_computed(objects, camera);
-        draw_flags(objects, player_id);
+        draw_flags(objects);
+    }
+
+    bool Inspector::is_selected_player(const GameObject* selected, GameObjectId player_id) const noexcept
+    {
+        return selected != nullptr &&
+            selected->kind == GameObjectKind::Player &&
+            selected->id == player_id;
     }
 
     void Inspector::draw_selected(
@@ -32,7 +39,7 @@ namespace prune {
             return;
         }
 
-        const bool is_player = (selected->id == player_id);
+        const bool is_player = is_selected_player(selected, player_id);
 
         if (tooling::imgui::layout::collapsing_header("Selected")) {
             if (tooling::imgui::property_table::begin("Selected")) {
@@ -148,7 +155,7 @@ namespace prune {
             return;
         }
 
-        const bool is_player = (selected->id == player_id);
+        const bool is_player = is_selected_player(selected, player_id);
 
         if (tooling::imgui::layout::collapsing_header("Transform")) {
             if (tooling::imgui::property_table::begin("##transform")) {
@@ -218,10 +225,8 @@ namespace prune {
         }
     }
 
-    void Inspector::draw_flags(
-        GameObjectManager& objects,
-        GameObjectId player_id
-    ) {
+    void Inspector::draw_flags(GameObjectManager& objects)
+    {
         GameObject* selected = objects.selected_object();
         if (!selected) {
             return;
@@ -230,16 +235,19 @@ namespace prune {
         const bool is_player = (selected->kind == GameObjectKind::Player);
 
         if (tooling::imgui::layout::collapsing_header("Flags", false)) {
-            if (tooling::imgui::property_table::begin("##computed")) {
-				tooling::imgui::property_table::checkbox("Active", "##active", selected->active);
-				tooling::imgui::property_table::checkbox("Visible", "##visible", selected->render.visible);
+            if (tooling::imgui::property_table::begin("##flags")) {
+                tooling::imgui::property_table::checkbox("Active", "##active", selected->active);
+                tooling::imgui::property_table::checkbox("Visible", "##visible", selected->render.visible);
+
                 if (!is_player) {
                     tooling::imgui::property_table::checkbox("Solid", "##solid", selected->collision.solid);
                 }
-				tooling::imgui::property_table::end();
+
+                tooling::imgui::property_table::end();
             }
         }
     }
+
     void Inspector::sync_rename_buffer(const GameObject* selected)
     {
         if (!selected) {
