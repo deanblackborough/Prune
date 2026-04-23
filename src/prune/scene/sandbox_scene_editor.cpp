@@ -47,7 +47,7 @@ namespace prune {
 
     void SandboxScene::update_editor_camera(float dt, const Input& input)
     {
-        if (!scene_input_enabled()) {
+        if (!scene_keyboard_input_enabled()) {
             return;
         }
 
@@ -92,7 +92,7 @@ namespace prune {
 
     void SandboxScene::handle_scene_click(const Input& input)
     {
-        if (!m_viewport.hovered) {
+        if (!scene_mouse_input_enabled()) {
             return;
         }
 
@@ -115,7 +115,7 @@ namespace prune {
 
     void SandboxScene::handle_keyboard_nudge(const Input& input)
     {
-        if (!scene_input_enabled()) {
+        if (!scene_keyboard_input_enabled()) {
             return;
         }
 

@@ -409,6 +409,8 @@ namespace prune {
 
             root["options"]["highlight_selected"] = m_scene_options.highlight_selected;
 
+            root["player"]["speed"] = m_player_controller.speed();
+
             YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
             for (const auto& object : m_objects.objects()) {
                 objects.push_back(make_object_node(object));
@@ -442,9 +444,13 @@ namespace prune {
 
             const YAML::Node scene = root["scene"];
             const YAML::Node cameras = root["cameras"];
+            const YAML::Node player = root["player"];
             const YAML::Node legacy_camera = root["camera"];
             const YAML::Node grid = root["grid"];
             const YAML::Node options = root["options"];
+            if (player && player["speed"]) {
+                m_player_controller.set_speed(player["speed"].as<float>());
+            }
             const YAML::Node objects = root["objects"];
 
             if (!scene || !grid || !options || !objects || !objects.IsSequence()) {
@@ -568,9 +574,15 @@ namespace prune {
                 return false;
             }
 
-            if (player->kind != GameObjectKind::Player) {
-                error = "Saved player_id does not point to a player object.";
-                return false;
+            GameObjectId max_loaded_id = kInvalidGameObjectId;
+            for (const auto& object : loaded.objects.objects()) {
+                if (object.id > max_loaded_id) {
+                    max_loaded_id = object.id;
+                }
+            }
+
+            if (loaded_next_id <= max_loaded_id) {
+                loaded_next_id = max_loaded_id + 1;
             }
 
             loaded.objects.set_next_id(loaded_next_id);

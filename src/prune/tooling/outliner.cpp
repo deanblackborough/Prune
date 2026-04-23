@@ -96,6 +96,7 @@ namespace prune {
         block.transform.y = y;
         block.size.width = 32;
         block.size.height = 32;
+        block.render.type = RenderType::Rectangle;
         block.render.rectangle.color[0] = random_color_component();
         block.render.rectangle.color[1] = random_color_component();
         block.render.rectangle.color[2] = random_color_component();

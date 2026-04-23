@@ -175,7 +175,47 @@ namespace prune {
 
         if (tooling::imgui::layout::collapsing_header("Rendering")) {
             if (tooling::imgui::property_table::begin("##rendering")) {
-                tooling::imgui::property_table::color3("Colour", "##colour", selected->render.rectangle.color);
+                int render_type = (selected->render.type == RenderType::Rectangle) ? 0 : 1;
+                const char* render_items[] = { "Rectangle", "Sprite" };
+
+                if (tooling::imgui::property_table::combo(
+                    "Type",
+                    "##render_type",
+                    render_type,
+                    render_items,
+                    IM_ARRAYSIZE(render_items)
+                )) {
+                    selected->render.type = (render_type == 0)
+                        ? RenderType::Rectangle
+                        : RenderType::Sprite;
+                }
+
+                switch (selected->render.type) {
+                case RenderType::Rectangle:
+                    tooling::imgui::property_table::color3(
+                        "Colour",
+                        "##colour",
+                        selected->render.rectangle.color
+                    );
+                    break;
+
+                case RenderType::Sprite:
+                    sync_sprite_path_buffer(selected);
+
+                    tooling::imgui::property_table::input_text(
+                        "Texture",
+                        "##texture_path",
+                        m_sprite_path_buffer.data(),
+                        m_sprite_path_buffer.size()
+                    );
+
+                    if (ImGui::IsItemDeactivatedAfterEdit()) {
+                        selected->render.sprite.texture_path = m_sprite_path_buffer.data();
+                    }
+
+                    break;
+                }
+
                 tooling::imgui::property_table::end();
             }
         }
@@ -262,5 +302,26 @@ namespace prune {
 
         m_rename_target_id = selected->id;
         std::snprintf(m_rename_buffer.data(), m_rename_buffer.size(), "%s", selected->name.c_str());
+    }
+
+    void Inspector::sync_sprite_path_buffer(const GameObject* selected)
+    {
+        if (!selected || selected->render.type != RenderType::Sprite) {
+            m_sprite_path_target_id.reset();
+            m_sprite_path_buffer[0] = '\0';
+            return;
+        }
+
+        if (m_sprite_path_target_id.has_value() && m_sprite_path_target_id.value() == selected->id) {
+            return;
+        }
+
+        m_sprite_path_target_id = selected->id;
+        std::snprintf(
+            m_sprite_path_buffer.data(),
+            m_sprite_path_buffer.size(),
+            "%s",
+            selected->render.sprite.texture_path.c_str()
+        );
     }
 }

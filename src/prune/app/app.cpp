@@ -108,10 +108,6 @@ namespace prune {
                     if (m_window) {
                         m_window->refresh_size();
                     }
-
-                    if (m_window) {
-                        m_window->refresh_size();
-                    }
                     break;
 
                 default:

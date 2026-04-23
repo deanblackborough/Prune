@@ -163,7 +163,7 @@ namespace prune {
             return;
         }
 
-        if (!scene_input_enabled()) {
+        if (!scene_keyboard_input_enabled()) {
             player->velocity = {};
             return;
         }

@@ -216,6 +216,7 @@ namespace prune {
     void Ui::draw_scene_viewport(SandboxScene& scene, SDL_Renderer* renderer)
     {
         if (!m_show_scene_viewport) {
+            scene.set_viewport({});
             return;
         }
 
@@ -239,10 +240,7 @@ namespace prune {
         viewport.screen_y = static_cast<int>(viewport_pos.y);
         viewport.width = static_cast<int>(viewport_size.x);
         viewport.height = static_cast<int>(viewport_size.y);
-        viewport.hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
         viewport.focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
-
-        scene.set_viewport(viewport);
 
         ensure_scene_render_target(renderer, viewport.width, viewport.height);
 
@@ -261,11 +259,16 @@ namespace prune {
                 reinterpret_cast<ImTextureID>(m_scene_render_target),
                 viewport_size
             );
+
+            viewport.hovered = ImGui::IsItemHovered();
         }
         else {
             ImGui::Dummy(viewport_size);
             ImGui::TextUnformatted("Failed to create scene render target.");
+            viewport.hovered = false;
         }
+
+        scene.set_viewport(viewport);
 
         ImGui::End();
     }
