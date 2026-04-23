@@ -17,7 +17,9 @@ namespace prune {
     class Ui {
     public:
         ~Ui();
-        void render(SandboxScene& scene, SDL_Renderer* renderer);
+
+        void build(SandboxScene& scene, SDL_Renderer* renderer);
+        void render_scene_viewport_content(SandboxScene& scene, SDL_Renderer* renderer);
 
     private:
         void draw_scene_viewport(SandboxScene& scene, SDL_Renderer* renderer);

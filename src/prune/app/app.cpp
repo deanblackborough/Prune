@@ -70,6 +70,12 @@ namespace prune {
 
             m_accumulator += frame_time;
 
+            begin_imgui_frame();
+
+            if (m_scene && m_ui && m_window) {
+                m_ui->build(*m_scene, m_window->renderer());
+            }
+
             while (m_accumulator >= m_fixed_timestep) {
                 update(m_fixed_timestep);
                 m_accumulator -= m_fixed_timestep;
@@ -147,10 +153,8 @@ namespace prune {
         SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
         SDL_RenderClear(renderer);
 
-        begin_imgui_frame();
-
         if (m_scene && m_ui) {
-            m_ui->render(*m_scene, renderer);
+            m_ui->render_scene_viewport_content(*m_scene, renderer);
         }
 
         ImGui::Render();

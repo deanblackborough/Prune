@@ -10,7 +10,7 @@ namespace prune {
         destroy_scene_render_target();
     }
 
-    void Ui::render(SandboxScene& scene, SDL_Renderer* renderer) 
+    void Ui::build(SandboxScene& scene, SDL_Renderer* renderer) 
     {
         draw_scene_viewport(scene, renderer);
 
@@ -245,16 +245,6 @@ namespace prune {
         ensure_scene_render_target(renderer, viewport.width, viewport.height);
 
         if (m_scene_render_target) {
-            SDL_Texture* previous_target = SDL_GetRenderTarget(renderer);
-
-            SDL_SetRenderTarget(renderer, m_scene_render_target);
-            SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
-            SDL_RenderClear(renderer);
-
-            scene.render(renderer);
-
-            SDL_SetRenderTarget(renderer, previous_target);
-
             ImGui::Image(
                 reinterpret_cast<ImTextureID>(m_scene_render_target),
                 viewport_size
@@ -271,5 +261,30 @@ namespace prune {
         scene.set_viewport(viewport);
 
         ImGui::End();
+    }
+
+    void Ui::render_scene_viewport_content(SandboxScene& scene, SDL_Renderer* renderer)
+    {
+        const SceneViewport& viewport = scene.get_viewport();
+
+        if (!viewport.has_area()) {
+            return;
+        }
+
+        ensure_scene_render_target(renderer, viewport.width, viewport.height);
+
+        if (!m_scene_render_target) {
+            return;
+        }
+
+        SDL_Texture* previous_target = SDL_GetRenderTarget(renderer);
+
+        SDL_SetRenderTarget(renderer, m_scene_render_target);
+        SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
+        SDL_RenderClear(renderer);
+
+        scene.render(renderer);
+
+        SDL_SetRenderTarget(renderer, previous_target);
     }
 } 
