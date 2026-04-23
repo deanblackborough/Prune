@@ -18,6 +18,7 @@ namespace prune {
             GridOptions grid_options{};
             SceneOptions scene_options{};
             CameraState cameras{};
+            float player_speed = 256.0f;
         };
 
         const char* to_string(GameObjectKind kind) noexcept
@@ -444,13 +445,10 @@ namespace prune {
 
             const YAML::Node scene = root["scene"];
             const YAML::Node cameras = root["cameras"];
-            const YAML::Node player = root["player"];
+            const YAML::Node player_node = root["player"];
             const YAML::Node legacy_camera = root["camera"];
             const YAML::Node grid = root["grid"];
             const YAML::Node options = root["options"];
-            if (player && player["speed"]) {
-                m_player_controller.set_speed(player["speed"].as<float>());
-            }
             const YAML::Node objects = root["objects"];
 
             if (!scene || !grid || !options || !objects || !objects.IsSequence()) {
@@ -459,6 +457,10 @@ namespace prune {
             }
 
             LoadedSceneState loaded{};
+
+            if (player_node && player_node["speed"]) {
+                loaded.player_speed = player_node["speed"].as<float>();
+            }
 
             GameObjectId loaded_next_id = 1;
             GameObjectId loaded_player_id = kInvalidGameObjectId;
@@ -568,9 +570,14 @@ namespace prune {
 
             loaded.player_id = loaded_player_id;
 
-            const GameObject* player_object = loaded.objects.get_by_id(loaded.player_id);
-            if (!player_object) {
+            const GameObject* loaded_player = loaded.objects.get_by_id(loaded.player_id);
+            if (!loaded_player) {
                 error = "Saved player_id does not exist.";
+                return false;
+            }
+
+            if (loaded_player->kind != GameObjectKind::Player) {
+                error = "Saved player_id does not point to a player object.";
                 return false;
             }
 
@@ -602,6 +609,7 @@ namespace prune {
             m_grid_options = loaded.grid_options;
             m_scene_options = loaded.scene_options;
             m_cameras = loaded.cameras;
+            m_player_controller.set_speed(loaded.player_speed);
 
             update_game_camera();
 
