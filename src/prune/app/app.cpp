@@ -1,14 +1,16 @@
-#include "prune/app/app.hpp"
-#include "prune/core/time.hpp"
-#include "prune/scene/sandbox_scene.hpp"
-#include "prune/tooling/ui.hpp"
-
 #include "imgui.h"
 #include "backends/imgui_impl_sdl2.h"
 #include "backends/imgui_impl_sdlrenderer2.h"
 
 #include <SDL2/SDL.h>
 #include <stdexcept>
+#include <filesystem>
+
+#include "prune/app/app.hpp"
+#include "prune/core/time.hpp"
+#include "prune/scene/sandbox_scene.hpp"
+#include "prune/tooling/theme.hpp"
+#include "prune/tooling/ui.hpp"
 
 namespace prune {
 
@@ -150,7 +152,7 @@ namespace prune {
     {
         SDL_Renderer* renderer = m_window->renderer();
 
-        SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
+        SDL_SetRenderDrawColor(renderer, 18, 14, 24, 255);
         SDL_RenderClear(renderer);
 
         if (m_scene && m_ui) {
@@ -166,7 +168,31 @@ namespace prune {
     void App::init_imgui() {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
+
+        ImGuiIO& io = ImGui::GetIO();
+
+        ImFontConfig font_config;
+        font_config.OversampleH = 3;
+        font_config.OversampleV = 2;
+        font_config.PixelSnapH = true;
+
+        const std::filesystem::path font_path =
+            std::filesystem::current_path() / "assets" / "fonts" / "JetBrainsMonoNL-Regular.ttf";
+
+        ImFont* font = io.Fonts->AddFontFromFileTTF(
+            font_path.string().c_str(),
+            16.0f,
+            &font_config
+        );
+
+        if (font == nullptr) {
+            io.Fonts->AddFontDefault();
+        }
+
+        io.FontGlobalScale = 1.0f;
+
         ImGui::StyleColorsDark();
+		prune::tooling::apply_editor_theme(prune::tooling::EditorTheme::PrunePurple);
 
         if (!ImGui_ImplSDL2_InitForSDLRenderer(
             m_window->sdl_window(),

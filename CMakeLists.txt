@@ -24,6 +24,7 @@ add_executable(Prune
         src/prune/scene/sandbox_scene_editor.cpp
         src/prune/scene/sandbox_scene_serialization.cpp
 
+        src/prune/tooling/theme.cpp
         src/prune/tooling/ui.cpp
         src/prune/tooling/outliner.cpp
         src/prune/tooling/inspector.cpp
@@ -40,8 +41,7 @@ add_executable(Prune
         external/imgui/imgui_widgets.cpp
         external/imgui/imgui_demo.cpp
         external/imgui/backends/imgui_impl_sdl2.cpp
-        external/imgui/backends/imgui_impl_sdlrenderer2.cpp
-)
+        external/imgui/backends/imgui_impl_sdlrenderer2.cpp)
 
 target_include_directories(Prune PRIVATE
         src
@@ -52,6 +52,12 @@ target_include_directories(Prune PRIVATE
 target_link_libraries(Prune PRIVATE
         SDL2::SDL2
         yaml-cpp::yaml-cpp
+)
+
+add_custom_command(TARGET Prune POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/assets
+    $<TARGET_FILE_DIR:Prune>/assets
 )
 
 if(MSVC)

@@ -26,7 +26,7 @@ Forces a proper separation between editor UI and world interaction
 
 This feels like the right foundation before adding anything more visual or interactive.
 
-## Step 2: Move away from “rectangle + flags”
+## Step 2: Move away from “rectangle + flags” - Done
 
 Current GameObject is basically:
 
