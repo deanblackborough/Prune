@@ -35,11 +35,11 @@ namespace prune::tooling {
         const ImVec4 bg = ImVec4(0.075f, 0.060f, 0.095f, 1.0f);
         const ImVec4 panel = ImVec4(0.110f, 0.085f, 0.145f, 1.0f);
         const ImVec4 panel_light = ImVec4(0.155f, 0.115f, 0.205f, 1.0f);
-        const ImVec4 purple = ImVec4(0.540f, 0.280f, 0.820f, 1.0f);
-        const ImVec4 purple_hot = ImVec4(0.680f, 0.390f, 0.950f, 1.0f);
+        const ImVec4 purple = ImVec4(0.450f, 0.240f, 0.660f, 1.0f);
+        const ImVec4 purple_hot = ImVec4(0.520f, 0.290f, 0.760f, 1.0f);
         const ImVec4 purple_dim = ImVec4(0.360f, 0.190f, 0.560f, 1.0f);
-        const ImVec4 text = ImVec4(0.920f, 0.885f, 0.960f, 1.0f);
-        const ImVec4 text_muted = ImVec4(0.650f, 0.595f, 0.720f, 1.0f);
+        const ImVec4 text = ImVec4(0.86f, 0.82f, 0.90f, 1.0f);
+        const ImVec4 text_muted = ImVec4(0.55f, 0.50f, 0.62f, 1.0f);
 
         colors[ImGuiCol_Text] = text;
         colors[ImGuiCol_TextDisabled] = text_muted;
@@ -51,12 +51,12 @@ namespace prune::tooling {
         colors[ImGuiCol_Border] = ImVec4(0.300f, 0.210f, 0.400f, 1.0f);
         colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-        colors[ImGuiCol_FrameBg] = panel_light;
+        colors[ImGuiCol_FrameBg] = ImVec4(0.18f, 0.13f, 0.24f, 1.0f);
         colors[ImGuiCol_FrameBgHovered] = purple_dim;
         colors[ImGuiCol_FrameBgActive] = purple;
 
         colors[ImGuiCol_TitleBg] = panel;
-        colors[ImGuiCol_TitleBgActive] = purple_dim;
+        colors[ImGuiCol_TitleBgActive] = ImVec4(0.30f, 0.17f, 0.46f, 1.0f);
         colors[ImGuiCol_TitleBgCollapsed] = panel;
 
         colors[ImGuiCol_MenuBarBg] = panel;

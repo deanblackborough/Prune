@@ -89,7 +89,7 @@ namespace prune {
                 ImGuiCond_FirstUseEver,
                 ImVec2(0.5f, 0.5f)
             );
-            ImGui::SetNextWindowSize(ImVec2(320.0f, 375.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(306.0, 308.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Options", &m_show_view_grid_options)) {
                 m_options.draw(scene.get_scene_options(), scene.get_grid_options(), scene.get_camera_state());
@@ -98,8 +98,8 @@ namespace prune {
         }
 
         if (m_show_outliner) {
-            ImGui::SetNextWindowPos(ImVec2(960.0f, 23.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(310.0f, 230.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(982.0f, 21.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(270.0f, 300.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
                 const Camera& camera = scene.get_active_camera();
@@ -119,8 +119,8 @@ namespace prune {
         }
 
         if (m_show_inspector) {
-            ImGui::SetNextWindowPos(ImVec2(960.0f, 260.f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(310.0f, 460.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(970.0f, 294.f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(300.0f, 419.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Inspector", &m_show_inspector)) {
                 m_inspector.draw(

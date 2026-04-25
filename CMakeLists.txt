@@ -54,6 +54,12 @@ target_link_libraries(Prune PRIVATE
         yaml-cpp::yaml-cpp
 )
 
+add_custom_command(TARGET Prune POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/assets
+    $<TARGET_FILE_DIR:Prune>/assets
+)
+
 if(MSVC)
     target_compile_options(Prune PRIVATE /W4 /permissive-)
 else()
