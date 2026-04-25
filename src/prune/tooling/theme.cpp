@@ -21,12 +21,13 @@ namespace prune::tooling {
         style.GrabRounding = 3.0f;
         style.TabRounding = 3.0f;
 
-        style.WindowPadding = ImVec2(10.0f, 10.0f);
-        style.FramePadding = ImVec2(5.0f, 3.0f);
-        style.ItemSpacing = ImVec2(5.0f, 3.0f);
-        style.ItemInnerSpacing = ImVec2(5.0f, 3.0f);
+        style.WindowPadding = ImVec2(8.0f, 8.0f);
+        style.FramePadding = ImVec2(4.0f, 2.0f);
+        style.FrameBorderSize = 1.0f;
+        style.ItemSpacing = ImVec2(4.0f, 2.0f);
+        style.ItemInnerSpacing = ImVec2(3.0f, 2.0f);
         style.IndentSpacing = 18.0f;
-        style.ScrollbarSize = 10.0f;
+        style.ScrollbarSize = 8.0f;
         style.GrabMinSize = 10.0f;
 
         ImVec4* colors = style.Colors;
@@ -73,7 +74,7 @@ namespace prune::tooling {
         colors[ImGuiCol_ButtonHovered] = purple;
         colors[ImGuiCol_ButtonActive] = purple_hot;
 
-        colors[ImGuiCol_Header] = purple_dim;
+        colors[ImGuiCol_Header] = ImVec4(0.25f, 0.14f, 0.38f, 1.0f);
         colors[ImGuiCol_HeaderHovered] = purple;
         colors[ImGuiCol_HeaderActive] = purple_hot;
 

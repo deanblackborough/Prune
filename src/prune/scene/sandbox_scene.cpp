@@ -336,7 +336,7 @@ namespace prune {
         const float first_horizontal_world =
             std::floor(top_world / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
 
-        SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
+        SDL_SetRenderDrawColor(renderer, 50, 40, 65, 255);
 
         const int vertical_line_count = static_cast<int>(std::ceil((right_world - first_vertical_world) / static_cast<float>(scene_grid_size))) + 1;
         for (int i = 0; i < vertical_line_count; ++i) {
