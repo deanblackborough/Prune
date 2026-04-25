@@ -1,6 +1,7 @@
 #include "prune/app/app.hpp"
 #include "prune/core/time.hpp"
 #include "prune/scene/sandbox_scene.hpp"
+#include "prune/tooling/theme.hpp"
 #include "prune/tooling/ui.hpp"
 
 #include "imgui.h"
@@ -150,7 +151,7 @@ namespace prune {
     {
         SDL_Renderer* renderer = m_window->renderer();
 
-        SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
+        SDL_SetRenderDrawColor(renderer, 18, 14, 24, 255);
         SDL_RenderClear(renderer);
 
         if (m_scene && m_ui) {
@@ -167,6 +168,7 @@ namespace prune {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
+		prune::tooling::apply_editor_theme(prune::tooling::EditorTheme::PrunePurple);
 
         if (!ImGui_ImplSDL2_InitForSDLRenderer(
             m_window->sdl_window(),

@@ -280,7 +280,7 @@ namespace prune {
         SDL_Texture* previous_target = SDL_GetRenderTarget(renderer);
 
         SDL_SetRenderTarget(renderer, m_scene_render_target);
-        SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
+        SDL_SetRenderDrawColor(renderer, 18, 14, 24, 255);
         SDL_RenderClear(renderer);
 
         scene.render(renderer);

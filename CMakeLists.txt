@@ -24,6 +24,7 @@ add_executable(Prune
         src/prune/scene/sandbox_scene_editor.cpp
         src/prune/scene/sandbox_scene_serialization.cpp
 
+        src/prune/tooling/theme.cpp
         src/prune/tooling/ui.cpp
         src/prune/tooling/outliner.cpp
         src/prune/tooling/inspector.cpp
@@ -40,8 +41,7 @@ add_executable(Prune
         external/imgui/imgui_widgets.cpp
         external/imgui/imgui_demo.cpp
         external/imgui/backends/imgui_impl_sdl2.cpp
-        external/imgui/backends/imgui_impl_sdlrenderer2.cpp
-)
+        external/imgui/backends/imgui_impl_sdlrenderer2.cpp)
 
 target_include_directories(Prune PRIVATE
         src
