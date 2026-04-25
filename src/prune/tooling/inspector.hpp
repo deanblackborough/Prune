@@ -29,9 +29,15 @@ namespace prune {
             GridOptions& grid_options
         );
         void draw_computed(GameObjectManager& objects, const Camera& camera);
-        void draw_flags(GameObjectManager& objects, GameObjectId player_id);
+        void draw_flags(GameObjectManager& objects);
+        [[nodiscard]] bool is_selected_player(const GameObject* selected, GameObjectId player_id) const noexcept;
 
         void sync_rename_buffer(const GameObject* selected);
+
+        void sync_sprite_path_buffer(const GameObject* selected);
+
+        std::optional<GameObjectId> m_sprite_path_target_id;
+        std::array<char, 256> m_sprite_path_buffer{};
 
         std::optional<GameObjectId> m_rename_target_id;
 		std::array<char, 128> m_rename_buffer{};

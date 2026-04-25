@@ -19,9 +19,19 @@ namespace prune {
         m_viewport = viewport;
     }
 
-    bool SandboxScene::scene_input_enabled() const noexcept
+    bool SandboxScene::scene_keyboard_input_enabled() const noexcept
     {
         return m_viewport.focused && m_viewport.has_area();
+    }
+
+    bool SandboxScene::scene_mouse_input_enabled() const noexcept
+    {
+        return m_viewport.hovered && m_viewport.has_area();
+    }
+
+    bool SandboxScene::scene_input_enabled() const noexcept
+    {
+        return scene_keyboard_input_enabled();
     }
 
     void SandboxScene::on_enter()
@@ -37,17 +47,18 @@ namespace prune {
     GameObject SandboxScene::create_player() {
         GameObject player;
         player.name = "Player";
+		player.kind = GameObjectKind::Player;
+		player.size.width = 32;
+		player.size.height = 32;
+		player.render.type = RenderType::Rectangle;
+		player.render.rectangle.color[0] = 0.3f;
+		player.render.rectangle.color[1] = 0.8f;
+		player.render.rectangle.color[2] = 0.5f;
         player.transform.x = 128.0f;
         player.transform.y = 128.0f;
-        player.rectangle.width = 32;
-        player.rectangle.height = 32;
-        player.rectangle.color[0] = 0.3f;
-        player.rectangle.color[1] = 0.8f;
-        player.rectangle.color[2] = 0.5f;
         player.active = true;
-        player.visible = true;
-        player.solid = false;
-        player.is_player = true;
+        player.render.visible = true;
+        player.collision.solid = false;
 
         return player;
     }
@@ -55,17 +66,17 @@ namespace prune {
     GameObject SandboxScene::create_initial_block() {
         GameObject block;
         block.name = "Static Block";
+		block.kind = GameObjectKind::Block;
         block.transform.x = 128.0f;
         block.transform.y = 256.0f;
-        block.rectangle.width = 32;
-        block.rectangle.height = 32;
-        block.rectangle.color[0] = 0.8f;
-        block.rectangle.color[1] = 0.5f;
-        block.rectangle.color[2] = 0.2f;
+        block.size.width = 32;
+        block.size.height = 32;
+        block.render.type = RenderType::Rectangle;
+        block.render.rectangle.color[0] = 0.8f;
+        block.render.rectangle.color[1] = 0.5f;
+        block.render.rectangle.color[2] = 0.2f;
         block.active = true;
-        block.visible = true;
-        block.solid = true;
-        block.is_player = false;
+        block.collision.solid = true;
 
         return block;
     }
@@ -152,7 +163,7 @@ namespace prune {
             return;
         }
 
-        if (!scene_input_enabled()) {
+        if (!scene_keyboard_input_enabled()) {
             player->velocity = {};
             return;
         }
@@ -187,10 +198,10 @@ namespace prune {
         }
 
         const float player_center_x =
-            player->transform.x + (static_cast<float>(player->rectangle.width) * 0.5f);
+            player->transform.x + (static_cast<float>(player->size.width) * 0.5f);
 
         const float player_center_y =
-            player->transform.y + (static_cast<float>(player->rectangle.height) * 0.5f);
+            player->transform.y + (static_cast<float>(player->size.height) * 0.5f);
 
         if (!m_viewport.has_area()) {
             return;
@@ -205,7 +216,7 @@ namespace prune {
         object.transform.x += delta_x;
         object.transform.y += delta_y;
 
-        if (resolve_collisions && object.is_player) {
+        if (resolve_collisions && object.kind == GameObjectKind::Player) {
             resolve_player_collisions(object);
         }
     }
@@ -230,8 +241,8 @@ namespace prune {
         return SDL_Rect{
             static_cast<int>(std::round(object.transform.x - camera.x)),
             static_cast<int>(std::round(object.transform.y - camera.y)),
-            object.rectangle.width,
-            object.rectangle.height
+            object.size.width,
+            object.size.height
         };
     }
 
@@ -256,36 +267,46 @@ namespace prune {
         bool has_selected_outline = false;
 
         for (const auto& object : m_objects.objects()) {
-            if (!object.active || !object.visible) {
+            if (!object.active || !object.render.visible) {
                 continue;
             }
 
-            const SDL_Rect rect = world_to_screen_rect(object);
+            switch (object.render.type) {
+                case RenderType::Rectangle: {
+                    const SDL_Rect rect = world_to_screen_rect(object);
 
-            if (!is_rect_visible(rect)) {
-                continue;
-            }
+                    if (!is_rect_visible(rect)) {
+                        continue;
+                    }
 
-            SDL_SetRenderDrawColor(
-                renderer,
-                static_cast<Uint8>(object.rectangle.color[0] * 255.0f),
-                static_cast<Uint8>(object.rectangle.color[1] * 255.0f),
-                static_cast<Uint8>(object.rectangle.color[2] * 255.0f),
-                255
-            );
+                    SDL_SetRenderDrawColor(
+                        renderer,
+                        static_cast<Uint8>(object.render.rectangle.color[0] * 255.0f),
+                        static_cast<Uint8>(object.render.rectangle.color[1] * 255.0f),
+                        static_cast<Uint8>(object.render.rectangle.color[2] * 255.0f),
+                        255
+                    );
 
-            SDL_RenderFillRect(renderer, &rect);
+                    SDL_RenderFillRect(renderer, &rect);
 
-            if (m_scene_options.highlight_selected && object.id == selected_id) {
-                selected_outline = SDL_Rect{
-                    rect.x - 2,
-                    rect.y - 2,
-                    rect.w + 4,
-                    rect.h + 4
-                };
+                    if (m_scene_options.highlight_selected && object.id == selected_id) {
+                        selected_outline = SDL_Rect{
+                            rect.x - 2,
+                            rect.y - 2,
+                            rect.w + 4,
+                            rect.h + 4
+                        };
 
-                has_selected_outline = true;
-            }
+                        has_selected_outline = true;
+                    }
+
+                    break;
+                }
+                case RenderType::Sprite: {
+                    // Sprite rendering not implemented yet
+                    continue;
+                }
+			}
         }
 
         if (m_scene_options.highlight_selected && has_selected_outline) {
@@ -374,7 +395,7 @@ namespace prune {
     void SandboxScene::resolve_player_collisions(GameObject& player)
     {
         for (const auto& object : m_objects.objects()) {
-            if (object.id == player.id || !object.active || !object.solid) {
+            if (object.id == player.id || !object.active || !object.collision.solid) {
                 continue;
             }
 

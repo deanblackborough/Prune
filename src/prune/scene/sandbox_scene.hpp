@@ -111,6 +111,8 @@ namespace prune {
         void restore_defaults();
 
         [[nodiscard]] bool scene_input_enabled() const noexcept;
+        [[nodiscard]] bool scene_keyboard_input_enabled() const noexcept;
+        [[nodiscard]] bool scene_mouse_input_enabled() const noexcept;
 
         [[nodiscard]] GameObject* player_object() noexcept;
         [[nodiscard]] const GameObject* player_object() const noexcept;

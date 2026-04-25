@@ -9,9 +9,8 @@ namespace prune {
         return {
             transform.x,
             transform.y,
-            static_cast<float>(rectangle.width),
-            static_cast<float>(rectangle.height)
+            static_cast<float>(size.width),
+            static_cast<float>(size.height)
         };
     }
-
-} // namespace prune
+} 

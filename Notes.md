@@ -1,6 +1,6 @@
 # Short-term roadmap for editor development
 
-## Step 1: Proper scene viewport
+## Step 1: Proper scene viewport - Done
 
 Right now everything renders straight to the SDL window and all input assumes the full window is the scene. That was fine for getting cameras working, but it’s already starting to get in the way.
 

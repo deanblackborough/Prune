@@ -18,7 +18,14 @@ namespace prune {
         draw_selected(objects, player_id, grid_options);
         draw_properties(objects, player_id, player_controller, grid_options);
         draw_computed(objects, camera);
-        draw_flags(objects, player_id);
+        draw_flags(objects);
+    }
+
+    bool Inspector::is_selected_player(const GameObject* selected, GameObjectId player_id) const noexcept
+    {
+        return selected != nullptr &&
+            selected->kind == GameObjectKind::Player &&
+            selected->id == player_id;
     }
 
     void Inspector::draw_selected(
@@ -32,7 +39,7 @@ namespace prune {
             return;
         }
 
-        const bool is_player = (selected->id == player_id);
+        const bool is_player = is_selected_player(selected, player_id);
 
         if (tooling::imgui::layout::collapsing_header("Selected")) {
             if (tooling::imgui::property_table::begin("Selected")) {
@@ -83,7 +90,6 @@ namespace prune {
                         const std::string source_name = selected->name;
 
                         GameObject clone = *selected;
-                        clone.is_player = false;
 
                         const float step = grid_options.snap_to_grid
                             ? static_cast<float>(std::max(1, grid_options.grid_size))
@@ -149,7 +155,7 @@ namespace prune {
             return;
         }
 
-        const bool is_player = (selected->id == player_id);
+        const bool is_player = is_selected_player(selected, player_id);
 
         if (tooling::imgui::layout::collapsing_header("Transform")) {
             if (tooling::imgui::property_table::begin("##transform")) {
@@ -161,15 +167,55 @@ namespace prune {
 
         if (tooling::imgui::layout::collapsing_header("Size")) {
             if (tooling::imgui::property_table::begin("##size")) {
-                tooling::imgui::property_table::slider_int("Width", "##width", selected->rectangle.width, 16, 256);
-                tooling::imgui::property_table::slider_int("Height", "##height", selected->rectangle.height, 16, 256);
+                tooling::imgui::property_table::slider_int("Width", "##width", selected->size.width, 16, 256);
+                tooling::imgui::property_table::slider_int("Height", "##height", selected->size.height, 16, 256);
                 tooling::imgui::property_table::end();
             }
         }
 
         if (tooling::imgui::layout::collapsing_header("Rendering")) {
             if (tooling::imgui::property_table::begin("##rendering")) {
-                tooling::imgui::property_table::color3("Colour", "##colour", selected->rectangle.color);
+                int render_type = (selected->render.type == RenderType::Rectangle) ? 0 : 1;
+                const char* render_items[] = { "Rectangle", "Sprite" };
+
+                if (tooling::imgui::property_table::combo(
+                    "Type",
+                    "##render_type",
+                    render_type,
+                    render_items,
+                    IM_ARRAYSIZE(render_items)
+                )) {
+                    selected->render.type = (render_type == 0)
+                        ? RenderType::Rectangle
+                        : RenderType::Sprite;
+                }
+
+                switch (selected->render.type) {
+                case RenderType::Rectangle:
+                    tooling::imgui::property_table::color3(
+                        "Colour",
+                        "##colour",
+                        selected->render.rectangle.color
+                    );
+                    break;
+
+                case RenderType::Sprite:
+                    sync_sprite_path_buffer(selected);
+
+                    tooling::imgui::property_table::input_text(
+                        "Texture",
+                        "##texture_path",
+                        m_sprite_path_buffer.data(),
+                        m_sprite_path_buffer.size()
+                    );
+
+                    if (ImGui::IsItemDeactivatedAfterEdit()) {
+                        selected->render.sprite.texture_path = m_sprite_path_buffer.data();
+                    }
+
+                    break;
+                }
+
                 tooling::imgui::property_table::end();
             }
         }
@@ -219,32 +265,29 @@ namespace prune {
         }
     }
 
-    void Inspector::draw_flags(
-        GameObjectManager& objects,
-        GameObjectId player_id
-    ) {
+    void Inspector::draw_flags(GameObjectManager& objects)
+    {
         GameObject* selected = objects.selected_object();
         if (!selected) {
             return;
         }
 
-        const bool is_player = (selected->id == player_id);
+        const bool is_player = (selected->kind == GameObjectKind::Player);
 
         if (tooling::imgui::layout::collapsing_header("Flags", false)) {
-            if (tooling::imgui::property_table::begin("##computed")) {
+            if (tooling::imgui::property_table::begin("##flags")) {
+                tooling::imgui::property_table::checkbox("Active", "##active", selected->active);
+                tooling::imgui::property_table::checkbox("Visible", "##visible", selected->render.visible);
 
-                if (is_player) {
-                    tooling::imgui::property_table::checkbox_readonly("Is Player", "##is_player", selected->is_player);
-                }
-				tooling::imgui::property_table::checkbox("Active", "##active", selected->active);
-				tooling::imgui::property_table::checkbox("Visible", "##visible", selected->visible);
                 if (!is_player) {
-                    tooling::imgui::property_table::checkbox("Solid", "##solid", selected->solid);
+                    tooling::imgui::property_table::checkbox("Solid", "##solid", selected->collision.solid);
                 }
-				tooling::imgui::property_table::end();
+
+                tooling::imgui::property_table::end();
             }
         }
     }
+
     void Inspector::sync_rename_buffer(const GameObject* selected)
     {
         if (!selected) {
@@ -259,5 +302,26 @@ namespace prune {
 
         m_rename_target_id = selected->id;
         std::snprintf(m_rename_buffer.data(), m_rename_buffer.size(), "%s", selected->name.c_str());
+    }
+
+    void Inspector::sync_sprite_path_buffer(const GameObject* selected)
+    {
+        if (!selected || selected->render.type != RenderType::Sprite) {
+            m_sprite_path_target_id.reset();
+            m_sprite_path_buffer[0] = '\0';
+            return;
+        }
+
+        if (m_sprite_path_target_id.has_value() && m_sprite_path_target_id.value() == selected->id) {
+            return;
+        }
+
+        m_sprite_path_target_id = selected->id;
+        std::snprintf(
+            m_sprite_path_buffer.data(),
+            m_sprite_path_buffer.size(),
+            "%s",
+            selected->render.sprite.texture_path.c_str()
+        );
     }
 }
