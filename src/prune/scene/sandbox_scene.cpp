@@ -48,8 +48,8 @@ namespace prune {
         GameObject player;
         player.name = "Player";
 		player.kind = GameObjectKind::Player;
-		player.size.width = 32;
-		player.size.height = 32;
+		player.size.width = 16;
+		player.size.height = 16;
 		player.render.type = RenderType::Rectangle;
 		player.render.rectangle.color[0] = 0.3f;
 		player.render.rectangle.color[1] = 0.8f;
@@ -69,8 +69,8 @@ namespace prune {
 		block.kind = GameObjectKind::Block;
         block.transform.x = 128.0f;
         block.transform.y = 256.0f;
-        block.size.width = 32;
-        block.size.height = 32;
+        block.size.width = 16;
+        block.size.height = 16;
         block.render.type = RenderType::Rectangle;
         block.render.rectangle.color[0] = 0.8f;
         block.render.rectangle.color[1] = 0.5f;
@@ -321,7 +321,8 @@ namespace prune {
             return;
         }
 
-        const int scene_grid_size = std::max(1, m_grid_options.grid_size);
+        const int grid_size = std::max(1, m_grid_options.grid_size);
+        const int major_every = 4; // 16px * 4 = 64px
 
         const Camera& camera = get_active_camera();
 
@@ -331,29 +332,63 @@ namespace prune {
         const float bottom_world = camera.y + static_cast<float>(m_viewport.height);
 
         const float first_vertical_world =
-            std::floor(left_world / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
+            std::floor(left_world / static_cast<float>(grid_size)) * static_cast<float>(grid_size);
 
         const float first_horizontal_world =
-            std::floor(top_world / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
+            std::floor(top_world / static_cast<float>(grid_size)) * static_cast<float>(grid_size);
 
-        SDL_SetRenderDrawColor(renderer, 48, 38, 62, 255);
+        const int vertical_line_count =
+            static_cast<int>(std::ceil((right_world - first_vertical_world) / static_cast<float>(grid_size))) + 1;
 
-        const int vertical_line_count = static_cast<int>(std::ceil((right_world - first_vertical_world) / static_cast<float>(scene_grid_size))) + 1;
         for (int i = 0; i < vertical_line_count; ++i) {
-            const float world_x = first_vertical_world + static_cast<float>(i * scene_grid_size);
+            const float world_x = first_vertical_world + static_cast<float>(i * grid_size);
+
             if (world_x > right_world) {
                 break;
             }
+
+            const int grid_index = static_cast<int>(std::round(world_x / static_cast<float>(grid_size)));
+            const bool is_origin = grid_index == 0;
+            const bool is_major = grid_index % major_every == 0;
+
+            if (is_origin) {
+                SDL_SetRenderDrawColor(renderer, 130, 90, 160, 110);
+            }
+            else if (is_major) {
+                SDL_SetRenderDrawColor(renderer, 74, 52, 96, 70);
+            }
+            else {
+                SDL_SetRenderDrawColor(renderer, 48, 34, 64, 55);
+            }
+
             const int screen_x = static_cast<int>(std::round(world_x - camera.x));
             SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, m_viewport.height);
         }
 
-        const int horizontal_line_count = static_cast<int>(std::ceil((bottom_world - first_horizontal_world) / static_cast<float>(scene_grid_size))) + 1;
+        const int horizontal_line_count =
+            static_cast<int>(std::ceil((bottom_world - first_horizontal_world) / static_cast<float>(grid_size))) + 1;
+
         for (int i = 0; i < horizontal_line_count; ++i) {
-            const float world_y = first_horizontal_world + static_cast<float>(i * scene_grid_size);
+            const float world_y = first_horizontal_world + static_cast<float>(i * grid_size);
+
             if (world_y > bottom_world) {
                 break;
             }
+
+            const int grid_index = static_cast<int>(std::round(world_y / static_cast<float>(grid_size)));
+            const bool is_origin = grid_index == 0;
+            const bool is_major = grid_index % major_every == 0;
+
+            if (is_origin) {
+                SDL_SetRenderDrawColor(renderer, 130, 90, 160, 110);
+            }
+            else if (is_major) {
+                SDL_SetRenderDrawColor(renderer, 74, 52, 96, 90);
+            }
+            else {
+                SDL_SetRenderDrawColor(renderer, 48, 34, 64, 55);
+            }
+
             const int screen_y = static_cast<int>(std::round(world_y - camera.y));
             SDL_RenderDrawLine(renderer, 0, screen_y, m_viewport.width, screen_y);
         }

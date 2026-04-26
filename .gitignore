@@ -3,6 +3,7 @@
 .vscode/
 .vs/
 out/
+vcpkg_installed/
 
 # Prerequisites
 *.d

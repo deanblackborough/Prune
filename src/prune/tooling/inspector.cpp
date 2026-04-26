@@ -93,7 +93,7 @@ namespace prune {
 
                         const float step = grid_options.snap_to_grid
                             ? static_cast<float>(std::max(1, grid_options.grid_size))
-                            : 32.0f;
+                            : 16.0f;
 
                         clone.transform.x += step;
                         clone.transform.y += step;

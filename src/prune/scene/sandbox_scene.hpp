@@ -59,14 +59,14 @@ namespace prune {
     struct GridOptions {
         bool show_grid = true;
         bool snap_to_grid = true;
-        int grid_size = 32;
+        int grid_size = 16;
         int nudge_step = 8;
         int shift_nudge_steps = 4;
 
-        int min_grid_size = 32;
-        int max_grid_size = 128;
-        int min_nudge_step = 8;
-        int max_nudge_step = 32;
+        int min_grid_size = 8;
+        int max_grid_size = 64;
+        int min_nudge_step = 4;
+        int max_nudge_step = 64;
     };
 
     class SandboxScene {
