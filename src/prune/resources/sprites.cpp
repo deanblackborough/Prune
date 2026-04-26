@@ -5,8 +5,9 @@ namespace prune {
     const std::vector<Sprites>& sprite_resources()
     {
         static const std::vector<Sprites> resources{
-            { "player", "assets/sprites/player.png" },
-            { "crate", "assets/sprites/crate.png" }
+            { "tank-green", "assets/sprites/tank-green.png" },
+            { "tank-blue", "assets/sprites/tank-blue.png" },
+            { "tank-red", "assets/sprites/tank-red.png" }
         };
 
         return resources;

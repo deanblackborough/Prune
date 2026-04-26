@@ -47,6 +47,19 @@ namespace prune {
 
     void SandboxScene::update_editor_camera(float dt, const Input& input)
     {
+        if (scene_mouse_input_enabled() && input.is_mouse_button_down(SDL_BUTTON_MIDDLE)) {
+            activate_editor_camera();
+
+            Camera& camera = get_editor_camera();
+
+            const float zoom = std::max(camera.zoom, 0.01f);
+
+            camera.x -= static_cast<float>(input.mouse_delta_x()) / zoom;
+            camera.y -= static_cast<float>(input.mouse_delta_y()) / zoom;
+
+            return;
+        }
+
         if (!scene_keyboard_input_enabled()) {
             return;
         }

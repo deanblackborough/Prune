@@ -5,6 +5,7 @@
 #include "prune/tooling/inspector.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
+#include "prune/resources/sprites.hpp"
 
 namespace prune {
 
@@ -200,17 +201,34 @@ namespace prune {
                     break;
 
                 case RenderType::Sprite:
-                    sync_sprite_path_buffer(selected);
+                    const auto& resources = sprite_resources();
 
-                    tooling::imgui::property_table::input_text(
-                        "Texture",
-                        "##texture_path",
-                        m_sprite_path_buffer.data(),
-                        m_sprite_path_buffer.size()
-                    );
+                    std::vector<const char*> sprite_items;
+                    sprite_items.reserve(resources.size());
 
-                    if (ImGui::IsItemDeactivatedAfterEdit()) {
-                        selected->render.sprite.texture_path = m_sprite_path_buffer.data();
+                    int current_sprite = 0;
+
+                    for (int i = 0; i < static_cast<int>(resources.size()); ++i) {
+                        sprite_items.push_back(resources[i].key.data());
+
+                        if (selected->render.sprite.sprite_key == resources[i].key) {
+                            current_sprite = i;
+                        }
+                    }
+
+                    if (!sprite_items.empty()) {
+                        if (tooling::imgui::property_table::combo(
+                            "Sprite",
+                            "##sprite_key",
+                            current_sprite,
+                            sprite_items.data(),
+                            static_cast<int>(sprite_items.size())
+                        )) {
+                            selected->render.sprite.sprite_key = resources[current_sprite].key;
+                        }
+                    }
+                    else {
+                        tooling::imgui::property_table::text("Sprite", "No sprites defined");
                     }
 
                     break;
@@ -302,26 +320,5 @@ namespace prune {
 
         m_rename_target_id = selected->id;
         std::snprintf(m_rename_buffer.data(), m_rename_buffer.size(), "%s", selected->name.c_str());
-    }
-
-    void Inspector::sync_sprite_path_buffer(const GameObject* selected)
-    {
-        if (!selected || selected->render.type != RenderType::Sprite) {
-            m_sprite_path_target_id.reset();
-            m_sprite_path_buffer[0] = '\0';
-            return;
-        }
-
-        if (m_sprite_path_target_id.has_value() && m_sprite_path_target_id.value() == selected->id) {
-            return;
-        }
-
-        m_sprite_path_target_id = selected->id;
-        std::snprintf(
-            m_sprite_path_buffer.data(),
-            m_sprite_path_buffer.size(),
-            "%s",
-            selected->render.sprite.texture_path.c_str()
-        );
     }
 }

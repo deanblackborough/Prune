@@ -3,6 +3,7 @@
 #include "backends/imgui_impl_sdlrenderer2.h"
 
 #include <SDL2/SDL.h>
+#include <SDL_image.h>
 #include <stdexcept>
 #include <filesystem>
 
@@ -92,10 +93,17 @@ namespace prune {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
             throw std::runtime_error(std::string("Failed to initialize SDL: ") + SDL_GetError());
         }
+
+        const int image_flags = IMG_INIT_PNG;
+
+        if ((IMG_Init(image_flags) & image_flags) != image_flags) {
+            SDL_Log("Failed to initialise SDL_image PNG support: %s", IMG_GetError());
+        }
     }
 
     void App::shutdown_sdl()
     {
+        IMG_Quit();
         SDL_Quit();
     }
 

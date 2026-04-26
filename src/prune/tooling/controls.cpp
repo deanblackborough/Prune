@@ -16,6 +16,7 @@ namespace prune {
 		tooling::imgui::layout::separator();
 
 		tooling::imgui::layout::text_wrapped("Camera");
+		tooling::imgui::layout::text_wrapped("Middle mouse drag: Pan editor camera");
 		tooling::imgui::layout::text_wrapped("IJKL keys move the editor camera");
     }
 }

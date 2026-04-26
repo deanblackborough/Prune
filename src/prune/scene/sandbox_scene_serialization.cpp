@@ -121,7 +121,7 @@ namespace prune {
                 break;
             }
             case RenderType::Sprite: {
-                node["render"]["sprite"]["texture_path"] = object.render.sprite.texture_path;
+                node["render"]["sprite"]["sprite_key"] = object.render.sprite.sprite_key;
                 break;
             }
             }
@@ -269,12 +269,12 @@ namespace prune {
                         return false;
                     }
 
-                    if (!sprite["texture_path"]) {
-                        error = "Object sprite.texture_path is missing.";
+                    if (!sprite["sprite_key"]) {
+                        error = "Object sprite.sprite_key is missing.";
                         return false;
                     }
 
-                    object.render.sprite.texture_path = sprite["texture_path"].as<std::string>();
+                    object.render.sprite.sprite_key = sprite["sprite_key"].as<std::string>();
                     break;
                 }
                 }
@@ -396,10 +396,12 @@ namespace prune {
             root["cameras"]["editor"]["x"] = m_cameras.editor.x;
             root["cameras"]["editor"]["y"] = m_cameras.editor.y;
             root["cameras"]["editor"]["speed"] = m_cameras.editor.speed;
+            root["cameras"]["editor"]["zoom"] = m_cameras.editor.zoom;
 
             root["cameras"]["game"]["x"] = m_cameras.game.x;
             root["cameras"]["game"]["y"] = m_cameras.game.y;
             root["cameras"]["game"]["speed"] = m_cameras.game.speed;
+			root["cameras"]["game"]["zoom"] = m_cameras.game.zoom;
             root["cameras"]["game"]["follow_player"] = m_cameras.game_options.follow_player;
 
             root["grid"]["show_grid"] = m_grid_options.show_grid;
@@ -496,7 +498,8 @@ namespace prune {
 
                 if (!read_required_float(editor, "x", loaded.cameras.editor.x) ||
                     !read_required_float(editor, "y", loaded.cameras.editor.y) ||
-                    !read_required_float(editor, "speed", loaded.cameras.editor.speed)) {
+                    !read_required_float(editor, "speed", loaded.cameras.editor.speed) || 
+                    !read_required_float(editor, "zoom", loaded.cameras.editor.zoom)) {
                     error = "cameras.editor is incomplete.";
                     return false;
                 }
@@ -504,6 +507,7 @@ namespace prune {
                 if (!read_required_float(game, "x", loaded.cameras.game.x) ||
                     !read_required_float(game, "y", loaded.cameras.game.y) ||
                     !read_required_float(game, "speed", loaded.cameras.game.speed) ||
+					!read_required_float(game, "zoom", loaded.cameras.game.zoom) ||
                     !read_required_bool(game, "follow_player", loaded.cameras.game_options.follow_player)) {
                     error = "cameras.game is incomplete.";
                     return false;
@@ -517,7 +521,9 @@ namespace prune {
                 }
 
                 loaded.cameras.editor.speed = 256.0f;
-                loaded.cameras.game.speed = 256.0f;
+				loaded.cameras.editor.zoom = 1.0f;
+                loaded.cameras.game.speed = 96.0f;
+				loaded.cameras.game.zoom = 3.0f;
                 loaded.cameras.mode = CameraMode::Editor;
                 loaded.cameras.game_options.follow_player = true;
             }

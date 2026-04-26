@@ -1,10 +1,12 @@
-#include "prune/scene/sandbox_scene.hpp"
-
-#include <SDL2/SDL.h>
 #include <algorithm>
 #include <cmath>
 
+#include <SDL2/SDL.h>
+#include <SDL_image.h>
 #include "imgui.h"
+
+#include "prune/scene/sandbox_scene.hpp"
+#include "prune/resources/sprites.hpp"
 
 namespace prune {
 
@@ -12,6 +14,11 @@ namespace prune {
     {
         m_viewport.width = window_width;
         m_viewport.height = window_height;
+    }
+
+    SandboxScene::~SandboxScene()
+    {
+        destroy_sprite_textures();
     }
 
     void SandboxScene::set_viewport(const SceneViewport& viewport) noexcept
@@ -50,7 +57,8 @@ namespace prune {
 		player.kind = GameObjectKind::Player;
 		player.size.width = 16;
 		player.size.height = 16;
-		player.render.type = RenderType::Rectangle;
+		player.render.type = RenderType::Sprite;
+		player.render.sprite.sprite_key = "tank-green";
 		player.render.rectangle.color[0] = 0.3f;
 		player.render.rectangle.color[1] = 0.8f;
 		player.render.rectangle.color[2] = 0.5f;
@@ -207,8 +215,10 @@ namespace prune {
             return;
         }
 
-        m_cameras.game.x = player_center_x - (static_cast<float>(m_viewport.width) * 0.5f);
-        m_cameras.game.y = player_center_y - (static_cast<float>(m_viewport.height) * 0.5f);
+        const float zoom = std::max(m_cameras.game.zoom, 0.01f);
+
+        m_cameras.game.x = player_center_x - ((static_cast<float>(m_viewport.width) / zoom) * 0.5f);
+        m_cameras.game.y = player_center_y - ((static_cast<float>(m_viewport.height) / zoom) * 0.5f);
     }
 
     void SandboxScene::move_object(GameObject& object, float delta_x, float delta_y, bool resolve_collisions)
@@ -229,8 +239,8 @@ namespace prune {
         const int local_y = screen_y - m_viewport.screen_y;
 
         return {
-            static_cast<float>(local_x) + camera.x,
-            static_cast<float>(local_y) + camera.y
+            camera.x + static_cast<float>(local_x) / camera.zoom,
+            camera.y + static_cast<float>(local_y) / camera.zoom
         };
     }
 
@@ -238,11 +248,13 @@ namespace prune {
     {
         const Camera& camera = get_active_camera();
 
+        const float zoom = std::max(camera.zoom, 0.01f);
+
         return SDL_Rect{
-            static_cast<int>(std::round(object.transform.x - camera.x)),
-            static_cast<int>(std::round(object.transform.y - camera.y)),
-            object.size.width,
-            object.size.height
+            static_cast<int>(std::round((object.transform.x - camera.x) * zoom)),
+            static_cast<int>(std::round((object.transform.y - camera.y) * zoom)),
+            static_cast<int>(std::round(static_cast<float>(object.size.width) * zoom)),
+            static_cast<int>(std::round(static_cast<float>(object.size.height) * zoom))
         };
     }
 
@@ -303,8 +315,33 @@ namespace prune {
                     break;
                 }
                 case RenderType::Sprite: {
-                    // Sprite rendering not implemented yet
-                    continue;
+                    const SDL_Rect rect = world_to_screen_rect(object);
+
+                    if (!is_rect_visible(rect)) {
+                        continue;
+                    }
+
+                    SDL_Texture* texture = sprite_texture(renderer, object.render.sprite.sprite_key);
+
+                    if (texture) {
+                        SDL_RenderCopy(renderer, texture, nullptr, &rect);
+                    }
+                    else {
+                        draw_sprite_fallback(renderer, rect);
+                    }
+
+                    if (m_scene_options.highlight_selected && object.id == selected_id) {
+                        selected_outline = SDL_Rect{
+                            rect.x - 2,
+                            rect.y - 2,
+                            rect.w + 4,
+                            rect.h + 4
+                        };
+
+                        has_selected_outline = true;
+                    }
+
+                    break;
                 }
 			}
         }
@@ -326,10 +363,12 @@ namespace prune {
 
         const Camera& camera = get_active_camera();
 
+        const float zoom = std::max(camera.zoom, 0.01f);
+
         const float left_world = camera.x;
-        const float right_world = camera.x + static_cast<float>(m_viewport.width);
+        const float right_world = camera.x + (static_cast<float>(m_viewport.width) / zoom);
         const float top_world = camera.y;
-        const float bottom_world = camera.y + static_cast<float>(m_viewport.height);
+        const float bottom_world = camera.y + (static_cast<float>(m_viewport.height) / zoom);
 
         const float first_vertical_world =
             std::floor(left_world / static_cast<float>(grid_size)) * static_cast<float>(grid_size);
@@ -361,7 +400,7 @@ namespace prune {
                 SDL_SetRenderDrawColor(renderer, 48, 34, 64, 55);
             }
 
-            const int screen_x = static_cast<int>(std::round(world_x - camera.x));
+            const int screen_x = static_cast<int>(std::round((world_x - camera.x) * zoom));
             SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, m_viewport.height);
         }
 
@@ -389,7 +428,7 @@ namespace prune {
                 SDL_SetRenderDrawColor(renderer, 48, 34, 64, 55);
             }
 
-            const int screen_y = static_cast<int>(std::round(world_y - camera.y));
+            const int screen_y = static_cast<int>(std::round((world_y - camera.y) * zoom));
             SDL_RenderDrawLine(renderer, 0, screen_y, m_viewport.width, screen_y);
         }
     }
@@ -466,7 +505,11 @@ namespace prune {
 
         m_cameras = {};
         m_cameras.editor.speed = 256.0f;
-        m_cameras.game.speed = 256.0f;
+        m_cameras.editor.zoom = 1.0f;
+
+        m_cameras.game.speed = 256.0F;
+        m_cameras.game.zoom = 3.0f;
+
         m_cameras.mode = CameraMode::Editor;
         m_cameras.game_options.follow_player = true;
 
@@ -491,5 +534,51 @@ namespace prune {
         restore_defaults();
 
         update_game_camera();
+    }
+
+    void SandboxScene::destroy_sprite_textures() noexcept
+    {
+        for (auto& [key, texture] : m_sprite_textures) {
+            if (texture) {
+                SDL_DestroyTexture(texture);
+            }
+        }
+
+        m_sprite_textures.clear();
+    }
+
+    SDL_Texture* SandboxScene::sprite_texture(SDL_Renderer* renderer, const std::string& sprite_key)
+    {
+        if (sprite_key.empty()) {
+            return nullptr;
+        }
+
+        if (const auto existing = m_sprite_textures.find(sprite_key); existing != m_sprite_textures.end()) {
+            return existing->second;
+        }
+
+        const Sprites* resource = find_sprite_resource(sprite_key);
+        if (!resource) {
+            m_sprite_textures.emplace(sprite_key, nullptr);
+            return nullptr;
+        }
+
+        SDL_Texture* texture = IMG_LoadTexture(renderer, resource->path.data());
+
+        m_sprite_textures.emplace(sprite_key, texture);
+
+        return texture;
+    }
+
+    void SandboxScene::draw_sprite_fallback(SDL_Renderer* renderer, const SDL_Rect& rect) const
+    {
+        SDL_SetRenderDrawColor(renderer, 38, 28, 48, 255);
+        SDL_RenderFillRect(renderer, &rect);
+
+        SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
+        SDL_RenderDrawRect(renderer, &rect);
+
+        SDL_RenderDrawLine(renderer, rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
+        SDL_RenderDrawLine(renderer, rect.x + rect.w, rect.y, rect.x, rect.y + rect.h);
     }
 }

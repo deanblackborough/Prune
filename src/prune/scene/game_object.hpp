@@ -50,7 +50,7 @@ namespace prune {
     };
 
     struct SpriteVisual {
-        std::string texture_path;
+        std::string sprite_key = "tank-blue";
     };
 
     struct RenderData {
