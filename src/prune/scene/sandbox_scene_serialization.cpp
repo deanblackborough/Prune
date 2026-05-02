@@ -1,4 +1,3 @@
-#include "prune/scene/sandbox_scene.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -7,14 +6,17 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "prune/scene/sandbox_scene.hpp"
+#include "prune/resources/sprites.hpp"
+
 namespace prune {
 
     namespace {
 
         struct LoadedSceneState {
             GameObjectManager objects;
-            GameObjectId player_id = kInvalidGameObjectId;
-            GameObjectId selected_id = kInvalidGameObjectId;
+            GameObjectId player_id = k_invalid_game_object_id;
+            GameObjectId selected_id = k_invalid_game_object_id;
             GridOptions grid_options{};
             SceneOptions scene_options{};
             CameraState cameras{};
@@ -275,7 +277,15 @@ namespace prune {
                     }
 
 					//@todo: validate sprite key exists in assets when we have an asset library
-                    object.render.sprite.sprite_key = sprite["sprite_key"].as<std::string>();
+                    const std::string sprite_key = sprite["sprite_key"].as<std::string>();
+
+                    if (find_sprite_resource(sprite_key) == nullptr) {
+                        error = "Object sprite.sprite_key is not defined: " + sprite_key;
+                        return false;
+                    }
+
+                    object.render.sprite.sprite_key = sprite_key;
+
                     break;
                 }
                 }
@@ -388,7 +398,7 @@ namespace prune {
             root["scene"]["next_object_id"] = m_objects.next_id();
             root["scene"]["player_id"] = m_player_id;
 
-            if (m_objects.selected_id() != kInvalidGameObjectId) {
+            if (m_objects.selected_id() != k_invalid_game_object_id) {
                 root["scene"]["selected_object_id"] = m_objects.selected_id();
             }
 
@@ -466,8 +476,8 @@ namespace prune {
             }
 
             GameObjectId loaded_next_id = 1;
-            GameObjectId loaded_player_id = kInvalidGameObjectId;
-            GameObjectId loaded_selected_id = kInvalidGameObjectId;
+            GameObjectId loaded_player_id = k_invalid_game_object_id;
+            GameObjectId loaded_selected_id = k_invalid_game_object_id;
 
             if (!read_required_uint(scene, "next_object_id", loaded_next_id)) {
                 error = "scene.next_object_id is missing.";
@@ -588,7 +598,7 @@ namespace prune {
                 return false;
             }
 
-            GameObjectId max_loaded_id = kInvalidGameObjectId;
+            GameObjectId max_loaded_id = k_invalid_game_object_id;
             for (const auto& object : loaded.objects.objects()) {
                 if (object.id > max_loaded_id) {
                     max_loaded_id = object.id;
@@ -601,7 +611,7 @@ namespace prune {
 
             loaded.objects.set_next_id(loaded_next_id);
 
-            if (loaded_selected_id != kInvalidGameObjectId &&
+            if (loaded_selected_id != k_invalid_game_object_id &&
                 loaded.objects.get_by_id(loaded_selected_id) != nullptr) {
                 loaded.selected_id = loaded_selected_id;
             }

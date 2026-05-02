@@ -48,17 +48,17 @@ namespace prune {
 
     void SandboxScene::on_exit() {
         m_objects.clear();
-        m_player_id = kInvalidGameObjectId;
+        m_player_id = k_invalid_game_object_id;
     }
 
     GameObject SandboxScene::create_player() {
         GameObject player;
         player.name = "Player";
 		player.kind = GameObjectKind::Player;
-		player.size.width = 16;
-		player.size.height = 16;
+		player.size.width = k_default_object_size;
+		player.size.height = k_default_object_size;
 		player.render.type = RenderType::Sprite;
-		player.render.sprite.sprite_key = "tank-green";
+		player.render.sprite.sprite_key = std::string(k_default_player_sprite_key);
 		player.render.rectangle.color[0] = 0.3f;
 		player.render.rectangle.color[1] = 0.8f;
 		player.render.rectangle.color[2] = 0.5f;
@@ -77,8 +77,8 @@ namespace prune {
 		block.kind = GameObjectKind::Block;
         block.transform.x = 128.0f;
         block.transform.y = 256.0f;
-        block.size.width = 16;
-        block.size.height = 16;
+        block.size.width = k_default_object_size;
+        block.size.height = k_default_object_size;
         block.render.type = RenderType::Rectangle;
         block.render.rectangle.color[0] = 0.8f;
         block.render.rectangle.color[1] = 0.5f;
@@ -502,7 +502,7 @@ namespace prune {
     void SandboxScene::reset_runtime_state()
     {
         m_objects.clear();
-        m_player_id = kInvalidGameObjectId;
+        m_player_id = k_invalid_game_object_id;
 
         m_cameras = {};
         m_cameras.editor.speed = 256.0f;

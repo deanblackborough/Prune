@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <string>
 
+#include "prune/core/defaults.hpp"
+
 namespace prune {
 
     using GameObjectId = std::uint32_t;
-    constexpr GameObjectId kInvalidGameObjectId = 0;
+    constexpr GameObjectId k_invalid_game_object_id = 0;
 
     enum class GameObjectKind {
         Generic = 0,
@@ -37,8 +39,8 @@ namespace prune {
     };
 
     struct Size {
-        int width = 16;
-        int height = 16;
+        int width = k_default_object_size;
+        int height = k_default_object_size;
     };
 
     struct CollisionSettings {
@@ -50,7 +52,7 @@ namespace prune {
     };
 
     struct SpriteVisual {
-        std::string sprite_key = "tank-blue";
+        std::string sprite_key = std::string(k_default_sprite_key);
     };
 
     struct RenderData {
@@ -62,7 +64,7 @@ namespace prune {
     };
 
     struct GameObject {
-        GameObjectId id = kInvalidGameObjectId;
+        GameObjectId id = k_invalid_game_object_id;
         std::string name = "Object";
 
         GameObjectKind kind = GameObjectKind::Generic;

@@ -6,7 +6,7 @@ namespace prune {
     {
         m_objects.clear();
         m_next_id = 1;
-        m_selected_id = kInvalidGameObjectId;
+        m_selected_id = k_invalid_game_object_id;
     }
 
     GameObjectId GameObjectManager::create_object(const GameObject& object)
@@ -16,7 +16,7 @@ namespace prune {
 
         m_objects.push_back(copy);
 
-        if (m_selected_id == kInvalidGameObjectId) {
+        if (m_selected_id == k_invalid_game_object_id) {
             m_selected_id = copy.id;
         }
 
@@ -25,7 +25,7 @@ namespace prune {
 
     bool GameObjectManager::add_loaded_object(const GameObject& object)
     {
-        if (object.id == kInvalidGameObjectId) {
+        if (object.id == k_invalid_game_object_id) {
             return false;
         }
 
@@ -39,8 +39,8 @@ namespace prune {
 
     void GameObjectManager::set_selected_id(GameObjectId id) noexcept
     {
-        if (id == kInvalidGameObjectId) {
-            m_selected_id = kInvalidGameObjectId;
+        if (id == k_invalid_game_object_id) {
+            m_selected_id = k_invalid_game_object_id;
             return;
         }
 
@@ -70,7 +70,7 @@ namespace prune {
 
         if (m_selected_id == id) {
             if (m_objects.empty()) {
-                m_selected_id = kInvalidGameObjectId;
+                m_selected_id = k_invalid_game_object_id;
             } else if (index < m_objects.size()) {
                 m_selected_id = m_objects[index].id;
             } else {
@@ -123,8 +123,8 @@ namespace prune {
 
     void GameObjectManager::select(GameObjectId id) noexcept
     {
-        if (id == kInvalidGameObjectId) {
-            m_selected_id = kInvalidGameObjectId;
+        if (id == k_invalid_game_object_id) {
+            m_selected_id = k_invalid_game_object_id;
             return;
         }
 
@@ -178,7 +178,7 @@ namespace prune {
 
     std::size_t GameObjectManager::find_index_by_id(GameObjectId id) const noexcept
     {
-        if (id == kInvalidGameObjectId) {
+        if (id == k_invalid_game_object_id) {
             return m_objects.size();
         }
 
@@ -191,4 +191,4 @@ namespace prune {
         return m_objects.size();
     }
 
-} // namespace prune
+}
