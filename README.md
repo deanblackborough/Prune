@@ -127,3 +127,7 @@ fighting the architecture later.
 - CMake
 - Git
 - vcpkg
+
+## Credits
+
+- Include icons by Kenney @ www.kenney.nl

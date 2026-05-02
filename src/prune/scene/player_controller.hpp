@@ -13,7 +13,6 @@ namespace prune {
         void set_speed(float speed) noexcept;
 
     private:
-        float m_speed = 256.0f;
+        float m_speed = 96.0f;
     };
-
-} // namespace prune
+}

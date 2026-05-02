@@ -37,8 +37,8 @@ namespace prune {
     };
 
     struct Size {
-        int width = 32;
-        int height = 32;
+        int width = 16;
+        int height = 16;
     };
 
     struct CollisionSettings {
@@ -50,7 +50,7 @@ namespace prune {
     };
 
     struct SpriteVisual {
-        std::string texture_path;
+        std::string sprite_key = "tank-blue";
     };
 
     struct RenderData {

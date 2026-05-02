@@ -98,8 +98,8 @@ namespace prune {
         }
 
         if (m_show_outliner) {
-            ImGui::SetNextWindowPos(ImVec2(982.0f, 21.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(270.0f, 300.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(967.0f, 36.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(306.0f, 239.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
                 const Camera& camera = scene.get_active_camera();
@@ -119,8 +119,8 @@ namespace prune {
         }
 
         if (m_show_inspector) {
-            ImGui::SetNextWindowPos(ImVec2(970.0f, 294.f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(300.0f, 419.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(967.0f, 273.f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(305.0f, 431.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Inspector", &m_show_inspector)) {
                 m_inspector.draw(
@@ -220,8 +220,8 @@ namespace prune {
             return;
         }
 
-        ImGui::SetNextWindowPos(ImVec2(320.0f, 23.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(620.0f, 690.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(6.0f, 26.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(954.0f, 688.0f), ImGuiCond_FirstUseEver);
 
         if (!ImGui::Begin("Scene", &m_show_scene_viewport, ImGuiWindowFlags_NoScrollbar)) {
             scene.set_viewport({});

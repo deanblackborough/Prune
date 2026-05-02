@@ -1,144 +1,86 @@
 # Short-term roadmap for editor development
 
-## Step 1: Proper scene viewport - Done
+## Step 1 – quick cleanup first
 
-Right now everything renders straight to the SDL window and all input assumes the full window is the scene. That was fine for getting cameras working, but it’s already starting to get in the way.
+Before adding anything new, tidy a couple of small things that will just get annoying later:
 
-What’s wrong with the current setup:
+Stop hardcoding 16 everywhere, define a default size properly
+Validate sprite keys on load so things don’t silently fail
+Maybe group this into a small constants file or similar
 
-screen_to_world() assumes full window space
-Picking is based on raw screen coords
-UI panels are just drawn over the top, not actually separate
-No concept of “this part of the screen is the scene”
+## Step 2 – object dragging in the scene
 
-What I want instead:
+This is the main bit.
 
-A dedicated viewport panel inside the editor UI
-The scene renders into that, not the whole window
-Input only affects the scene when the viewport is hovered/focused
+What I want:
+Click to select (already works)
+Click + hold on selected object → start dragging
+Mouse movement moves the object in world space
+Movement uses proper world coords, not screen hacks
+Grid snapping can apply while dragging (optional for now)
+Probably don’t allow dragging the player yet, or at least be careful with it
+Why this next
 
-Why this matters:
+Right now everything is inspector-driven. That’s fine for testing, but it’s not how an editor should feel.
 
-Stops clicks leaking through UI
-Gives me a clean place to handle zoom later
-Required for gizmos to make sense
-Forces a proper separation between editor UI and world interaction
+Dragging objects in the scene:
 
-This feels like the right foundation before adding anything more visual or interactive.
+makes it immediately more usable
+properly tests camera + coordinate handling
+sets the base for gizmos later
 
-## Step 2: Move away from “rectangle + flags” - Done
+This feels like the first “this is actually an editor” moment.
 
-Current GameObject is basically:
+## Step 3 – small gameplay slice
 
-transform
-velocity
-rectangle render
-a couple of flags (solid, is_player, etc.)
+Once dragging is in, then it’s worth adding a tiny bit of gameplay.
 
-That’s already starting to feel too limiting.
+Keep it simple:
 
-What I actually need:
+Player can face a direction
+Player can shoot something basic
+One enemy that moves towards the player
+Simple collision (bullet kills enemy)
 
-A clear object type/kind (not just booleans)
-A render type (start with rectangle + sprite)
-Separate “what it is” from “how it looks”
-Stop using flags like is_player as identity
+This isn’t about building a game yet, just stress testing the setup.
 
-Rough direction:
+I expect this will highlight where the current structure starts to break down.
 
-enum or tag for object kind
-enum for render type
-split visual data from behaviour data
+## Step 4 – scene-specific stuff (later)
 
-Why do this now:
+After the gameplay slice, then look at:
 
-Sprite support will be awkward without it
-Inspectors become cleaner when types are explicit
-Save/load will be much easier to reason about
+splitting scene types properly (top-down, platformer, etc.)
+pulling behaviour out of SandboxScene
+introducing scene-specific tooling
 
-Basically, this is me putting a bit of structure in before things get messy.
+Doing this now would just be guessing. Better to wait until the gameplay slice exposes what’s actually needed.
 
-## Step 3: Static sprite support
+## Misc fixes
 
-At the moment everything is just coloured rectangles. That’s fine for logic, but visually it’s still very “prototype”.
+- Sprites need to rotate/switch based on player direction
+- We are duplicaing 16 everywhere, should be a constant
+- Validate sprites against the library when loading (don’t just fail silently)
 
-I don’t want to jump straight into animation, but I do want to support sprites.
+## What comes next?
 
-Current limitations:
-
-Rendering is just SDL_RenderFillRect
-No asset concept
-Serialization only knows about colour + size
-
-What I need to add:
-
-Asset path on objects (for sprites)
-A simple texture cache/manager
-A sprite render path alongside rectangle rendering
-Inspector option to switch between rectangle and sprite
-
-Why this step:
-
-Makes the project look like more than a sandbox
-Forces me to introduce assets properly
-Sets up for animation later without overcommitting
-
-## Step 4: Basic gizmos (movement only)
-
-Right now editing is mostly:
-
-Inspector fields
-Add/clone/delete
-Keyboard nudging
-
-That works, but it doesn’t feel like an editor yet.
-
-I need to be able to interact with objects directly in the scene.
-
-What I’m aiming for:
-
-Click to select in the viewport
-Drag to move objects
-Optional grid snapping while dragging
-Visual feedback (bounds/selection highlight)
-
-Deliberately not doing yet:
-
-Scaling
-Rotation
-
-Those can come later once movement feels solid.
-
-This step is mostly about making the editor feel usable rather than just functional.
-
-## Step 5: Start separating scene-specific tooling
-
-At the moment everything is effectively hardcoded into one flow:
-
-SandboxScene
-One UI render path
-One inspector/outliner setup
-One object model
-
-That’s fine early on, but it doesn’t match the longer-term goal.
-
-I want different scene types (platformer, top-down, etc.), each with their own tools and inspectors.
-
-So I need to start untangling things before it grows further.
-
-What I want to introduce:
-
-Scene-level hooks for editor behaviour (not just update/render)
-Ability for scenes to define their own inspector sections
-Scene-specific outliner/tool behaviour
-Scene-aware save/load
-
-At the same time:
-
-Keep shared systems generic (camera, viewport, selection, object manager helpers)
-
-Important constraint:
-
-Don’t over-engineer this
-Don’t build a full framework yet
-Just stop SandboxScene becoming the permanent dumping ground
+- Proper transform gizmos (translate, rotate, scale, axis handles)
+- Scene-specific tools (different controls per scene type)
+- Behaviour system (move logic out of SandboxScene)
+- Sprite system expansion (animation, facing, states)
+- Simple collision system (solid objects, triggers, interactions)
+- Input abstraction (decouple editor input from gameplay input)
+- Camera improvements (zoom, bounds, smoothing, multiple cameras)
+- Undo/redo system (editor usability baseline)
+- Object duplication & multi-select (basic editor workflow)
+- Prefab-style objects (reusable setups, not full system yet)
+- Save/load iteration (stability, versioning later)
+- Debug overlays (collision, bounds, state visualisation)
+- Basic UI for games (text, simple HUD elements)
+- Audio hooks (very light, just enough for feedback)
+- Scene switching / multiple scenes
+- Plugin-style scene architecture (tools + behaviour per scene type)
+- Asset handling pass (still simple, no heavy pipeline)
+- Performance pass (only once systems exist)
+- Packaging / build flow (run outside editor cleanly)
+- Documentation / examples (show intent of the project)

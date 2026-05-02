@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <string>
+#include <unordered_map>
 
 #include <SDL2/SDL.h>
 
@@ -38,6 +40,7 @@ namespace prune {
         float x = 0.0f;
         float y = 0.0f;
         float speed = 256.0f;
+        float zoom = 1.0f;
     };
 
     enum class CameraMode {
@@ -59,19 +62,22 @@ namespace prune {
     struct GridOptions {
         bool show_grid = true;
         bool snap_to_grid = true;
-        int grid_size = 32;
+        int grid_size = 16;
         int nudge_step = 8;
         int shift_nudge_steps = 4;
 
-        int min_grid_size = 32;
-        int max_grid_size = 128;
-        int min_nudge_step = 8;
-        int max_nudge_step = 32;
+        int min_grid_size = 8;
+        int max_grid_size = 64;
+        int min_nudge_step = 4;
+        int max_nudge_step = 64;
     };
 
     class SandboxScene {
     public:
         SandboxScene(int window_width, int window_height);
+        ~SandboxScene();
+        SandboxScene(const SandboxScene&) = delete;
+        SandboxScene& operator=(const SandboxScene&) = delete;
 
         void on_enter();
         void on_exit();
@@ -150,6 +156,11 @@ namespace prune {
         [[nodiscard]] float snap_value_to_grid(float value) const noexcept;
         void snap_object_to_grid(GameObject& object) const noexcept;
 
+		// Sprites
+        void destroy_sprite_textures() noexcept;
+        [[nodiscard]] SDL_Texture* sprite_texture(SDL_Renderer* renderer, const std::string& sprite_key);
+        void draw_sprite_fallback(SDL_Renderer* renderer, const SDL_Rect& rect) const;
+
         GameObjectManager m_objects;
         PlayerController m_player_controller;
 
@@ -161,5 +172,7 @@ namespace prune {
         SceneOptions m_scene_options;
 
         CameraState m_cameras;
+
+        std::unordered_map<std::string, SDL_Texture*> m_sprite_textures;
     };
 }

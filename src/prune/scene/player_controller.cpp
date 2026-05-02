@@ -51,5 +51,4 @@ namespace prune {
     {
         m_speed = std::max(0.0f, speed);
     }
-
-} // namespace prune
+}

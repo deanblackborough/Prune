@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(SDL2 REQUIRED CONFIG)
+find_package(SDL2_image REQUIRED CONFIG)
 find_package(yaml-cpp REQUIRED CONFIG)
 
 add_executable(Prune
@@ -23,6 +24,8 @@ add_executable(Prune
         src/prune/scene/sandbox_scene.cpp
         src/prune/scene/sandbox_scene_editor.cpp
         src/prune/scene/sandbox_scene_serialization.cpp
+
+        src/prune/resources/sprites.cpp
 
         src/prune/tooling/theme.cpp
         src/prune/tooling/ui.cpp
@@ -51,6 +54,7 @@ target_include_directories(Prune PRIVATE
 
 target_link_libraries(Prune PRIVATE
         SDL2::SDL2
+        SDL2_image::SDL2_image
         yaml-cpp::yaml-cpp
 )
 

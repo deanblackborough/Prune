@@ -34,10 +34,6 @@ namespace prune {
 
         void sync_rename_buffer(const GameObject* selected);
 
-        void sync_sprite_path_buffer(const GameObject* selected);
-
-        std::optional<GameObjectId> m_sprite_path_target_id;
-        std::array<char, 256> m_sprite_path_buffer{};
 
         std::optional<GameObjectId> m_rename_target_id;
 		std::array<char, 128> m_rename_buffer{};
