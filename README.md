@@ -22,7 +22,7 @@ so the project grows around live editing rather adding tooling later. That means
 editor problems early: scene view ownership, input focus, picking, object inspection, 
 save/load, and the separation between editor behaviour and game behaviour.
 
-<img width="1917" height="1128" alt="image" src="https://github.com/user-attachments/assets/7e4eecc3-3acc-45ab-8f48-e118c09e5fd8" />
+<img width="1921" height="1130" alt="image" src="https://github.com/user-attachments/assets/768f6685-5962-4b6b-ae88-564f5bf0263d" />
 
 ## Design principles
 
@@ -65,17 +65,19 @@ fighting the architecture later.
 - object cloning and deletion
 - outliner search
 - selected object highlighting
+- object types, rectangle and sprite for now
 
 ### Runtime interaction
 - player movement
 - collision against solid objects
-- live player speed editing
+- live - editing of scene objects while the game is running
 
 ### Editor support
 - editor grid
 - optional snap-to-grid
 - keyboard nudging
 - editor camera movement
+- zoomed camera that follows the player instead of the editor camera
 - stats and options panels
 
 ### Persistence
@@ -88,22 +90,11 @@ fighting the architecture later.
 - **Arrow keys**: nudge selected non-player object
 - **Shift + Arrow keys**: larger nudge
 - **Left click**: select object
+- **Middle mouse button**: pan editor camera
 
 ## Roadmap
 
-### Next
-- proper scene viewport inside the editor UI
-- viewport-owned input and picking
-- cleaner object/render type foundations
-- static sprite support
-- movement/transform gizmos
-
-### After that
-- scene-specific inspectors and tools
-- richer persistence
-- animated sprites
-- undo/redo
-- ECS integration where it genuinely helps rather than by default
+- Check the [`notes`](Notes.md) file to see what is planned
 
 ### Long-term direction
 - multiple scene types with different editing models
