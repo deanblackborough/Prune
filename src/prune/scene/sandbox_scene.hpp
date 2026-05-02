@@ -72,6 +72,13 @@ namespace prune {
         int max_nudge_step = 64;
     };
 
+    struct DragState {
+        bool active = false;
+        GameObjectId object_id = k_invalid_game_object_id;
+        Transform object_start{};
+        Transform mouse_start_world{};
+    };
+
     class SandboxScene {
     public:
         SandboxScene(int window_width, int window_height);
@@ -143,6 +150,7 @@ namespace prune {
         void update_editor(float dt, const Input& input);
         void update_editor_camera(float dt, const Input& input);
         void handle_scene_click(const Input& input);
+        void handle_object_drag(const Input& input);
         void handle_keyboard_nudge(const Input& input);
         [[nodiscard]] GameObject* pick_object_at_screen(int screen_x, int screen_y) noexcept;
 
@@ -170,6 +178,7 @@ namespace prune {
 
         GridOptions m_grid_options;
         SceneOptions m_scene_options;
+        DragState m_drag_state;
 
         CameraState m_cameras;
 

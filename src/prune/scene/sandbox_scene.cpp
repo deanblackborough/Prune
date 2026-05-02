@@ -75,8 +75,8 @@ namespace prune {
         GameObject block;
         block.name = "Static Block";
 		block.kind = GameObjectKind::Block;
-        block.transform.x = 128.0f;
-        block.transform.y = 256.0f;
+        block.transform.x = 176.0f;
+        block.transform.y = 128.0f;
         block.size.width = k_default_object_size;
         block.size.height = k_default_object_size;
         block.render.type = RenderType::Rectangle;
@@ -516,6 +516,7 @@ namespace prune {
 
         m_grid_options = {};
         m_scene_options = {};
+        m_drag_state = {};
         m_player_controller = {};
     }
 
