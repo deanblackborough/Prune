@@ -12,6 +12,7 @@ namespace prune {
 		tooling::imgui::layout::text_wrapped("Objects");
 		tooling::imgui::layout::text_wrapped("Arrow keys move selected non-player object");
 		tooling::imgui::layout::text_wrapped("Hold Shift for larger movements");
+		tooling::imgui::layout::text_wrapped("Mouse button left: Move non-player object");
 
 		tooling::imgui::layout::separator();
 

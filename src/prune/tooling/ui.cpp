@@ -245,12 +245,16 @@ namespace prune {
         ensure_scene_render_target(renderer, viewport.width, viewport.height);
 
         if (m_scene_render_target) {
-            ImGui::Image(
-                reinterpret_cast<ImTextureID>(m_scene_render_target),
-                viewport_size
-            );
+            ImGui::InvisibleButton("##scene_viewport_input", viewport_size);
 
             viewport.hovered = ImGui::IsItemHovered();
+
+            ImDrawList* draw_list = ImGui::GetWindowDrawList();
+            draw_list->AddImage(
+                reinterpret_cast<ImTextureID>(m_scene_render_target),
+                viewport_pos,
+                ImVec2(viewport_pos.x + viewport_size.x, viewport_pos.y + viewport_size.y)
+            );
         }
         else {
             ImGui::Dummy(viewport_size);
