@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string_view>
+
 namespace prune {
 
     constexpr int k_default_object_size = 16;
