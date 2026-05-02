@@ -97,7 +97,8 @@ namespace prune {
         const int image_flags = IMG_INIT_PNG;
 
         if ((IMG_Init(image_flags) & image_flags) != image_flags) {
-            SDL_Log("Failed to initialise SDL_image PNG support: %s", IMG_GetError());
+			SDL_Quit(); // We did init SDL, so need to kill it before exiting
+            throw std::runtime_error(std::string("Failed to initialise SDL_image PNG support: ") + IMG_GetError());
         }
     }
 

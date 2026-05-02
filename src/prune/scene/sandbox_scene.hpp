@@ -76,6 +76,8 @@ namespace prune {
     public:
         SandboxScene(int window_width, int window_height);
         ~SandboxScene();
+        SandboxScene(const SandboxScene&) = delete;
+        SandboxScene& operator=(const SandboxScene&) = delete;
 
         void on_enter();
         void on_exit();

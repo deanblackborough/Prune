@@ -58,7 +58,7 @@ Save/load will be much easier to reason about
 
 Basically, this is me putting a bit of structure in before things get messy.
 
-## Step 3: Static sprite support
+## Step 3: Static sprite support - Done
 
 At the moment everything is just coloured rectangles. That’s fine for logic, but visually it’s still very “prototype”.
 
@@ -142,3 +142,8 @@ Important constraint:
 Don’t over-engineer this
 Don’t build a full framework yet
 Just stop SandboxScene becoming the permanent dumping ground
+
+## Misc fixes/improvements
+
+- We are duplicaing 16 everywhere, should be a constant
+- Validate sprites against the library when loading (don’t just fail silently)

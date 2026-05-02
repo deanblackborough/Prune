@@ -130,4 +130,4 @@ fighting the architecture later.
 
 ## Credits
 
-- Icons by Kenney @ www.kenney.nl
+- Include icons by Kenney @ www.kenney.nl

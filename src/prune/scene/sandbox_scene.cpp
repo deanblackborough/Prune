@@ -234,13 +234,14 @@ namespace prune {
     Transform SandboxScene::screen_to_world(int screen_x, int screen_y) const noexcept
     {
         const Camera& camera = get_active_camera();
+        const float zoom = std::max(camera.zoom, 0.01f);
 
         const int local_x = screen_x - m_viewport.screen_x;
         const int local_y = screen_y - m_viewport.screen_y;
 
         return {
-            camera.x + static_cast<float>(local_x) / camera.zoom,
-            camera.y + static_cast<float>(local_y) / camera.zoom
+            camera.x + static_cast<float>(local_x) / zoom,
+            camera.y + static_cast<float>(local_y) / zoom
         };
     }
 

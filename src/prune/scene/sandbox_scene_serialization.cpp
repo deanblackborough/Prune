@@ -274,6 +274,7 @@ namespace prune {
                         return false;
                     }
 
+					//@todo: validate sprite key exists in assets when we have an asset library
                     object.render.sprite.sprite_key = sprite["sprite_key"].as<std::string>();
                     break;
                 }

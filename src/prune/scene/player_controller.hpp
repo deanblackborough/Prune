@@ -15,5 +15,4 @@ namespace prune {
     private:
         float m_speed = 96.0f;
     };
-
-} // namespace prune
+}
