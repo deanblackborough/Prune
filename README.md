@@ -65,17 +65,19 @@ fighting the architecture later.
 - object cloning and deletion
 - outliner search
 - selected object highlighting
+- object types, rectangle and sprite for now
 
 ### Runtime interaction
 - player movement
 - collision against solid objects
-- live player speed editing
+- live - editing of scene objects while the game is running
 
 ### Editor support
 - editor grid
 - optional snap-to-grid
 - keyboard nudging
 - editor camera movement
+- zoomed camera that follows the player instead of the editor camera
 - stats and options panels
 
 ### Persistence
@@ -88,22 +90,11 @@ fighting the architecture later.
 - **Arrow keys**: nudge selected non-player object
 - **Shift + Arrow keys**: larger nudge
 - **Left click**: select object
+- **Middle mouse button**: pan editor camera
 
 ## Roadmap
 
-### Next
-- proper scene viewport inside the editor UI
-- viewport-owned input and picking
-- cleaner object/render type foundations
-- static sprite support
-- movement/transform gizmos
-
-### After that
-- scene-specific inspectors and tools
-- richer persistence
-- animated sprites
-- undo/redo
-- ECS integration where it genuinely helps rather than by default
+- Check the [`notes`](Notes.md) file to see what is planned
 
 ### Long-term direction
 - multiple scene types with different editing models
