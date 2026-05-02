@@ -22,7 +22,7 @@ so the project grows around live editing rather adding tooling later. That means
 editor problems early: scene view ownership, input focus, picking, object inspection, 
 save/load, and the separation between editor behaviour and game behaviour.
 
-<img width="1917" height="1128" alt="image" src="https://github.com/user-attachments/assets/7e4eecc3-3acc-45ab-8f48-e118c09e5fd8" />
+<img width="1921" height="1130" alt="image" src="https://github.com/user-attachments/assets/768f6685-5962-4b6b-ae88-564f5bf0263d" />
 
 ## Design principles
 
