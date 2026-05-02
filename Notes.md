@@ -50,6 +50,10 @@ I expect this will highlight where the current structure starts to break down.
 
 After the gameplay slice, then look at:
 
+Splitting scene, it is doing too much right now.
+
+Maybe, Scene, Scene Objects, Scene Renders, Scene Tools, Scene Behaviours, or something like that.
+
 splitting scene types properly (top-down, platformer, etc.)
 pulling behaviour out of SandboxScene
 introducing scene-specific tooling
