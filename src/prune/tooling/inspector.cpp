@@ -17,7 +17,7 @@ namespace prune {
         const Camera& camera
     ) {
         draw_selected(objects, player_id, grid_options);
-        draw_properties(objects, player_id, player_controller, grid_options);
+        draw_properties(objects, player_id, player_controller);
         draw_computed(objects, camera);
         draw_flags(objects);
     }
@@ -94,7 +94,7 @@ namespace prune {
 
                         const float step = grid_options.snap_to_grid
                             ? static_cast<float>(std::max(1, grid_options.grid_size))
-                            : 16.0f;
+                            : static_cast<float>(k_default_object_size);
 
                         clone.transform.x += step;
                         clone.transform.y += step;
@@ -120,8 +120,7 @@ namespace prune {
     void Inspector::draw_properties(
         GameObjectManager& objects,
         GameObjectId player_id,
-        PlayerController& player_controller,
-        GridOptions& grid_options
+        PlayerController& player_controller
     ) {
         GameObject* selected = objects.selected_object();
         if (!selected) {
@@ -168,8 +167,8 @@ namespace prune {
 
         if (tooling::imgui::layout::collapsing_header("Size")) {
             if (tooling::imgui::property_table::begin("##size")) {
-                tooling::imgui::property_table::slider_int("Width", "##width", selected->size.width, 16, 256);
-                tooling::imgui::property_table::slider_int("Height", "##height", selected->size.height, 16, 256);
+                tooling::imgui::property_table::slider_int("Width", "##width", selected->size.width, k_min_object_size, k_max_object_size);
+                tooling::imgui::property_table::slider_int("Height", "##height", selected->size.height, k_min_object_size, k_max_object_size);
                 tooling::imgui::property_table::end();
             }
         }

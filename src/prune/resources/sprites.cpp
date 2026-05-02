@@ -7,7 +7,10 @@ namespace prune {
         static const std::vector<Sprites> resources{
             { "tank-green", "assets/sprites/tank-green.png" },
             { "tank-blue", "assets/sprites/tank-blue.png" },
-            { "tank-red", "assets/sprites/tank-red.png" }
+            { "tank-red", "assets/sprites/tank-red.png" },
+
+            // Missing sprite
+            { "missing", "assets/sprites/missing.png" }
         };
 
         return resources;

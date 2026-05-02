@@ -33,8 +33,8 @@ namespace prune {
                 base.y,
                 snap_to_grid,
                 grid_size,
-                16,
-                16
+                k_default_object_size,
+                k_default_object_size
             );
 
             create_block(objects, spawn.x, spawn.y);
@@ -94,8 +94,8 @@ namespace prune {
         block.kind = GameObjectKind::Block;
         block.transform.x = x;
         block.transform.y = y;
-        block.size.width = 16;
-        block.size.height = 16;
+        block.size.width = k_default_object_size;
+        block.size.height = k_default_object_size;
         block.render.type = RenderType::Rectangle;
         block.render.rectangle.color[0] = random_color_component();
         block.render.rectangle.color[1] = random_color_component();
@@ -145,7 +145,7 @@ namespace prune {
     {
         const float step = snap_to_grid
             ? static_cast<float>(std::max(1, grid_size))
-            : 16.0f;
+            : static_cast<float>(k_default_object_size);
 
         float start_x = base_x;
         float start_y = base_y;

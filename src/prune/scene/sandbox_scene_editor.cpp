@@ -122,7 +122,7 @@ namespace prune {
         if (picked) {
             m_objects.select(picked->id);
         } else {
-            m_objects.set_selected_id(kInvalidGameObjectId);
+            m_objects.set_selected_id(k_invalid_game_object_id);
         }
     }
 

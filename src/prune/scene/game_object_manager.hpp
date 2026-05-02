@@ -40,7 +40,7 @@ namespace prune {
 
         std::vector<GameObject> m_objects;
         GameObjectId m_next_id = 1;
-        GameObjectId m_selected_id = kInvalidGameObjectId;
+        GameObjectId m_selected_id = k_invalid_game_object_id;
     };
 
-} // namespace prune
+} 

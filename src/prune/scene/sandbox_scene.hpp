@@ -62,12 +62,12 @@ namespace prune {
     struct GridOptions {
         bool show_grid = true;
         bool snap_to_grid = true;
-        int grid_size = 16;
+        int grid_size = k_default_object_size;
         int nudge_step = 8;
         int shift_nudge_steps = 4;
 
-        int min_grid_size = 8;
-        int max_grid_size = 64;
+        int min_grid_size = k_min_object_size;
+        int max_grid_size = k_max_object_size;
         int min_nudge_step = 4;
         int max_nudge_step = 64;
     };
@@ -164,7 +164,7 @@ namespace prune {
         GameObjectManager m_objects;
         PlayerController m_player_controller;
 
-        GameObjectId m_player_id = kInvalidGameObjectId;
+        GameObjectId m_player_id = k_invalid_game_object_id;
 
         SceneViewport m_viewport{};
 
