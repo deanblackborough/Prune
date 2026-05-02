@@ -46,6 +46,17 @@ This isn’t about building a game yet, just stress testing the setup.
 
 I expect this will highlight where the current structure starts to break down.
 
+Example:
+
+one scene type: “simple shooter” or “top-down movement”
+minimal behaviour:
+player moves
+one enemy type
+basic interaction (collision or shooting)
+minimal UI:
+scene-specific inspector field or two
+maybe one custom panel
+
 ## Step 4 – scene-specific stuff (later)
 
 After the gameplay slice, then look at:
