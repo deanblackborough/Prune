@@ -13,7 +13,16 @@ namespace prune {
     enum class GameObjectKind {
         Generic = 0,
         Player,
-        Block
+        Block,
+        Enemy,
+        Bullet
+    };
+
+    enum class Direction {
+        Up = 0,
+        Down,
+        Left,
+		Right
     };
 
     enum class RenderType {
@@ -75,6 +84,9 @@ namespace prune {
 
         CollisionSettings collision{};
         RenderData render{};
+
+        Direction facing = Direction::Right;
+		float lifetime = 0.0f;
 
         bool active = true;
 

@@ -6,6 +6,7 @@ namespace prune {
     void Controls::draw() {
 		tooling::imgui::layout::text_wrapped("Player");
 		tooling::imgui::layout::text_wrapped("WASD keys move the player");
+		tooling::imgui::layout::text_wrapped("Space fires in the current facing direction");
 
 		tooling::imgui::layout::separator();
 

@@ -52,7 +52,7 @@ namespace prune {
             m_object_search.size()
         );
 
-        constexpr int visible_rows = 8;
+        constexpr int visible_rows = 5;
         const float row_height = ImGui::GetTextLineHeightWithSpacing();
         const float list_height = row_height * static_cast<float>(visible_rows)
             + ImGui::GetStyle().FramePadding.y * 2.0f;
@@ -82,10 +82,16 @@ namespace prune {
         switch (object.kind) {
             case GameObjectKind::Player: type = "[Player]"; break;
             case GameObjectKind::Block: type = "[Block]"; break;
+            case GameObjectKind::Enemy: type = "[Enemy]"; break;
+            case GameObjectKind::Bullet: type = "[Bullet]"; break;
             case GameObjectKind::Generic: type = "[Object]"; break;
         }
 
-		return std::string(type) + " " + object.name;
+        if (object.active) {
+            return std::string(type) + " " + object.name;
+        } else {
+			return std::string(type) + " " + object.name + " (inactive)";
+        }
     }
 
     GameObjectId Outliner::create_block(GameObjectManager& objects, float x, float y)

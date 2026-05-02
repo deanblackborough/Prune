@@ -23,6 +23,8 @@ namespace prune {
 
     private:
         void draw_scene_viewport(SandboxScene& scene, SDL_Renderer* renderer);
+        void draw_simple_shooter_panel(SandboxScene& scene);
+
         void ensure_scene_render_target(SDL_Renderer* renderer, int width, int height);
         void destroy_scene_render_target();
 
@@ -48,6 +50,7 @@ namespace prune {
         bool m_show_inspector = true;
         bool m_show_controls = false;
         bool m_show_stats = false;
+        bool m_show_simple_shooter = true;
         bool m_show_imgui_demo = false;
     };
 }
