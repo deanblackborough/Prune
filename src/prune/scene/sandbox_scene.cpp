@@ -7,6 +7,7 @@
 
 #include "prune/scene/sandbox_scene.hpp"
 #include "prune/resources/sprites.hpp"
+#include "prune/core/input.hpp"
 
 namespace prune {
 
@@ -49,6 +50,8 @@ namespace prune {
     void SandboxScene::on_exit() {
         m_objects.clear();
         m_player_id = k_invalid_game_object_id;
+
+        m_enemy_id = k_invalid_game_object_id;
     }
 
     GameObject SandboxScene::create_player() {
@@ -87,6 +90,27 @@ namespace prune {
         block.collision.solid = true;
 
         return block;
+    }
+
+    GameObject SandboxScene::create_enemy()
+    {
+        GameObject enemy;
+        enemy.name = "Enemy";
+        enemy.kind = GameObjectKind::Enemy;
+        enemy.transform.x = 256.0f;
+        enemy.transform.y = 128.0f;
+        enemy.size.width = k_default_object_size;
+        enemy.size.height = k_default_object_size;
+        enemy.render.type = RenderType::Sprite;
+        enemy.render.sprite.sprite_key = "tank-red";
+        enemy.render.rectangle.color[0] = 0.9f;
+        enemy.render.rectangle.color[1] = 0.2f;
+        enemy.render.rectangle.color[2] = 0.2f;
+        enemy.active = true;
+        enemy.render.visible = true;
+        enemy.collision.solid = false;
+
+        return enemy;
     }
 
     GameObjectManager& SandboxScene::get_object_manager() {
@@ -152,6 +176,58 @@ namespace prune {
         m_cameras.mode = CameraMode::Game;
     }
 
+    SimpleShooterOptions& SandboxScene::get_simple_shooter_options() noexcept
+    {
+        return m_simple_shooter_options;
+    }
+
+    const SimpleShooterOptions& SandboxScene::get_simple_shooter_options() const noexcept
+    {
+        return m_simple_shooter_options;
+    }
+
+    GameObject* SandboxScene::enemy_object() noexcept
+    {
+        return m_objects.get_by_id(m_enemy_id);
+    }
+
+    const GameObject* SandboxScene::enemy_object() const noexcept
+    {
+        return m_objects.get_by_id(m_enemy_id);
+    }
+
+    int SandboxScene::bullet_count() const noexcept
+    {
+        int count = 0;
+
+        for (const auto& object : m_objects.objects()) {
+            if (object.kind == GameObjectKind::Bullet && object.active) {
+                ++count;
+            }
+        }
+
+        return count;
+    }
+
+    void SandboxScene::reset_simple_shooter()
+    {
+        for (auto& object : m_objects.objects()) {
+            if (object.kind == GameObjectKind::Bullet) {
+                object.active = false;
+            }
+        }
+
+        cleanup_runtime_objects();
+
+        GameObject* enemy = enemy_object();
+        if (!enemy) {
+            m_enemy_id = m_objects.create_object(create_enemy());
+            return;
+        }
+
+		respawn_enemy(*enemy);
+    }
+
     void SandboxScene::update(float dt, const Input& input)
     {
         update_game(dt, input);
@@ -162,6 +238,11 @@ namespace prune {
     void SandboxScene::update_game(float dt, const Input& input)
     {
         update_player(dt, input);
+        handle_player_shooting(input);
+        update_enemy(dt);
+        update_bullets(dt);
+        handle_bullet_enemy_collisions();
+        cleanup_runtime_objects();
     }
 
     void SandboxScene::update_player(float dt, const Input& input)
@@ -184,9 +265,179 @@ namespace prune {
 
         if (is_moving) {
             activate_game_camera();
+            update_player_facing(*player);
         }
 
         move_object(*player, player->velocity.x * dt, player->velocity.y * dt, true);
+    }
+
+    void SandboxScene::update_player_facing(GameObject& player) noexcept
+    {
+        if (std::abs(player.velocity.x) > std::abs(player.velocity.y)) {
+            player.facing = player.velocity.x < 0.0f ? Direction::Left : Direction::Right;
+            return;
+        }
+
+        if (player.velocity.y != 0.0f) {
+            player.facing = player.velocity.y < 0.0f ? Direction::Up : Direction::Down;
+        }
+    }
+
+    void SandboxScene::handle_player_shooting(const Input& input)
+    {
+        if (!scene_keyboard_input_enabled()) {
+            return;
+        }
+
+        if (!input.was_key_pressed(SDL_SCANCODE_SPACE)) {
+            return;
+        }
+
+        const GameObject* player = player_object();
+        if (!player) {
+            return;
+        }
+
+        create_bullet_from_player(*player);
+    }
+
+    void SandboxScene::create_bullet_from_player(const GameObject& player)
+    {
+        GameObject bullet;
+        bullet.name = "Bullet";
+        bullet.kind = GameObjectKind::Bullet;
+        bullet.size.width = 4;
+        bullet.size.height = 4;
+        bullet.render.type = RenderType::Rectangle;
+        bullet.render.rectangle.color[0] = 0.95f;
+        bullet.render.rectangle.color[1] = 0.9f;
+        bullet.render.rectangle.color[2] = 0.35f;
+        bullet.collision.solid = false;
+        bullet.active = true;
+        bullet.render.visible = true;
+        bullet.facing = player.facing;
+        bullet.lifetime = m_simple_shooter_options.bullet_lifetime;
+
+        const float player_center_x = player.transform.x + (static_cast<float>(player.size.width) * 0.5f);
+        const float player_center_y = player.transform.y + (static_cast<float>(player.size.height) * 0.5f);
+
+        bullet.transform.x = player_center_x - (static_cast<float>(bullet.size.width) * 0.5f);
+        bullet.transform.y = player_center_y - (static_cast<float>(bullet.size.height) * 0.5f);
+
+        switch (player.facing) {
+        case Direction::Up:
+            bullet.velocity.y = -m_simple_shooter_options.bullet_speed;
+            break;
+        case Direction::Down:
+            bullet.velocity.y = m_simple_shooter_options.bullet_speed;
+            break;
+        case Direction::Left:
+            bullet.velocity.x = -m_simple_shooter_options.bullet_speed;
+            break;
+        case Direction::Right:
+            bullet.velocity.x = m_simple_shooter_options.bullet_speed;
+            break;
+        }
+
+        m_objects.create_object(bullet);
+    }
+
+    void SandboxScene::update_enemy(float dt)
+    {
+        GameObject* enemy = enemy_object();
+        const GameObject* player = player_object();
+
+        if (!enemy || !enemy->active || !player) {
+            return;
+        }
+
+        const float enemy_center_x = enemy->transform.x + (static_cast<float>(enemy->size.width) * 0.5f);
+        const float enemy_center_y = enemy->transform.y + (static_cast<float>(enemy->size.height) * 0.5f);
+        const float player_center_x = player->transform.x + (static_cast<float>(player->size.width) * 0.5f);
+        const float player_center_y = player->transform.y + (static_cast<float>(player->size.height) * 0.5f);
+
+        float direction_x = player_center_x - enemy_center_x;
+        float direction_y = player_center_y - enemy_center_y;
+        const float length = std::sqrt((direction_x * direction_x) + (direction_y * direction_y));
+
+        if (length <= 0.001f) {
+            enemy->velocity = {};
+            return;
+        }
+
+        direction_x /= length;
+        direction_y /= length;
+
+        enemy->velocity.x = direction_x * m_simple_shooter_options.enemy_speed;
+        enemy->velocity.y = direction_y * m_simple_shooter_options.enemy_speed;
+
+        move_object(*enemy, enemy->velocity.x * dt, enemy->velocity.y * dt, false);
+    }
+
+    void SandboxScene::update_bullets(float dt)
+    {
+        for (auto& object : m_objects.objects()) {
+            if (object.kind != GameObjectKind::Bullet || !object.active) {
+                continue;
+            }
+
+            object.transform.x += object.velocity.x * dt;
+            object.transform.y += object.velocity.y * dt;
+            object.lifetime -= dt;
+
+            if (object.lifetime <= 0.0f) {
+                object.active = false;
+            }
+        }
+    }
+
+    void SandboxScene::handle_bullet_enemy_collisions()
+    {
+        GameObject* enemy = enemy_object();
+        if (!enemy || !enemy->active) {
+            return;
+        }
+
+        for (auto& object : m_objects.objects()) {
+            if (object.kind != GameObjectKind::Bullet || !object.active) {
+                continue;
+            }
+
+            if (!is_overlapping(object, *enemy)) {
+                continue;
+            }
+
+            object.active = false;
+
+			respawn_enemy(*enemy);
+
+            return;
+        }
+    }
+
+    void SandboxScene::respawn_enemy(GameObject& enemy)
+    {
+        enemy.transform.x = 256.0f;
+        enemy.transform.y = 128.0f;
+        enemy.velocity = {};
+        enemy.active = true;
+        enemy.render.visible = true;
+    }
+
+    void SandboxScene::cleanup_runtime_objects()
+    {
+        auto& objects = m_objects.objects();
+
+        objects.erase(
+            std::remove_if(
+                objects.begin(),
+                objects.end(),
+                [](const GameObject& object) {
+                    return object.kind == GameObjectKind::Bullet && !object.active;
+                }
+            ),
+            objects.end()
+        );
     }
 
     void SandboxScene::update_cameras()
@@ -347,10 +598,43 @@ namespace prune {
 			}
         }
 
+        if (const GameObject* player = player_object(); player && player->active) {
+            draw_player_facing_indicator(renderer, *player);
+        }
+
         if (m_scene_options.highlight_selected && has_selected_outline) {
             SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
             SDL_RenderDrawRect(renderer, &selected_outline);
         }
+    }
+
+    void SandboxScene::draw_player_facing_indicator(SDL_Renderer* renderer, const GameObject& player) const
+    {
+        const SDL_Rect rect = world_to_screen_rect(player);
+
+        const int center_x = rect.x + (rect.w / 2);
+        const int center_y = rect.y + (rect.h / 2);
+
+        int end_x = center_x;
+        int end_y = center_y;
+
+        switch (player.facing) {
+        case Direction::Up:
+            end_y = rect.y - 6;
+            break;
+        case Direction::Down:
+            end_y = rect.y + rect.h + 6;
+            break;
+        case Direction::Left:
+            end_x = rect.x - 6;
+            break;
+        case Direction::Right:
+            end_x = rect.x + rect.w + 6;
+            break;
+        }
+
+        SDL_SetRenderDrawColor(renderer, 245, 230, 80, 255);
+        SDL_RenderDrawLine(renderer, center_x, center_y, end_x, end_y);
     }
 
     void SandboxScene::draw_grid(SDL_Renderer* renderer) const
@@ -518,6 +802,9 @@ namespace prune {
         m_scene_options = {};
         m_drag_state = {};
         m_player_controller = {};
+
+        m_enemy_id = k_invalid_game_object_id;
+        m_simple_shooter_options = {};
     }
 
     void SandboxScene::restore_defaults()
@@ -526,6 +813,7 @@ namespace prune {
 
         m_player_id = m_objects.create_object(create_player());
         m_objects.create_object(create_initial_block());
+        m_enemy_id = m_objects.create_object(create_enemy());
         m_objects.select(m_player_id);
 
 		update_game_camera();

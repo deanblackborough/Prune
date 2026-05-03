@@ -30,6 +30,10 @@ namespace prune {
                 return "player";
             case GameObjectKind::Block:
                 return "block";
+            case GameObjectKind::Enemy:
+                return "enemy";
+            case GameObjectKind::Bullet:
+                return "bullet";
             case GameObjectKind::Generic:
             default:
                 return "generic";
@@ -51,6 +55,16 @@ namespace prune {
 
             if (value == "block") {
                 out = GameObjectKind::Block;
+                return true;
+            }
+
+            if (value == "enemy") {
+                out = GameObjectKind::Enemy;
+                return true;
+            }
+
+            if (value == "bullet") {
+                out = GameObjectKind::Bullet;
                 return true;
             }
 
@@ -427,6 +441,10 @@ namespace prune {
 
             YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
             for (const auto& object : m_objects.objects()) {
+                if (object.kind == GameObjectKind::Bullet) {
+                    continue;
+                }
+
                 objects.push_back(make_object_node(object));
             }
 
@@ -623,6 +641,19 @@ namespace prune {
 
             m_objects = std::move(loaded.objects);
             m_player_id = loaded.player_id;
+            m_enemy_id = k_invalid_game_object_id;
+
+            for (const auto& object : m_objects.objects()) {
+                if (object.kind == GameObjectKind::Enemy) {
+                    m_enemy_id = object.id;
+                    break;
+                }
+            }
+
+            if (m_enemy_id == k_invalid_game_object_id) {
+                m_enemy_id = m_objects.create_object(create_enemy());
+            }
+
             m_grid_options = loaded.grid_options;
             m_scene_options = loaded.scene_options;
             m_cameras = loaded.cameras;

@@ -68,6 +68,7 @@ namespace prune {
                 ImGui::MenuItem("Scene", nullptr, &m_show_scene_viewport);
                 ImGui::MenuItem("Outliner", nullptr, &m_show_outliner);
                 ImGui::MenuItem("Inspector", nullptr, &m_show_inspector);
+                ImGui::MenuItem("Simple Shooter", nullptr, &m_show_simple_shooter);
                 ImGui::MenuItem("Stats", nullptr, &m_show_stats);
                 ImGui::EndMenu();
             }
@@ -132,6 +133,10 @@ namespace prune {
                 );
             }
             ImGui::End();
+        }
+
+        if (m_show_simple_shooter) {
+            draw_simple_shooter_panel(scene);
         }
 
         if (m_show_controls) {
@@ -290,5 +295,35 @@ namespace prune {
         scene.render(renderer);
 
         SDL_SetRenderTarget(renderer, previous_target);
+    }
+
+    void Ui::draw_simple_shooter_panel(SandboxScene& scene)
+    {
+        ImGui::SetNextWindowPos(ImVec2(1280.0f, 36.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(280.0f, 190.0f), ImGuiCond_FirstUseEver);
+
+        if (!ImGui::Begin("Simple Shooter", &m_show_simple_shooter)) {
+            ImGui::End();
+            return;
+        }
+
+        SimpleShooterOptions& options = scene.get_simple_shooter_options();
+
+        ImGui::TextUnformatted("Vertical slice controls");
+        ImGui::Separator();
+
+        ImGui::SliderFloat("Enemy speed", &options.enemy_speed, 0.0f, 160.0f, "%.1f");
+        ImGui::SliderFloat("Bullet speed", &options.bullet_speed, 40.0f, 400.0f, "%.1f");
+        ImGui::SliderFloat("Bullet lifetime", &options.bullet_lifetime, 0.2f, 4.0f, "%.2f");
+
+        const GameObject* enemy = scene.enemy_object();
+        ImGui::Text("Enemy: %s", (enemy && enemy->active) ? "alive" : "dead");
+        ImGui::Text("Bullets: %d", scene.bullet_count());
+
+        if (ImGui::Button("Reset enemy")) {
+            scene.reset_simple_shooter();
+        }
+
+        ImGui::End();
     }
 } 

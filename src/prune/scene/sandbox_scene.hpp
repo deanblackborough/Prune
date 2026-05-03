@@ -79,6 +79,12 @@ namespace prune {
         Transform mouse_start_world{};
     };
 
+    struct SimpleShooterOptions {
+        float enemy_speed = 48.0f;
+        float bullet_speed = 180.0f;
+        float bullet_lifetime = 1.25f;
+    };
+
     class SandboxScene {
     public:
         SandboxScene(int window_width, int window_height);
@@ -117,7 +123,17 @@ namespace prune {
         const Camera& get_game_camera() const noexcept;
 
         Camera& get_active_camera() noexcept;
-        const Camera& get_active_camera() const noexcept;;
+        const Camera& get_active_camera() const noexcept;
+
+        SimpleShooterOptions& get_simple_shooter_options() noexcept;
+        const SimpleShooterOptions& get_simple_shooter_options() const noexcept;
+
+        void reset_simple_shooter();
+
+        [[nodiscard]] int bullet_count() const noexcept;
+
+        [[nodiscard]] GameObject* enemy_object() noexcept;
+        [[nodiscard]] const GameObject* enemy_object() const noexcept;
 
     private:
         void reset_runtime_state();
@@ -132,6 +148,7 @@ namespace prune {
 
         [[nodiscard]] static GameObject create_player();
         [[nodiscard]] static GameObject create_initial_block();
+        [[nodiscard]] static GameObject create_enemy();
 
         // Game logic
         void update_game(float dt, const Input& input);
@@ -145,6 +162,15 @@ namespace prune {
         void move_object(GameObject& object, float delta_x, float delta_y, bool resolve_collisions);
         void resolve_player_collisions(GameObject& player);
         [[nodiscard]] bool is_overlapping(const GameObject& a, const GameObject& b) const noexcept;
+
+        void update_player_facing(GameObject& player) noexcept;
+        void handle_player_shooting(const Input& input);
+        void respawn_enemy(GameObject& enemy);
+        void create_bullet_from_player(const GameObject& player);
+        void update_enemy(float dt);
+        void update_bullets(float dt);
+        void handle_bullet_enemy_collisions();
+        void cleanup_runtime_objects();
 
         // Editor logic
         void update_editor(float dt, const Input& input);
@@ -169,6 +195,8 @@ namespace prune {
         [[nodiscard]] SDL_Texture* sprite_texture(SDL_Renderer* renderer, const std::string& sprite_key);
         void draw_sprite_fallback(SDL_Renderer* renderer, const SDL_Rect& rect) const;
 
+        void draw_player_facing_indicator(SDL_Renderer* renderer, const GameObject& player) const;
+
         GameObjectManager m_objects;
         PlayerController m_player_controller;
 
@@ -181,6 +209,9 @@ namespace prune {
         DragState m_drag_state;
 
         CameraState m_cameras;
+
+        SimpleShooterOptions m_simple_shooter_options;
+        GameObjectId m_enemy_id = k_invalid_game_object_id;
 
         std::unordered_map<std::string, SDL_Texture*> m_sprite_textures;
     };
