@@ -225,8 +225,7 @@ namespace prune {
             return;
         }
 
-        *enemy = create_enemy();
-        enemy->id = m_enemy_id;
+		respawn_enemy(*enemy);
     }
 
     void SandboxScene::update(float dt, const Input& input)
@@ -410,11 +409,7 @@ namespace prune {
 
             object.active = false;
 
-            enemy->transform.x = 256.0f;
-            enemy->transform.y = 128.0f;
-            enemy->velocity = {};
-            enemy->active = true;
-            enemy->render.visible = true;
+			respawn_enemy(*enemy);
 
             return;
         }

@@ -22,7 +22,7 @@ namespace prune {
         Up = 0,
         Down,
         Left,
-		Right
+        Right
     };
 
     enum class RenderType {
