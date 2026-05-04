@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "prune/scene/game_object_manager.hpp"
 
 namespace prune {

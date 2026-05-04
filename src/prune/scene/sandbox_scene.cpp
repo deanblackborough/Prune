@@ -65,7 +65,12 @@ namespace prune {
     GameObject SandboxScene::create_player() {
         GameObject player;
         player.name = "Player";
-		player.kind = GameObjectKind::Player;
+        player.type = GameObjectType::Object;
+        player.runtime.behaviour = "simple_shooter.player";
+        player.editor.renameable = false;
+        player.editor.movable = false;
+        player.editor.deletable = false;
+        player.editor.cloneable = false;
 		player.size.width = k_default_object_size;
 		player.size.height = k_default_object_size;
 		player.render.type = RenderType::Sprite;
@@ -85,7 +90,8 @@ namespace prune {
     GameObject SandboxScene::create_initial_block() {
         GameObject block;
         block.name = "Static Block";
-		block.kind = GameObjectKind::Block;
+        block.type = GameObjectType::Object;
+        block.runtime.behaviour = "";
         block.transform.x = 176.0f;
         block.transform.y = 128.0f;
         block.size.width = k_default_object_size;
@@ -104,7 +110,8 @@ namespace prune {
     {
         GameObject enemy;
         enemy.name = "Enemy";
-        enemy.kind = GameObjectKind::Enemy;
+        enemy.type = GameObjectType::Object;
+        enemy.runtime.behaviour = "simple_shooter.enemy";
         enemy.transform.x = 256.0f;
         enemy.transform.y = 128.0f;
         enemy.size.width = k_default_object_size;
@@ -209,7 +216,7 @@ namespace prune {
         int count = 0;
 
         for (const auto& object : m_state.objects.objects()) {
-            if (object.kind == GameObjectKind::Bullet && object.active) {
+            if (object.runtime.behaviour == "simple_shooter.bullet" && object.active) {
                 ++count;
             }
         }
@@ -220,7 +227,7 @@ namespace prune {
     void SandboxScene::reset_simple_shooter()
     {
         for (auto& object : m_state.objects.objects()) {
-            if (object.kind == GameObjectKind::Bullet) {
+            if (object.runtime.behaviour == "simple_shooter.bullet") {
                 object.active = false;
             }
         }
@@ -239,7 +246,7 @@ namespace prune {
     void SandboxScene::update(float dt, const Input& input)
     {
         update_game(dt, input);
-        update_editor(dt, input);
+        m_interaction.update(m_state, dt, input);
 		update_cameras();
     }
 
@@ -313,7 +320,16 @@ namespace prune {
     {
         GameObject bullet;
         bullet.name = "Bullet";
-        bullet.kind = GameObjectKind::Bullet;
+        bullet.type = GameObjectType::Runtime;
+        bullet.runtime.behaviour = "simple_shooter.bullet";
+        bullet.runtime.persistent = false;
+
+        bullet.editor.selectable = false;
+        bullet.editor.renameable = false;
+        bullet.editor.movable = false;
+        bullet.editor.deletable = false;
+        bullet.editor.cloneable = false;
+
         bullet.size.width = 4;
         bullet.size.height = 4;
         bullet.render.type = RenderType::Rectangle;
@@ -385,7 +401,7 @@ namespace prune {
     void SandboxScene::update_bullets(float dt)
     {
         for (auto& object : m_state.objects.objects()) {
-            if (object.kind != GameObjectKind::Bullet || !object.active) {
+            if (object.runtime.behaviour != "simple_shooter.bullet" || !object.active) {
                 continue;
             }
 
@@ -407,7 +423,7 @@ namespace prune {
         }
 
         for (auto& object : m_state.objects.objects()) {
-            if (object.kind != GameObjectKind::Bullet || !object.active) {
+            if (object.runtime.behaviour != "simple_shooter.bullet" || !object.active) {
                 continue;
             }
 
@@ -441,7 +457,7 @@ namespace prune {
                 objects.begin(),
                 objects.end(),
                 [](const GameObject& object) {
-                    return object.kind == GameObjectKind::Bullet && !object.active;
+                    return object.runtime.behaviour == "simple_shooter.bullet" && !object.active;
                 }
             ),
             objects.end()
@@ -485,35 +501,9 @@ namespace prune {
         object.transform.x += delta_x;
         object.transform.y += delta_y;
 
-        if (resolve_collisions && object.kind == GameObjectKind::Player) {
+        if (resolve_collisions && object.id == m_state.player_id) {
             resolve_player_collisions(object);
         }
-    }
-
-    Transform SandboxScene::screen_to_world(int screen_x, int screen_y) const noexcept
-    {
-        const Camera& camera = get_active_camera();
-        const float zoom = std::max(camera.zoom, 0.01f);
-
-        const int local_x = screen_x - m_state.viewport.screen_x;
-        const int local_y = screen_y - m_state.viewport.screen_y;
-
-        return {
-            camera.x + static_cast<float>(local_x) / zoom,
-            camera.y + static_cast<float>(local_y) / zoom
-        };
-    }
-
-    float SandboxScene::snap_value_to_grid(float value) const noexcept
-    {
-        const int scene_grid_size = std::max(1, m_state.grid_options.grid_size);
-        return std::round(value / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
-    }
-
-    void SandboxScene::snap_object_to_grid(GameObject& object) const noexcept
-    {
-        object.transform.x = snap_value_to_grid(object.transform.x);
-        object.transform.y = snap_value_to_grid(object.transform.y);
     }
 
     GameObject* SandboxScene::player_object() noexcept

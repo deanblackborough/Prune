@@ -20,14 +20,12 @@ namespace prune {
         draw_selected(objects, player_id, grid_options);
         draw_properties(objects, player_id, player_controller);
         draw_computed(objects, camera);
-        draw_flags(objects);
+        draw_flags(objects, player_id);
     }
 
     bool Inspector::is_selected_player(const GameObject* selected, GameObjectId player_id) const noexcept
     {
-        return selected != nullptr &&
-            selected->kind == GameObjectKind::Player &&
-            selected->id == player_id;
+        return selected != nullptr && selected->id == player_id;
     }
 
     void Inspector::draw_selected(
@@ -41,14 +39,12 @@ namespace prune {
             return;
         }
 
-        const bool is_player = is_selected_player(selected, player_id);
-
         if (tooling::imgui::layout::collapsing_header("Selected")) {
             if (tooling::imgui::property_table::begin("Selected")) {
 
                 tooling::imgui::property_table::text("Id", std::to_string(selected->id).c_str());
 
-                if (is_player) {
+                if (!selected->editor.renameable) {
                     tooling::imgui::property_table::text("Name", selected->name.c_str());
                 }
                 else {
@@ -72,7 +68,7 @@ namespace prune {
                     }
                 }
 
-                if (!is_player) {
+                if (selected->editor.deletable || selected->editor.cloneable) {
 
                     tooling::imgui::layout::separator();
 
@@ -283,14 +279,14 @@ namespace prune {
         }
     }
 
-    void Inspector::draw_flags(GameObjectManager& objects)
+    void Inspector::draw_flags(GameObjectManager& objects, GameObjectId player_id)
     {
         GameObject* selected = objects.selected_object();
         if (!selected) {
             return;
         }
 
-        const bool is_player = (selected->kind == GameObjectKind::Player);
+        const bool is_player = (selected->id == player_id);
 
         if (tooling::imgui::layout::collapsing_header("Flags", false)) {
             if (tooling::imgui::property_table::begin("##flags")) {

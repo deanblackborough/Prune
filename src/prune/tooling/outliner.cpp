@@ -78,26 +78,21 @@ namespace prune {
 
     std::string Outliner::object_label(const GameObject& object)
     {
-        const char* type = "[Generic]";
-        switch (object.kind) {
-            case GameObjectKind::Player: type = "[Player]"; break;
-            case GameObjectKind::Block: type = "[Block]"; break;
-            case GameObjectKind::Enemy: type = "[Enemy]"; break;
-            case GameObjectKind::Bullet: type = "[Bullet]"; break;
-            case GameObjectKind::Generic: type = "[Object]"; break;
-        }
+        const char* type = object.type == GameObjectType::Runtime
+            ? "[Runtime]"
+            : "[Object]";
 
         if (object.active) {
             return std::string(type) + " " + object.name;
-        } else {
-			return std::string(type) + " " + object.name + " (inactive)";
         }
+
+        return std::string(type) + " " + object.name + " (inactive)";
     }
 
     GameObjectId Outliner::create_block(GameObjectManager& objects, float x, float y)
     {
         GameObject block;
-        block.kind = GameObjectKind::Block;
+        block.type = GameObjectType::Object;
         block.transform.x = x;
         block.transform.y = y;
         block.size.width = k_default_object_size;

@@ -10,12 +10,22 @@ namespace prune {
     using GameObjectId = std::uint32_t;
     constexpr GameObjectId k_invalid_game_object_id = 0;
 
-    enum class GameObjectKind {
-        Generic = 0,
-        Player,
-        Block,
-        Enemy,
-        Bullet
+    enum class GameObjectType {
+        Object = 0,
+        Runtime
+    };
+
+    struct EditorFlags {
+        bool selectable = true;
+        bool renameable = true;
+        bool movable = true;
+        bool deletable = true;
+        bool cloneable = true;
+    };
+
+    struct RuntimeData {
+        bool persistent = true;
+        std::string behaviour;
     };
 
     enum class Direction {
@@ -76,7 +86,7 @@ namespace prune {
         GameObjectId id = k_invalid_game_object_id;
         std::string name = "Object";
 
-        GameObjectKind kind = GameObjectKind::Generic;
+        GameObjectType type = GameObjectType::Object;
 
         Transform transform{};
         Velocity velocity{};
@@ -84,6 +94,9 @@ namespace prune {
 
         CollisionSettings collision{};
         RenderData render{};
+
+        EditorFlags editor{};
+        RuntimeData runtime{};
 
         Direction facing = Direction::Right;
 		float lifetime = 0.0f;

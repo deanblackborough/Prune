@@ -28,7 +28,7 @@ namespace prune {
             PlayerController& player_controller
         );
         void draw_computed(GameObjectManager& objects, const Camera& camera);
-        void draw_flags(GameObjectManager& objects);
+        void draw_flags(GameObjectManager& objects, GameObjectId player_id);
         [[nodiscard]] bool is_selected_player(const GameObject* selected, GameObjectId player_id) const noexcept;
 
         void sync_rename_buffer(const GameObject* selected);
