@@ -6,84 +6,9 @@
 
 #include <SDL2/SDL.h>
 
-#include "prune/scene/game_object.hpp"
-#include "prune/scene/game_object_manager.hpp"
-#include "prune/scene/player_controller.hpp"
+#include "prune/scene/scene_state.hpp"
 
 namespace prune {
-
-    struct SceneViewport {
-        int screen_x = 0;
-        int screen_y = 0;
-        int width = 0;
-        int height = 0;
-        bool hovered = false;
-        bool focused = false;
-
-        [[nodiscard]] bool has_area() const noexcept {
-            return width > 0 && height > 0;
-        }
-
-        [[nodiscard]] bool contains(int x, int y) const noexcept {
-            return x >= screen_x &&
-                y >= screen_y &&
-                x < (screen_x + width) &&
-                y < (screen_y + height);
-        }
-    };
-
-    struct SceneOptions {
-        bool highlight_selected = true;
-    };
-
-    struct Camera {
-        float x = 0.0f;
-        float y = 0.0f;
-        float speed = 256.0f;
-        float zoom = 1.0f;
-    };
-
-    enum class CameraMode {
-        Editor = 0,
-		Game = 1
-    };
-
-    struct GameCameraOptions {
-		bool follow_player = true;
-    };
-
-    struct CameraState {
-        Camera editor;
-        Camera game;
-		CameraMode mode = CameraMode::Editor;
-		GameCameraOptions game_options;
-    };
-
-    struct GridOptions {
-        bool show_grid = true;
-        bool snap_to_grid = true;
-        int grid_size = k_default_object_size;
-        int nudge_step = 8;
-        int shift_nudge_steps = 4;
-
-        int min_grid_size = k_min_object_size;
-        int max_grid_size = k_max_object_size;
-        int min_nudge_step = 4;
-        int max_nudge_step = 64;
-    };
-
-    struct DragState {
-        bool active = false;
-        GameObjectId object_id = k_invalid_game_object_id;
-        Transform object_start{};
-        Transform mouse_start_world{};
-    };
-
-    struct SimpleShooterOptions {
-        float enemy_speed = 48.0f;
-        float bullet_speed = 180.0f;
-        float bullet_lifetime = 1.25f;
-    };
 
     class SandboxScene {
     public:
@@ -98,14 +23,16 @@ namespace prune {
         void render(SDL_Renderer* renderer);
 
         void new_scene();
+        [[nodiscard]] SceneState& get_state() noexcept;
+        [[nodiscard]] const SceneState& get_state() const noexcept;
 
         [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) const;
         [[nodiscard]] bool load_from_file(std::string_view path, std::string& error);
 
         void set_viewport(const SceneViewport& viewport) noexcept;
-        [[nodiscard]] const SceneViewport& get_viewport() const noexcept { return m_viewport; }
-        [[nodiscard]] int get_viewport_width() const noexcept { return m_viewport.width; }
-        [[nodiscard]] int get_viewport_height() const noexcept { return m_viewport.height; }
+        [[nodiscard]] const SceneViewport& get_viewport() const noexcept { return m_state.viewport; }
+        [[nodiscard]] int get_viewport_width() const noexcept { return m_state.viewport.width; }
+        [[nodiscard]] int get_viewport_height() const noexcept { return m_state.viewport.height; }
 
         GameObjectManager& get_object_manager();
         [[nodiscard]] GameObjectId get_player_id() const;
@@ -197,21 +124,7 @@ namespace prune {
 
         void draw_player_facing_indicator(SDL_Renderer* renderer, const GameObject& player) const;
 
-        GameObjectManager m_objects;
-        PlayerController m_player_controller;
-
-        GameObjectId m_player_id = k_invalid_game_object_id;
-
-        SceneViewport m_viewport{};
-
-        GridOptions m_grid_options;
-        SceneOptions m_scene_options;
-        DragState m_drag_state;
-
-        CameraState m_cameras;
-
-        SimpleShooterOptions m_simple_shooter_options;
-        GameObjectId m_enemy_id = k_invalid_game_object_id;
+        SceneState m_state;
 
         std::unordered_map<std::string, SDL_Texture*> m_sprite_textures;
     };

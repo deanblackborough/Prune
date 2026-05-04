@@ -409,38 +409,38 @@ namespace prune {
         try {
             YAML::Node root;
 
-            root["scene"]["next_object_id"] = m_objects.next_id();
-            root["scene"]["player_id"] = m_player_id;
+            root["scene"]["next_object_id"] = m_state.objects.next_id();
+            root["scene"]["player_id"] = m_state.player_id;
 
-            if (m_objects.selected_id() != k_invalid_game_object_id) {
-                root["scene"]["selected_object_id"] = m_objects.selected_id();
+            if (m_state.objects.selected_id() != k_invalid_game_object_id) {
+                root["scene"]["selected_object_id"] = m_state.objects.selected_id();
             }
 
-            root["cameras"]["mode"] = (m_cameras.mode == CameraMode::Editor) ? "editor" : "game";
+            root["cameras"]["mode"] = (m_state.cameras.mode == CameraMode::Editor) ? "editor" : "game";
 
-            root["cameras"]["editor"]["x"] = m_cameras.editor.x;
-            root["cameras"]["editor"]["y"] = m_cameras.editor.y;
-            root["cameras"]["editor"]["speed"] = m_cameras.editor.speed;
-            root["cameras"]["editor"]["zoom"] = m_cameras.editor.zoom;
+            root["cameras"]["editor"]["x"] = m_state.cameras.editor.x;
+            root["cameras"]["editor"]["y"] = m_state.cameras.editor.y;
+            root["cameras"]["editor"]["speed"] = m_state.cameras.editor.speed;
+            root["cameras"]["editor"]["zoom"] = m_state.cameras.editor.zoom;
 
-            root["cameras"]["game"]["x"] = m_cameras.game.x;
-            root["cameras"]["game"]["y"] = m_cameras.game.y;
-            root["cameras"]["game"]["speed"] = m_cameras.game.speed;
-			root["cameras"]["game"]["zoom"] = m_cameras.game.zoom;
-            root["cameras"]["game"]["follow_player"] = m_cameras.game_options.follow_player;
+            root["cameras"]["game"]["x"] = m_state.cameras.game.x;
+            root["cameras"]["game"]["y"] = m_state.cameras.game.y;
+            root["cameras"]["game"]["speed"] = m_state.cameras.game.speed;
+			root["cameras"]["game"]["zoom"] = m_state.cameras.game.zoom;
+            root["cameras"]["game"]["follow_player"] = m_state.cameras.game_options.follow_player;
 
-            root["grid"]["show_grid"] = m_grid_options.show_grid;
-            root["grid"]["snap_to_grid"] = m_grid_options.snap_to_grid;
-            root["grid"]["grid_size"] = m_grid_options.grid_size;
-            root["grid"]["nudge_step"] = m_grid_options.nudge_step;
-            root["grid"]["shift_nudge_steps"] = m_grid_options.shift_nudge_steps;
+            root["grid"]["show_grid"] = m_state.grid_options.show_grid;
+            root["grid"]["snap_to_grid"] = m_state.grid_options.snap_to_grid;
+            root["grid"]["grid_size"] = m_state.grid_options.grid_size;
+            root["grid"]["nudge_step"] = m_state.grid_options.nudge_step;
+            root["grid"]["shift_nudge_steps"] = m_state.grid_options.shift_nudge_steps;
 
-            root["options"]["highlight_selected"] = m_scene_options.highlight_selected;
+            root["options"]["highlight_selected"] = m_state.scene_options.highlight_selected;
 
-            root["player"]["speed"] = m_player_controller.speed();
+            root["player"]["speed"] = m_state.player_controller.speed();
 
             YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
-            for (const auto& object : m_objects.objects()) {
+            for (const auto& object : m_state.objects.objects()) {
                 if (object.kind == GameObjectKind::Bullet) {
                     continue;
                 }
@@ -639,25 +639,25 @@ namespace prune {
 
             loaded.objects.set_selected_id(loaded.selected_id);
 
-            m_objects = std::move(loaded.objects);
-            m_player_id = loaded.player_id;
-            m_enemy_id = k_invalid_game_object_id;
+            m_state.objects = std::move(loaded.objects);
+            m_state.player_id = loaded.player_id;
+            m_state.enemy_id = k_invalid_game_object_id;
 
-            for (const auto& object : m_objects.objects()) {
+            for (const auto& object : m_state.objects.objects()) {
                 if (object.kind == GameObjectKind::Enemy) {
-                    m_enemy_id = object.id;
+                    m_state.enemy_id = object.id;
                     break;
                 }
             }
 
-            if (m_enemy_id == k_invalid_game_object_id) {
-                m_enemy_id = m_objects.create_object(create_enemy());
+            if (m_state.enemy_id == k_invalid_game_object_id) {
+                m_state.enemy_id = m_state.objects.create_object(create_enemy());
             }
 
-            m_grid_options = loaded.grid_options;
-            m_scene_options = loaded.scene_options;
-            m_cameras = loaded.cameras;
-            m_player_controller.set_speed(loaded.player_speed);
+            m_state.grid_options = loaded.grid_options;
+            m_state.scene_options = loaded.scene_options;
+            m_state.cameras = loaded.cameras;
+            m_state.player_controller.set_speed(loaded.player_speed);
 
             update_game_camera();
 
