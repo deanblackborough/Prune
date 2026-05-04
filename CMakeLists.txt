@@ -21,6 +21,7 @@ add_executable(Prune
         src/prune/scene/game_object.cpp
         src/prune/scene/game_object_manager.cpp
         src/prune/scene/player_controller.cpp
+        src/prune/scene/scene_renderer.cpp
         src/prune/scene/sandbox_scene.cpp
         src/prune/scene/sandbox_scene_editor.cpp
         src/prune/scene/sandbox_scene_serialization.cpp
@@ -44,7 +45,8 @@ add_executable(Prune
         external/imgui/imgui_widgets.cpp
         external/imgui/imgui_demo.cpp
         external/imgui/backends/imgui_impl_sdl2.cpp
-        external/imgui/backends/imgui_impl_sdlrenderer2.cpp)
+        external/imgui/backends/imgui_impl_sdlrenderer2.cpp
+)
 
 target_include_directories(Prune PRIVATE
         src
