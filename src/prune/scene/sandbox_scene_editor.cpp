@@ -13,7 +13,7 @@ namespace prune {
     GameObject* SandboxScene::pick_object_at_screen(int screen_x, int screen_y) noexcept
     {
         const Transform world = screen_to_world(screen_x, screen_y);
-        auto& objects = m_objects.objects();
+        auto& objects = m_state.objects.objects();
 
         for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
             GameObject& object = *it;
@@ -42,7 +42,7 @@ namespace prune {
     {
 		handle_object_drag(input);
 
-        if (!m_drag_state.active) {
+        if (!m_state.drag_state.active) {
             update_editor_camera(dt, input);
             handle_scene_click(input);
             handle_keyboard_nudge(input);
@@ -117,39 +117,39 @@ namespace prune {
             return;
         }
 
-        if (!m_viewport.contains(input.mouse_x(), input.mouse_y())) {
+        if (!m_state.viewport.contains(input.mouse_x(), input.mouse_y())) {
             return;
         }
 
         GameObject* picked = pick_object_at_screen(input.mouse_x(), input.mouse_y());
 
         if (picked) {
-            m_objects.select(picked->id);
+            m_state.objects.select(picked->id);
         } else {
-            m_objects.set_selected_id(k_invalid_game_object_id);
+            m_state.objects.set_selected_id(k_invalid_game_object_id);
         }
     }
 
     void SandboxScene::handle_object_drag(const Input& input)
     {
-        if (m_drag_state.active) {
-            if (!input.is_mouse_button_down(SDL_BUTTON_LEFT) || !m_viewport.has_area()) {
-                m_drag_state = {};
+        if (m_state.drag_state.active) {
+            if (!input.is_mouse_button_down(SDL_BUTTON_LEFT) || !m_state.viewport.has_area()) {
+                m_state.drag_state = {};
                 return;
             }
 
-            GameObject* object = m_objects.get_by_id(m_drag_state.object_id);
+            GameObject* object = m_state.objects.get_by_id(m_state.drag_state.object_id);
             if (!object || object->kind == GameObjectKind::Player) {
-                m_drag_state = {};
+                m_state.drag_state = {};
                 return;
             }
 
             const Transform mouse_world = screen_to_world(input.mouse_x(), input.mouse_y());
 
-            object->transform.x = m_drag_state.object_start.x + (mouse_world.x - m_drag_state.mouse_start_world.x);
-            object->transform.y = m_drag_state.object_start.y + (mouse_world.y - m_drag_state.mouse_start_world.y);
+            object->transform.x = m_state.drag_state.object_start.x + (mouse_world.x - m_state.drag_state.mouse_start_world.x);
+            object->transform.y = m_state.drag_state.object_start.y + (mouse_world.y - m_state.drag_state.mouse_start_world.y);
 
-            if (m_grid_options.snap_to_grid) {
+            if (m_state.grid_options.snap_to_grid) {
                 snap_object_to_grid(*object);
             }
 
@@ -164,11 +164,11 @@ namespace prune {
             return;
         }
 
-        if (!m_viewport.contains(input.mouse_x(), input.mouse_y())) {
+        if (!m_state.viewport.contains(input.mouse_x(), input.mouse_y())) {
             return;
         }
 
-        GameObject* selected = m_objects.selected_object();
+        GameObject* selected = m_state.objects.selected_object();
         if (!selected || selected->kind == GameObjectKind::Player) {
             return;
         }
@@ -178,10 +178,10 @@ namespace prune {
             return;
         }
 
-        m_drag_state.active = true;
-        m_drag_state.object_id = selected->id;
-        m_drag_state.object_start = selected->transform;
-        m_drag_state.mouse_start_world = screen_to_world(input.mouse_x(), input.mouse_y());
+        m_state.drag_state.active = true;
+        m_state.drag_state.object_id = selected->id;
+        m_state.drag_state.object_start = selected->transform;
+        m_state.drag_state.mouse_start_world = screen_to_world(input.mouse_x(), input.mouse_y());
     }
 
     void SandboxScene::handle_keyboard_nudge(const Input& input)
@@ -190,7 +190,7 @@ namespace prune {
             return;
         }
 
-        GameObject* selected = m_objects.selected_object();
+        GameObject* selected = m_state.objects.selected_object();
         if (!selected) {
             return;
         }
@@ -223,16 +223,16 @@ namespace prune {
             return;
         }
 
-        int step = m_grid_options.snap_to_grid
-            ? std::max(1, m_grid_options.grid_size)
-            : std::max(1, m_grid_options.nudge_step);
+        int step = m_state.grid_options.snap_to_grid
+            ? std::max(1, m_state.grid_options.grid_size)
+            : std::max(1, m_state.grid_options.nudge_step);
 
         const bool shift_down =
             input.is_key_down(SDL_SCANCODE_LSHIFT) ||
             input.is_key_down(SDL_SCANCODE_RSHIFT);
 
         if (shift_down) {
-            step *= m_grid_options.shift_nudge_steps;
+            step *= m_state.grid_options.shift_nudge_steps;
         }
 
         move_object(
@@ -242,7 +242,7 @@ namespace prune {
             false
         );
 
-        if (m_grid_options.snap_to_grid) {
+        if (m_state.grid_options.snap_to_grid) {
             snap_object_to_grid(*selected);
         }
     }

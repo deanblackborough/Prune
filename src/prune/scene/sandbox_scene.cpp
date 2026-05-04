@@ -13,8 +13,8 @@ namespace prune {
 
     SandboxScene::SandboxScene(int window_width, int window_height)
     {
-        m_viewport.width = window_width;
-        m_viewport.height = window_height;
+        m_state.viewport.width = window_width;
+        m_state.viewport.height = window_height;
     }
 
     SandboxScene::~SandboxScene()
@@ -24,17 +24,27 @@ namespace prune {
 
     void SandboxScene::set_viewport(const SceneViewport& viewport) noexcept
     {
-        m_viewport = viewport;
+        m_state.viewport = viewport;
+    }
+
+    SceneState& SandboxScene::get_state() noexcept
+    {
+        return m_state;
+    }
+
+    const SceneState& SandboxScene::get_state() const noexcept
+    {
+        return m_state;
     }
 
     bool SandboxScene::scene_keyboard_input_enabled() const noexcept
     {
-        return m_viewport.focused && m_viewport.has_area();
+        return m_state.viewport.focused && m_state.viewport.has_area();
     }
 
     bool SandboxScene::scene_mouse_input_enabled() const noexcept
     {
-        return m_viewport.hovered && m_viewport.has_area();
+        return m_state.viewport.hovered && m_state.viewport.has_area();
     }
 
     bool SandboxScene::scene_input_enabled() const noexcept
@@ -48,10 +58,10 @@ namespace prune {
     }
 
     void SandboxScene::on_exit() {
-        m_objects.clear();
-        m_player_id = k_invalid_game_object_id;
+        m_state.objects.clear();
+        m_state.player_id = k_invalid_game_object_id;
 
-        m_enemy_id = k_invalid_game_object_id;
+        m_state.enemy_id = k_invalid_game_object_id;
     }
 
     GameObject SandboxScene::create_player() {
@@ -114,93 +124,93 @@ namespace prune {
     }
 
     GameObjectManager& SandboxScene::get_object_manager() {
-        return m_objects;
+        return m_state.objects;
     }
 
     GameObjectId SandboxScene::get_player_id() const {
-        return m_player_id;
+        return m_state.player_id;
     }
 
     PlayerController & SandboxScene::get_player_controller() {
-        return m_player_controller;
+        return m_state.player_controller;
     }
 
     GridOptions& SandboxScene::get_grid_options() {
-        return m_grid_options;
+        return m_state.grid_options;
     }
 
     SceneOptions& SandboxScene::get_scene_options() {
-        return m_scene_options;
+        return m_state.scene_options;
     }
 
 
     CameraState& SandboxScene::get_camera_state() noexcept {
-        return m_cameras;
+        return m_state.cameras;
     }
 
     const CameraState& SandboxScene::get_camera_state() const noexcept {
-        return m_cameras;
+        return m_state.cameras;
     }
 
     Camera& SandboxScene::get_editor_camera() noexcept {
-        return m_cameras.editor;
+        return m_state.cameras.editor;
     }
 
     const Camera& SandboxScene::get_editor_camera() const noexcept {
-        return m_cameras.editor;
+        return m_state.cameras.editor;
     }
 
     Camera& SandboxScene::get_game_camera() noexcept {
-        return m_cameras.game;
+        return m_state.cameras.game;
     }
 
     const Camera& SandboxScene::get_game_camera() const noexcept {
-        return m_cameras.game;
+        return m_state.cameras.game;
     }
 
     Camera& SandboxScene::get_active_camera() noexcept {
-        return (m_cameras.mode == CameraMode::Editor) ? m_cameras.editor : m_cameras.game;
+        return (m_state.cameras.mode == CameraMode::Editor) ? m_state.cameras.editor : m_state.cameras.game;
     }
 
     const Camera& SandboxScene::get_active_camera() const noexcept {
-        return (m_cameras.mode == CameraMode::Editor) ? m_cameras.editor : m_cameras.game;
+        return (m_state.cameras.mode == CameraMode::Editor) ? m_state.cameras.editor : m_state.cameras.game;
     }
 
     void SandboxScene::activate_editor_camera() noexcept
     {
-        m_cameras.mode = CameraMode::Editor;
+        m_state.cameras.mode = CameraMode::Editor;
     }
 
     void SandboxScene::activate_game_camera() noexcept
     {
-        m_cameras.mode = CameraMode::Game;
+        m_state.cameras.mode = CameraMode::Game;
     }
 
     SimpleShooterOptions& SandboxScene::get_simple_shooter_options() noexcept
     {
-        return m_simple_shooter_options;
+        return m_state.simple_shooter_options;
     }
 
     const SimpleShooterOptions& SandboxScene::get_simple_shooter_options() const noexcept
     {
-        return m_simple_shooter_options;
+        return m_state.simple_shooter_options;
     }
 
     GameObject* SandboxScene::enemy_object() noexcept
     {
-        return m_objects.get_by_id(m_enemy_id);
+        return m_state.objects.get_by_id(m_state.enemy_id);
     }
 
     const GameObject* SandboxScene::enemy_object() const noexcept
     {
-        return m_objects.get_by_id(m_enemy_id);
+        return m_state.objects.get_by_id(m_state.enemy_id);
     }
 
     int SandboxScene::bullet_count() const noexcept
     {
         int count = 0;
 
-        for (const auto& object : m_objects.objects()) {
+        for (const auto& object : m_state.objects.objects()) {
             if (object.kind == GameObjectKind::Bullet && object.active) {
                 ++count;
             }
@@ -211,7 +221,7 @@ namespace prune {
 
     void SandboxScene::reset_simple_shooter()
     {
-        for (auto& object : m_objects.objects()) {
+        for (auto& object : m_state.objects.objects()) {
             if (object.kind == GameObjectKind::Bullet) {
                 object.active = false;
             }
@@ -221,7 +231,7 @@ namespace prune {
 
         GameObject* enemy = enemy_object();
         if (!enemy) {
-            m_enemy_id = m_objects.create_object(create_enemy());
+            m_state.enemy_id = m_state.objects.create_object(create_enemy());
             return;
         }
 
@@ -257,7 +267,7 @@ namespace prune {
             return;
         }
 
-        player->velocity = m_player_controller.movement_velocity(input);
+        player->velocity = m_state.player_controller.movement_velocity(input);
 
         const bool is_moving =
             player->velocity.x != 0.0f ||
@@ -316,7 +326,7 @@ namespace prune {
         bullet.active = true;
         bullet.render.visible = true;
         bullet.facing = player.facing;
-        bullet.lifetime = m_simple_shooter_options.bullet_lifetime;
+        bullet.lifetime = m_state.simple_shooter_options.bullet_lifetime;
 
         const float player_center_x = player.transform.x + (static_cast<float>(player.size.width) * 0.5f);
         const float player_center_y = player.transform.y + (static_cast<float>(player.size.height) * 0.5f);
@@ -326,20 +336,20 @@ namespace prune {
 
         switch (player.facing) {
         case Direction::Up:
-            bullet.velocity.y = -m_simple_shooter_options.bullet_speed;
+            bullet.velocity.y = -m_state.simple_shooter_options.bullet_speed;
             break;
         case Direction::Down:
-            bullet.velocity.y = m_simple_shooter_options.bullet_speed;
+            bullet.velocity.y = m_state.simple_shooter_options.bullet_speed;
             break;
         case Direction::Left:
-            bullet.velocity.x = -m_simple_shooter_options.bullet_speed;
+            bullet.velocity.x = -m_state.simple_shooter_options.bullet_speed;
             break;
         case Direction::Right:
-            bullet.velocity.x = m_simple_shooter_options.bullet_speed;
+            bullet.velocity.x = m_state.simple_shooter_options.bullet_speed;
             break;
         }
 
-        m_objects.create_object(bullet);
+        m_state.objects.create_object(bullet);
     }
 
     void SandboxScene::update_enemy(float dt)
@@ -368,15 +378,15 @@ namespace prune {
         direction_x /= length;
         direction_y /= length;
 
-        enemy->velocity.x = direction_x * m_simple_shooter_options.enemy_speed;
-        enemy->velocity.y = direction_y * m_simple_shooter_options.enemy_speed;
+        enemy->velocity.x = direction_x * m_state.simple_shooter_options.enemy_speed;
+        enemy->velocity.y = direction_y * m_state.simple_shooter_options.enemy_speed;
 
         move_object(*enemy, enemy->velocity.x * dt, enemy->velocity.y * dt, false);
     }
 
     void SandboxScene::update_bullets(float dt)
     {
-        for (auto& object : m_objects.objects()) {
+        for (auto& object : m_state.objects.objects()) {
             if (object.kind != GameObjectKind::Bullet || !object.active) {
                 continue;
             }
@@ -398,7 +408,7 @@ namespace prune {
             return;
         }
 
-        for (auto& object : m_objects.objects()) {
+        for (auto& object : m_state.objects.objects()) {
             if (object.kind != GameObjectKind::Bullet || !object.active) {
                 continue;
             }
@@ -426,7 +436,7 @@ namespace prune {
 
     void SandboxScene::cleanup_runtime_objects()
     {
-        auto& objects = m_objects.objects();
+        auto& objects = m_state.objects.objects();
 
         objects.erase(
             std::remove_if(
@@ -452,7 +462,7 @@ namespace prune {
             return;
         }
 
-        if (!m_cameras.game_options.follow_player) {
+        if (!m_state.cameras.game_options.follow_player) {
             return;
         }
 
@@ -462,14 +472,14 @@ namespace prune {
         const float player_center_y =
             player->transform.y + (static_cast<float>(player->size.height) * 0.5f);
 
-        if (!m_viewport.has_area()) {
+        if (!m_state.viewport.has_area()) {
             return;
         }
 
-        const float zoom = std::max(m_cameras.game.zoom, 0.01f);
+        const float zoom = std::max(m_state.cameras.game.zoom, 0.01f);
 
-        m_cameras.game.x = player_center_x - ((static_cast<float>(m_viewport.width) / zoom) * 0.5f);
-        m_cameras.game.y = player_center_y - ((static_cast<float>(m_viewport.height) / zoom) * 0.5f);
+        m_state.cameras.game.x = player_center_x - ((static_cast<float>(m_state.viewport.width) / zoom) * 0.5f);
+        m_state.cameras.game.y = player_center_y - ((static_cast<float>(m_state.viewport.height) / zoom) * 0.5f);
     }
 
     void SandboxScene::move_object(GameObject& object, float delta_x, float delta_y, bool resolve_collisions)
@@ -487,8 +497,8 @@ namespace prune {
         const Camera& camera = get_active_camera();
         const float zoom = std::max(camera.zoom, 0.01f);
 
-        const int local_x = screen_x - m_viewport.screen_x;
-        const int local_y = screen_y - m_viewport.screen_y;
+        const int local_x = screen_x - m_state.viewport.screen_x;
+        const int local_y = screen_y - m_state.viewport.screen_y;
 
         return {
             camera.x + static_cast<float>(local_x) / zoom,
@@ -514,23 +524,23 @@ namespace prune {
     {
         return rect.x + rect.w >= 0 &&
             rect.y + rect.h >= 0 &&
-            rect.x < m_viewport.width &&
-            rect.y < m_viewport.height;
+            rect.x < m_state.viewport.width &&
+            rect.y < m_state.viewport.height;
     }
 
     void SandboxScene::render(SDL_Renderer* renderer)
     {
-        if (!m_viewport.has_area()) {
+        if (!m_state.viewport.has_area()) {
             return;
         }
 
         draw_grid(renderer);
 
-        const GameObjectId selected_id = m_objects.selected_id();
+        const GameObjectId selected_id = m_state.objects.selected_id();
         SDL_Rect selected_outline{};
         bool has_selected_outline = false;
 
-        for (const auto& object : m_objects.objects()) {
+        for (const auto& object : m_state.objects.objects()) {
             if (!object.active || !object.render.visible) {
                 continue;
             }
@@ -553,7 +563,7 @@ namespace prune {
 
                     SDL_RenderFillRect(renderer, &rect);
 
-                    if (m_scene_options.highlight_selected && object.id == selected_id) {
+                    if (m_state.scene_options.highlight_selected && object.id == selected_id) {
                         selected_outline = SDL_Rect{
                             rect.x - 2,
                             rect.y - 2,
@@ -582,7 +592,7 @@ namespace prune {
                         draw_sprite_fallback(renderer, rect);
                     }
 
-                    if (m_scene_options.highlight_selected && object.id == selected_id) {
+                    if (m_state.scene_options.highlight_selected && object.id == selected_id) {
                         selected_outline = SDL_Rect{
                             rect.x - 2,
                             rect.y - 2,
@@ -602,7 +612,7 @@ namespace prune {
             draw_player_facing_indicator(renderer, *player);
         }
 
-        if (m_scene_options.highlight_selected && has_selected_outline) {
+        if (m_state.scene_options.highlight_selected && has_selected_outline) {
             SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
             SDL_RenderDrawRect(renderer, &selected_outline);
         }
@@ -639,11 +649,11 @@ namespace prune {
 
     void SandboxScene::draw_grid(SDL_Renderer* renderer) const
     {
-        if (!m_grid_options.show_grid || m_grid_options.grid_size <= 1) {
+        if (!m_state.grid_options.show_grid || m_state.grid_options.grid_size <= 1) {
             return;
         }
 
-        const int grid_size = std::max(1, m_grid_options.grid_size);
+        const int grid_size = std::max(1, m_state.grid_options.grid_size);
         const int major_every = 4; // 16px * 4 = 64px
 
         const Camera& camera = get_active_camera();
@@ -651,9 +661,9 @@ namespace prune {
         const float zoom = std::max(camera.zoom, 0.01f);
 
         const float left_world = camera.x;
-        const float right_world = camera.x + (static_cast<float>(m_viewport.width) / zoom);
+        const float right_world = camera.x + (static_cast<float>(m_state.viewport.width) / zoom);
         const float top_world = camera.y;
-        const float bottom_world = camera.y + (static_cast<float>(m_viewport.height) / zoom);
+        const float bottom_world = camera.y + (static_cast<float>(m_state.viewport.height) / zoom);
 
         const float first_vertical_world =
             std::floor(left_world / static_cast<float>(grid_size)) * static_cast<float>(grid_size);
@@ -686,7 +696,7 @@ namespace prune {
             }
 
             const int screen_x = static_cast<int>(std::round((world_x - camera.x) * zoom));
-            SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, m_viewport.height);
+            SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, m_state.viewport.height);
         }
 
         const int horizontal_line_count =
@@ -714,13 +724,13 @@ namespace prune {
             }
 
             const int screen_y = static_cast<int>(std::round((world_y - camera.y) * zoom));
-            SDL_RenderDrawLine(renderer, 0, screen_y, m_viewport.width, screen_y);
+            SDL_RenderDrawLine(renderer, 0, screen_y, m_state.viewport.width, screen_y);
         }
     }
 
     float SandboxScene::snap_value_to_grid(float value) const noexcept
     {
-        const int scene_grid_size = std::max(1, m_grid_options.grid_size);
+        const int scene_grid_size = std::max(1, m_state.grid_options.grid_size);
         return std::round(value / static_cast<float>(scene_grid_size)) * static_cast<float>(scene_grid_size);
     }
 
@@ -732,12 +742,12 @@ namespace prune {
 
     GameObject* SandboxScene::player_object() noexcept
     {
-        return m_objects.get_by_id(m_player_id);
+        return m_state.objects.get_by_id(m_state.player_id);
     }
 
     const GameObject* SandboxScene::player_object() const noexcept
     {
-        return m_objects.get_by_id(m_player_id);
+        return m_state.objects.get_by_id(m_state.player_id);
     }
 
     bool SandboxScene::is_overlapping(const GameObject& a, const GameObject& b) const noexcept
@@ -753,7 +763,7 @@ namespace prune {
 
     void SandboxScene::resolve_player_collisions(GameObject& player)
     {
-        for (const auto& object : m_objects.objects()) {
+        for (const auto& object : m_state.objects.objects()) {
             if (object.id == player.id || !object.active || !object.collision.solid) {
                 continue;
             }
@@ -785,36 +795,36 @@ namespace prune {
 
     void SandboxScene::reset_runtime_state()
     {
-        m_objects.clear();
-        m_player_id = k_invalid_game_object_id;
+        m_state.objects.clear();
+        m_state.player_id = k_invalid_game_object_id;
 
-        m_cameras = {};
-        m_cameras.editor.speed = 256.0f;
-        m_cameras.editor.zoom = 1.0f;
+        m_state.cameras = {};
+        m_state.cameras.editor.speed = 256.0f;
+        m_state.cameras.editor.zoom = 1.0f;
 
-        m_cameras.game.speed = 256.0F;
-        m_cameras.game.zoom = 3.0f;
+        m_state.cameras.game.speed = 256.0F;
+        m_state.cameras.game.zoom = 3.0f;
 
-        m_cameras.mode = CameraMode::Editor;
-        m_cameras.game_options.follow_player = true;
+        m_state.cameras.mode = CameraMode::Editor;
+        m_state.cameras.game_options.follow_player = true;
 
-        m_grid_options = {};
-        m_scene_options = {};
-        m_drag_state = {};
-        m_player_controller = {};
+        m_state.grid_options = {};
+        m_state.scene_options = {};
+        m_state.drag_state = {};
+        m_state.player_controller = {};
 
-        m_enemy_id = k_invalid_game_object_id;
-        m_simple_shooter_options = {};
+        m_state.enemy_id = k_invalid_game_object_id;
+        m_state.simple_shooter_options = {};
     }
 
     void SandboxScene::restore_defaults()
     {
         reset_runtime_state();
 
-        m_player_id = m_objects.create_object(create_player());
-        m_objects.create_object(create_initial_block());
-        m_enemy_id = m_objects.create_object(create_enemy());
-        m_objects.select(m_player_id);
+        m_state.player_id = m_state.objects.create_object(create_player());
+        m_state.objects.create_object(create_initial_block());
+        m_state.enemy_id = m_state.objects.create_object(create_enemy());
+        m_state.objects.select(m_state.player_id);
 
 		update_game_camera();
     }
