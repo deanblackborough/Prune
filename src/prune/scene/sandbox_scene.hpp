@@ -2,18 +2,17 @@
 
 #include <array>
 #include <string>
-#include <unordered_map>
 
 #include <SDL2/SDL.h>
 
 #include "prune/scene/scene_state.hpp"
+#include "prune/scene/scene_renderer.hpp"
 
 namespace prune {
 
     class SandboxScene {
     public:
         SandboxScene(int window_width, int window_height);
-        ~SandboxScene();
         SandboxScene(const SandboxScene&) = delete;
         SandboxScene& operator=(const SandboxScene&) = delete;
 
@@ -109,23 +108,13 @@ namespace prune {
 
         // Camera logic
         [[nodiscard]] Transform screen_to_world(int screen_x, int screen_y) const noexcept;
-        [[nodiscard]] SDL_Rect world_to_screen_rect(const GameObject& object) const noexcept;
-        [[nodiscard]] bool is_rect_visible(const SDL_Rect& rect) const noexcept;
 
         // Editor grid
-        void draw_grid(SDL_Renderer* renderer) const;
         [[nodiscard]] float snap_value_to_grid(float value) const noexcept;
         void snap_object_to_grid(GameObject& object) const noexcept;
 
-		// Sprites
-        void destroy_sprite_textures() noexcept;
-        [[nodiscard]] SDL_Texture* sprite_texture(SDL_Renderer* renderer, const std::string& sprite_key);
-        void draw_sprite_fallback(SDL_Renderer* renderer, const SDL_Rect& rect) const;
-
-        void draw_player_facing_indicator(SDL_Renderer* renderer, const GameObject& player) const;
-
         SceneState m_state;
 
-        std::unordered_map<std::string, SDL_Texture*> m_sprite_textures;
+        SceneRenderer m_renderer;
     };
 }
