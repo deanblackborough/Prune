@@ -7,6 +7,7 @@
 
 #include "prune/scene/scene_state.hpp"
 #include "prune/scene/scene_renderer.hpp"
+#include "prune/scene/scene_interaction.hpp"
 
 namespace prune {
 
@@ -98,23 +99,10 @@ namespace prune {
         void handle_bullet_enemy_collisions();
         void cleanup_runtime_objects();
 
-        // Editor logic
-        void update_editor(float dt, const Input& input);
-        void update_editor_camera(float dt, const Input& input);
-        void handle_scene_click(const Input& input);
-        void handle_object_drag(const Input& input);
-        void handle_keyboard_nudge(const Input& input);
-        [[nodiscard]] GameObject* pick_object_at_screen(int screen_x, int screen_y) noexcept;
-
-        // Camera logic
-        [[nodiscard]] Transform screen_to_world(int screen_x, int screen_y) const noexcept;
-
-        // Editor grid
-        [[nodiscard]] float snap_value_to_grid(float value) const noexcept;
-        void snap_object_to_grid(GameObject& object) const noexcept;
-
         SceneState m_state;
 
         SceneRenderer m_renderer;
+
+        SceneInteraction m_interaction;
     };
 }

@@ -1,17 +1,18 @@
-
 #include <fstream>
-#include <sstream>
+#include <string>
 #include <utility>
-#include <vector>
 
 #include <yaml-cpp/yaml.h>
 
-#include "prune/scene/sandbox_scene.hpp"
 #include "prune/resources/sprites.hpp"
+#include "prune/scene/sandbox_scene.hpp"
 
 namespace prune {
 
     namespace {
+
+        constexpr const char* k_behaviour_player = "simple_shooter.player";
+        constexpr const char* k_behaviour_enemy = "simple_shooter.enemy";
 
         struct LoadedSceneState {
             GameObjectManager objects;
@@ -23,24 +24,18 @@ namespace prune {
             float player_speed = 256.0f;
         };
 
-        const char* to_string(GameObjectKind kind) noexcept
+        const char* to_string(GameObjectType type) noexcept
         {
-            switch (kind) {
-            case GameObjectKind::Player:
-                return "player";
-            case GameObjectKind::Block:
-                return "block";
-            case GameObjectKind::Enemy:
-                return "enemy";
-            case GameObjectKind::Bullet:
-                return "bullet";
-            case GameObjectKind::Generic:
+            switch (type) {
+            case GameObjectType::Runtime:
+                return "runtime";
+            case GameObjectType::Object:
             default:
-                return "generic";
+                return "object";
             }
         }
 
-        bool parse_game_object_kind(const YAML::Node& node, GameObjectKind& out)
+        bool parse_game_object_type(const YAML::Node& node, GameObjectType& out)
         {
             if (!node) {
                 return false;
@@ -48,28 +43,13 @@ namespace prune {
 
             const std::string value = node.as<std::string>();
 
-            if (value == "player") {
-                out = GameObjectKind::Player;
+            if (value == "object") {
+                out = GameObjectType::Object;
                 return true;
             }
 
-            if (value == "block") {
-                out = GameObjectKind::Block;
-                return true;
-            }
-
-            if (value == "enemy") {
-                out = GameObjectKind::Enemy;
-                return true;
-            }
-
-            if (value == "bullet") {
-                out = GameObjectKind::Bullet;
-                return true;
-            }
-
-            if (value == "generic") {
-                out = GameObjectKind::Generic;
+            if (value == "runtime") {
+                out = GameObjectType::Runtime;
                 return true;
             }
 
@@ -106,43 +86,6 @@ namespace prune {
             }
 
             return false;
-        }
-
-        YAML::Node make_object_node(const GameObject& object)
-        {
-            YAML::Node node;
-            node["id"] = object.id;
-            node["name"] = object.name;
-            node["kind"] = to_string(object.kind);
-            node["active"] = object.active;
-
-            node["transform"]["x"] = object.transform.x;
-            node["transform"]["y"] = object.transform.y;
-
-            node["size"]["width"] = object.size.width;
-            node["size"]["height"] = object.size.height;
-
-            node["collision"]["solid"] = object.collision.solid;
-
-            node["render"]["type"] = to_string(object.render.type);
-            node["render"]["visible"] = object.render.visible;
-
-            switch (object.render.type) {
-            case RenderType::Rectangle: {
-                YAML::Node colour;
-                colour.push_back(object.render.rectangle.color[0]);
-                colour.push_back(object.render.rectangle.color[1]);
-                colour.push_back(object.render.rectangle.color[2]);
-                node["render"]["rectangle"]["colour"] = colour;
-                break;
-            }
-            case RenderType::Sprite: {
-                node["render"]["sprite"]["sprite_key"] = object.render.sprite.sprite_key;
-                break;
-            }
-            }
-
-            return node;
         }
 
         bool read_required_bool(const YAML::Node& node, const char* key, bool& out)
@@ -185,66 +128,78 @@ namespace prune {
             return true;
         }
 
-        bool load_object_kind_from_node(const YAML::Node& node, GameObject& object, std::string& error)
+        YAML::Node make_object_node(const GameObject& object)
         {
-            if (node["kind"]) {
-                if (!parse_game_object_kind(node["kind"], object.kind)) {
-                    error = "Object kind is invalid.";
-                    return false;
-                }
+            YAML::Node node;
+            node["id"] = object.id;
+            node["name"] = object.name;
+            node["type"] = to_string(object.type);
+            node["active"] = object.active;
 
-                return true;
+            node["transform"]["x"] = object.transform.x;
+            node["transform"]["y"] = object.transform.y;
+
+            node["size"]["width"] = object.size.width;
+            node["size"]["height"] = object.size.height;
+
+            node["collision"]["solid"] = object.collision.solid;
+
+            node["render"]["type"] = to_string(object.render.type);
+            node["render"]["visible"] = object.render.visible;
+
+            switch (object.render.type) {
+            case RenderType::Rectangle: {
+                YAML::Node colour;
+                colour.push_back(object.render.rectangle.color[0]);
+                colour.push_back(object.render.rectangle.color[1]);
+                colour.push_back(object.render.rectangle.color[2]);
+                node["render"]["rectangle"]["colour"] = colour;
+                break;
+            }
+            case RenderType::Sprite:
+                node["render"]["sprite"]["sprite_key"] = object.render.sprite.sprite_key;
+                break;
             }
 
-            if (node["is_player"]) {
-                const bool is_player = node["is_player"].as<bool>();
-                object.kind = is_player ? GameObjectKind::Player : GameObjectKind::Block;
-                return true;
-            }
+            node["editor"]["selectable"] = object.editor.selectable;
+            node["editor"]["renameable"] = object.editor.renameable;
+            node["editor"]["movable"] = object.editor.movable;
+            node["editor"]["deletable"] = object.editor.deletable;
+            node["editor"]["cloneable"] = object.editor.cloneable;
 
-            error = "Object is missing kind.";
-            return false;
+            node["runtime"]["persistent"] = object.runtime.persistent;
+            node["runtime"]["behaviour"] = object.runtime.behaviour;
+
+            return node;
         }
 
         bool load_object_size_from_node(const YAML::Node& node, GameObject& object, std::string& error)
         {
-            if (const YAML::Node size = node["size"]; size && size.IsMap()) {
-                if (!read_required_int(size, "width", object.size.width) ||
-                    !read_required_int(size, "height", object.size.height)) {
-                    error = "Object size is incomplete.";
-                    return false;
-                }
-
-                return true;
+            const YAML::Node size = node["size"];
+            if (!size || !size.IsMap()) {
+                error = "Object is missing size.";
+                return false;
             }
 
-            if (const YAML::Node rectangle = node["rectangle"]; rectangle && rectangle.IsMap()) {
-                if (!read_required_int(rectangle, "width", object.size.width) ||
-                    !read_required_int(rectangle, "height", object.size.height)) {
-                    error = "Object rectangle is incomplete.";
-                    return false;
-                }
-
-                return true;
+            if (!read_required_int(size, "width", object.size.width) ||
+                !read_required_int(size, "height", object.size.height)) {
+                error = "Object size is incomplete.";
+                return false;
             }
 
-            error = "Object is missing size.";
-            return false;
+            return true;
         }
 
         bool load_object_collision_from_node(const YAML::Node& node, GameObject& object, std::string& error)
         {
-            if (const YAML::Node collision = node["collision"]; collision && collision.IsMap()) {
-                if (!read_required_bool(collision, "solid", object.collision.solid)) {
-                    error = "Object collision is incomplete.";
-                    return false;
-                }
-
-                return true;
+            const YAML::Node collision = node["collision"];
+            if (!collision || !collision.IsMap()) {
+                error = "Object is missing collision.";
+                return false;
             }
 
-            if (!read_required_bool(node, "solid", object.collision.solid)) {
-                error = "Object solid flag is missing.";
+            if (!read_required_bool(collision, "solid", object.collision.solid)) {
+                error = "Object collision is incomplete.";
                 return false;
             }
 
@@ -253,78 +208,104 @@ namespace prune {
 
         bool load_object_render_from_node(const YAML::Node& node, GameObject& object, std::string& error)
         {
-            if (const YAML::Node render = node["render"]; render && render.IsMap()) {
-                if (!parse_render_type(render["type"], object.render.type)) {
-                    error = "Object render.type is invalid.";
-                    return false;
-                }
-
-                if (!read_required_bool(render, "visible", object.render.visible)) {
-                    error = "Object render.visible is missing.";
-                    return false;
-                }
-
-                switch (object.render.type) {
-                case RenderType::Rectangle: {
-                    const YAML::Node rectangle = render["rectangle"];
-                    const YAML::Node colour = rectangle ? rectangle["colour"] : YAML::Node{};
-                    if (!colour || !colour.IsSequence() || colour.size() != 3) {
-                        error = "Object rectangle colour must be a 3-item sequence.";
-                        return false;
-                    }
-
-                    object.render.rectangle.color[0] = colour[0].as<float>();
-                    object.render.rectangle.color[1] = colour[1].as<float>();
-                    object.render.rectangle.color[2] = colour[2].as<float>();
-                    break;
-                }
-                case RenderType::Sprite: {
-                    const YAML::Node sprite = render["sprite"];
-                    if (!sprite || !sprite.IsMap()) {
-                        error = "Object sprite render data is missing.";
-                        return false;
-                    }
-
-                    if (!sprite["sprite_key"]) {
-                        error = "Object sprite.sprite_key is missing.";
-                        return false;
-                    }
-
-					//@todo: validate sprite key exists in assets when we have an asset library
-                    const std::string sprite_key = sprite["sprite_key"].as<std::string>();
-
-                    if (find_sprite_resource(sprite_key) == nullptr) {
-                        error = "Object sprite.sprite_key is not defined: " + sprite_key;
-                        return false;
-                    }
-
-                    object.render.sprite.sprite_key = sprite_key;
-
-                    break;
-                }
-                }
-
-                return true;
-            }
-
-            // Legacy format fallback
-            object.render.type = RenderType::Rectangle;
-
-            if (!read_required_bool(node, "visible", object.render.visible)) {
-                error = "Object visible flag is missing.";
+            const YAML::Node render = node["render"];
+            if (!render || !render.IsMap()) {
+                error = "Object is missing render.";
                 return false;
             }
 
-            const YAML::Node colour = node["colour"];
-            if (!colour || !colour.IsSequence() || colour.size() != 3) {
-                error = "Object colour must be a 3-item sequence.";
+            if (!parse_render_type(render["type"], object.render.type)) {
+                error = "Object render.type is invalid.";
                 return false;
             }
 
-            object.render.rectangle.color[0] = colour[0].as<float>();
-            object.render.rectangle.color[1] = colour[1].as<float>();
-            object.render.rectangle.color[2] = colour[2].as<float>();
+            if (!read_required_bool(render, "visible", object.render.visible)) {
+                error = "Object render.visible is missing.";
+                return false;
+            }
 
+            switch (object.render.type) {
+            case RenderType::Rectangle: {
+                const YAML::Node rectangle = render["rectangle"];
+                const YAML::Node colour = rectangle ? rectangle["colour"] : YAML::Node{};
+
+                if (!colour || !colour.IsSequence() || colour.size() != 3) {
+                    error = "Object rectangle colour must be a 3-item sequence.";
+                    return false;
+                }
+
+                object.render.rectangle.color[0] = colour[0].as<float>();
+                object.render.rectangle.color[1] = colour[1].as<float>();
+                object.render.rectangle.color[2] = colour[2].as<float>();
+                break;
+            }
+
+            case RenderType::Sprite: {
+                const YAML::Node sprite = render["sprite"];
+                if (!sprite || !sprite.IsMap()) {
+                    error = "Object sprite render data is missing.";
+                    return false;
+                }
+
+                if (!sprite["sprite_key"]) {
+                    error = "Object sprite.sprite_key is missing.";
+                    return false;
+                }
+
+                const std::string sprite_key = sprite["sprite_key"].as<std::string>();
+
+                if (find_sprite_resource(sprite_key) == nullptr) {
+                    error = "Object sprite.sprite_key is not defined: " + sprite_key;
+                    return false;
+                }
+
+                object.render.sprite.sprite_key = sprite_key;
+                break;
+            }
+            }
+
+            return true;
+        }
+
+        bool load_object_editor_from_node(const YAML::Node& node, GameObject& object, std::string& error)
+        {
+            const YAML::Node editor = node["editor"];
+            if (!editor || !editor.IsMap()) {
+                error = "Object is missing editor.";
+                return false;
+            }
+
+            if (!read_required_bool(editor, "selectable", object.editor.selectable) ||
+                !read_required_bool(editor, "renameable", object.editor.renameable) ||
+                !read_required_bool(editor, "movable", object.editor.movable) ||
+                !read_required_bool(editor, "deletable", object.editor.deletable) ||
+                !read_required_bool(editor, "cloneable", object.editor.cloneable)) {
+                error = "Object editor flags are incomplete.";
+                return false;
+            }
+
+            return true;
+        }
+
+        bool load_object_runtime_from_node(const YAML::Node& node, GameObject& object, std::string& error)
+        {
+            const YAML::Node runtime = node["runtime"];
+            if (!runtime || !runtime.IsMap()) {
+                error = "Object is missing runtime.";
+                return false;
+            }
+
+            if (!read_required_bool(runtime, "persistent", object.runtime.persistent)) {
+                error = "Object runtime.persistent is missing.";
+                return false;
+            }
+
+            if (!runtime["behaviour"]) {
+                error = "Object runtime.behaviour is missing.";
+                return false;
+            }
+
+            object.runtime.behaviour = runtime["behaviour"].as<std::string>();
             return true;
         }
 
@@ -344,7 +325,13 @@ namespace prune {
                 error = "Object is missing name.";
                 return false;
             }
+
             object.name = node["name"].as<std::string>();
+
+            if (!parse_game_object_type(node["type"], object.type)) {
+                error = "Object type is invalid.";
+                return false;
+            }
 
             if (!read_required_bool(node, "active", object.active)) {
                 error = "Object active flag is missing.";
@@ -363,10 +350,6 @@ namespace prune {
                 return false;
             }
 
-            if (!load_object_kind_from_node(node, object, error)) {
-                return false;
-            }
-
             if (!load_object_size_from_node(node, object, error)) {
                 return false;
             }
@@ -379,7 +362,17 @@ namespace prune {
                 return false;
             }
 
+            if (!load_object_editor_from_node(node, object, error)) {
+                return false;
+            }
+
+            if (!load_object_runtime_from_node(node, object, error)) {
+                return false;
+            }
+
             object.velocity = {};
+            object.lifetime = 0.0f;
+
             return true;
         }
 
@@ -390,6 +383,7 @@ namespace prune {
             }
 
             const std::string value = node.as<std::string>();
+
             if (value == "editor") {
                 out = CameraMode::Editor;
                 return true;
@@ -416,7 +410,7 @@ namespace prune {
                 root["scene"]["selected_object_id"] = m_state.objects.selected_id();
             }
 
-            root["cameras"]["mode"] = (m_state.cameras.mode == CameraMode::Editor) ? "editor" : "game";
+            root["cameras"]["mode"] = m_state.cameras.mode == CameraMode::Editor ? "editor" : "game";
 
             root["cameras"]["editor"]["x"] = m_state.cameras.editor.x;
             root["cameras"]["editor"]["y"] = m_state.cameras.editor.y;
@@ -426,7 +420,7 @@ namespace prune {
             root["cameras"]["game"]["x"] = m_state.cameras.game.x;
             root["cameras"]["game"]["y"] = m_state.cameras.game.y;
             root["cameras"]["game"]["speed"] = m_state.cameras.game.speed;
-			root["cameras"]["game"]["zoom"] = m_state.cameras.game.zoom;
+            root["cameras"]["game"]["zoom"] = m_state.cameras.game.zoom;
             root["cameras"]["game"]["follow_player"] = m_state.cameras.game_options.follow_player;
 
             root["grid"]["show_grid"] = m_state.grid_options.show_grid;
@@ -441,7 +435,7 @@ namespace prune {
 
             YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
             for (const auto& object : m_state.objects.objects()) {
-                if (object.kind == GameObjectKind::Bullet) {
+                if (!object.runtime.persistent) {
                     continue;
                 }
 
@@ -477,20 +471,20 @@ namespace prune {
             const YAML::Node scene = root["scene"];
             const YAML::Node cameras = root["cameras"];
             const YAML::Node player_node = root["player"];
-            const YAML::Node legacy_camera = root["camera"];
             const YAML::Node grid = root["grid"];
             const YAML::Node options = root["options"];
             const YAML::Node objects = root["objects"];
 
-            if (!scene || !grid || !options || !objects || !objects.IsSequence()) {
+            if (!scene || !cameras || !player_node || !grid || !options || !objects || !objects.IsSequence()) {
                 error = "Save file is missing required top-level sections.";
                 return false;
             }
 
             LoadedSceneState loaded{};
 
-            if (player_node && player_node["speed"]) {
-                loaded.player_speed = player_node["speed"].as<float>();
+            if (!read_required_float(player_node, "speed", loaded.player_speed)) {
+                error = "player.speed is missing.";
+                return false;
             }
 
             GameObjectId loaded_next_id = 1;
@@ -511,53 +505,33 @@ namespace prune {
                 loaded_selected_id = scene["selected_object_id"].as<GameObjectId>();
             }
 
-            if (cameras) {
-                const YAML::Node editor = cameras["editor"];
-                const YAML::Node game = cameras["game"];
+            const YAML::Node editor = cameras["editor"];
+            const YAML::Node game = cameras["game"];
 
-                if (!editor || !game) {
-                    error = "cameras section is incomplete.";
-                    return false;
-                }
-
-                if (!parse_camera_mode(cameras["mode"], loaded.cameras.mode)) {
-                    error = "cameras.mode is invalid.";
-                    return false;
-                }
-
-                if (!read_required_float(editor, "x", loaded.cameras.editor.x) ||
-                    !read_required_float(editor, "y", loaded.cameras.editor.y) ||
-                    !read_required_float(editor, "speed", loaded.cameras.editor.speed) || 
-                    !read_required_float(editor, "zoom", loaded.cameras.editor.zoom)) {
-                    error = "cameras.editor is incomplete.";
-                    return false;
-                }
-
-                if (!read_required_float(game, "x", loaded.cameras.game.x) ||
-                    !read_required_float(game, "y", loaded.cameras.game.y) ||
-                    !read_required_float(game, "speed", loaded.cameras.game.speed) ||
-					!read_required_float(game, "zoom", loaded.cameras.game.zoom) ||
-                    !read_required_bool(game, "follow_player", loaded.cameras.game_options.follow_player)) {
-                    error = "cameras.game is incomplete.";
-                    return false;
-                }
+            if (!editor || !game) {
+                error = "cameras section is incomplete.";
+                return false;
             }
-            else if (legacy_camera) {
-                if (!read_required_float(legacy_camera, "x", loaded.cameras.editor.x) ||
-                    !read_required_float(legacy_camera, "y", loaded.cameras.editor.y)) {
-                    error = "legacy camera is incomplete.";
-                    return false;
-                }
 
-                loaded.cameras.editor.speed = 256.0f;
-				loaded.cameras.editor.zoom = 1.0f;
-                loaded.cameras.game.speed = 96.0f;
-				loaded.cameras.game.zoom = 3.0f;
-                loaded.cameras.mode = CameraMode::Editor;
-                loaded.cameras.game_options.follow_player = true;
+            if (!parse_camera_mode(cameras["mode"], loaded.cameras.mode)) {
+                error = "cameras.mode is invalid.";
+                return false;
             }
-            else {
-                error = "Save file is missing cameras section.";
+
+            if (!read_required_float(editor, "x", loaded.cameras.editor.x) ||
+                !read_required_float(editor, "y", loaded.cameras.editor.y) ||
+                !read_required_float(editor, "speed", loaded.cameras.editor.speed) ||
+                !read_required_float(editor, "zoom", loaded.cameras.editor.zoom)) {
+                error = "cameras.editor is incomplete.";
+                return false;
+            }
+
+            if (!read_required_float(game, "x", loaded.cameras.game.x) ||
+                !read_required_float(game, "y", loaded.cameras.game.y) ||
+                !read_required_float(game, "speed", loaded.cameras.game.speed) ||
+                !read_required_float(game, "zoom", loaded.cameras.game.zoom) ||
+                !read_required_bool(game, "follow_player", loaded.cameras.game_options.follow_player)) {
+                error = "cameras.game is incomplete.";
                 return false;
             }
 
@@ -579,7 +553,13 @@ namespace prune {
 
             for (const auto& entry : objects) {
                 GameObject object{};
+
                 if (!load_object_from_node(entry, object, error)) {
+                    return false;
+                }
+
+                if (!object.runtime.persistent) {
+                    error = "Save file contains a non-persistent object.";
                     return false;
                 }
 
@@ -588,7 +568,7 @@ namespace prune {
                     return false;
                 }
 
-                if (object.kind == GameObjectKind::Player) {
+                if (object.runtime.behaviour == k_behaviour_player) {
                     ++player_count;
                 }
             }
@@ -611,7 +591,7 @@ namespace prune {
                 return false;
             }
 
-            if (loaded_player->kind != GameObjectKind::Player) {
+            if (loaded_player->runtime.behaviour != k_behaviour_player) {
                 error = "Saved player_id does not point to a player object.";
                 return false;
             }
@@ -644,7 +624,7 @@ namespace prune {
             m_state.enemy_id = k_invalid_game_object_id;
 
             for (const auto& object : m_state.objects.objects()) {
-                if (object.kind == GameObjectKind::Enemy) {
+                if (object.runtime.behaviour == k_behaviour_enemy) {
                     m_state.enemy_id = object.id;
                     break;
                 }
