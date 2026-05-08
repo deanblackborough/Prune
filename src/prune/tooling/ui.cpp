@@ -1,6 +1,7 @@
 #include "imgui.h"
 
 #include "prune/scene/sandbox_scene.hpp"
+#include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/ui.hpp"
 
 namespace prune {
@@ -83,14 +84,7 @@ namespace prune {
         }
 
         if (m_show_view_grid_options) {
-            ImGuiViewport* viewport = ImGui::GetMainViewport();
-
-            ImGui::SetNextWindowPos(
-                viewport->GetCenter(),
-                ImGuiCond_FirstUseEver,
-                ImVec2(0.5f, 0.5f)
-            );
-            ImGui::SetNextWindowSize(ImVec2(306.0, 308.0f), ImGuiCond_FirstUseEver);
+            tooling::EditorLayout::options();
 
             if (ImGui::Begin("Options", &m_show_view_grid_options)) {
                 m_options.draw(scene.get_scene_options(), scene.get_grid_options(), scene.get_camera());
@@ -99,8 +93,7 @@ namespace prune {
         }
 
         if (m_show_outliner) {
-            ImGui::SetNextWindowPos(ImVec2(945.0f, 25.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(330.0f, 175.0f), ImGuiCond_FirstUseEver);
+            tooling::EditorLayout::outliner();
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
                 const Camera& camera = scene.get_camera().active();
@@ -120,8 +113,7 @@ namespace prune {
         }
 
         if (m_show_inspector) {
-            ImGui::SetNextWindowPos(ImVec2(945.0f, 390.f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(330.0f, 330.0f), ImGuiCond_FirstUseEver);
+            tooling::EditorLayout::inspector();
 
             if (ImGui::Begin("Inspector", &m_show_inspector)) {
                 m_inspector.draw(
@@ -140,15 +132,7 @@ namespace prune {
         }
 
         if (m_show_controls) {
-
-            ImGuiViewport* viewport = ImGui::GetMainViewport();
-
-            ImGui::SetNextWindowPos(
-                viewport->GetCenter(),
-                ImGuiCond_FirstUseEver,
-                ImVec2(0.5f, 0.5f)
-            );
-            ImGui::SetNextWindowSize(ImVec2(377.0f, 165.0f), ImGuiCond_FirstUseEver);
+            tooling::EditorLayout::controls();
 
             if (ImGui::Begin("Controls", &m_show_controls)) {
                 m_controls.draw();
@@ -157,8 +141,7 @@ namespace prune {
         }
 
         if (m_show_stats) {
-            ImGui::SetNextWindowPos(ImVec2(10.0f, 34.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(300.0f, 320.0f), ImGuiCond_FirstUseEver);
+            tooling::EditorLayout::stats();
 
             if (ImGui::Begin("Stats", &m_show_stats)) {
                 m_stats.draw(
@@ -225,8 +208,7 @@ namespace prune {
             return;
         }
 
-        ImGui::SetNextWindowPos(ImVec2(5.0f, 25.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(930.0f, 700.0f), ImGuiCond_FirstUseEver);
+        tooling::EditorLayout::scene_viewport();
 
         if (!ImGui::Begin("Scene", &m_show_scene_viewport, ImGuiWindowFlags_NoScrollbar)) {
             scene.set_viewport({});
@@ -299,8 +281,7 @@ namespace prune {
 
     void Ui::draw_simple_shooter_panel(SandboxScene& scene)
     {
-        ImGui::SetNextWindowPos(ImVec2(945.0f, 205.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(330.0f, 180.0f), ImGuiCond_FirstUseEver);
+        tooling::EditorLayout::simple_shooter();
 
         if (!ImGui::Begin("Simple Shooter", &m_show_simple_shooter)) {
             ImGui::End();

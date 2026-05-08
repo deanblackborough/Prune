@@ -38,6 +38,7 @@ add_executable(Prune
         src/prune/tooling/controls.cpp
         src/prune/tooling/options.cpp
         src/prune/tooling/stats.cpp
+        src/prune/tooling/editor_layout.cpp
 
         src/prune/tooling/imgui/property_table.cpp
         src/prune/tooling/imgui/layout.cpp
