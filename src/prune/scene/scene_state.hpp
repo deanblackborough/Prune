@@ -4,6 +4,7 @@
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
 #include "prune/scene/player_controller.hpp"
+#include "prune/scene/scene_camera.hpp"
 
 namespace prune {
 
@@ -31,29 +32,6 @@ namespace prune {
         bool highlight_selected = true;
     };
 
-    struct Camera {
-        float x = 0.0f;
-        float y = 0.0f;
-        float speed = 256.0f;
-        float zoom = 1.0f;
-    };
-
-    enum class CameraMode {
-        Editor = 0,
-        Game = 1
-    };
-
-    struct GameCameraOptions {
-        bool follow_player = true;
-    };
-
-    struct CameraState {
-        Camera editor;
-        Camera game;
-        CameraMode mode = CameraMode::Editor;
-        GameCameraOptions game_options;
-    };
-
     struct GridOptions {
         bool show_grid = true;
         bool snap_to_grid = true;
@@ -75,7 +53,7 @@ namespace prune {
     };
 
     struct SimpleShooterOptions {
-        float enemy_speed = 48.0f;
+        float enemy_speed = 24.0f;
         float bullet_speed = 180.0f;
         float bullet_lifetime = 1.25f;
     };
@@ -91,7 +69,7 @@ namespace prune {
         GridOptions grid_options{};
         SceneOptions scene_options{};
         DragState drag_state{};
-        CameraState cameras{};
+        SceneCamera camera{};
         SimpleShooterOptions simple_shooter_options{};
     };
 

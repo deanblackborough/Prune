@@ -23,6 +23,7 @@ add_executable(Prune
         src/prune/scene/player_controller.cpp
 
         src/prune/scene/scene_renderer.cpp
+        src/prune/scene/scene_camera.cpp
         src/prune/scene/scene_interaction.cpp
         
         src/prune/scene/sandbox_scene.cpp        
@@ -37,6 +38,7 @@ add_executable(Prune
         src/prune/tooling/controls.cpp
         src/prune/tooling/options.cpp
         src/prune/tooling/stats.cpp
+        src/prune/tooling/editor_layout.cpp
 
         src/prune/tooling/imgui/property_table.cpp
         src/prune/tooling/imgui/layout.cpp
@@ -48,7 +50,7 @@ add_executable(Prune
         external/imgui/imgui_demo.cpp
         external/imgui/backends/imgui_impl_sdl2.cpp
         external/imgui/backends/imgui_impl_sdlrenderer2.cpp
- )
+)
 
 target_include_directories(Prune PRIVATE
         src

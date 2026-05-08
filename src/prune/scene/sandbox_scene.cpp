@@ -148,47 +148,14 @@ namespace prune {
         return m_state.scene_options;
     }
 
-
-    CameraState& SandboxScene::get_camera_state() noexcept {
-        return m_state.cameras;
-    }
-
-    const CameraState& SandboxScene::get_camera_state() const noexcept {
-        return m_state.cameras;
-    }
-
-    Camera& SandboxScene::get_editor_camera() noexcept {
-        return m_state.cameras.editor;
-    }
-
-    const Camera& SandboxScene::get_editor_camera() const noexcept {
-        return m_state.cameras.editor;
-    }
-
-    Camera& SandboxScene::get_game_camera() noexcept {
-        return m_state.cameras.game;
-    }
-
-    const Camera& SandboxScene::get_game_camera() const noexcept {
-        return m_state.cameras.game;
-    }
-
-    Camera& SandboxScene::get_active_camera() noexcept {
-        return (m_state.cameras.mode == CameraMode::Editor) ? m_state.cameras.editor : m_state.cameras.game;
-    }
-
-    const Camera& SandboxScene::get_active_camera() const noexcept {
-        return (m_state.cameras.mode == CameraMode::Editor) ? m_state.cameras.editor : m_state.cameras.game;
-    }
-
-    void SandboxScene::activate_editor_camera() noexcept
+    SceneCamera& SandboxScene::get_camera() noexcept
     {
-        m_state.cameras.mode = CameraMode::Editor;
+        return m_state.camera;
     }
 
-    void SandboxScene::activate_game_camera() noexcept
+    const SceneCamera& SandboxScene::get_camera() const noexcept
     {
-        m_state.cameras.mode = CameraMode::Game;
+        return m_state.camera;
     }
 
     SimpleShooterOptions& SandboxScene::get_simple_shooter_options() noexcept
@@ -247,7 +214,7 @@ namespace prune {
     {
         update_game(dt, input);
         m_interaction.update(m_state, dt, input);
-		update_cameras();
+		m_state.camera.update_game_camera(m_state.viewport, player_object());
     }
 
     void SandboxScene::update_game(float dt, const Input& input)
@@ -279,7 +246,7 @@ namespace prune {
             player->velocity.y != 0.0f;
 
         if (is_moving) {
-            activate_game_camera();
+            m_state.camera.activate_game();
             update_player_facing(*player);
         }
 
@@ -464,38 +431,6 @@ namespace prune {
         );
     }
 
-    void SandboxScene::update_cameras()
-    {
-        update_game_camera();
-    }
-
-    void SandboxScene::update_game_camera() noexcept
-    {
-        const GameObject* player = player_object();
-        if (!player) {
-            return;
-        }
-
-        if (!m_state.cameras.game_options.follow_player) {
-            return;
-        }
-
-        const float player_center_x =
-            player->transform.x + (static_cast<float>(player->size.width) * 0.5f);
-
-        const float player_center_y =
-            player->transform.y + (static_cast<float>(player->size.height) * 0.5f);
-
-        if (!m_state.viewport.has_area()) {
-            return;
-        }
-
-        const float zoom = std::max(m_state.cameras.game.zoom, 0.01f);
-
-        m_state.cameras.game.x = player_center_x - ((static_cast<float>(m_state.viewport.width) / zoom) * 0.5f);
-        m_state.cameras.game.y = player_center_y - ((static_cast<float>(m_state.viewport.height) / zoom) * 0.5f);
-    }
-
     void SandboxScene::move_object(GameObject& object, float delta_x, float delta_y, bool resolve_collisions)
     {
         object.transform.x += delta_x;
@@ -564,15 +499,7 @@ namespace prune {
         m_state.objects.clear();
         m_state.player_id = k_invalid_game_object_id;
 
-        m_state.cameras = {};
-        m_state.cameras.editor.speed = 256.0f;
-        m_state.cameras.editor.zoom = 1.0f;
-
-        m_state.cameras.game.speed = 256.0F;
-        m_state.cameras.game.zoom = 3.0f;
-
-        m_state.cameras.mode = CameraMode::Editor;
-        m_state.cameras.game_options.follow_player = true;
+        m_state.camera.reset();
 
         m_state.grid_options = {};
         m_state.scene_options = {};
@@ -592,13 +519,13 @@ namespace prune {
         m_state.enemy_id = m_state.objects.create_object(create_enemy());
         m_state.objects.select(m_state.player_id);
 
-		update_game_camera();
+        m_state.camera.update_game_camera(m_state.viewport, player_object());
     }
 
     void SandboxScene::new_scene()
     {
         restore_defaults();
 
-        update_game_camera();
+        m_state.camera.update_game_camera(m_state.viewport, player_object());
     }
 }

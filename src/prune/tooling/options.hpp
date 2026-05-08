@@ -6,7 +6,7 @@ namespace prune {
 
     class Options {
     public:
-        void draw(SceneOptions& scene_options, GridOptions& grid_options, CameraState& cameras);
+        void draw(SceneOptions& scene_options, GridOptions& grid_options, SceneCamera& camera);
     private:
 
     };

@@ -20,12 +20,6 @@ namespace prune {
 
         [[nodiscard]] GameObject* pick_object_at_screen(SceneState& state, int screen_x, int screen_y) noexcept;
 
-        [[nodiscard]] static Transform screen_to_world(
-            const SceneState& state,
-            int screen_x,
-            int screen_y
-        ) noexcept;
-
         [[nodiscard]] static float snap_value_to_grid(
             const SceneState& state,
             float value

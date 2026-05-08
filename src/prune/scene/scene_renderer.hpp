@@ -22,8 +22,6 @@ namespace prune {
         void clear_cached_textures() noexcept;
 
     private:
-        [[nodiscard]] static const Camera& active_camera(const SceneState& state) noexcept;
-        [[nodiscard]] static SDL_Rect world_to_screen_rect(const SceneState& state, const GameObject& object) noexcept;
         [[nodiscard]] static bool is_rect_visible(const SceneState& state, const SDL_Rect& rect) noexcept;
 
         void draw_grid(SDL_Renderer* renderer, const SceneState& state) const;

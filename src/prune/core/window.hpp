@@ -7,8 +7,8 @@ namespace prune {
 
     struct WindowConfig {
         std::string title = "Prune";
-        int width = 1280;
-        int height = 720;
+        int width = 1600;
+        int height = 900;
         bool fullscreen = false;
         bool resizable = true;
         bool vsync = true;

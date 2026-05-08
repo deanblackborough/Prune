@@ -7,9 +7,11 @@ namespace prune {
     void Options::draw(
         SceneOptions& scene_options,
         GridOptions& grid_options,
-        CameraState& cameras
+        SceneCamera& camera
     )
     {
+        CameraState& cameras = camera.state();
+
 		if (tooling::imgui::layout::collapsing_header("Scene")) {
 			tooling::imgui::property_table::begin("##scene");
 			tooling::imgui::property_table::checkbox("Highlight selected", "##highlight_selected", scene_options.highlight_selected);
