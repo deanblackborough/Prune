@@ -20,7 +20,7 @@ namespace prune {
             GameObjectId selected_id = k_invalid_game_object_id;
             GridOptions grid_options{};
             SceneOptions scene_options{};
-            CameraState cameras{};
+            CameraState camera_state{};
             float player_speed = 256.0f;
         };
 
@@ -410,18 +410,18 @@ namespace prune {
                 root["scene"]["selected_object_id"] = m_state.objects.selected_id();
             }
 
-            root["cameras"]["mode"] = m_state.cameras.mode == CameraMode::Editor ? "editor" : "game";
+            root["cameras"]["mode"] = m_state.camera.state().mode == CameraMode::Editor ? "editor" : "game";
 
-            root["cameras"]["editor"]["x"] = m_state.cameras.editor.x;
-            root["cameras"]["editor"]["y"] = m_state.cameras.editor.y;
-            root["cameras"]["editor"]["speed"] = m_state.cameras.editor.speed;
-            root["cameras"]["editor"]["zoom"] = m_state.cameras.editor.zoom;
+            root["cameras"]["editor"]["x"] = m_state.camera.state().editor.x;
+            root["cameras"]["editor"]["y"] = m_state.camera.state().editor.y;
+            root["cameras"]["editor"]["speed"] = m_state.camera.state().editor.speed;
+            root["cameras"]["editor"]["zoom"] = m_state.camera.state().editor.zoom;
 
-            root["cameras"]["game"]["x"] = m_state.cameras.game.x;
-            root["cameras"]["game"]["y"] = m_state.cameras.game.y;
-            root["cameras"]["game"]["speed"] = m_state.cameras.game.speed;
-            root["cameras"]["game"]["zoom"] = m_state.cameras.game.zoom;
-            root["cameras"]["game"]["follow_player"] = m_state.cameras.game_options.follow_player;
+            root["cameras"]["game"]["x"] = m_state.camera.state().game.x;
+            root["cameras"]["game"]["y"] = m_state.camera.state().game.y;
+            root["cameras"]["game"]["speed"] = m_state.camera.state().game.speed;
+            root["cameras"]["game"]["zoom"] = m_state.camera.state().game.zoom;
+            root["cameras"]["game"]["follow_player"] = m_state.camera.state().game_options.follow_player;
 
             root["grid"]["show_grid"] = m_state.grid_options.show_grid;
             root["grid"]["snap_to_grid"] = m_state.grid_options.snap_to_grid;
@@ -513,24 +513,24 @@ namespace prune {
                 return false;
             }
 
-            if (!parse_camera_mode(cameras["mode"], loaded.cameras.mode)) {
+            if (!parse_camera_mode(cameras["mode"], loaded.camera_state.mode)) {
                 error = "cameras.mode is invalid.";
                 return false;
             }
 
-            if (!read_required_float(editor, "x", loaded.cameras.editor.x) ||
-                !read_required_float(editor, "y", loaded.cameras.editor.y) ||
-                !read_required_float(editor, "speed", loaded.cameras.editor.speed) ||
-                !read_required_float(editor, "zoom", loaded.cameras.editor.zoom)) {
+            if (!read_required_float(editor, "x", loaded.camera_state.editor.x) ||
+                !read_required_float(editor, "y", loaded.camera_state.editor.y) ||
+                !read_required_float(editor, "speed", loaded.camera_state.editor.speed) ||
+                !read_required_float(editor, "zoom", loaded.camera_state.editor.zoom)) {
                 error = "cameras.editor is incomplete.";
                 return false;
             }
 
-            if (!read_required_float(game, "x", loaded.cameras.game.x) ||
-                !read_required_float(game, "y", loaded.cameras.game.y) ||
-                !read_required_float(game, "speed", loaded.cameras.game.speed) ||
-                !read_required_float(game, "zoom", loaded.cameras.game.zoom) ||
-                !read_required_bool(game, "follow_player", loaded.cameras.game_options.follow_player)) {
+            if (!read_required_float(game, "x", loaded.camera_state.game.x) ||
+                !read_required_float(game, "y", loaded.camera_state.game.y) ||
+                !read_required_float(game, "speed", loaded.camera_state.game.speed) ||
+                !read_required_float(game, "zoom", loaded.camera_state.game.zoom) ||
+                !read_required_bool(game, "follow_player", loaded.camera_state.game_options.follow_player)) {
                 error = "cameras.game is incomplete.";
                 return false;
             }
@@ -636,10 +636,10 @@ namespace prune {
 
             m_state.grid_options = loaded.grid_options;
             m_state.scene_options = loaded.scene_options;
-            m_state.cameras = loaded.cameras;
+            m_state.camera.state() = loaded.camera_state;
             m_state.player_controller.set_speed(loaded.player_speed);
 
-            update_game_camera();
+            m_state.camera.update_game_camera(m_state.viewport, player_object());
 
             return true;
         }

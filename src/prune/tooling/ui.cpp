@@ -93,7 +93,7 @@ namespace prune {
             ImGui::SetNextWindowSize(ImVec2(306.0, 308.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Options", &m_show_view_grid_options)) {
-                m_options.draw(scene.get_scene_options(), scene.get_grid_options(), scene.get_camera_state());
+                m_options.draw(scene.get_scene_options(), scene.get_grid_options(), scene.get_camera());
             }
             ImGui::End();
         }
@@ -103,7 +103,7 @@ namespace prune {
             ImGui::SetNextWindowSize(ImVec2(306.0f, 239.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
-                const Camera& camera = scene.get_active_camera();
+                const Camera& camera = scene.get_camera().active();
                 GridOptions& grid_options = scene.get_grid_options();
 
                 m_outliner.draw(
@@ -129,7 +129,7 @@ namespace prune {
                     scene.get_player_id(),
                     scene.get_player_controller(),
                     scene.get_grid_options(),
-                    scene.get_active_camera()
+                    scene.get_camera().active()
                 );
             }
             ImGui::End();
@@ -165,7 +165,7 @@ namespace prune {
                     scene.get_object_manager(),
                     scene.get_player_id(),
                     scene.get_viewport(),
-                    scene.get_camera_state()
+                    scene.get_camera()
                 );
             }
             ImGui::End();

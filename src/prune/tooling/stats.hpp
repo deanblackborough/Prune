@@ -12,7 +12,7 @@ namespace prune {
             GameObjectManager& objects,
             GameObjectId player_id,
             const SceneViewport& viewport,
-            const CameraState& cameras
+            const SceneCamera& camera
         );
     private:
 

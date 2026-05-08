@@ -7,24 +7,6 @@
 
 namespace prune {
 
-    namespace {
-
-        [[nodiscard]] Camera& active_camera(SceneState& state) noexcept
-        {
-            return state.cameras.mode == CameraMode::Editor
-                ? state.cameras.editor
-                : state.cameras.game;
-        }
-
-        [[nodiscard]] const Camera& active_camera(const SceneState& state) noexcept
-        {
-            return state.cameras.mode == CameraMode::Editor
-                ? state.cameras.editor
-                : state.cameras.game;
-        }
-
-    }
-
     void SceneInteraction::update(SceneState& state, float dt, const Input& input)
     {
         handle_object_drag(state, input);
@@ -56,13 +38,8 @@ namespace prune {
             return;
         }
 
-        state.cameras.mode = CameraMode::Editor;
-
-        Camera& camera = state.cameras.editor;
-        const float zoom = std::max(camera.zoom, 0.01f);
-
-        camera.x -= static_cast<float>(input.mouse_delta_x()) / zoom;
-        camera.y -= static_cast<float>(input.mouse_delta_y()) / zoom;
+        state.camera.activate_editor();
+        state.camera.pan_editor_by_mouse_delta(input.mouse_delta_x(), input.mouse_delta_y());
     }
 
     void SceneInteraction::handle_scene_click(SceneState& state, const Input& input)
@@ -103,7 +80,7 @@ namespace prune {
                 return;
             }
 
-            const Transform mouse_world = screen_to_world(state, input.mouse_x(), input.mouse_y());
+            const Transform mouse_world = state.camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
 
             object->transform.x =
                 state.drag_state.object_start.x +
@@ -145,7 +122,7 @@ namespace prune {
         state.drag_state.active = true;
         state.drag_state.object_id = selected->id;
         state.drag_state.object_start = selected->transform;
-        state.drag_state.mouse_start_world = screen_to_world(state, input.mouse_x(), input.mouse_y());
+        state.drag_state.mouse_start_world = state.camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
     }
 
     void SceneInteraction::handle_keyboard_nudge(SceneState& state, const Input& input)
@@ -204,7 +181,7 @@ namespace prune {
 
     GameObject* SceneInteraction::pick_object_at_screen(SceneState& state, int screen_x, int screen_y) noexcept
     {
-        const Transform world = screen_to_world(state, screen_x, screen_y);
+        const Transform world = state.camera.screen_to_world(state.viewport, screen_x, screen_y);
         auto& objects = state.objects.objects();
 
         for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
@@ -228,20 +205,6 @@ namespace prune {
         }
 
         return nullptr;
-    }
-
-    Transform SceneInteraction::screen_to_world(const SceneState& state, int screen_x, int screen_y) noexcept
-    {
-        const Camera& camera = active_camera(state);
-        const float zoom = std::max(camera.zoom, 0.01f);
-
-        const int local_x = screen_x - state.viewport.screen_x;
-        const int local_y = screen_y - state.viewport.screen_y;
-
-        return {
-            camera.x + static_cast<float>(local_x) / zoom,
-            camera.y + static_cast<float>(local_y) / zoom
-        };
     }
 
     float SceneInteraction::snap_value_to_grid(const SceneState& state, float value) noexcept

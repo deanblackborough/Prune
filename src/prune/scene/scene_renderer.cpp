@@ -24,24 +24,6 @@ namespace prune {
         m_sprite_textures.clear();
     }
 
-    const Camera& SceneRenderer::active_camera(const SceneState& state) noexcept
-    {
-        return (state.cameras.mode == CameraMode::Editor) ? state.cameras.editor : state.cameras.game;
-    }
-
-    SDL_Rect SceneRenderer::world_to_screen_rect(const SceneState& state, const GameObject& object) noexcept
-    {
-        const Camera& camera = active_camera(state);
-        const float zoom = std::max(camera.zoom, 0.01f);
-
-        return SDL_Rect{
-            static_cast<int>(std::round((object.transform.x - camera.x) * zoom)),
-            static_cast<int>(std::round((object.transform.y - camera.y) * zoom)),
-            static_cast<int>(std::round(static_cast<float>(object.size.width) * zoom)),
-            static_cast<int>(std::round(static_cast<float>(object.size.height) * zoom))
-        };
-    }
-
     bool SceneRenderer::is_rect_visible(const SceneState& state, const SDL_Rect& rect) noexcept
     {
         return rect.x + rect.w >= 0 &&
@@ -59,7 +41,7 @@ namespace prune {
         const int grid_size = std::max(1, state.grid_options.grid_size);
         const int major_every = 4; // 16px * 4 = 64px
 
-        const Camera& camera = active_camera(state);
+        const Camera& camera = state.camera.active();
 
         const float zoom = std::max(camera.zoom, 0.01f);
 
@@ -149,7 +131,7 @@ namespace prune {
 
     void SceneRenderer::draw_rectangle_object(SDL_Renderer* renderer, const SceneState& state, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline) const
     {
-        SDL_Rect rect = world_to_screen_rect(state, object);
+        SDL_Rect rect = state.camera.world_to_screen_rect(object);
 
         if (!is_rect_visible(state, rect)) {
             return;
@@ -169,7 +151,7 @@ namespace prune {
 
     void SceneRenderer::draw_sprite_object(SDL_Renderer* renderer, const SceneState& state, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline)
     {
-        SDL_Rect rect = world_to_screen_rect(state, object);
+        SDL_Rect rect = state.camera.world_to_screen_rect(object);
 
         if (!is_rect_visible(state, rect)) {
             return;
@@ -218,7 +200,7 @@ namespace prune {
 
     void SceneRenderer::draw_player_facing_indicator(SDL_Renderer* renderer, const SceneState& state, const GameObject& player) const
     {
-        const SDL_Rect rect = world_to_screen_rect(state, player);
+        const SDL_Rect rect = state.camera.world_to_screen_rect(player);
 
         const int center_x = rect.x + (rect.w / 2);
         const int center_y = rect.y + (rect.h / 2);

@@ -40,17 +40,8 @@ namespace prune {
         GridOptions& get_grid_options();
         SceneOptions& get_scene_options();
 
-        CameraState& get_camera_state() noexcept;
-        const CameraState& get_camera_state() const noexcept;
-
-        Camera& get_editor_camera() noexcept;
-        const Camera& get_editor_camera() const noexcept;
-
-        Camera& get_game_camera() noexcept;
-        const Camera& get_game_camera() const noexcept;
-
-        Camera& get_active_camera() noexcept;
-        const Camera& get_active_camera() const noexcept;
+        SceneCamera& get_camera() noexcept;
+        const SceneCamera& get_camera() const noexcept;
 
         SimpleShooterOptions& get_simple_shooter_options() noexcept;
         const SimpleShooterOptions& get_simple_shooter_options() const noexcept;
@@ -80,11 +71,6 @@ namespace prune {
         // Game logic
         void update_game(float dt, const Input& input);
         void update_player(float dt, const Input& input);
-        void update_cameras();
-        void update_game_camera() noexcept;
-
-        void activate_editor_camera() noexcept;
-        void activate_game_camera() noexcept;
 
         void move_object(GameObject& object, float delta_x, float delta_y, bool resolve_collisions);
         void resolve_player_collisions(GameObject& player);
