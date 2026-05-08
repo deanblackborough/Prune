@@ -99,8 +99,8 @@ namespace prune {
         }
 
         if (m_show_outliner) {
-            ImGui::SetNextWindowPos(ImVec2(967.0f, 36.0f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(306.0f, 239.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(945.0f, 25.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(330.0f, 175.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
                 const Camera& camera = scene.get_camera().active();
@@ -120,8 +120,8 @@ namespace prune {
         }
 
         if (m_show_inspector) {
-            ImGui::SetNextWindowPos(ImVec2(967.0f, 273.f), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(305.0f, 431.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(ImVec2(945.0f, 390.f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(330.0f, 330.0f), ImGuiCond_FirstUseEver);
 
             if (ImGui::Begin("Inspector", &m_show_inspector)) {
                 m_inspector.draw(
@@ -225,8 +225,8 @@ namespace prune {
             return;
         }
 
-        ImGui::SetNextWindowPos(ImVec2(6.0f, 26.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(954.0f, 688.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(5.0f, 25.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(930.0f, 700.0f), ImGuiCond_FirstUseEver);
 
         if (!ImGui::Begin("Scene", &m_show_scene_viewport, ImGuiWindowFlags_NoScrollbar)) {
             scene.set_viewport({});
@@ -299,8 +299,8 @@ namespace prune {
 
     void Ui::draw_simple_shooter_panel(SandboxScene& scene)
     {
-        ImGui::SetNextWindowPos(ImVec2(1280.0f, 36.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(280.0f, 190.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(945.0f, 205.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(330.0f, 180.0f), ImGuiCond_FirstUseEver);
 
         if (!ImGui::Begin("Simple Shooter", &m_show_simple_shooter)) {
             ImGui::End();

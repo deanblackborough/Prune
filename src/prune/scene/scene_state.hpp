@@ -53,7 +53,7 @@ namespace prune {
     };
 
     struct SimpleShooterOptions {
-        float enemy_speed = 48.0f;
+        float enemy_speed = 24.0f;
         float bullet_speed = 180.0f;
         float bullet_lifetime = 1.25f;
     };
