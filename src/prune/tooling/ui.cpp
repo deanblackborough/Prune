@@ -283,28 +283,9 @@ namespace prune {
     {
         tooling::EditorLayout::simple_shooter();
 
-        if (!ImGui::Begin("Simple Shooter", &m_show_simple_shooter)) {
-            ImGui::End();
-            return;
+        if (ImGui::Begin("Simple Shooter", &m_show_simple_shooter)) {
+            m_simple_shooter.draw(scene.get_simple_shooter_options());
         }
-
-        SimpleShooterOptions& options = scene.get_simple_shooter_options();
-
-        ImGui::TextUnformatted("Vertical slice controls");
-        ImGui::Separator();
-
-        ImGui::SliderFloat("Enemy speed", &options.enemy_speed, 0.0f, 160.0f, "%.1f");
-        ImGui::SliderFloat("Bullet speed", &options.bullet_speed, 40.0f, 400.0f, "%.1f");
-        ImGui::SliderFloat("Bullet lifetime", &options.bullet_lifetime, 0.2f, 4.0f, "%.2f");
-
-        const GameObject* enemy = scene.enemy_object();
-        ImGui::Text("Enemy: %s", (enemy && enemy->active) ? "alive" : "dead");
-        ImGui::Text("Bullets: %d", scene.bullet_count());
-
-        if (ImGui::Button("Reset enemy")) {
-            scene.reset_simple_shooter();
-        }
-
         ImGui::End();
     }
 } 

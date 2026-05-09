@@ -39,6 +39,7 @@ add_executable(Prune
         src/prune/tooling/options.cpp
         src/prune/tooling/stats.cpp
         src/prune/tooling/editor_layout.cpp
+        src/prune/tooling/simple_shooter.cpp
 
         src/prune/tooling/imgui/property_table.cpp
         src/prune/tooling/imgui/layout.cpp
