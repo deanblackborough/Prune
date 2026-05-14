@@ -5,7 +5,8 @@
 #include <yaml-cpp/yaml.h>
 
 #include "prune/resources/sprites.hpp"
-#include "prune/scene/sandbox_scene.hpp"
+#include "prune/scene/scene_serializer.hpp"
+#include "prune/scene/simple_shooter_factory.hpp"
 
 namespace prune {
 
@@ -398,43 +399,43 @@ namespace prune {
         }
     }
 
-    bool SandboxScene::save_to_file(std::string_view path, std::string& error) const
+    bool SceneSerializer::save_to_file(const SceneState& state, std::string_view path, std::string& error)
     {
         try {
             YAML::Node root;
 
-            root["scene"]["next_object_id"] = m_state.objects.next_id();
-            root["scene"]["player_id"] = m_state.player_id;
+            root["scene"]["next_object_id"] = state.objects.next_id();
+            root["scene"]["player_id"] = state.player_id;
 
-            if (m_state.objects.selected_id() != k_invalid_game_object_id) {
-                root["scene"]["selected_object_id"] = m_state.objects.selected_id();
+            if (state.objects.selected_id() != k_invalid_game_object_id) {
+                root["scene"]["selected_object_id"] = state.objects.selected_id();
             }
 
-            root["cameras"]["mode"] = m_state.camera.state().mode == CameraMode::Editor ? "editor" : "game";
+            root["cameras"]["mode"] = state.camera.state().mode == CameraMode::Editor ? "editor" : "game";
 
-            root["cameras"]["editor"]["x"] = m_state.camera.state().editor.x;
-            root["cameras"]["editor"]["y"] = m_state.camera.state().editor.y;
-            root["cameras"]["editor"]["speed"] = m_state.camera.state().editor.speed;
-            root["cameras"]["editor"]["zoom"] = m_state.camera.state().editor.zoom;
+            root["cameras"]["editor"]["x"] = state.camera.state().editor.x;
+            root["cameras"]["editor"]["y"] = state.camera.state().editor.y;
+            root["cameras"]["editor"]["speed"] = state.camera.state().editor.speed;
+            root["cameras"]["editor"]["zoom"] = state.camera.state().editor.zoom;
 
-            root["cameras"]["game"]["x"] = m_state.camera.state().game.x;
-            root["cameras"]["game"]["y"] = m_state.camera.state().game.y;
-            root["cameras"]["game"]["speed"] = m_state.camera.state().game.speed;
-            root["cameras"]["game"]["zoom"] = m_state.camera.state().game.zoom;
-            root["cameras"]["game"]["follow_player"] = m_state.camera.state().game_options.follow_player;
+            root["cameras"]["game"]["x"] = state.camera.state().game.x;
+            root["cameras"]["game"]["y"] = state.camera.state().game.y;
+            root["cameras"]["game"]["speed"] = state.camera.state().game.speed;
+            root["cameras"]["game"]["zoom"] = state.camera.state().game.zoom;
+            root["cameras"]["game"]["follow_player"] = state.camera.state().game_options.follow_player;
 
-            root["grid"]["show_grid"] = m_state.grid_options.show_grid;
-            root["grid"]["snap_to_grid"] = m_state.grid_options.snap_to_grid;
-            root["grid"]["grid_size"] = m_state.grid_options.grid_size;
-            root["grid"]["nudge_step"] = m_state.grid_options.nudge_step;
-            root["grid"]["shift_nudge_steps"] = m_state.grid_options.shift_nudge_steps;
+            root["grid"]["show_grid"] = state.grid_options.show_grid;
+            root["grid"]["snap_to_grid"] = state.grid_options.snap_to_grid;
+            root["grid"]["grid_size"] = state.grid_options.grid_size;
+            root["grid"]["nudge_step"] = state.grid_options.nudge_step;
+            root["grid"]["shift_nudge_steps"] = state.grid_options.shift_nudge_steps;
 
-            root["options"]["highlight_selected"] = m_state.scene_options.highlight_selected;
+            root["options"]["highlight_selected"] = state.scene_options.highlight_selected;
 
-            root["player"]["speed"] = m_state.player_controller.speed();
+            root["player"]["speed"] = state.player_controller.speed();
 
             YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
-            for (const auto& object : m_state.objects.objects()) {
+            for (const auto& object : state.objects.objects()) {
                 if (!object.runtime.persistent) {
                     continue;
                 }
@@ -463,7 +464,7 @@ namespace prune {
         }
     }
 
-    bool SandboxScene::load_from_file(std::string_view path, std::string& error)
+    bool SceneSerializer::load_from_file(SceneState& state, std::string_view path, std::string& error)
     {
         try {
             const YAML::Node root = YAML::LoadFile(std::string(path));
@@ -619,27 +620,27 @@ namespace prune {
 
             loaded.objects.set_selected_id(loaded.selected_id);
 
-            m_state.objects = std::move(loaded.objects);
-            m_state.player_id = loaded.player_id;
-            m_state.enemy_id = k_invalid_game_object_id;
+            state.objects = std::move(loaded.objects);
+            state.player_id = loaded.player_id;
+            state.enemy_id = k_invalid_game_object_id;
 
-            for (const auto& object : m_state.objects.objects()) {
+            for (const auto& object : state.objects.objects()) {
                 if (object.runtime.behaviour == k_behaviour_enemy) {
-                    m_state.enemy_id = object.id;
+                    state.enemy_id = object.id;
                     break;
                 }
             }
 
-            if (m_state.enemy_id == k_invalid_game_object_id) {
-                m_state.enemy_id = m_state.objects.create_object(create_enemy());
+            if (state.enemy_id == k_invalid_game_object_id) {
+                state.enemy_id = state.objects.create_object(simple_shooter_factory::create_enemy());
             }
 
-            m_state.grid_options = loaded.grid_options;
-            m_state.scene_options = loaded.scene_options;
-            m_state.camera.state() = loaded.camera_state;
-            m_state.player_controller.set_speed(loaded.player_speed);
+            state.grid_options = loaded.grid_options;
+            state.scene_options = loaded.scene_options;
+            state.camera.state() = loaded.camera_state;
+            state.player_controller.set_speed(loaded.player_speed);
 
-            m_state.camera.update_game_camera(m_state.viewport, player_object());
+            state.camera.update_game_camera(state.viewport, state.objects.get_by_id(state.player_id));
 
             return true;
         }

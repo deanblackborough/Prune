@@ -21,13 +21,17 @@ add_executable(Prune
         src/prune/scene/game_object.cpp
         src/prune/scene/game_object_manager.cpp
         src/prune/scene/player_controller.cpp
+        src/prune/scene/collision.cpp
 
         src/prune/scene/scene_renderer.cpp
         src/prune/scene/scene_camera.cpp
         src/prune/scene/scene_interaction.cpp
+        src/prune/scene/scene_serializer.cpp
         
         src/prune/scene/sandbox_scene.cpp        
-        src/prune/scene/sandbox_scene_serialization.cpp
+
+        src/prune/scene/simple_shooter_factory.cpp
+        src/prune/scene/simple_shooter_behaviour.cpp
 
         src/prune/resources/sprites.cpp
 
