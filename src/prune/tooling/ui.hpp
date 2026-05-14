@@ -13,18 +13,18 @@
 
 namespace prune {
 
-    class SandboxScene;
+    class SimpleShooterScene;
 
     class Ui {
     public:
         ~Ui();
 
-        void build(SandboxScene& scene, SDL_Renderer* renderer);
-        void render_scene_viewport_content(SandboxScene& scene, SDL_Renderer* renderer);
+        void build(SimpleShooterScene& scene, SDL_Renderer* renderer);
+        void render_scene_viewport_content(SimpleShooterScene& scene, SDL_Renderer* renderer);
 
     private:
-        void draw_scene_viewport(SandboxScene& scene, SDL_Renderer* renderer);
-        void draw_simple_shooter_panel(SandboxScene& scene);
+        void draw_scene_viewport(SimpleShooterScene& scene, SDL_Renderer* renderer);
+        void draw_simple_shooter_panel(SimpleShooterScene& scene);
 
         void ensure_scene_render_target(SDL_Renderer* renderer, int width, int height);
         void destroy_scene_render_target();

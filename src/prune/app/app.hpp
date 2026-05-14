@@ -2,7 +2,7 @@
 
 #include "prune/core/input.hpp"
 #include "prune/core/window.hpp"
-#include "prune/scene/sandbox_scene.hpp"
+#include "prune/scene/simple_shooter_scene.hpp"
 
 #include <SDL2/SDL.h>
 #include <memory>
@@ -57,7 +57,7 @@ namespace prune {
         std::unique_ptr<Window> m_window;
         std::unique_ptr<Time> m_time;
         std::unique_ptr<Input> m_input;
-        std::unique_ptr<SandboxScene> m_scene;
+        std::unique_ptr<SimpleShooterScene> m_scene;
         std::unique_ptr<Ui> m_ui;
 
         float m_fixed_timestep = 1.0f / 60.0f;

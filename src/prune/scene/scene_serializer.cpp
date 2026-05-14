@@ -22,6 +22,7 @@ namespace prune {
             GridOptions grid_options{};
             SceneOptions scene_options{};
             CameraState camera_state{};
+            SimpleShooterOptions simple_shooter_options{};
             float player_speed = 256.0f;
         };
 
@@ -434,6 +435,10 @@ namespace prune {
 
             root["player"]["speed"] = state.player_controller.speed();
 
+            root["simple_shooter"]["enemy_speed"] = state.simple_shooter_options.enemy_speed;
+            root["simple_shooter"]["bullet_speed"] = state.simple_shooter_options.bullet_speed;
+            root["simple_shooter"]["bullet_lifetime"] = state.simple_shooter_options.bullet_lifetime;
+
             YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
             for (const auto& object : state.objects.objects()) {
                 if (!object.runtime.persistent) {
@@ -472,11 +477,12 @@ namespace prune {
             const YAML::Node scene = root["scene"];
             const YAML::Node cameras = root["cameras"];
             const YAML::Node player_node = root["player"];
+            const YAML::Node simple_shooter = root["simple_shooter"];
             const YAML::Node grid = root["grid"];
             const YAML::Node options = root["options"];
             const YAML::Node objects = root["objects"];
 
-            if (!scene || !cameras || !player_node || !grid || !options || !objects || !objects.IsSequence()) {
+            if (!scene || !cameras || !player_node || !simple_shooter || !grid || !options || !objects || !objects.IsSequence()) {
                 error = "Save file is missing required top-level sections.";
                 return false;
             }
@@ -547,6 +553,13 @@ namespace prune {
 
             if (!read_required_bool(options, "highlight_selected", loaded.scene_options.highlight_selected)) {
                 error = "options.highlight_selected is missing.";
+                return false;
+            }
+
+            if (!read_required_float(simple_shooter, "enemy_speed", loaded.simple_shooter_options.enemy_speed) ||
+                !read_required_float(simple_shooter, "bullet_speed", loaded.simple_shooter_options.bullet_speed) ||
+                !read_required_float(simple_shooter, "bullet_lifetime", loaded.simple_shooter_options.bullet_lifetime)) {
+                error = "simple_shooter options are incomplete.";
                 return false;
             }
 
@@ -639,6 +652,7 @@ namespace prune {
             state.scene_options = loaded.scene_options;
             state.camera.state() = loaded.camera_state;
             state.player_controller.set_speed(loaded.player_speed);
+            state.simple_shooter_options = loaded.simple_shooter_options;
 
             state.camera.update_game_camera(state.viewport, state.objects.get_by_id(state.player_id));
 

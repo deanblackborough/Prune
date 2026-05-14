@@ -1,6 +1,6 @@
 #include "imgui.h"
 
-#include "prune/scene/sandbox_scene.hpp"
+#include "prune/scene/simple_shooter_scene.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/ui.hpp"
 
@@ -11,7 +11,7 @@ namespace prune {
         destroy_scene_render_target();
     }
 
-    void Ui::build(SandboxScene& scene, SDL_Renderer* renderer) 
+    void Ui::build(SimpleShooterScene& scene, SDL_Renderer* renderer)
     {
         draw_scene_viewport(scene, renderer);
 
@@ -201,7 +201,7 @@ namespace prune {
         m_scene_render_target_height = height;
     }
 
-    void Ui::draw_scene_viewport(SandboxScene& scene, SDL_Renderer* renderer)
+    void Ui::draw_scene_viewport(SimpleShooterScene& scene, SDL_Renderer* renderer)
     {
         if (!m_show_scene_viewport) {
             scene.set_viewport({});
@@ -254,7 +254,7 @@ namespace prune {
         ImGui::End();
     }
 
-    void Ui::render_scene_viewport_content(SandboxScene& scene, SDL_Renderer* renderer)
+    void Ui::render_scene_viewport_content(SimpleShooterScene& scene, SDL_Renderer* renderer)
     {
         const SceneViewport& viewport = scene.get_viewport();
 
@@ -279,7 +279,7 @@ namespace prune {
         SDL_SetRenderTarget(renderer, previous_target);
     }
 
-    void Ui::draw_simple_shooter_panel(SandboxScene& scene)
+    void Ui::draw_simple_shooter_panel(SimpleShooterScene& scene)
     {
         tooling::EditorLayout::simple_shooter();
 
