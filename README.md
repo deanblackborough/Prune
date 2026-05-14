@@ -24,6 +24,8 @@ Prune is built around this split:
 
 A top-down shooter, platformer, card scene, or puzzle scene should be able to reuse most of the editor while still defining the parts that make that scene type unique.
 
+<img width="1914" height="1123" alt="image" src="https://github.com/user-attachments/assets/9f3705f7-679e-4da1-94dd-e7a9694a3ce1" />
+
 ## Current state
 
 Prune currently has:
