@@ -1,13 +1,14 @@
 #pragma once
 
-#include <array>
 #include <string>
+#include <string_view>
 
 #include <SDL2/SDL.h>
 
-#include "prune/scene/scene_state.hpp"
-#include "prune/scene/scene_renderer.hpp"
 #include "prune/scene/scene_interaction.hpp"
+#include "prune/scene/scene_renderer.hpp"
+#include "prune/scene/scene_state.hpp"
+#include "prune/scene/simple_shooter_behaviour.hpp"
 
 namespace prune {
 
@@ -57,38 +58,15 @@ namespace prune {
         void reset_runtime_state();
         void restore_defaults();
 
-        [[nodiscard]] bool scene_input_enabled() const noexcept;
         [[nodiscard]] bool scene_keyboard_input_enabled() const noexcept;
         [[nodiscard]] bool scene_mouse_input_enabled() const noexcept;
 
         [[nodiscard]] GameObject* player_object() noexcept;
         [[nodiscard]] const GameObject* player_object() const noexcept;
 
-        [[nodiscard]] static GameObject create_player();
-        [[nodiscard]] static GameObject create_initial_block();
-        [[nodiscard]] static GameObject create_enemy();
-
-        // Game logic
-        void update_game(float dt, const Input& input);
-        void update_player(float dt, const Input& input);
-
-        void move_object(GameObject& object, float delta_x, float delta_y, bool resolve_collisions);
-        void resolve_player_collisions(GameObject& player);
-        [[nodiscard]] bool is_overlapping(const GameObject& a, const GameObject& b) const noexcept;
-
-        void update_player_facing(GameObject& player) noexcept;
-        void handle_player_shooting(const Input& input);
-        void respawn_enemy(GameObject& enemy);
-        void create_bullet_from_player(const GameObject& player);
-        void update_enemy(float dt);
-        void update_bullets(float dt);
-        void handle_bullet_enemy_collisions();
-        void cleanup_runtime_objects();
-
         SceneState m_state;
-
         SceneRenderer m_renderer;
-
         SceneInteraction m_interaction;
+        SimpleShooterBehaviour m_simple_shooter;
     };
 }
