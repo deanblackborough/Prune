@@ -9,6 +9,7 @@
 #include "prune/tooling/controls.hpp"
 #include "prune/tooling/stats.hpp"
 #include "prune/tooling/options.hpp"
+#include "prune/tooling/simple_shooter.hpp"
 
 namespace prune {
 
@@ -41,6 +42,7 @@ namespace prune {
         Controls m_controls;
         Stats m_stats;
         Options m_options;
+        SimpleShooter m_simple_shooter;
 
         std::string m_file_status;
         bool m_file_status_is_error = false;
