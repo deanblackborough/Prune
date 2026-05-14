@@ -25,6 +25,24 @@ namespace prune {
         return copy.id;
     }
 
+    void GameObjectManager::remove_inactive_runtime_objects(std::string_view behaviour)
+    {
+        m_objects.erase(
+            std::remove_if(
+                m_objects.begin(),
+                m_objects.end(),
+                [behaviour](const GameObject& object) {
+                    return object.runtime.behaviour == behaviour && !object.active;
+                }
+            ),
+            m_objects.end()
+        );
+
+        if (m_selected_id != k_invalid_game_object_id && get_by_id(m_selected_id) == nullptr) {
+            m_selected_id = k_invalid_game_object_id;
+        }
+    }
+
     bool GameObjectManager::add_loaded_object(const GameObject& object)
     {
         if (object.id == k_invalid_game_object_id) {

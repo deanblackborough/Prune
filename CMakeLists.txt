@@ -28,8 +28,7 @@ add_executable(Prune
         src/prune/scene/scene_interaction.cpp
         src/prune/scene/scene_serializer.cpp
         
-        src/prune/scene/sandbox_scene.cpp        
-
+        src/prune/scene/simple_shooter_scene.cpp        
         src/prune/scene/simple_shooter_factory.cpp
         src/prune/scene/simple_shooter_behaviour.cpp
 

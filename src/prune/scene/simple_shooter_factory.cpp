@@ -2,6 +2,7 @@
 
 #include "prune/core/defaults.hpp"
 #include "prune/scene/simple_shooter_factory.hpp"
+#include "prune/scene/simple_shooter_ids.hpp"
 
 namespace prune::simple_shooter_factory {
 
@@ -10,7 +11,7 @@ namespace prune::simple_shooter_factory {
         GameObject player;
         player.name = "Player";
         player.type = GameObjectType::Object;
-        player.runtime.behaviour = "simple_shooter.player";
+        player.runtime.behaviour = simple_shooter_ids::player_behaviour;
         player.editor.renameable = false;
         player.editor.movable = false;
         player.editor.deletable = false;

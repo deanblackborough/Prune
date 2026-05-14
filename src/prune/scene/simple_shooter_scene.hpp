@@ -12,12 +12,11 @@
 
 namespace prune {
 
-    class SandboxScene {
+    class SimpleShooterScene {
     public:
-        SandboxScene(int window_width, int window_height);
-        SandboxScene(const SandboxScene&) = delete;
-        SandboxScene& operator=(const SandboxScene&) = delete;
-
+        SimpleShooterScene(int window_width, int window_height);
+        SimpleShooterScene(const SimpleShooterScene&) = delete;
+        SimpleShooterScene& operator=(const SimpleShooterScene&) = delete;
         void on_enter();
         void on_exit();
         void update(float dt, const Input& input);

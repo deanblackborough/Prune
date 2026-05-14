@@ -1,101 +1,190 @@
-# Short-term roadmap for editor development
+# Notes
 
-## Step 1 – quick cleanup first
+## Current focus
 
-Before adding anything new, tidy a couple of small things that will just get annoying later:
+Prune now has enough editor and runtime pieces to start testing the real idea:
 
-Stop hardcoding 16 everywhere, define a default size properly
-Validate sprite keys on load so things don’t silently fail
-Maybe group this into a small constants file or similar
+A live 2D editor/runtime where generic editor tools are shared, but each scene type can define its own behaviour, tools, panels, and inspectors.
 
-## Step 2 – object dragging in the scene
+The current simple shooter slice is not meant to become a full game yet. It exists to expose where the architecture needs to bend before adding more scene types.
 
-This is the main bit.
+## Immediate cleanup branch
 
-What I want:
-Click to select (already works)
-Click + hold on selected object → start dragging
-Mouse movement moves the object in world space
-Movement uses proper world coords, not screen hacks
-Grid snapping can apply while dragging (optional for now)
-Probably don’t allow dragging the player yet, or at least be careful with it
-Why this next
+Before adding new features, clean up the current structure.
 
-Right now everything is inspector-driven. That’s fine for testing, but it’s not how an editor should feel.
+### Goals
 
-Dragging objects in the scene:
+- Rename SandboxScene to SimpleShooterScene
+- Save and load SimpleShooterOptions
+- Add a runtime pause option
+- Move simple shooter behaviour string constants into one place
+- Stop runtime cleanup from bypassing GameObjectManager
+- Update README and Notes to match the current roadmap
 
-makes it immediately more usable
-properly tests camera + coordinate handling
-sets the base for gizmos later
+### Why
 
-This feels like the first “this is actually an editor” moment.
+The project is about to move from one scene type to multiple scene types. The current code mostly supports that direction, but the naming and a few ownership boundaries still reflect the earlier sandbox phase.
 
-## Step 3 – small gameplay slice
+## Next feature branch: transform gizmos
 
-Once dragging is in, then it’s worth adding a tiny bit of gameplay.
+The next major editor feature should be basic transform gizmos.
 
-Keep it simple:
+### First version
 
-Player can face a direction
-Player can shoot something basic
-One enemy that moves towards the player
-Simple collision (bullet kills enemy)
+- Select an object
+- Show a move gizmo at the object origin or centre
+- Drag on X axis
+- Drag on Y axis
+- Drag freely from centre handle
+- Respect grid snapping
+- Only support position at first
 
-This isn’t about building a game yet, just stress testing the setup.
+### Not yet
 
-I expect this will highlight where the current structure starts to break down.
+- Rotation
+- Scale
+- Multi-select
+- Pivot editing
+- Undo/redo integration
 
-Example:
+### Why
 
-one scene type: “simple shooter” or “top-down movement”
-minimal behaviour:
-player moves
-one enemy type
-basic interaction (collision or shooting)
-minimal UI:
-scene-specific inspector field or two
-maybe one custom panel
+Dragging objects directly proved the viewport interaction model. Gizmos are the next step because they force the editor to formalise tools instead of baking interaction directly into SceneInteraction.
 
-## Step 4 – scene-specific stuff (later)
+## Next architecture branch: scene type boundary
 
-After the gameplay slice, then look at:
+After gizmos start to exist, introduce a clearer scene type boundary.
 
-Splitting scene, it is doing too much right now.
+Expected direction:
 
-Maybe, Scene, Scene Objects, Scene Renders, Scene Tools, Scene Behaviours, or something like that.
+- Generic editor owns:
+  - viewport
+  - outliner
+  - generic inspector
+  - grid
+  - camera controls
+  - save/load shell
+  - object selection
+  - generic object transforms
 
-splitting scene types properly (top-down, platformer, etc.)
-pulling behaviour out of SandboxScene
-introducing scene-specific tooling
+- Scene type owns:
+  - runtime update
+  - scene-specific options
+  - scene-specific panels
+  - scene-specific inspector sections
+  - scene-specific object creation
+  - scene-specific serialization data
 
-Doing this now would just be guessing. Better to wait until the gameplay slice exposes what’s actually needed.
+Do not over-design this before the second scene exists.
 
-## Misc fixes
+## Second scene type
 
-- Sprites need to rotate/switch based on player direction
-- We are duplicaing 16 everywhere, should be a constant
-- Validate sprites against the library when loading (don’t just fail silently)
+The second scene type should be small and intentionally different from the shooter.
 
-## What comes next?
+Best candidate:
 
-- Proper transform gizmos (translate, rotate, scale, axis handles)
-- Scene-specific tools (different controls per scene type)
-- Behaviour system (move logic out of SandboxScene)
-- Sprite system expansion (animation, facing, states)
-- Simple collision system (solid objects, triggers, interactions)
-- Input abstraction (decouple editor input from gameplay input)
-- Camera improvements (zoom, bounds, smoothing, multiple cameras)
-- Undo/redo system (editor usability baseline)
-- Object duplication & multi-select (basic editor workflow)
-- Prefab-style objects (reusable setups, not full system yet)
-- Save/load iteration (stability, versioning later)
-- Debug overlays (collision, bounds, state visualisation)
-- Basic UI for games (text, simple HUD elements)
-- Audio hooks (very light, just enough for feedback)
-- Scene switching / multiple scenes
-- Plugin-style scene architecture (tools + behaviour per scene type)
-- Asset handling pass (still simple, no heavy pipeline)
-- Performance pass (only once systems exist)
-- Packaging / build flow (run outside editor cleanly)
-- Documentation / examples (show intent of the project)
+### Platformer prototype
+
+Why:
+
+- Gravity
+- Jumping
+- Ground checks
+- Different camera expectations
+- Different scene-specific settings
+- Different inspector needs
+
+Minimum slice:
+
+- Player affected by gravity
+- Solid blocks
+- Jump
+- Horizontal movement
+- One platformer-specific settings panel:
+  - gravity
+  - jump strength
+  - move speed
+
+This will quickly show whether the editor shell is genuinely reusable.
+
+## Sprite handling pass
+
+Sprite handling needs a dedicated improvement pass.
+
+### Short-term
+
+- Keep the resource map simple
+- Validate sprite keys on load
+- Add sprite selection in inspector
+- Show missing sprite fallback clearly
+- Support facing-based sprite selection or rotation
+
+### Later
+
+- Sprite sheets
+- Animation states
+- Scene-specific sprite rules
+- Asset browser
+- Hot reload
+
+## One-to-two month plan
+
+### Week 1
+
+- Cleanup branch
+- Rename SandboxScene
+- Save/load SimpleShooterOptions
+- Add pause
+- Centralise behaviour IDs
+- Update docs
+
+### Week 2
+
+- Basic move gizmo
+- Pull gizmo state out of SceneInteraction
+- Keep position-only
+
+### Week 3
+
+- Improve sprite selection
+- Add missing sprite fallback handling
+- Add facing sprite/rotation decision
+
+### Week 4
+
+- Extract first scene-type seam
+- Keep it small
+- Do not build plugin architecture yet
+
+### Weeks 5-6
+
+- Add platformer scene prototype
+- Reuse generic panels
+- Add platformer-specific settings panel
+- Identify what must become generic
+
+### Weeks 7-8
+
+- Refine scene-type boundary
+- Improve save/load structure
+- Add small debug overlays
+- Decide whether card/tetris scene or top-down shooter expansion comes next
+
+## Later roadmap
+
+- Transform gizmos
+- Rotate and scale tools
+- Undo/redo
+- Multi-select
+- Object duplication improvements
+- Scene-specific inspectors
+- Scene-specific creation tools
+- Better sprite system
+- Animation
+- Audio hooks
+- Debug overlays
+- Collision visualisation
+- Scene switching
+- Multiple scene examples
+- Packaging/build polish
+- Example projects

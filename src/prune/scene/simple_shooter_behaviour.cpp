@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 
 #include "prune/scene/collision.hpp"
+#include "prune/scene/simple_shooter_ids.hpp"
 #include "prune/scene/simple_shooter_behaviour.hpp"
 #include "prune/scene/simple_shooter_factory.hpp"
 
@@ -16,6 +17,10 @@ namespace prune {
         bool keyboard_input_enabled
     )
     {
+        if (state.simple_shooter_options.paused) {
+            return;
+        }
+
         update_player(state, dt, input, keyboard_input_enabled);
         handle_player_shooting(state, input, keyboard_input_enabled);
         update_enemy(state, dt);
@@ -245,17 +250,6 @@ namespace prune {
 
     void SimpleShooterBehaviour::cleanup_runtime_objects(SceneState& state)
     {
-        auto& objects = state.objects.objects();
-
-        objects.erase(
-            std::remove_if(
-                objects.begin(),
-                objects.end(),
-                [](const GameObject& object) {
-                    return object.runtime.behaviour == "simple_shooter.bullet" && !object.active;
-                }
-            ),
-            objects.end()
-        );
+        state.objects.remove_inactive_runtime_objects(simple_shooter_ids::bullet_behaviour);
     }
 }

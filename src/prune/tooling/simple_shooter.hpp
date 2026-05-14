@@ -1,6 +1,6 @@
 #pragma once
 
-#include "prune/scene/sandbox_scene.hpp"
+#include "prune/scene/simple_shooter_scene.hpp"
 
 namespace prune {
 

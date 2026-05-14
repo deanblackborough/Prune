@@ -1,103 +1,83 @@
 # Prune
 
-Prune is a C++23 2D editor-first game development experiment built with SDL2 and Dear ImGui.
+Prune is a C++23 live 2D editor/runtime experiment built with SDL2 and Dear ImGui.
 
-It is not aiming to be a traditional engine where you “edit here, play there”.
-Instead, the goal is a live system where editing and gameplay happen in the same space, with scene types defining their own behaviour, tools, and workflows.
+It is not trying to be a traditional engine where editing happens in one mode and gameplay happens in another. The goal is a play-and-build system where the editor is part of the runtime, and different scene types can define their own behaviour, tools, panels, inspectors, and workflows.
 
 ## Why this exists
 
-My earlier attempt [`prune-2d`](https://github.com/deanblackborough/prune-2d) leaned too far 
-towards “build engine pieces first and hope the game and editor appeared later”.
+My earlier attempt, prune-2d, leaned too far towards building generic engine pieces first and hoping the editor and game would appear later.
 
 Prune is take two.
 
-The goal here is to build the runtime, editor, and interaction model together from the start 
-so the project grows around live editing rather than adding tooling later. That means solving editor problems early: scene ownership, input focus, picking, inspection, save/load, and the separation between editor and game behaviour.
+The goal is to build the editor, runtime, and interaction model together from the start. That means solving editor problems early: viewport ownership, input focus, picking, object inspection, save/load, scene-specific behaviour, and the boundary between generic editor tools and scene-owned tools.
 
-## Screenshot
+## Core idea
 
-Current editor state:
+Prune is built around this split:
 
-<img width="1921" height="1130" alt="image" src="https://github.com/user-attachments/assets/768f6685-5962-4b6b-ae88-564f5bf0263d" />
+- generic editor shell
+- generic object editing
+- generic rendering and scene state
+- scene-specific behaviour
+- scene-specific tools and panels
 
-The scene viewport is interactive — objects can be selected, dragged, and edited directly.
+A top-down shooter, platformer, card scene, or puzzle scene should be able to reuse most of the editor while still defining the parts that make that scene type unique.
 
-Everything shown is live; there is no separate “play mode”.
+## Current state
 
-## Philosophy
+Prune currently has:
 
-Most tools separate the editor and the game.
-
-Prune is exploring a different direction:
-
-- The editor is part of the runtime
-- The scene is always live
-- Tools are defined by the scene, not globally
-- Interaction happens in the viewport, not only through panels
-
-This means a platformer scene, a top-down scene, or even a card game scene can define their own:
-- input behaviour
-- inspectors
-- editing tools
-- rendering rules
-
-Rather than forcing everything into one editor model.
-
-## Current State
-
-Prune is early, but already behaves like a small editor rather than a demo.
-
-### Editor
-
-- Dedicated scene viewport (not full-window rendering)
+- Dedicated ImGui scene viewport
+- Live object selection and dragging
 - Outliner and inspector panels
-- Live property editing
-- Camera controls (pan, player follow)
-- Grid rendering with optional snapping
+- Grid rendering and snapping
+- Editor camera and game camera separation
+- YAML scene save/load
+- Rectangle and sprite rendering
+- A small simple-shooter behaviour slice:
+  - player movement
+  - facing direction
+  - shooting
+  - bullets
+  - enemy movement
+  - basic bullet/enemy collision
+  - scene-specific tuning panel
 
-### Scene Interaction
-
-- Click to select objects
-- Drag objects directly in the viewport (world-space correct)
-- Keyboard nudging (grid-aware)
-- Editor camera and player camera separation
-- Player object with separate controls (WASD)
-
-### Rendering
-
-- Basic render types:
-  - Rectangle
-  - Sprite (resource-based, minimal implementation)
-- Visibility and simple flags
-
-### Serialization
-
-- YAML-based save/load
-- Scene state includes:
-	- objects
-	- transforms
-	- grid settings
-	- camera state
-
-This is intentionally simple — clarity before abstraction.
+This is still early, but it is now more than a rendering demo. The current focus is proving that live editing and scene-specific behaviour can coexist cleanly.
 
 ## Roadmap
 
-Short-term focus:
+Near-term:
 
-- Viewport improvements (zoom, focus, boundaries)
-- Gizmos (move / rotate / scale)
-- Improved sprite handling
-- First scene-specific gameplay implementation
+- Rename the first scene type away from SandboxScene
+- Tighten save/load for scene-specific settings
+- Add runtime pause
+- Improve sprite handling
+- Add transform gizmos
+- Extract the first real scene-type boundary
+- Add a second scene type to test the architecture
 
-More detail: see [`notes`](Notes.md)
+Medium-term:
 
-### Long-term direction
+- Top-down shooter scene
+- Platformer scene
+- Card or grid-based puzzle scene
+- Scene-specific inspectors
+- Scene-specific tools
+- Better sprite/facing/animation support
+- Undo/redo
+- Object duplication and multi-select
+- Debug overlays
+- Basic audio hooks
 
-- Scene-defined tools and inspectors
-- Play-and-edit simultaneously without mode switching
-- Extensible architecture for different game styles
+Long-term:
+
+- Live play-and-build workflow
+- Scene-defined tools
+- Scene-defined runtime behaviour
+- Multiple scene types sharing the same editor shell
+- Fast prototyping workflow for game jams, education, and small 2D experiments
 
 ## Build
 
@@ -107,9 +87,10 @@ More detail: see [`notes`](Notes.md)
 - CMake
 - vcpkg
 
-### Dependencies:
+### Dependencies
 
 - SDL2
+- SDL2_image
 - Dear ImGui
 - yaml-cpp
 
@@ -120,15 +101,3 @@ cmake -B build -S . \
   -DCMAKE_TOOLCHAIN_FILE=[vcpkg]/scripts/buildsystems/vcpkg.cmake
 
 cmake --build build
-```
-
-## Credits
-
-- Icons by Kenney — https://www.kenney.nl
-
-## Status
-
-Active and evolving.
-
-The focus is on building a usable editor alongside the engine, not stabilising APIs early.
-Expect refactors as the architecture becomes clearer.
