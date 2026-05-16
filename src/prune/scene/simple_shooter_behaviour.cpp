@@ -215,7 +215,7 @@ namespace prune {
     void SimpleShooterBehaviour::update_bullets(SceneState& state, float dt)
     {
         for (auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour != "simple_shooter.bullet" || !object.active) {
+            if (object.runtime.behaviour != simple_shooter_ids::bullet_behaviour || !object.active) {
                 continue;
             }
 
