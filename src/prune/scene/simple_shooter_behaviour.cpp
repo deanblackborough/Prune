@@ -12,36 +12,37 @@ namespace prune {
 
     void SimpleShooterBehaviour::update(
         SceneState& state,
+        SimpleShooterState& shooter_state,
         float dt,
         const Input& input,
         bool keyboard_input_enabled
     )
     {
-        if (state.simple_shooter_options.paused) {
+        if (shooter_state.options.paused) {
             return;
         }
 
         update_player(state, dt, input, keyboard_input_enabled);
-        handle_player_shooting(state, input, keyboard_input_enabled);
-        update_enemy(state, dt);
+        handle_player_shooting(state, shooter_state, input, keyboard_input_enabled);
+        update_enemy(state, shooter_state, dt);
         update_bullets(state, dt);
-        handle_bullet_enemy_collisions(state);
+        handle_bullet_enemy_collisions(state, shooter_state);
         cleanup_runtime_objects(state);
     }
 
-    void SimpleShooterBehaviour::reset(SceneState& state)
+    void SimpleShooterBehaviour::reset(SceneState& state, SimpleShooterState& shooter_state)
     {
         for (auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour == "simple_shooter.bullet") {
+            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour) {
                 object.active = false;
             }
         }
 
         cleanup_runtime_objects(state);
 
-        GameObject* enemy = enemy_object(state);
+        GameObject* enemy = enemy_object(state, shooter_state);
         if (!enemy) {
-            state.enemy_id = state.objects.create_object(simple_shooter_factory::create_enemy());
+            shooter_state.enemy_id = state.objects.create_object(simple_shooter_factory::create_enemy());
             return;
         }
 
@@ -53,7 +54,7 @@ namespace prune {
         int count = 0;
 
         for (const auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour == "simple_shooter.bullet" && object.active) {
+            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour && object.active) {
                 ++count;
             }
         }
@@ -61,14 +62,20 @@ namespace prune {
         return count;
     }
 
-    GameObject* SimpleShooterBehaviour::enemy_object(SceneState& state) const noexcept
+    GameObject* SimpleShooterBehaviour::enemy_object(
+        SceneState& state,
+        const SimpleShooterState& shooter_state
+    ) const noexcept
     {
-        return state.objects.get_by_id(state.enemy_id);
+        return state.objects.get_by_id(shooter_state.enemy_id);
     }
 
-    const GameObject* SimpleShooterBehaviour::enemy_object(const SceneState& state) const noexcept
+    const GameObject* SimpleShooterBehaviour::enemy_object(
+        const SceneState& state,
+        const SimpleShooterState& shooter_state
+    ) const noexcept
     {
-        return state.objects.get_by_id(state.enemy_id);
+        return state.objects.get_by_id(shooter_state.enemy_id);
     }
 
     GameObject* SimpleShooterBehaviour::player_object(SceneState& state) const noexcept
@@ -142,6 +149,7 @@ namespace prune {
 
     void SimpleShooterBehaviour::handle_player_shooting(
         SceneState& state,
+        const SimpleShooterState& shooter_state,
         const Input& input,
         bool keyboard_input_enabled
     )
@@ -162,15 +170,19 @@ namespace prune {
         state.objects.create_object(
             simple_shooter_factory::create_bullet_from_player(
                 *player,
-                state.simple_shooter_options.bullet_speed,
-                state.simple_shooter_options.bullet_lifetime
+                shooter_state.options.bullet_speed,
+                shooter_state.options.bullet_lifetime
             )
         );
     }
 
-    void SimpleShooterBehaviour::update_enemy(SceneState& state, float dt)
+    void SimpleShooterBehaviour::update_enemy(
+        SceneState& state,
+        const SimpleShooterState& shooter_state,
+        float dt
+    )
     {
-        GameObject* enemy = enemy_object(state);
+        GameObject* enemy = enemy_object(state, shooter_state);
         const GameObject* player = player_object(state);
 
         if (!enemy || !enemy->active || !player) {
@@ -194,8 +206,8 @@ namespace prune {
         direction_x /= length;
         direction_y /= length;
 
-        enemy->velocity.x = direction_x * state.simple_shooter_options.enemy_speed;
-        enemy->velocity.y = direction_y * state.simple_shooter_options.enemy_speed;
+        enemy->velocity.x = direction_x * shooter_state.options.enemy_speed;
+        enemy->velocity.y = direction_y * shooter_state.options.enemy_speed;
 
         move_object(state, *enemy, enemy->velocity.x * dt, enemy->velocity.y * dt, false);
     }
@@ -217,15 +229,18 @@ namespace prune {
         }
     }
 
-    void SimpleShooterBehaviour::handle_bullet_enemy_collisions(SceneState& state)
+    void SimpleShooterBehaviour::handle_bullet_enemy_collisions(
+        SceneState& state,
+        const SimpleShooterState& shooter_state
+    )
     {
-        GameObject* enemy = enemy_object(state);
+        GameObject* enemy = enemy_object(state, shooter_state);
         if (!enemy || !enemy->active) {
             return;
         }
 
         for (auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour != "simple_shooter.bullet" || !object.active) {
+            if (object.runtime.behaviour != simple_shooter_ids::bullet_behaviour || !object.active) {
                 continue;
             }
 

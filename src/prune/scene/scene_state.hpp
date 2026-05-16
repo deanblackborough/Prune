@@ -52,26 +52,17 @@ namespace prune {
         Transform mouse_start_world{};
     };
 
-    struct SimpleShooterOptions {
-        bool paused = false;
-        float enemy_speed = 24.0f;
-        float bullet_speed = 180.0f;
-        float bullet_lifetime = 1.25f;
-    };
-
     struct SceneState {
         GameObjectManager objects;
         PlayerController player_controller;
 
         GameObjectId player_id = k_invalid_game_object_id;
-        GameObjectId enemy_id = k_invalid_game_object_id;
 
         SceneViewport viewport{};
         GridOptions grid_options{};
         SceneOptions scene_options{};
         DragState drag_state{};
         SceneCamera camera{};
-        SimpleShooterOptions simple_shooter_options{};
     };
 
 }
