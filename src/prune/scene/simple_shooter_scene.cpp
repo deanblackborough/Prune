@@ -47,7 +47,7 @@ namespace prune {
         m_state.objects.clear();
         m_state.player_id = k_invalid_game_object_id;
 
-        m_state.enemy_id = k_invalid_game_object_id;
+        m_simple_shooter_state.enemy_id = k_invalid_game_object_id;
     }
 
     void SimpleShooterScene::render(SDL_Renderer* renderer)
@@ -87,22 +87,32 @@ namespace prune {
 
     SimpleShooterOptions& SimpleShooterScene::get_simple_shooter_options() noexcept
     {
-        return m_state.simple_shooter_options;
+        return m_simple_shooter_state.options;
     }
 
     const SimpleShooterOptions& SimpleShooterScene::get_simple_shooter_options() const noexcept
     {
-        return m_state.simple_shooter_options;
+        return m_simple_shooter_state.options;
+    }
+
+    SimpleShooterState& SimpleShooterScene::get_simple_shooter_state() noexcept
+    {
+        return m_simple_shooter_state;
+    }
+
+    const SimpleShooterState& SimpleShooterScene::get_simple_shooter_state() const noexcept
+    {
+        return m_simple_shooter_state;
     }
 
     GameObject* SimpleShooterScene::enemy_object() noexcept
     {
-        return m_simple_shooter.enemy_object(m_state);
+        return m_simple_shooter.enemy_object(m_state, m_simple_shooter_state);
     }
 
     const GameObject* SimpleShooterScene::enemy_object() const noexcept
     {
-        return m_simple_shooter.enemy_object(m_state);
+        return m_simple_shooter.enemy_object(m_state, m_simple_shooter_state);
     }
 
     int SimpleShooterScene::bullet_count() const noexcept
@@ -112,12 +122,19 @@ namespace prune {
 
     void SimpleShooterScene::reset_simple_shooter()
     {
-        m_simple_shooter.reset(m_state);
+        m_simple_shooter.reset(m_state, m_simple_shooter_state);
     }
 
     void SimpleShooterScene::update(float dt, const Input& input)
     {
-        m_simple_shooter.update(m_state, dt, input, scene_keyboard_input_enabled());
+        m_simple_shooter.update(
+            m_state,
+            m_simple_shooter_state,
+            dt,
+            input,
+            scene_keyboard_input_enabled()
+        );
+
         m_interaction.update(m_state, dt, input);
         m_state.camera.update_game_camera(m_state.viewport, player_object());
     }
@@ -144,8 +161,7 @@ namespace prune {
         m_state.drag_state = {};
         m_state.player_controller = {};
 
-        m_state.enemy_id = k_invalid_game_object_id;
-        m_state.simple_shooter_options = {};
+        m_simple_shooter_state = {};
     }
 
     void SimpleShooterScene::restore_defaults()
@@ -154,7 +170,7 @@ namespace prune {
 
         m_state.player_id = m_state.objects.create_object(simple_shooter_factory::create_player());
         m_state.objects.create_object(simple_shooter_factory::create_initial_block());
-        m_state.enemy_id = m_state.objects.create_object(simple_shooter_factory::create_enemy());
+        m_simple_shooter_state.enemy_id = m_state.objects.create_object(simple_shooter_factory::create_enemy());
         m_state.objects.select(m_state.player_id);
 
         m_state.camera.update_game_camera(m_state.viewport, player_object());
@@ -169,11 +185,11 @@ namespace prune {
 
     bool SimpleShooterScene::save_to_file(std::string_view path, std::string& error) const
     {
-        return SceneSerializer::save_to_file(m_state, path, error);
+        return SceneSerializer::save_to_file(m_state, m_simple_shooter_state, path, error);
     }
 
     bool SimpleShooterScene::load_from_file(std::string_view path, std::string& error)
     {
-        return SceneSerializer::load_from_file(m_state, path, error);
+        return SceneSerializer::load_from_file(m_state, m_simple_shooter_state, path, error);
     }
 }

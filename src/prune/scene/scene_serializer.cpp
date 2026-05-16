@@ -7,13 +7,11 @@
 #include "prune/resources/sprites.hpp"
 #include "prune/scene/scene_serializer.hpp"
 #include "prune/scene/simple_shooter_factory.hpp"
+#include "prune/scene/simple_shooter_ids.hpp"
 
 namespace prune {
 
     namespace {
-
-        constexpr const char* k_behaviour_player = "simple_shooter.player";
-        constexpr const char* k_behaviour_enemy = "simple_shooter.enemy";
 
         struct LoadedSceneState {
             GameObjectManager objects;
@@ -22,7 +20,7 @@ namespace prune {
             GridOptions grid_options{};
             SceneOptions scene_options{};
             CameraState camera_state{};
-            SimpleShooterOptions simple_shooter_options{};
+            SimpleShooterState simple_shooter_state{};
             float player_speed = 256.0f;
         };
 
@@ -400,7 +398,12 @@ namespace prune {
         }
     }
 
-    bool SceneSerializer::save_to_file(const SceneState& state, std::string_view path, std::string& error)
+    bool SceneSerializer::save_to_file(
+        const SceneState& state,
+        const SimpleShooterState& shooter_state,
+        std::string_view path,
+        std::string& error
+    )
     {
         try {
             YAML::Node root;
@@ -435,9 +438,10 @@ namespace prune {
 
             root["player"]["speed"] = state.player_controller.speed();
 
-            root["simple_shooter"]["enemy_speed"] = state.simple_shooter_options.enemy_speed;
-            root["simple_shooter"]["bullet_speed"] = state.simple_shooter_options.bullet_speed;
-            root["simple_shooter"]["bullet_lifetime"] = state.simple_shooter_options.bullet_lifetime;
+            root["simple_shooter"]["paused"] = shooter_state.options.paused;
+            root["simple_shooter"]["enemy_speed"] = shooter_state.options.enemy_speed;
+            root["simple_shooter"]["bullet_speed"] = shooter_state.options.bullet_speed;
+            root["simple_shooter"]["bullet_lifetime"] = shooter_state.options.bullet_lifetime;
 
             YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
             for (const auto& object : state.objects.objects()) {
@@ -469,7 +473,12 @@ namespace prune {
         }
     }
 
-    bool SceneSerializer::load_from_file(SceneState& state, std::string_view path, std::string& error)
+    bool SceneSerializer::load_from_file(
+        SceneState& state,
+        SimpleShooterState& shooter_state,
+        std::string_view path,
+        std::string& error
+    )
     {
         try {
             const YAML::Node root = YAML::LoadFile(std::string(path));
@@ -556,9 +565,10 @@ namespace prune {
                 return false;
             }
 
-            if (!read_required_float(simple_shooter, "enemy_speed", loaded.simple_shooter_options.enemy_speed) ||
-                !read_required_float(simple_shooter, "bullet_speed", loaded.simple_shooter_options.bullet_speed) ||
-                !read_required_float(simple_shooter, "bullet_lifetime", loaded.simple_shooter_options.bullet_lifetime)) {
+            if (!read_required_bool(simple_shooter, "paused", loaded.simple_shooter_state.options.paused) ||
+                !read_required_float(simple_shooter, "enemy_speed", loaded.simple_shooter_state.options.enemy_speed) ||
+                !read_required_float(simple_shooter, "bullet_speed", loaded.simple_shooter_state.options.bullet_speed) ||
+                !read_required_float(simple_shooter, "bullet_lifetime", loaded.simple_shooter_state.options.bullet_lifetime)) {
                 error = "simple_shooter options are incomplete.";
                 return false;
             }
@@ -582,7 +592,7 @@ namespace prune {
                     return false;
                 }
 
-                if (object.runtime.behaviour == k_behaviour_player) {
+                if (object.runtime.behaviour == simple_shooter_ids::player_behaviour) {
                     ++player_count;
                 }
             }
@@ -605,7 +615,7 @@ namespace prune {
                 return false;
             }
 
-            if (loaded_player->runtime.behaviour != k_behaviour_player) {
+            if (loaded_player->runtime.behaviour != simple_shooter_ids::player_behaviour) {
                 error = "Saved player_id does not point to a player object.";
                 return false;
             }
@@ -635,24 +645,25 @@ namespace prune {
 
             state.objects = std::move(loaded.objects);
             state.player_id = loaded.player_id;
-            state.enemy_id = k_invalid_game_object_id;
+
+            shooter_state = loaded.simple_shooter_state;
+            shooter_state.enemy_id = k_invalid_game_object_id;
 
             for (const auto& object : state.objects.objects()) {
-                if (object.runtime.behaviour == k_behaviour_enemy) {
-                    state.enemy_id = object.id;
+                if (object.runtime.behaviour == simple_shooter_ids::enemy_behaviour) {
+                    shooter_state.enemy_id = object.id;
                     break;
                 }
             }
 
-            if (state.enemy_id == k_invalid_game_object_id) {
-                state.enemy_id = state.objects.create_object(simple_shooter_factory::create_enemy());
+            if (shooter_state.enemy_id == k_invalid_game_object_id) {
+                shooter_state.enemy_id = state.objects.create_object(simple_shooter_factory::create_enemy());
             }
 
             state.grid_options = loaded.grid_options;
             state.scene_options = loaded.scene_options;
             state.camera.state() = loaded.camera_state;
             state.player_controller.set_speed(loaded.player_speed);
-            state.simple_shooter_options = loaded.simple_shooter_options;
 
             state.camera.update_game_camera(state.viewport, state.objects.get_by_id(state.player_id));
 

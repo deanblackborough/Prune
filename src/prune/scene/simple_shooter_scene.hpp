@@ -9,6 +9,7 @@
 #include "prune/scene/scene_renderer.hpp"
 #include "prune/scene/scene_state.hpp"
 #include "prune/scene/simple_shooter_behaviour.hpp"
+#include "prune/scene/simple_shooter_state.hpp"
 
 namespace prune {
 
@@ -46,6 +47,9 @@ namespace prune {
         SimpleShooterOptions& get_simple_shooter_options() noexcept;
         const SimpleShooterOptions& get_simple_shooter_options() const noexcept;
 
+        SimpleShooterState& get_simple_shooter_state() noexcept;
+        const SimpleShooterState& get_simple_shooter_state() const noexcept;
+
         void reset_simple_shooter();
 
         [[nodiscard]] int bullet_count() const noexcept;
@@ -64,6 +68,8 @@ namespace prune {
         [[nodiscard]] const GameObject* player_object() const noexcept;
 
         SceneState m_state;
+        SimpleShooterState m_simple_shooter_state;
+
         SceneRenderer m_renderer;
         SceneInteraction m_interaction;
         SimpleShooterBehaviour m_simple_shooter;
