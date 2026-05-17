@@ -72,7 +72,7 @@ namespace prune {
 
     void SimpleShooterScene::draw_scene_tools(bool& open)
     {
-        tooling::EditorLayout::simple_shooter();
+        tooling::EditorLayout::scene_panel();
 
         if (ImGui::Begin("Simple Shooter", &open)) {
             if (ImGui::Button("Add Block")) {
