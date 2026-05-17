@@ -21,7 +21,7 @@ namespace prune {
     };
 
     struct GameCameraOptions {
-        bool follow_player = true;
+        bool follow_target = true;
     };
 
     struct CameraState {
@@ -52,7 +52,7 @@ namespace prune {
 
         void reset() noexcept;
 
-        void update_game_camera(const SceneViewport& viewport, const GameObject* player) noexcept;
+        void update_game_camera(const SceneViewport& viewport, const GameObject* target) noexcept;
         void pan_editor_by_mouse_delta(int delta_x, int delta_y) noexcept;
 
         [[nodiscard]] Transform screen_to_world(const SceneViewport& viewport, int screen_x, int screen_y) const noexcept;

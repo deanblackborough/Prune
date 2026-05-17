@@ -9,7 +9,6 @@ namespace prune {
 
 	void Stats::draw(
 		GameObjectManager& objects,
-		GameObjectId player_id,
 		const SceneViewport& viewport,
 		const SceneCamera& camera
 	)
@@ -33,7 +32,6 @@ namespace prune {
 			tooling::imgui::property_table::begin("##scene");
 			tooling::imgui::property_table::text("Object count", std::to_string(objects.count()).c_str());
 			tooling::imgui::property_table::text("Selected id", std::to_string(objects.selected_id()).c_str());
-			tooling::imgui::property_table::text("Player id", std::to_string(player_id).c_str());
 			tooling::imgui::property_table::end();
         }
 
@@ -55,13 +53,6 @@ namespace prune {
 			tooling::imgui::property_table::text("Editor Y", std::format("{:.2f}", cameras.editor.y).c_str());
 			tooling::imgui::property_table::text("Game X", std::format("{:.2f}", cameras.game.x).c_str());
 			tooling::imgui::property_table::text("Game Y", std::format("{:.2f}", cameras.game.y).c_str());
-			tooling::imgui::property_table::text("Follow player", cameras.game_options.follow_player ? "true" : "false");
-
-			if (const GameObject* player = objects.get_by_id(player_id)) {
-				tooling::imgui::property_table::text("Player X", std::format("{:.2f}", player->transform.x).c_str());
-				tooling::imgui::property_table::text("Player Y", std::format("{:.2f}", player->transform.y).c_str());
-			}
-
 			tooling::imgui::property_table::end();
 		}
     }

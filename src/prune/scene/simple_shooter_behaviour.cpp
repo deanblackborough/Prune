@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cmath>
 
 #include <SDL2/SDL.h>
@@ -22,7 +21,7 @@ namespace prune {
             return;
         }
 
-        update_player(state, dt, input, keyboard_input_enabled);
+        update_player(state, shooter_state, dt, input, keyboard_input_enabled);
         handle_player_shooting(state, shooter_state, input, keyboard_input_enabled);
         update_enemy(state, shooter_state, dt);
         update_bullets(state, dt);
@@ -78,24 +77,31 @@ namespace prune {
         return state.objects.get_by_id(shooter_state.enemy_id);
     }
 
-    GameObject* SimpleShooterBehaviour::player_object(SceneState& state) const noexcept
+    GameObject* SimpleShooterBehaviour::player_object(
+        SceneState& state,
+        const SimpleShooterState& shooter_state
+    ) const noexcept
     {
-        return state.objects.get_by_id(state.player_id);
+        return state.objects.get_by_id(shooter_state.player_id);
     }
 
-    const GameObject* SimpleShooterBehaviour::player_object(const SceneState& state) const noexcept
+    const GameObject* SimpleShooterBehaviour::player_object(
+        const SceneState& state,
+        const SimpleShooterState& shooter_state
+    ) const noexcept
     {
-        return state.objects.get_by_id(state.player_id);
+        return state.objects.get_by_id(shooter_state.player_id);
     }
 
     void SimpleShooterBehaviour::update_player(
         SceneState& state,
+        SimpleShooterState& shooter_state,
         float dt,
         const Input& input,
         bool keyboard_input_enabled
     )
     {
-        GameObject* player = player_object(state);
+        GameObject* player = player_object(state, shooter_state);
         if (!player) {
             return;
         }
@@ -105,7 +111,7 @@ namespace prune {
             return;
         }
 
-        player->motion.velocity = state.player_controller.movement_velocity(input);
+        player->motion.velocity = shooter_state.player_controller.movement_velocity(input);
 
         const bool is_moving =
             player->motion.velocity.x != 0.0f ||
@@ -168,7 +174,7 @@ namespace prune {
             return;
         }
 
-        const GameObject* player = player_object(state);
+        const GameObject* player = player_object(state, shooter_state);
         if (!player) {
             return;
         }
@@ -189,7 +195,7 @@ namespace prune {
     )
     {
         GameObject* enemy = enemy_object(state, shooter_state);
-        const GameObject* player = player_object(state);
+        const GameObject* player = player_object(state, shooter_state);
 
         if (!enemy || !enemy->lifecycle.active || !player) {
             return;

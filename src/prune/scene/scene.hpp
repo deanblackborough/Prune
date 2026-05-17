@@ -6,7 +6,6 @@
 
 #include "prune/core/input.hpp"
 #include "prune/scene/game_object_manager.hpp"
-#include "prune/scene/player_controller.hpp"
 #include "prune/scene/scene_camera.hpp"
 #include "prune/scene/scene_state.hpp"
 
@@ -39,10 +38,11 @@ namespace prune {
         virtual void draw_scene_tools(bool& open) = 0;
 
         virtual GameObjectManager& get_object_manager() = 0;
-        [[nodiscard]] virtual GameObjectId get_player_id() const = 0;
-        virtual PlayerController& get_player_controller() = 0;
+
         virtual GridOptions& get_grid_options() = 0;
         virtual SceneOptions& get_scene_options() = 0;
+
+        virtual void draw_scene_inspector(GameObject& selected) = 0;
 
         virtual SceneCamera& get_camera() noexcept = 0;
         [[nodiscard]] virtual const SceneCamera& get_camera() const noexcept = 0;

@@ -9,7 +9,7 @@
 
 #include "prune/app/app.hpp"
 #include "prune/core/time.hpp"
-#include "prune/scene/simple_shooter_scene.hpp"
+#include "prune/scene/scene_factory.hpp"
 #include "prune/tooling/theme.hpp"
 #include "prune/tooling/ui.hpp"
 
@@ -23,10 +23,7 @@ namespace prune {
         m_window = std::make_unique<Window>(config.window);
         m_input = std::make_unique<Input>();
         m_time = std::make_unique<Time>();
-        m_scene = std::make_unique<SimpleShooterScene>(
-            m_window->width(),
-            m_window->height()
-        );
+        m_scene = SceneFactory::create(SceneType::SimpleShooter, m_window->width(), m_window->height());
         m_scene->on_enter();
         m_ui = std::make_unique<Ui>();
 

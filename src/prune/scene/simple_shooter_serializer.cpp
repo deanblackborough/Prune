@@ -4,6 +4,9 @@ namespace prune {
 
     void SimpleShooterSerializer::save_to_node(const SimpleShooterState& state, YAML::Node& root)
     {
+        root["simple_shooter"]["player_id"] = state.player_id;
+        root["simple_shooter"]["player_speed"] = state.player_controller.speed();
+
         root["simple_shooter"]["paused"] = state.options.paused;
         root["simple_shooter"]["enemy_speed"] = state.options.enemy_speed;
         root["simple_shooter"]["bullet_speed"] = state.options.bullet_speed;
@@ -23,13 +26,18 @@ namespace prune {
             return false;
         }
 
-        if (!simple_shooter["paused"] ||
+        if (!simple_shooter["player_id"] ||
+            !simple_shooter["player_speed"] ||
+            !simple_shooter["paused"] ||
             !simple_shooter["enemy_speed"] ||
             !simple_shooter["bullet_speed"] ||
             !simple_shooter["bullet_lifetime"]) {
             error = "simple_shooter options are incomplete.";
             return false;
         }
+
+        state.player_id = simple_shooter["player_id"].as<GameObjectId>();
+        state.player_controller.set_speed(simple_shooter["player_speed"].as<float>());
 
         state.options.paused = simple_shooter["paused"].as<bool>();
         state.options.enemy_speed = simple_shooter["enemy_speed"].as<float>();

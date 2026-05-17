@@ -28,7 +28,7 @@ namespace prune {
                 if (ImGui::MenuItem("Save Scene")) {
                     std::string error;
                     if (scene.save_to_file(kSceneFilePath, error)) {
-                        m_file_status = "Saved scene to sandbox_scene.yml";
+                        m_file_status = "Saved scene to simple_shooter_scene.yml";
                         m_file_status_is_error = false;
                     }
                     else {
@@ -96,18 +96,7 @@ namespace prune {
             tooling::EditorLayout::outliner();
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
-                const Camera& camera = scene.get_camera().active();
-                GridOptions& grid_options = scene.get_grid_options();
-
-                m_outliner.draw(
-                    scene.get_object_manager(),
-                    camera.x,
-                    camera.y,
-                    scene.get_viewport_width(),
-                    scene.get_viewport_height(),
-                    grid_options.snap_to_grid,
-                    grid_options.grid_size
-                );
+                m_outliner.draw(scene.get_object_manager());
             }
             ImGui::End();
         }
@@ -118,8 +107,6 @@ namespace prune {
             if (ImGui::Begin("Inspector", &m_show_inspector)) {
                 m_inspector.draw(
                     scene.get_object_manager(),
-                    scene.get_player_id(),
-                    scene.get_player_controller(),
                     scene.get_grid_options(),
                     scene.get_camera().active()
                 );
@@ -146,7 +133,6 @@ namespace prune {
             if (ImGui::Begin("Stats", &m_show_stats)) {
                 m_stats.draw(
                     scene.get_object_manager(),
-                    scene.get_player_id(),
                     scene.get_viewport(),
                     scene.get_camera()
                 );

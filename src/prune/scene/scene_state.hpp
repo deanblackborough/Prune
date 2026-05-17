@@ -3,7 +3,6 @@
 #include "prune/core/defaults.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
-#include "prune/scene/player_controller.hpp"
 #include "prune/scene/scene_camera.hpp"
 
 namespace prune {
@@ -53,16 +52,14 @@ namespace prune {
     };
 
     struct SceneState {
-        GameObjectManager objects;
-        PlayerController player_controller;
-
-        GameObjectId player_id = k_invalid_game_object_id;
-
         SceneViewport viewport{};
         GridOptions grid_options{};
-        SceneOptions scene_options{};
         DragState drag_state{};
         SceneCamera camera{};
+
+        SceneOptions scene_options{};
+
+        GameObjectManager objects;
     };
 
 }

@@ -188,43 +188,10 @@ namespace prune {
             draw_object(renderer, state, object, selected_outline, has_selected_outline);
         }
 
-        if (const GameObject* player = state.objects.get_by_id(state.player_id); player && player->lifecycle.active) {
-            draw_player_facing_indicator(renderer, state, *player);
-        }
-
         if (state.scene_options.highlight_selected && has_selected_outline) {
             SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
             SDL_RenderDrawRect(renderer, &selected_outline);
         }
-    }
-
-    void SceneRenderer::draw_player_facing_indicator(SDL_Renderer* renderer, const SceneState& state, const GameObject& player) const
-    {
-        const SDL_Rect rect = state.camera.world_to_screen_rect(player);
-
-        const int center_x = rect.x + (rect.w / 2);
-        const int center_y = rect.y + (rect.h / 2);
-
-        int end_x = center_x;
-        int end_y = center_y;
-
-        switch (player.motion.facing) {
-        case Direction::Up:
-            end_y = rect.y - 6;
-            break;
-        case Direction::Down:
-            end_y = rect.y + rect.h + 6;
-            break;
-        case Direction::Left:
-            end_x = rect.x - 6;
-            break;
-        case Direction::Right:
-            end_x = rect.x + rect.w + 6;
-            break;
-        }
-
-        SDL_SetRenderDrawColor(renderer, 245, 230, 80, 255);
-        SDL_RenderDrawLine(renderer, center_x, center_y, end_x, end_y);
     }
 
     void SceneRenderer::draw_sprite_fallback(SDL_Renderer* renderer, const SDL_Rect& rect) const

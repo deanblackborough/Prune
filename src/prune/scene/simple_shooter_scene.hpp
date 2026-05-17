@@ -42,10 +42,10 @@ namespace prune {
         void draw_scene_tools(bool& open) override;
 
         GameObjectManager& get_object_manager() override;
-        [[nodiscard]] GameObjectId get_player_id() const override;
-        PlayerController& get_player_controller() override;
         GridOptions& get_grid_options() override;
         SceneOptions& get_scene_options() override;
+
+        void draw_scene_inspector(GameObject& selected) override;
 
         SceneCamera& get_camera() noexcept override;
         [[nodiscard]] const SceneCamera& get_camera() const noexcept override;
@@ -69,6 +69,13 @@ namespace prune {
 
         [[nodiscard]] bool scene_keyboard_input_enabled() const noexcept;
         [[nodiscard]] bool scene_mouse_input_enabled() const noexcept;
+
+        GameObjectId create_block_at_view_center();
+
+        [[nodiscard]] Transform find_block_spawn_position(const GameObject& block) const;
+        [[nodiscard]] bool is_space_free(const GameObject& candidate) const noexcept;
+
+        void draw_player_facing_indicator(SDL_Renderer* renderer) const;
 
         [[nodiscard]] GameObject* player_object() noexcept;
         [[nodiscard]] const GameObject* player_object() const noexcept;

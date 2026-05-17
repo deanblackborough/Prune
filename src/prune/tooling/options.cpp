@@ -36,7 +36,7 @@ namespace prune {
                     cameras.mode = (mode == 0) ? CameraMode::Editor : CameraMode::Game;
                 }
 
-                tooling::imgui::property_table::checkbox("Follow player", "##follow_player", cameras.game_options.follow_player);
+                tooling::imgui::property_table::checkbox("Follow target", "##follow_target", cameras.game_options.follow_target);
                 tooling::imgui::property_table::end();
             }
         }

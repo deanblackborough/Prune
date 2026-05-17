@@ -23,8 +23,6 @@ namespace prune {
 
     private:
         void draw_scene_viewport(Scene& scene, SDL_Renderer* renderer);
-        void draw_simple_shooter_panel(SimpleShooterScene& scene);
-
         void ensure_scene_render_target(SDL_Renderer* renderer, int width, int height);
         void destroy_scene_render_target();
 

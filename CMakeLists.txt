@@ -23,6 +23,7 @@ add_executable(Prune
         src/prune/scene/player_controller.cpp
         src/prune/scene/collision.cpp
 
+        src/prune/scene/scene_factory.cpp
         src/prune/scene/scene_renderer.cpp
         src/prune/scene/scene_camera.cpp
         src/prune/scene/scene_interaction.cpp

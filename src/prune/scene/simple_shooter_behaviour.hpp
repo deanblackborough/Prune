@@ -32,10 +32,23 @@ namespace prune {
         ) const noexcept;
 
     private:
-        [[nodiscard]] GameObject* player_object(SceneState& state) const noexcept;
-        [[nodiscard]] const GameObject* player_object(const SceneState& state) const noexcept;
+        GameObject* player_object(
+            SceneState& state,
+            const SimpleShooterState& shooter_state
+        ) const noexcept;
 
-        void update_player(SceneState& state, float dt, const Input& input, bool keyboard_input_enabled);
+        const GameObject* player_object(
+            const SceneState& state,
+            const SimpleShooterState& shooter_state
+        ) const noexcept;
+
+        void update_player(
+            SceneState& state,
+            SimpleShooterState& shooter_state,
+            float dt,
+            const Input& input,
+            bool keyboard_input_enabled
+        );
         void move_object(SceneState& state, GameObject& object, float delta_x, float delta_y, bool resolve_collisions);
         void update_player_facing(GameObject& player) const noexcept;
 
