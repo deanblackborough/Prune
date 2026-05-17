@@ -108,7 +108,12 @@ namespace prune {
                     scene.get_grid_options(),
                     scene.get_camera().active()
                 );
+
+                if (GameObject* selected = scene.get_object_manager().selected_object()) {
+                    scene.draw_scene_inspector(*selected);
+                }
             }
+
             ImGui::End();
         }
 

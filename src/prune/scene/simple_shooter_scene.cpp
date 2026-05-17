@@ -429,7 +429,7 @@ namespace prune {
         const int screen_x = static_cast<int>((indicator_x - camera.x) * camera.zoom);
         const int screen_y = static_cast<int>((indicator_y - camera.y) * camera.zoom);
 
-        const int size = std::max(2, static_cast<int>(3.0f * camera.zoom));
+        const int size = std::max(2, static_cast<int>(8.0f * camera.zoom));
 
         SDL_Point points[4]{};
 
