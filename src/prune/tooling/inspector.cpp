@@ -25,7 +25,7 @@ namespace prune {
 
     bool Inspector::is_selected_player(const GameObject* selected, GameObjectId player_id) const noexcept
     {
-        return selected != nullptr && selected->id == player_id;
+        return selected != nullptr && selected->identity.id == player_id;
     }
 
     void Inspector::draw_selected(
@@ -42,12 +42,11 @@ namespace prune {
         if (tooling::imgui::layout::collapsing_header("Selected")) {
             if (tooling::imgui::property_table::begin("Selected")) {
 
-                tooling::imgui::property_table::text("Id", std::to_string(selected->id).c_str());
+                tooling::imgui::property_table::text("Id", std::to_string(selected->identity.id).c_str());
 
                 if (!selected->editor.renameable) {
-                    tooling::imgui::property_table::text("Name", selected->name.c_str());
-                }
-                else {
+                    tooling::imgui::property_table::text("Name", selected->identity.name.c_str());
+                } else {
                     sync_rename_buffer(selected);
 
                     tooling::imgui::property_table::input_text(
@@ -58,12 +57,16 @@ namespace prune {
                     );
 
                     if (ImGui::IsItemDeactivatedAfterEdit()) {
-                        selected->name = objects.make_unique_name(m_rename_buffer.data(), selected->id);
+                        selected->identity.name = objects.make_unique_name(
+                            m_rename_buffer.data(),
+                            selected->identity.id
+                        );
+
                         std::snprintf(
                             m_rename_buffer.data(),
                             m_rename_buffer.size(),
                             "%s",
-                            selected->name.c_str()
+                            selected->identity.name.c_str()
                         );
                     }
                 }
@@ -75,7 +78,7 @@ namespace prune {
                     tooling::imgui::property_table::begin_row("Actions");
 
                     if (tooling::imgui::property_table::button_raw("Delete")) {
-                        const GameObjectId id_to_remove = selected->id;
+                        const GameObjectId id_to_remove = selected->identity.id;
                         objects.remove_object(id_to_remove);
 
                         tooling::imgui::property_table::end();
@@ -85,7 +88,7 @@ namespace prune {
                     ImGui::SameLine();
 
                     if (tooling::imgui::property_table::button_raw("Clone")) {
-                        const std::string source_name = selected->name;
+                        const std::string source_name = selected->identity.name;
 
                         GameObject clone = *selected;
 
@@ -99,7 +102,7 @@ namespace prune {
                         const GameObjectId clone_id = objects.create_object(clone);
 
                         if (GameObject* created = objects.get_by_id(clone_id)) {
-                            created->name = objects.make_unique_name(source_name, clone_id);
+                            created->identity.name = objects.make_unique_name(source_name, clone_id);
                         }
 
                         objects.select(clone_id);
@@ -286,11 +289,11 @@ namespace prune {
             return;
         }
 
-        const bool is_player = (selected->id == player_id);
+        const bool is_player = (selected->identity.id == player_id);
 
         if (tooling::imgui::layout::collapsing_header("Flags", false)) {
             if (tooling::imgui::property_table::begin("##flags")) {
-                tooling::imgui::property_table::checkbox("Active", "##active", selected->active);
+                tooling::imgui::property_table::checkbox("Active", "##active", selected->lifecycle.active);
                 tooling::imgui::property_table::checkbox("Visible", "##visible", selected->render.visible);
 
                 if (!is_player) {
@@ -310,11 +313,16 @@ namespace prune {
             return;
         }
 
-        if (m_rename_target_id.has_value() && m_rename_target_id.value() == selected->id) {
+        if (m_rename_target_id.has_value() && m_rename_target_id.value() == selected->identity.id) {
             return;
         }
 
-        m_rename_target_id = selected->id;
-        std::snprintf(m_rename_buffer.data(), m_rename_buffer.size(), "%s", selected->name.c_str());
+        m_rename_target_id = selected->identity.id;
+        std::snprintf(
+            m_rename_buffer.data(),
+            m_rename_buffer.size(),
+            "%s",
+            selected->identity.name.c_str()
+        );
     }
 }

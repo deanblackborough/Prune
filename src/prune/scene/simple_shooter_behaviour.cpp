@@ -34,7 +34,7 @@ namespace prune {
     {
         for (auto& object : state.objects.objects()) {
             if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour) {
-                object.active = false;
+                object.lifecycle.active = false;
             }
         }
 
@@ -54,7 +54,7 @@ namespace prune {
         int count = 0;
 
         for (const auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour && object.active) {
+            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour && object.lifecycle.active) {
                 ++count;
             }
         }
@@ -101,22 +101,28 @@ namespace prune {
         }
 
         if (!keyboard_input_enabled) {
-            player->velocity = {};
+            player->motion.velocity = {};
             return;
         }
 
-        player->velocity = state.player_controller.movement_velocity(input);
+        player->motion.velocity = state.player_controller.movement_velocity(input);
 
         const bool is_moving =
-            player->velocity.x != 0.0f ||
-            player->velocity.y != 0.0f;
+            player->motion.velocity.x != 0.0f ||
+            player->motion.velocity.y != 0.0f;
 
         if (is_moving) {
             state.camera.activate_game();
             update_player_facing(*player);
         }
 
-        move_object(state, *player, player->velocity.x * dt, player->velocity.y * dt, true);
+        move_object(
+            state,
+            *player,
+            player->motion.velocity.x * dt,
+            player->motion.velocity.y * dt,
+            true
+        );
     }
 
     void SimpleShooterBehaviour::move_object(
@@ -137,13 +143,13 @@ namespace prune {
 
     void SimpleShooterBehaviour::update_player_facing(GameObject& player) const noexcept
     {
-        if (std::abs(player.velocity.x) > std::abs(player.velocity.y)) {
-            player.facing = player.velocity.x < 0.0f ? Direction::Left : Direction::Right;
+        if (std::abs(player.motion.velocity.x) > std::abs(player.motion.velocity.y)) {
+            player.motion.facing = player.motion.velocity.x < 0.0f ? Direction::Left : Direction::Right;
             return;
         }
 
-        if (player.velocity.y != 0.0f) {
-            player.facing = player.velocity.y < 0.0f ? Direction::Up : Direction::Down;
+        if (player.motion.velocity.y != 0.0f) {
+            player.motion.facing = player.motion.velocity.y < 0.0f ? Direction::Up : Direction::Down;
         }
     }
 
@@ -185,7 +191,7 @@ namespace prune {
         GameObject* enemy = enemy_object(state, shooter_state);
         const GameObject* player = player_object(state);
 
-        if (!enemy || !enemy->active || !player) {
+        if (!enemy || !enemy->lifecycle.active || !player) {
             return;
         }
 
@@ -199,32 +205,38 @@ namespace prune {
         const float length = std::sqrt((direction_x * direction_x) + (direction_y * direction_y));
 
         if (length <= 0.001f) {
-            enemy->velocity = {};
+            enemy->motion.velocity = {};
             return;
         }
 
         direction_x /= length;
         direction_y /= length;
 
-        enemy->velocity.x = direction_x * shooter_state.options.enemy_speed;
-        enemy->velocity.y = direction_y * shooter_state.options.enemy_speed;
+        enemy->motion.velocity.x = direction_x * shooter_state.options.enemy_speed;
+        enemy->motion.velocity.y = direction_y * shooter_state.options.enemy_speed;
 
-        move_object(state, *enemy, enemy->velocity.x * dt, enemy->velocity.y * dt, false);
+        move_object(
+            state,
+            *enemy,
+            enemy->motion.velocity.x * dt,
+            enemy->motion.velocity.y * dt,
+            false
+        );
     }
 
     void SimpleShooterBehaviour::update_bullets(SceneState& state, float dt)
     {
         for (auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour != simple_shooter_ids::bullet_behaviour || !object.active) {
+            if (object.runtime.behaviour != simple_shooter_ids::bullet_behaviour || !object.lifecycle.active) {
                 continue;
             }
 
-            object.transform.x += object.velocity.x * dt;
-            object.transform.y += object.velocity.y * dt;
-            object.lifetime -= dt;
+            object.transform.x += object.motion.velocity.x * dt;
+            object.transform.y += object.motion.velocity.y * dt;
+            object.lifecycle.remaining -= dt;
 
-            if (object.lifetime <= 0.0f) {
-                object.active = false;
+            if (object.lifecycle.remaining <= 0.0f) {
+                object.lifecycle.active = false;
             }
         }
     }
@@ -235,12 +247,12 @@ namespace prune {
     )
     {
         GameObject* enemy = enemy_object(state, shooter_state);
-        if (!enemy || !enemy->active) {
+        if (!enemy || !enemy->lifecycle.active) {
             return;
         }
 
         for (auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour != simple_shooter_ids::bullet_behaviour || !object.active) {
+            if (object.runtime.behaviour != simple_shooter_ids::bullet_behaviour || !object.lifecycle.active) {
                 continue;
             }
 
@@ -248,7 +260,7 @@ namespace prune {
                 continue;
             }
 
-            object.active = false;
+            object.lifecycle.active = false;
             respawn_enemy(*enemy);
             return;
         }
@@ -258,8 +270,8 @@ namespace prune {
     {
         enemy.transform.x = 256.0f;
         enemy.transform.y = 128.0f;
-        enemy.velocity = {};
-        enemy.active = true;
+        enemy.motion.velocity = {};
+        enemy.lifecycle.active = true;
         enemy.render.visible = true;
     }
 

@@ -18,7 +18,11 @@ namespace prune::collision {
     void resolve_against_solids(GameObject& object, const GameObjectManager& objects)
     {
         for (const auto& other : objects.objects()) {
-            if (other.id == object.id || !other.active || !other.collision.solid) {
+            if (
+                other.identity.id == object.identity.id ||
+                !other.lifecycle.active ||
+                !other.collision.solid
+                ) {
                 continue;
             }
 
@@ -39,11 +43,11 @@ namespace prune::collision {
 
             if (std::abs(resolve_x) < std::abs(resolve_y)) {
                 object.transform.x += resolve_x;
-                object.velocity.x = 0.0f;
+                object.motion.velocity.x = 0.0f;
             }
             else {
                 object.transform.y += resolve_y;
-                object.velocity.y = 0.0f;
+                object.motion.velocity.y = 0.0f;
             }
         }
     }

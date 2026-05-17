@@ -181,14 +181,14 @@ namespace prune {
         bool has_selected_outline = false;
 
         for (const auto& object : state.objects.objects()) {
-            if (!object.active || !object.render.visible) {
+            if (!object.lifecycle.active || !object.render.visible) {
                 continue;
             }
 
             draw_object(renderer, state, object, selected_outline, has_selected_outline);
         }
 
-        if (const GameObject* player = state.objects.get_by_id(state.player_id); player && player->active) {
+        if (const GameObject* player = state.objects.get_by_id(state.player_id); player && player->lifecycle.active) {
             draw_player_facing_indicator(renderer, state, *player);
         }
 
@@ -208,7 +208,7 @@ namespace prune {
         int end_x = center_x;
         int end_y = center_y;
 
-        switch (player.facing) {
+        switch (player.motion.facing) {
         case Direction::Up:
             end_y = rect.y - 6;
             break;
@@ -241,7 +241,7 @@ namespace prune {
 
     void SceneRenderer::capture_selected_outline(const SceneState& state, const GameObject& object, const SDL_Rect& rect, SDL_Rect& selected_outline, bool& has_selected_outline) const noexcept
     {
-        if (object.id == state.objects.selected_id()) {
+        if (object.identity.id == state.objects.selected_id()) {
             selected_outline = rect;
             has_selected_outline = true;
         }

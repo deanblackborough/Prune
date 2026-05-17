@@ -131,10 +131,10 @@ namespace prune {
         YAML::Node make_object_node(const GameObject& object)
         {
             YAML::Node node;
-            node["id"] = object.id;
-            node["name"] = object.name;
-            node["type"] = to_string(object.type);
-            node["active"] = object.active;
+            node["id"] = object.identity.id;
+            node["name"] = object.identity.name;
+            node["type"] = to_string(object.identity.type);
+            node["active"] = object.lifecycle.active;
 
             node["transform"]["x"] = object.transform.x;
             node["transform"]["y"] = object.transform.y;
@@ -316,24 +316,19 @@ namespace prune {
                 return false;
             }
 
-            if (!read_required_uint(node, "id", object.id)) {
-                error = "Object is missing id.";
+            if (!read_required_uint(node, "id", object.identity.id)) {
+                error = "Object id is missing.";
                 return false;
             }
 
-            if (!node["name"]) {
-                error = "Object is missing name.";
-                return false;
-            }
+            object.identity.name = node["name"].as<std::string>();
 
-            object.name = node["name"].as<std::string>();
-
-            if (!parse_game_object_type(node["type"], object.type)) {
+            if (!parse_game_object_type(node["type"], object.identity.type)) {
                 error = "Object type is invalid.";
                 return false;
             }
 
-            if (!read_required_bool(node, "active", object.active)) {
+            if (!read_required_bool(node, "active", object.lifecycle.active)) {
                 error = "Object active flag is missing.";
                 return false;
             }
@@ -370,8 +365,8 @@ namespace prune {
                 return false;
             }
 
-            object.velocity = {};
-            object.lifetime = 0.0f;
+            object.motion.velocity = {};
+            object.lifecycle.remaining = 0.0f;
 
             return true;
         }
@@ -622,8 +617,8 @@ namespace prune {
 
             GameObjectId max_loaded_id = k_invalid_game_object_id;
             for (const auto& object : loaded.objects.objects()) {
-                if (object.id > max_loaded_id) {
-                    max_loaded_id = object.id;
+                if (object.identity.id > max_loaded_id) {
+                    max_loaded_id = object.identity.id;
                 }
             }
 
@@ -651,7 +646,7 @@ namespace prune {
 
             for (const auto& object : state.objects.objects()) {
                 if (object.runtime.behaviour == simple_shooter_ids::enemy_behaviour) {
-                    shooter_state.enemy_id = object.id;
+                    shooter_state.enemy_id = object.identity.id;
                     break;
                 }
             }

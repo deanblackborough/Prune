@@ -61,15 +61,15 @@ namespace prune {
             const std::string_view filter = m_object_search.data();
 
             for (const auto& object : objects.objects()) {
-                if (!filter.empty() && !contains_case_insensitive(object.name, filter)) {
+                if (!filter.empty() && !contains_case_insensitive(object.identity.name, filter)) {
                     continue;
                 }
 
-                const bool is_selected = object.id == objects.selected_id();
+                const bool is_selected = object.identity.id == objects.selected_id();
                 const std::string label = object_label(object);
 
                 if (ImGui::Selectable(label.c_str(), is_selected)) {
-                    objects.select(object.id);
+                    objects.select(object.identity.id);
                 }
             }
         }
@@ -78,21 +78,21 @@ namespace prune {
 
     std::string Outliner::object_label(const GameObject& object)
     {
-        const char* type = object.type == GameObjectType::Runtime
+        const char* type = object.identity.type == GameObjectType::Runtime
             ? "[Runtime]"
             : "[Object]";
 
-        if (object.active) {
-            return std::string(type) + " " + object.name;
+        if (object.lifecycle.active) {
+            return std::string(type) + " " + object.identity.name;
         }
 
-        return std::string(type) + " " + object.name + " (inactive)";
+        return std::string(type) + " " + object.identity.name + " (inactive)";
     }
 
     GameObjectId Outliner::create_block(GameObjectManager& objects, float x, float y)
     {
         GameObject block;
-        block.type = GameObjectType::Object;
+        block.identity.type = GameObjectType::Object;
         block.transform.x = x;
         block.transform.y = y;
         block.size.width = k_default_object_size;
@@ -101,14 +101,14 @@ namespace prune {
         block.render.rectangle.color[0] = random_color_component();
         block.render.rectangle.color[1] = random_color_component();
         block.render.rectangle.color[2] = random_color_component();
-        block.active = true;
+        block.lifecycle.active = true;
         block.render.visible = true;
         block.collision.solid = true;
 
         const GameObjectId id = objects.create_object(block);
 
         if (GameObject* created = objects.get_by_id(id)) {
-            created->name = "Block " + std::to_string(id);
+            created->identity.name = "Block " + std::to_string(id);
         }
 
         objects.select(id);
@@ -194,7 +194,7 @@ namespace prune {
         const float bottom_a = y + static_cast<float>(height);
 
         for (const auto& object : objects.objects()) {
-            if (!object.active) {
+            if (!object.lifecycle.active) {
                 continue;
             }
 
