@@ -73,25 +73,24 @@ namespace prune {
         m_state.game.zoom = 3.0f;
 
         m_state.mode = CameraMode::Editor;
-        m_state.game_options.follow_player = true;
     }
 
-    void SceneCamera::update_game_camera(const SceneViewport& viewport, const GameObject* player) noexcept
+    void SceneCamera::update_game_camera(const SceneViewport& viewport, const GameObject* target) noexcept
     {
-        if (!player || !m_state.game_options.follow_player || !viewport.has_area()) {
+        if (!target || !m_state.game_options.follow_target || !viewport.has_area()) {
             return;
         }
 
-        const float player_center_x =
-            player->transform.x + (static_cast<float>(player->size.width) * 0.5f);
+        const float target_center_x =
+            target->transform.x + (static_cast<float>(target->size.width) * 0.5f);
 
-        const float player_center_y =
-            player->transform.y + (static_cast<float>(player->size.height) * 0.5f);
+        const float target_center_y =
+            target->transform.y + (static_cast<float>(target->size.height) * 0.5f);
 
         const float zoom = std::max(m_state.game.zoom, 0.01f);
 
-        m_state.game.x = player_center_x - ((static_cast<float>(viewport.width) / zoom) * 0.5f);
-        m_state.game.y = player_center_y - ((static_cast<float>(viewport.height) / zoom) * 0.5f);
+        m_state.game.x = target_center_x - ((static_cast<float>(viewport.width) / zoom) * 0.5f);
+        m_state.game.y = target_center_y - ((static_cast<float>(viewport.height) / zoom) * 0.5f);
     }
 
     void SceneCamera::pan_editor_by_mouse_delta(int delta_x, int delta_y) noexcept

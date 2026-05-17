@@ -12,12 +12,10 @@ namespace prune {
 
         struct LoadedSceneState {
             GameObjectManager objects;
-            GameObjectId player_id = k_invalid_game_object_id;
             GameObjectId selected_id = k_invalid_game_object_id;
             GridOptions grid_options{};
             SceneOptions scene_options{};
             CameraState camera_state{};
-            float player_speed = 256.0f;
         };
 
         const char* to_string(GameObjectType type) noexcept
@@ -392,7 +390,6 @@ namespace prune {
     void SceneSerializer::save_to_node(const SceneState& state, YAML::Node& root)
     {
         root["scene"]["next_object_id"] = state.objects.next_id();
-        root["scene"]["player_id"] = state.player_id;
 
         if (state.objects.selected_id() != k_invalid_game_object_id) {
             root["scene"]["selected_object_id"] = state.objects.selected_id();
@@ -409,7 +406,7 @@ namespace prune {
         root["cameras"]["game"]["y"] = state.camera.state().game.y;
         root["cameras"]["game"]["speed"] = state.camera.state().game.speed;
         root["cameras"]["game"]["zoom"] = state.camera.state().game.zoom;
-        root["cameras"]["game"]["follow_player"] = state.camera.state().game_options.follow_player;
+        root["cameras"]["game"]["follow_target"] = state.camera.state().game_options.follow_target;
 
         root["grid"]["show_grid"] = state.grid_options.show_grid;
         root["grid"]["snap_to_grid"] = state.grid_options.snap_to_grid;
@@ -418,8 +415,6 @@ namespace prune {
         root["grid"]["shift_nudge_steps"] = state.grid_options.shift_nudge_steps;
 
         root["options"]["highlight_selected"] = state.scene_options.highlight_selected;
-
-        root["player"]["speed"] = state.player_controller.speed();
 
         YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
 
@@ -438,34 +433,22 @@ namespace prune {
     {
         const YAML::Node scene = root["scene"];
         const YAML::Node cameras = root["cameras"];
-        const YAML::Node player_node = root["player"];
         const YAML::Node grid = root["grid"];
         const YAML::Node options = root["options"];
         const YAML::Node objects = root["objects"];
 
-        if (!scene || !cameras || !player_node || !grid || !options || !objects || !objects.IsSequence()) {
+        if(!scene || !cameras || !grid || !options || !objects || !objects.IsSequence()) {
             error = "Save file is missing required generic scene sections.";
             return false;
         }
 
         LoadedSceneState loaded{};
 
-        if (!read_required_float(player_node, "speed", loaded.player_speed)) {
-            error = "player.speed is missing.";
-            return false;
-        }
-
         GameObjectId loaded_next_id = 1;
-        GameObjectId loaded_player_id = k_invalid_game_object_id;
         GameObjectId loaded_selected_id = k_invalid_game_object_id;
 
         if (!read_required_uint(scene, "next_object_id", loaded_next_id)) {
             error = "scene.next_object_id is missing.";
-            return false;
-        }
-
-        if (!read_required_uint(scene, "player_id", loaded_player_id)) {
-            error = "scene.player_id is missing.";
             return false;
         }
 
@@ -498,7 +481,7 @@ namespace prune {
             !read_required_float(game, "y", loaded.camera_state.game.y) ||
             !read_required_float(game, "speed", loaded.camera_state.game.speed) ||
             !read_required_float(game, "zoom", loaded.camera_state.game.zoom) ||
-            !read_required_bool(game, "follow_player", loaded.camera_state.game_options.follow_player)) {
+            !read_required_bool(game, "follow_target", loaded.camera_state.game_options.follow_target)) {
             error = "cameras.game is incomplete.";
             return false;
         }
@@ -540,13 +523,6 @@ namespace prune {
             return false;
         }
 
-        loaded.player_id = loaded_player_id;
-
-        if (!loaded.objects.get_by_id(loaded.player_id)) {
-            error = "Saved player_id does not exist.";
-            return false;
-        }
-
         GameObjectId max_loaded_id = k_invalid_game_object_id;
 
         for (const auto& object : loaded.objects.objects()) {
@@ -564,21 +540,16 @@ namespace prune {
         if (loaded_selected_id != k_invalid_game_object_id &&
             loaded.objects.get_by_id(loaded_selected_id) != nullptr) {
             loaded.selected_id = loaded_selected_id;
-        }
-        else {
-            loaded.selected_id = loaded.player_id;
+        } else if (!loaded.objects.empty()) {
+            loaded.selected_id = loaded.objects.objects().front().identity.id;
         }
 
         loaded.objects.set_selected_id(loaded.selected_id);
 
         state.objects = std::move(loaded.objects);
-        state.player_id = loaded.player_id;
         state.grid_options = loaded.grid_options;
         state.scene_options = loaded.scene_options;
         state.camera.state() = loaded.camera_state;
-        state.player_controller.set_speed(loaded.player_speed);
-
-        state.camera.update_game_camera(state.viewport, state.objects.get_by_id(state.player_id));
 
         return true;
     }

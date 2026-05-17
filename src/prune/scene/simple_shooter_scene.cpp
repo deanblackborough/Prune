@@ -1,3 +1,4 @@
+#include <cmath>
 #include <fstream>
 #include <string>
 #include <utility>
@@ -8,12 +9,15 @@
 #include "imgui.h"
 
 #include "prune/core/input.hpp"
+#include "prune/scene/collision.hpp"
 #include "prune/scene/simple_shooter_scene.hpp"
 #include "prune/scene/scene_serializer.hpp"
 #include "prune/scene/simple_shooter_factory.hpp"
 #include "prune/scene/simple_shooter_ids.hpp"
 #include "prune/scene/simple_shooter_serializer.hpp"
 #include "prune/tooling/editor_layout.hpp"
+#include "prune/tooling/imgui/layout.hpp"
+#include "prune/tooling/imgui/property_table.hpp"
 
 namespace prune {
 
@@ -55,7 +59,7 @@ namespace prune {
 
     void SimpleShooterScene::on_exit() {
         m_state.objects.clear();
-        m_state.player_id = k_invalid_game_object_id;
+        m_simple_shooter_state.player_id = k_invalid_game_object_id;
 
         m_simple_shooter_state.enemy_id = k_invalid_game_object_id;
     }
@@ -63,6 +67,7 @@ namespace prune {
     void SimpleShooterScene::render(SDL_Renderer* renderer)
     {
         m_renderer.render(renderer, m_state);
+        draw_player_facing_indicator(renderer);
     }
 
     void SimpleShooterScene::draw_scene_tools(bool& open)
@@ -70,6 +75,12 @@ namespace prune {
         tooling::EditorLayout::simple_shooter();
 
         if (ImGui::Begin("Simple Shooter", &open)) {
+            if (ImGui::Button("Add Block")) {
+                create_block_at_view_center();
+            }
+
+            ImGui::Separator();
+
             m_simple_shooter_tools.draw(m_simple_shooter_state.options);
         }
 
@@ -78,14 +89,6 @@ namespace prune {
 
     GameObjectManager& SimpleShooterScene::get_object_manager() {
         return m_state.objects;
-    }
-
-    GameObjectId SimpleShooterScene::get_player_id() const {
-        return m_state.player_id;
-    }
-
-    PlayerController & SimpleShooterScene::get_player_controller() {
-        return m_state.player_controller;
     }
 
     GridOptions& SimpleShooterScene::get_grid_options() {
@@ -162,25 +165,24 @@ namespace prune {
 
     GameObject* SimpleShooterScene::player_object() noexcept
     {
-        return m_state.objects.get_by_id(m_state.player_id);
+        return m_state.objects.get_by_id(m_simple_shooter_state.player_id);
     }
 
     const GameObject* SimpleShooterScene::player_object() const noexcept
     {
-        return m_state.objects.get_by_id(m_state.player_id);
+        return m_state.objects.get_by_id(m_simple_shooter_state.player_id);
     }
 
     void SimpleShooterScene::reset_runtime_state()
     {
         m_state.objects.clear();
-        m_state.player_id = k_invalid_game_object_id;
+        m_simple_shooter_state.player_id = k_invalid_game_object_id;
 
         m_state.camera.reset();
 
         m_state.grid_options = {};
         m_state.scene_options = {};
         m_state.drag_state = {};
-        m_state.player_controller = {};
 
         m_simple_shooter_state = {};
     }
@@ -189,10 +191,15 @@ namespace prune {
     {
         reset_runtime_state();
 
-        m_state.player_id = m_state.objects.create_object(simple_shooter_factory::create_player());
+        m_simple_shooter_state.player_id =
+            m_state.objects.create_object(simple_shooter_factory::create_player());
+
         m_state.objects.create_object(simple_shooter_factory::create_initial_block());
-        m_simple_shooter_state.enemy_id = m_state.objects.create_object(simple_shooter_factory::create_enemy());
-        m_state.objects.select(m_state.player_id);
+
+        m_simple_shooter_state.enemy_id =
+            m_state.objects.create_object(simple_shooter_factory::create_enemy());
+
+        m_state.objects.select(m_simple_shooter_state.player_id);
 
         m_state.camera.update_game_camera(m_state.viewport, player_object());
     }
@@ -284,5 +291,198 @@ namespace prune {
             error = ex.what();
             return false;
         }
+    }
+
+    void SimpleShooterScene::draw_scene_inspector(GameObject& selected)
+    {
+        if (selected.identity.id != m_simple_shooter_state.player_id) {
+            return;
+        }
+
+        if (tooling::imgui::layout::collapsing_header("Player")) {
+            if (tooling::imgui::property_table::begin("##simple_shooter_player")) {
+                float speed = m_simple_shooter_state.player_controller.speed();
+
+                if (tooling::imgui::property_table::slider_float(
+                    "Speed",
+                    "##player_speed",
+                    speed,
+                    0.0f,
+                    512.0f,
+                    "%.2f"
+                )) {
+                    m_simple_shooter_state.player_controller.set_speed(speed);
+                }
+
+                tooling::imgui::property_table::end();
+            }
+        }
+    }
+
+    GameObjectId SimpleShooterScene::create_block_at_view_center()
+    {
+        GameObject block = simple_shooter_factory::create_initial_block();
+
+        block.transform = find_block_spawn_position(block);
+
+        const GameObjectId id = m_state.objects.create_object(block);
+
+        if (GameObject* created = m_state.objects.get_by_id(id)) {
+            created->identity.name = "Block " + std::to_string(id);
+        }
+
+        m_state.objects.select(id);
+
+        return id;
+    }
+
+    Transform SimpleShooterScene::find_block_spawn_position(const GameObject& block) const
+    {
+        const Camera& camera = m_state.camera.active();
+
+        const float view_center_x =
+            camera.x + (static_cast<float>(m_state.viewport.width) / camera.zoom) * 0.5f;
+
+        const float view_center_y =
+            camera.y + (static_cast<float>(m_state.viewport.height) / camera.zoom) * 0.5f;
+
+        const int grid_size = m_state.grid_options.grid_size > 0
+            ? m_state.grid_options.grid_size
+            : block.size.width;
+
+        auto snap = [grid_size](float value) {
+            return static_cast<float>(
+                static_cast<int>(value / static_cast<float>(grid_size)) * grid_size
+                );
+            };
+
+        const float base_x = m_state.grid_options.snap_to_grid
+            ? snap(view_center_x - static_cast<float>(block.size.width) * 0.5f)
+            : view_center_x - static_cast<float>(block.size.width) * 0.5f;
+
+        const float base_y = m_state.grid_options.snap_to_grid
+            ? snap(view_center_y - static_cast<float>(block.size.height) * 0.5f)
+            : view_center_y - static_cast<float>(block.size.height) * 0.5f;
+
+        constexpr int max_radius = 20;
+
+        for (int radius = 0; radius <= max_radius; ++radius) {
+            for (int y = -radius; y <= radius; ++y) {
+                for (int x = -radius; x <= radius; ++x) {
+                    if (std::abs(x) != radius && std::abs(y) != radius) {
+                        continue;
+                    }
+
+                    GameObject candidate = block;
+                    candidate.transform.x = base_x + static_cast<float>(x * grid_size);
+                    candidate.transform.y = base_y + static_cast<float>(y * grid_size);
+
+                    if (is_space_free(candidate)) {
+                        return candidate.transform;
+                    }
+                }
+            }
+        }
+
+        return Transform{ base_x, base_y };
+    }
+
+    void SimpleShooterScene::draw_player_facing_indicator(SDL_Renderer* renderer) const
+    {
+        const GameObject* player = player_object();
+
+        if (!player || !player->lifecycle.active || !player->render.visible) {
+            return;
+        }
+
+        const Camera& camera = m_state.camera.active();
+
+        const float player_center_x =
+            player->transform.x + (static_cast<float>(player->size.width) * 0.5f);
+
+        const float player_center_y =
+            player->transform.y + (static_cast<float>(player->size.height) * 0.5f);
+
+        float indicator_x = player_center_x;
+        float indicator_y = player_center_y;
+
+        constexpr float indicator_distance = 10.0f;
+
+        switch (player->motion.facing) {
+        case Direction::Left:
+            indicator_x -= indicator_distance;
+            break;
+
+        case Direction::Right:
+            indicator_x += indicator_distance;
+            break;
+
+        case Direction::Up:
+            indicator_y -= indicator_distance;
+            break;
+
+        case Direction::Down:
+            indicator_y += indicator_distance;
+            break;
+        }
+
+        const int screen_x = static_cast<int>((indicator_x - camera.x) * camera.zoom);
+        const int screen_y = static_cast<int>((indicator_y - camera.y) * camera.zoom);
+
+        const int size = std::max(2, static_cast<int>(3.0f * camera.zoom));
+
+        SDL_Point points[4]{};
+
+        switch (player->motion.facing) {
+        case Direction::Left:
+            points[0] = { screen_x - size, screen_y };
+            points[1] = { screen_x + size, screen_y - size };
+            points[2] = { screen_x + size, screen_y + size };
+            points[3] = points[0];
+            break;
+
+        case Direction::Right:
+            points[0] = { screen_x + size, screen_y };
+            points[1] = { screen_x - size, screen_y - size };
+            points[2] = { screen_x - size, screen_y + size };
+            points[3] = points[0];
+            break;
+
+        case Direction::Up:
+            points[0] = { screen_x, screen_y - size };
+            points[1] = { screen_x - size, screen_y + size };
+            points[2] = { screen_x + size, screen_y + size };
+            points[3] = points[0];
+            break;
+
+        case Direction::Down:
+            points[0] = { screen_x, screen_y + size };
+            points[1] = { screen_x - size, screen_y - size };
+            points[2] = { screen_x + size, screen_y - size };
+            points[3] = points[0];
+            break;
+        }
+
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderDrawLines(renderer, points, 4);
+    }
+
+    bool SimpleShooterScene::is_space_free(const GameObject& candidate) const noexcept
+    {
+        for (const auto& object : m_state.objects.objects()) {
+            if (!object.lifecycle.active) {
+                continue;
+            }
+
+            if (!object.runtime.persistent) {
+                continue;
+            }
+
+            if (collision::is_overlapping(candidate, object)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

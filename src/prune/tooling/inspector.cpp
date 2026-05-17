@@ -12,25 +12,17 @@ namespace prune {
 
     void Inspector::draw(
         GameObjectManager& objects,
-        GameObjectId player_id,
-        PlayerController& player_controller,
         GridOptions& grid_options,
         const Camera& camera
     ) {
-        draw_selected(objects, player_id, grid_options);
-        draw_properties(objects, player_id, player_controller);
+        draw_selected(objects, grid_options);
+        draw_properties(objects);
         draw_computed(objects, camera);
-        draw_flags(objects, player_id);
-    }
-
-    bool Inspector::is_selected_player(const GameObject* selected, GameObjectId player_id) const noexcept
-    {
-        return selected != nullptr && selected->identity.id == player_id;
+        draw_flags(objects);
     }
 
     void Inspector::draw_selected(
         GameObjectManager& objects,
-        GameObjectId player_id,
         GridOptions& grid_options
     ) {
         GameObject* selected = objects.selected_object();
@@ -117,11 +109,7 @@ namespace prune {
         }
     }
 
-    void Inspector::draw_properties(
-        GameObjectManager& objects,
-        GameObjectId player_id,
-        PlayerController& player_controller
-    ) {
+    void Inspector::draw_properties(GameObjectManager& objects) {
         GameObject* selected = objects.selected_object();
         if (!selected) {
 
@@ -154,8 +142,6 @@ namespace prune {
 
             return;
         }
-
-        const bool is_player = is_selected_player(selected, player_id);
 
         if (tooling::imgui::layout::collapsing_header("Transform")) {
             if (tooling::imgui::property_table::begin("##transform")) {
@@ -236,19 +222,6 @@ namespace prune {
                 tooling::imgui::property_table::end();
             }
         }
-
-        if (is_player) {
-            if (tooling::imgui::layout::collapsing_header("Player")) {
-                if (tooling::imgui::property_table::begin("##player")) {
-                    float speed = player_controller.speed();
-
-                    if (tooling::imgui::property_table::slider_float("Speed", "##speed", speed, 0.0f, 512.0f, "%.2f")) {
-						player_controller.set_speed(speed);
-                    }
-                    tooling::imgui::property_table::end();
-                }
-            }
-        }
     }
 
     void Inspector::draw_computed(
@@ -282,24 +255,18 @@ namespace prune {
         }
     }
 
-    void Inspector::draw_flags(GameObjectManager& objects, GameObjectId player_id)
+    void Inspector::draw_flags(GameObjectManager& objects)
     {
         GameObject* selected = objects.selected_object();
         if (!selected) {
             return;
         }
 
-        const bool is_player = (selected->identity.id == player_id);
-
         if (tooling::imgui::layout::collapsing_header("Flags", false)) {
             if (tooling::imgui::property_table::begin("##flags")) {
                 tooling::imgui::property_table::checkbox("Active", "##active", selected->lifecycle.active);
                 tooling::imgui::property_table::checkbox("Visible", "##visible", selected->render.visible);
-
-                if (!is_player) {
-                    tooling::imgui::property_table::checkbox("Solid", "##solid", selected->collision.solid);
-                }
-
+                tooling::imgui::property_table::checkbox("Solid", "##solid", selected->collision.solid);
                 tooling::imgui::property_table::end();
             }
         }

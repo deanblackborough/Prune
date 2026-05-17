@@ -10,7 +10,6 @@ namespace prune {
     public:
         void draw(
             GameObjectManager& objects,
-            GameObjectId player_id,
             const SceneViewport& viewport,
             const SceneCamera& camera
         );
