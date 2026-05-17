@@ -1,3 +1,0 @@
-/home/runner/work/Prune/Prune/build/CMakeFiles/Prune.dir
-/home/runner/work/Prune/Prune/build/CMakeFiles/edit_cache.dir
-/home/runner/work/Prune/Prune/build/CMakeFiles/rebuild_cache.dir
