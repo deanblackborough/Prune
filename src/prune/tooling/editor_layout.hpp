@@ -6,7 +6,7 @@ namespace prune::tooling {
     public:
         static void scene_viewport();
         static void outliner();
-        static void simple_shooter();
+        static void scene_panel();
         static void inspector();
         static void stats();
         static void options();

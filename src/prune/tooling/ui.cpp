@@ -18,6 +18,7 @@ namespace prune {
         Scene& scene,
         SDL_Renderer* renderer,
         bool& new_scene_requested,
+        SceneType& new_scene_type,
         bool& load_scene_requested
     )
     {
@@ -25,8 +26,18 @@ namespace prune {
 
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("New Scene")) {
-                    new_scene_requested = true;
+                if (ImGui::BeginMenu("New Scene")) {
+                    if (ImGui::MenuItem("Simple Shooter")) {
+                        new_scene_type = SceneType::SimpleShooter;
+                        new_scene_requested = true;
+                    }
+
+                    if (ImGui::MenuItem("Platformer")) {
+                        new_scene_type = SceneType::Platformer;
+                        new_scene_requested = true;
+                    }
+
+                    ImGui::EndMenu();
                 }
 
                 ImGui::Separator();

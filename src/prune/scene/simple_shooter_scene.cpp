@@ -72,7 +72,7 @@ namespace prune {
 
     void SimpleShooterScene::draw_scene_tools(bool& open)
     {
-        tooling::EditorLayout::simple_shooter();
+        tooling::EditorLayout::scene_panel();
 
         if (ImGui::Begin("Simple Shooter", &open)) {
             if (ImGui::Button("Add Block")) {
@@ -81,7 +81,7 @@ namespace prune {
 
             ImGui::Separator();
 
-            m_simple_shooter_tools.draw(m_simple_shooter_state.options);
+            m_simple_shooter_tools.draw(m_simple_shooter_state);
         }
 
         ImGui::End();
@@ -295,28 +295,7 @@ namespace prune {
 
     void SimpleShooterScene::draw_scene_inspector(GameObject& selected)
     {
-        if (selected.identity.id != m_simple_shooter_state.player_id) {
-            return;
-        }
-
-        if (tooling::imgui::layout::collapsing_header("Player")) {
-            if (tooling::imgui::property_table::begin("##simple_shooter_player")) {
-                float speed = m_simple_shooter_state.player_controller.speed();
-
-                if (tooling::imgui::property_table::slider_float(
-                    "Speed",
-                    "##player_speed",
-                    speed,
-                    0.0f,
-                    512.0f,
-                    "%.2f"
-                )) {
-                    m_simple_shooter_state.player_controller.set_speed(speed);
-                }
-
-                tooling::imgui::property_table::end();
-            }
-        }
+        (void) selected;
     }
 
     GameObjectId SimpleShooterScene::create_block_at_view_center()

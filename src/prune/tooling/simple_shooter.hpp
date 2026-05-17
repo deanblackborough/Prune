@@ -6,6 +6,6 @@ namespace prune {
 
     class SimpleShooter {
     public:
-        void draw(SimpleShooterOptions& options);
+        void draw(SimpleShooterState& state);
     };
 }

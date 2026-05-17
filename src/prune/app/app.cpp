@@ -77,18 +77,21 @@ namespace prune {
 
             if (m_scene && m_ui && m_window) {
                 bool new_scene_requested = false;
+                SceneType new_scene_type = SceneType::SimpleShooter;
                 bool load_scene_requested = false;
 
                 m_ui->build(
                     *m_scene,
                     m_window->renderer(),
                     new_scene_requested,
+                    new_scene_type,
                     load_scene_requested
                 );
 
                 if (new_scene_requested) {
+                    m_scene->on_exit();
                     m_scene = SceneFactory::create(
-                        SceneType::SimpleShooter,
+                        new_scene_type,
                         m_window->width(),
                         m_window->height()
                     );
@@ -108,6 +111,7 @@ namespace prune {
                     );
 
                     if (loaded_scene) {
+                        m_scene->on_exit();
                         m_scene = std::move(loaded_scene);
                         m_ui->set_file_status("Loaded scene from " + std::string(k_default_scene_file_path), false);
                     }

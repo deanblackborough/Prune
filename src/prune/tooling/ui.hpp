@@ -8,6 +8,7 @@
 #include "prune/tooling/inspector.hpp"
 #include "prune/tooling/controls.hpp"
 #include "prune/tooling/stats.hpp"
+#include "prune/scene/scene_factory.hpp"
 #include "prune/tooling/options.hpp"
 
 namespace prune {
@@ -22,6 +23,7 @@ namespace prune {
             Scene& scene,
             SDL_Renderer* renderer,
             bool& new_scene_requested,
+            SceneType& new_scene_type,
             bool& load_scene_requested
         );
         void render_scene_viewport_content(Scene& scene, SDL_Renderer* renderer);
