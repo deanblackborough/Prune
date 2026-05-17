@@ -2,189 +2,394 @@
 
 ## Current focus
 
-Prune now has enough editor and runtime pieces to start testing the real idea:
+Prune now has two working scene slices:
 
-A live 2D editor/runtime where generic editor tools are shared, but each scene type can define its own behaviour, tools, panels, and inspectors.
+- Simple Shooter
+- Platformer
 
-The current simple shooter slice is not meant to become a full game yet. It exists to expose where the architecture needs to bend before adding more scene types.
+That is enough to stop guessing about the architecture and start fixing what the second slice has exposed.
 
-## Immediate cleanup branch
+The immediate priority is not more tools and not another game type. The immediate priority is making the existing two-slice architecture cleaner so the next scene type does not multiply duplication.
 
-Before adding new features, clean up the current structure.
+## Current assessment
 
-### Goals
+The project is moving in the right direction.
 
-- Rename SandboxScene to SimpleShooterScene
-- Save and load SimpleShooterOptions
-- Add a runtime pause option
-- Move simple shooter behaviour string constants into one place
-- Stop runtime cleanup from bypassing GameObjectManager
-- Update README and Notes to match the current roadmap
+The editor shell is real. The viewport, outliner, inspector, grid, camera, renderer, interaction, object manager, YAML save/load, and scene factory are all useful foundations.
 
-### Why
+The problem is that the concrete scene classes still carry too much shared plumbing. SimpleShooterScene and PlatformerScene should eventually read mostly as scene-specific code, but right now they still repeat general scene lifecycle, state access, viewport handling, camera access, object manager access, save/load shape, and editor interaction calls.
 
-The project is about to move from one scene type to multiple scene types. The current code mostly supports that direction, but the naming and a few ownership boundaries still reflect the earlier sandbox phase.
+That is fine for proving the second scene. It should not become the permanent pattern.
 
-## Next feature branch: transform gizmos
+## Immediate architecture branch
 
-The next major editor feature should be basic transform gizmos.
+### Goal
 
-### First version
+Clean up the architecture now that two scene types exist.
 
-- Select an object
-- Show a move gizmo at the object origin or centre
-- Drag on X axis
-- Drag on Y axis
-- Drag freely from centre handle
-- Respect grid snapping
-- Only support position at first
+Do this before adding transform gizmos, bigger scene tooling, or a third scene type.
 
-### Not yet
+### Non-goals
 
-- Rotation
-- Scale
-- Multi-select
-- Pivot editing
-- Undo/redo integration
+- Do not build a plugin system.
+- Do not build a full ECS.
+- Do not rewrite GameObject completely.
+- Do not over-document unstable internals.
+- Do not make the platformer a full game yet.
 
-### Why
+## Issues to fix now
 
-Dragging objects directly proved the viewport interaction model. Gizmos are the next step because they force the editor to formalise tools instead of baking interaction directly into SceneInteraction.
+### 1. Shared scene shell extraction
 
-## Next architecture branch: scene type boundary
+SimpleShooterScene and PlatformerScene repeat too much of the same shell work.
 
-After gizmos start to exist, introduce a clearer scene type boundary.
+Repeated responsibilities include:
 
-Expected direction:
+- Owning SceneState
+- Owning SceneRenderer
+- Owning SceneInteraction
+- Viewport get/set
+- Object manager access
+- Grid options access
+- Scene options access
+- Camera access
+- Common update shape
+- Common render shape
+- Common reset/default lifecycle shape
+- Common save/load shape
 
-- Generic editor owns:
-  - viewport
-  - outliner
-  - generic inspector
-  - grid
-  - camera controls
-  - save/load shell
-  - object selection
-  - generic object transforms
+Suggested direction:
 
-- Scene type owns:
-  - runtime update
-  - scene-specific options
-  - scene-specific panels
-  - scene-specific inspector sections
-  - scene-specific object creation
-  - scene-specific serialization data
+- Introduce a shared scene shell/base that owns common state and editor/runtime plumbing.
+- Let concrete scenes implement only scene-specific behaviour, defaults, tools, inspector sections, and serialization data.
+- Keep the design boring and explicit.
 
-Do not over-design this before the second scene exists.
+A good outcome would be that a new scene type does not need to reimplement object manager getters, viewport getters, camera getters, and generic render/update plumbing.
 
-## Second scene type
+### 2. Clearer editor/runtime boundary
 
-The second scene type should be small and intentionally different from the shooter.
+Current scene update flow still mixes these concerns:
 
-Best candidate:
+- Runtime behaviour update
+- Editor interaction update
+- Camera follow update
+- Viewport input gating
 
-### Platformer prototype
+Suggested direction:
 
-Why:
+- Shared shell owns editor interaction and generic camera/update sequencing.
+- Scene type owns runtime update.
+- Scene type receives a small context rather than reaching into everything directly where possible.
 
-- Gravity
-- Jumping
-- Ground checks
-- Different camera expectations
-- Different scene-specific settings
-- Different inspector needs
+The boundary should be clear enough that when a future transform gizmo is added, it obviously belongs to the editor/tooling side, not to SimpleShooterScene or PlatformerScene.
 
-Minimum slice:
+### 3. Real scene-specific inspector support
 
-- Player affected by gravity
-- Solid blocks
-- Jump
-- Horizontal movement
-- One platformer-specific settings panel:
-  - gravity
-  - jump strength
-  - move speed
+The interface has `draw_scene_inspector(GameObject& selected)`, and Ui calls it after the generic inspector. That is the right seam.
 
-This will quickly show whether the editor shell is genuinely reusable.
+The current implementation is effectively empty.
 
-## Sprite handling pass
+Suggested direction:
 
-Sprite handling needs a dedicated improvement pass.
+- Keep generic object properties in the generic inspector.
+- Add scene-owned sections only when the selected object has a scene-specific role.
+- Make these sections explanatory as well as editable.
 
-### Short-term
+Examples:
 
-- Keep the resource map simple
-- Validate sprite keys on load
-- Add sprite selection in inspector
-- Show missing sprite fallback clearly
-- Support facing-based sprite selection or rotation
+Simple Shooter:
 
-### Later
+- Player: movement speed, facing, shooting status
+- Enemy: enemy speed, respawn role
+- Bullet: runtime object, lifetime, velocity
+- Block: solid obstacle role
 
-- Sprite sheets
-- Animation states
-- Scene-specific sprite rules
-- Asset browser
-- Hot reload
+Platformer:
 
-## One-to-two month plan
+- Player: grounded state, velocity, jump/move tuning
+- Ground/platform: solid platform role
+- Hazard: causes player reset on overlap
 
-### Week 1
+This will make the editor demonstrate why scene-specific inspectors matter.
 
-- Cleanup branch
-- Rename SandboxScene
-- Save/load SimpleShooterOptions
-- Add pause
-- Centralise behaviour IDs
-- Update docs
+### 4. Stronger scene object semantics
 
-### Week 2
+GameObject is better grouped now, but the meaning of an object is still mostly implied by fields like `runtime.behaviour`, `collision.solid`, colour, and editor flags.
 
-- Basic move gizmo
-- Pull gizmo state out of SceneInteraction
-- Keep position-only
+The next pass should make object intent clearer.
 
-### Week 3
+Questions to answer:
 
-- Improve sprite selection
-- Add missing sprite fallback handling
-- Add facing sprite/rotation decision
+- Is this an authored object or runtime-spawned object?
+- What scene role does it have?
+- Is it solid, hazardous, decorative, player-controlled, enemy-controlled, projectile, terrain, or spawn-only?
+- Which system is allowed to create it?
+- Which system is allowed to delete it?
+- Should the editor expose the fields directly or through scene-specific controls?
 
-### Week 4
+Important example:
 
-- Extract first scene-type seam
-- Keep it small
-- Do not build plugin architecture yet
+A platformer hazard should work because it has a platformer hazard role/behaviour that the Platformer runtime checks. The red colour is only presentation.
 
-### Weeks 5-6
+### 5. Tighten Platformer into a cleaner demo slice
 
-- Add platformer scene prototype
-- Reuse generic panels
-- Add platformer-specific settings panel
-- Identify what must become generic
+The Platformer slice is useful but still feels like an architecture probe.
 
-### Weeks 7-8
+Improve it before moving on.
 
-- Refine scene-type boundary
-- Improve save/load structure
-- Add small debug overlays
-- Decide whether card/tetris scene or top-down shooter expansion comes next
+Work to consider:
 
-## Later roadmap
+- Better initial level layout
+- Better default camera/zoom expectations
+- Clear player start/reset point
+- Clear hazard placement
+- Clear platform names
+- Grounded state visible in the platformer panel or inspector
+- Hazard behaviour visible in inspector
+- Controls updated so A/D/W/Space behaviour is obvious
+- Consistent pause behaviour with Simple Shooter
+- Sensible tuning values that feel deliberate
+
+This should stay small. The target is a convincing slice, not a complete platformer.
+
+### 6. Organise scene types into folders
+
+The scene folder is now too flat.
+
+Suggested direction:
+
+```text
+src/prune/scene/core
+src/prune/scene/simple_shooter
+src/prune/scene/platformer
+src/prune/scene/artillery
+```
+
+Possible ownership:
+
+`scene/core`:
+
+- Scene interface
+- Shared scene shell/base
+- SceneState
+- SceneCamera
+- SceneRenderer
+- SceneInteraction
+- SceneSerializer
+- GameObject
+- GameObjectManager
+- Collision helpers
+- SceneFactory, unless factory moves higher-level later
+
+`scene/simple_shooter`:
+
+- SimpleShooterScene
+- SimpleShooterBehaviour
+- SimpleShooterFactory
+- SimpleShooterSerializer
+- SimpleShooterState
+- SimpleShooter IDs
+
+`scene/platformer`:
+
+- PlatformerScene
+- PlatformerBehaviour
+- PlatformerFactory
+- PlatformerSerializer
+- PlatformerState
+- Platformer IDs
+
+This is a structure change only. Do it when the shared shell work starts, not randomly in isolation.
+
+### 7. Duplication in the code
+
+Known duplication areas:
+
+- Concrete scene lifecycle
+- Concrete scene state accessors
+- Viewport accessors
+- Camera accessors
+- Save/load wrapper structure
+- Spawn-at-view-centre logic
+- Scene-specific panel setup shape
+- Scene creation menu entries
+- Scene type string handling
+
+Suggested direction:
+
+- Remove duplication only when there is a clear shared concept.
+- Keep scene-specific code scene-specific.
+- Do not abstract behaviour just because two files look similar.
+
+The useful split is not “no duplication at all”. The useful split is “new scene types should only define what makes them different”.
+
+### 8. Reduce new scene boilerplate
+
+Adding a third scene should not mean creating a large pile of files and repeating the same code.
+
+Target pattern for a small scene:
+
+- One scene class
+- One state/options file
+- One behaviour file if needed
+- One factory/defaults file if needed
+- One serializer file only if scene-specific save data exists
+- One tooling panel only if it has scene-specific controls
+- Optional inspector section only if useful
+
+The shared shell should make unused pieces optional.
+
+The project does not need dynamic plugins yet. A static registration/list is enough.
+
+### 9. Documentation level
+
+Some documentation is useful now, but deep documentation is too early.
+
+Useful now:
+
+- README with current goal and roadmap
+- Notes with immediate architecture plan
+- A short scene-type checklist after the shared shell exists
+- Comments explaining non-obvious C++/SDL/ImGui decisions
+
+Too early now:
+
+- Full architecture guide
+- Plugin guide
+- Public API docs
+- Long tutorials
+
+The architecture is still moving. Document intent and decisions, not every class in detail.
+
+## Recommended order of work
+
+### Step 1: Document the current direction
+
+Update README and Notes to reflect the two-slice state.
+
+### Step 2: Extract shared scene shell
+
+Create the smallest useful shared shell.
+
+Expected outcome:
+
+- Concrete scenes no longer repeat generic state/camera/viewport/object-manager accessors.
+- Generic render and editor interaction sequencing is centralised.
+- Scene-specific runtime update remains scene-owned.
+
+### Step 3: Move scene types into folders
+
+Do this once the shared shell boundary is clear.
+
+Expected outcome:
+
+- Scene core and scene slices are visually separate.
+- Adding a new scene type has an obvious location.
+
+### Step 4: Add real scene-specific inspector sections
+
+Use the existing hook.
+
+Expected outcome:
+
+- Selecting platformer hazard explains/controls hazard behaviour.
+- Selecting platformer player exposes useful platformer state.
+- Selecting shooter player/enemy/bullet exposes useful shooter state.
+
+### Step 5: Tighten the Platformer slice
+
+Expected outcome:
+
+- The platformer feels like a deliberate demo.
+- Hazards are visibly meaningful.
+- Controls and tuning make sense.
+
+## Step 6: Tighten the Simple Shooter slice
+
+The Simple Shooter should become the clean reference slice for how a scene type is structured. It does not need more features yet; it needs to be clearer, smaller, and more intentional.
+
+Focus areas:
+
+- Keep shooter-specific behaviour inside the shooter scene/control code, not the generic inspector.
+- Make the player, enemy, projectile, wall, and spawn objects explicit concepts instead of relying mostly on colour, flags, or loose behaviour IDs.
+- Remove duplicated tuning values from generic UI panels and keep them in the shooter-specific controls.
+- Make collision rules obvious:
+  - player movement blocked by solid walls
+  - bullets hit enemies
+  - bullets stop at walls
+  - enemies damage or collide with the player only if that behaviour is part of the slice
+- Ensure the outliner and inspector describe what each object is in game terms, not just rectangle data.
+- Keep the slice deliberately small:
+  - one player
+  - simple movement
+  - one projectile type
+  - one enemy type
+  - basic spawn/reset loop if needed
+
+The goal is not to make a better game yet. The goal is to make Simple Shooter the cleanest example of how a scene type owns its own runtime behaviour, controls, inspector fields, and object semantics.
+
+### Step 7: Reduce scene creation friction
+
+Review what was still painful after the shell/folder work.
+
+Expected outcome:
+
+- Adding the third scene is mostly filling in scene-specific pieces.
+- The checklist is short.
+
+## Next steps
+
+Once the boundaries are cleaner, continue editor tooling.
+
+Good candidates:
+
+- Transform gizmo
+- Better sprite picker
+- Collision/debug overlays
+- Object duplication improvements
+- Basic scene-specific creation tools
+
+## Possible third scene: artillery/tank
+
+A simple artillery/tank scene is a good third slice candidate.
+
+Minimum version:
+
+- Two tanks
+- Generated line terrain
+- Turn state
+- Current player indicator
+- Angle control
+- Power control
+- Fire projectile
+- Projectile arc
+- Collision with terrain or tank
+- Reset/restart round
+
+Why this is a strong architecture test:
+
+- It is turn-based, not continuous movement.
+- It uses generated terrain.
+- It has two controlled actors.
+- It needs a very different scene-specific panel.
+- It needs aiming/power tooling rather than movement tuning.
+- It uses projectile behaviour differently from Simple Shooter.
+
+This is likely a better next architecture test than a card game. A card game is still interesting, but it would force UI and object model questions that are probably too early while the scene shell is still settling.
+
+## Later backlog
 
 - Transform gizmos
 - Rotate and scale tools
 - Undo/redo
 - Multi-select
 - Object duplication improvements
-- Scene-specific inspectors
 - Scene-specific creation tools
 - Better sprite system
-- Animation
+- Facing/animation support
 - Audio hooks
-- Debug overlays
 - Collision visualisation
-- Scene switching
-- Multiple scene examples
-- Packaging/build polish
+- Runtime object overlays
+- Scene switching polish
 - Example projects
+- Packaging/build polish
