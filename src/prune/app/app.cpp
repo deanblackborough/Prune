@@ -1,11 +1,14 @@
-#include "imgui.h"
-#include "backends/imgui_impl_sdl2.h"
-#include "backends/imgui_impl_sdlrenderer2.h"
+#include <stdexcept>
+#include <filesystem>
+#include <memory>
+#include <utility>
 
 #include <SDL2/SDL.h>
 #include <SDL_image.h>
-#include <stdexcept>
-#include <filesystem>
+
+#include "imgui.h"
+#include "backends/imgui_impl_sdl2.h"
+#include "backends/imgui_impl_sdlrenderer2.h"
 
 #include "prune/app/app.hpp"
 #include "prune/core/time.hpp"
@@ -73,7 +76,44 @@ namespace prune {
             begin_imgui_frame();
 
             if (m_scene && m_ui && m_window) {
-                m_ui->build(*m_scene, m_window->renderer());
+                bool new_scene_requested = false;
+                bool load_scene_requested = false;
+
+                m_ui->build(
+                    *m_scene,
+                    m_window->renderer(),
+                    new_scene_requested,
+                    load_scene_requested
+                );
+
+                if (new_scene_requested) {
+                    m_scene = SceneFactory::create(
+                        SceneType::SimpleShooter,
+                        m_window->width(),
+                        m_window->height()
+                    );
+
+                    m_ui->set_file_status("Created new scene", false);
+                }
+
+                if (load_scene_requested) {
+                    std::string error;
+
+                    std::unique_ptr<Scene> loaded_scene = SceneFactory::create_from_file(
+                        k_default_scene_file_path,
+                        m_window->width(),
+                        m_window->height(),
+                        error
+                    );
+
+                    if (loaded_scene) {
+                        m_scene = std::move(loaded_scene);
+                        m_ui->set_file_status("Loaded scene from " + std::string(k_default_scene_file_path), false);
+                    }
+                    else {
+                        m_ui->set_file_status("Load failed: " + error, true);
+                    }
+                }
             }
 
             while (m_accumulator >= m_fixed_timestep) {

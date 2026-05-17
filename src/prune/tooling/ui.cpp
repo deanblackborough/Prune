@@ -1,5 +1,8 @@
+#include <utility>
+
 #include "imgui.h"
 
+#include "prune/core/defaults.hpp"
 #include "prune/scene/scene.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/ui.hpp"
@@ -11,24 +14,27 @@ namespace prune {
         destroy_scene_render_target();
     }
 
-    void Ui::build(Scene& scene, SDL_Renderer* renderer)
+    void Ui::build(
+        Scene& scene,
+        SDL_Renderer* renderer,
+        bool& new_scene_requested,
+        bool& load_scene_requested
+    )
     {
         draw_scene_viewport(scene, renderer);
 
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New Scene")) {
-                    scene.new_scene();
-                    m_file_status = "Created new scene";
-                    m_file_status_is_error = false;
+                    new_scene_requested = true;
                 }
 
                 ImGui::Separator();
 
                 if (ImGui::MenuItem("Save Scene")) {
                     std::string error;
-                    if (scene.save_to_file(kSceneFilePath, error)) {
-                        m_file_status = "Saved scene to simple_shooter_scene.yml";
+                    if (scene.save_to_file(k_default_scene_file_path, error)) {
+                        m_file_status = "Saved scene to " + std::string(k_default_scene_file_path);
                         m_file_status_is_error = false;
                     }
                     else {
@@ -38,15 +44,7 @@ namespace prune {
                 }
 
                 if (ImGui::MenuItem("Load Scene")) {
-                    std::string error;
-                    if (scene.load_from_file(kSceneFilePath, error)) {
-                        m_file_status = "Loaded scene from sandbox_scene.yml";
-                        m_file_status_is_error = false;
-                    }
-                    else {
-                        m_file_status = "Load failed: " + error;
-                        m_file_status_is_error = true;
-                    }
+                    load_scene_requested = true;
                 }
 
                 ImGui::Separator();
@@ -263,5 +261,11 @@ namespace prune {
         scene.render(renderer);
 
         SDL_SetRenderTarget(renderer, previous_target);
+    }
+
+    void Ui::set_file_status(std::string status, bool is_error)
+    {
+        m_file_status = std::move(status);
+        m_file_status_is_error = is_error;
     }
 }

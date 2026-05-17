@@ -12,4 +12,6 @@ namespace prune {
 	constexpr std::string_view k_default_sprite_key = "tank-red";
 	constexpr std::string_view k_default_player_sprite_key = "tank-green";
 
+    constexpr std::string_view k_default_scene_file_path = "simple_shooter_scene.yml";
+
 }

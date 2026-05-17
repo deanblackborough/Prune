@@ -18,8 +18,14 @@ namespace prune {
     public:
         ~Ui();
 
-        void build(Scene& scene, SDL_Renderer* renderer);
+        void build(
+            Scene& scene,
+            SDL_Renderer* renderer,
+            bool& new_scene_requested,
+            bool& load_scene_requested
+        );
         void render_scene_viewport_content(Scene& scene, SDL_Renderer* renderer);
+        void set_file_status(std::string status, bool is_error);
 
     private:
         void draw_scene_viewport(Scene& scene, SDL_Renderer* renderer);
@@ -31,8 +37,6 @@ namespace prune {
         int m_scene_render_target_height = 0;
 
         bool m_show_scene_viewport = true;
-
-        static constexpr const char* kSceneFilePath = "simple_shooter_scene.yml";
 
         Outliner m_outliner;
         Inspector m_inspector;
