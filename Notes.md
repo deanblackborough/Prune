@@ -152,7 +152,29 @@ Work to consider:
 
 This should stay small. The target is a convincing slice, not a complete platformer.
 
-### 6. Organise scene types into folders
+The Simple Shooter should become the clean reference slice for how a scene type is structured. It does not need more features yet; it needs to be clearer, smaller, and more intentional.
+
+### 6. Tighten shooter into a cleaner demo slice
+
+Focus areas:
+
+- Keep shooter-specific behaviour inside the shooter scene/control code, not the generic inspector.
+- Make the player, enemy, projectile, wall, and spawn objects explicit concepts instead of relying mostly on colour, flags, or loose behaviour IDs.
+- Remove duplicated tuning values from generic UI panels and keep them in the shooter-specific controls.
+- Make collision rules obvious:
+  - player movement blocked by solid walls
+  - bullets hit enemies
+  - bullets stop at walls
+  - enemies damage or collide with the player only if that behaviour is part of the slice
+- Ensure the outliner and inspector describe what each object is in game terms, not just rectangle data.
+- Keep the slice deliberately small:
+  - one player
+  - simple movement
+  - one projectile type
+  - one enemy type
+  - basic spawn/reset loop if needed
+
+### 7. Organise scene types into folders
 
 The scene folder is now too flat.
 
@@ -201,7 +223,7 @@ Possible ownership:
 
 This is a structure change only. Do it when the shared shell work starts, not randomly in isolation.
 
-### 7. Duplication in the code
+### 8. Duplication in the code
 
 Known duplication areas:
 
@@ -223,7 +245,7 @@ Suggested direction:
 
 The useful split is not “no duplication at all”. The useful split is “new scene types should only define what makes them different”.
 
-### 8. Reduce new scene boilerplate
+### 9. Reduce new scene boilerplate
 
 Adding a third scene should not mean creating a large pile of files and repeating the same code.
 
@@ -241,7 +263,7 @@ The shared shell should make unused pieces optional.
 
 The project does not need dynamic plugins yet. A static registration/list is enough.
 
-### 9. Documentation level
+### 10. Documentation level
 
 Some documentation is useful now, but deep documentation is too early.
 
@@ -260,82 +282,6 @@ Too early now:
 - Long tutorials
 
 The architecture is still moving. Document intent and decisions, not every class in detail.
-
-## Recommended order of work
-
-### Step 1: Document the current direction
-
-Update README and Notes to reflect the two-slice state.
-
-### Step 2: Extract shared scene shell
-
-Create the smallest useful shared shell.
-
-Expected outcome:
-
-- Concrete scenes no longer repeat generic state/camera/viewport/object-manager accessors.
-- Generic render and editor interaction sequencing is centralised.
-- Scene-specific runtime update remains scene-owned.
-
-### Step 3: Move scene types into folders
-
-Do this once the shared shell boundary is clear.
-
-Expected outcome:
-
-- Scene core and scene slices are visually separate.
-- Adding a new scene type has an obvious location.
-
-### Step 4: Add real scene-specific inspector sections
-
-Use the existing hook.
-
-Expected outcome:
-
-- Selecting platformer hazard explains/controls hazard behaviour.
-- Selecting platformer player exposes useful platformer state.
-- Selecting shooter player/enemy/bullet exposes useful shooter state.
-
-### Step 5: Tighten the Platformer slice
-
-Expected outcome:
-
-- The platformer feels like a deliberate demo.
-- Hazards are visibly meaningful.
-- Controls and tuning make sense.
-
-## Step 6: Tighten the Simple Shooter slice
-
-The Simple Shooter should become the clean reference slice for how a scene type is structured. It does not need more features yet; it needs to be clearer, smaller, and more intentional.
-
-Focus areas:
-
-- Keep shooter-specific behaviour inside the shooter scene/control code, not the generic inspector.
-- Make the player, enemy, projectile, wall, and spawn objects explicit concepts instead of relying mostly on colour, flags, or loose behaviour IDs.
-- Remove duplicated tuning values from generic UI panels and keep them in the shooter-specific controls.
-- Make collision rules obvious:
-  - player movement blocked by solid walls
-  - bullets hit enemies
-  - bullets stop at walls
-  - enemies damage or collide with the player only if that behaviour is part of the slice
-- Ensure the outliner and inspector describe what each object is in game terms, not just rectangle data.
-- Keep the slice deliberately small:
-  - one player
-  - simple movement
-  - one projectile type
-  - one enemy type
-  - basic spawn/reset loop if needed
-
-The goal is not to make a better game yet. The goal is to make Simple Shooter the cleanest example of how a scene type owns its own runtime behaviour, controls, inspector fields, and object semantics.
-
-### Step 7: Reduce scene creation friction
-
-Review what was still painful after the shell/folder work.
-
-Expected outcome:
-
-- Adding the third scene is mostly filling in scene-specific pieces.
-- The checklist is short.
 
 ## Next steps
 

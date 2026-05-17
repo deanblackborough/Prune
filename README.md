@@ -100,7 +100,7 @@ Having two scene types is already showing the useful pressure points:
 
 ## Near-term focus
 
-I have a [notes](notes.md) file which details everything I will be doing to clean up the core concept and prove Prune works and is worth building on.
+I have a [notes](Notes.md) file which details everything I will be doing to clean up the core concept and prove Prune works and is worth building on.
 
 ## Documentation stance
 
