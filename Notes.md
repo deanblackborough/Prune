@@ -269,7 +269,7 @@ Some documentation is useful now, but deep documentation is too early.
 
 Useful now:
 
-- README with current goal and roadmap
+- README with current goal and architecture direction
 - Notes with immediate architecture plan
 - A short scene-type checklist after the shared shell exists
 - Comments explaining non-obvious C++/SDL/ImGui decisions
