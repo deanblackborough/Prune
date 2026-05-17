@@ -93,6 +93,7 @@ namespace prune {
                         m_window->height()
                     );
 
+                    m_scene->on_enter();
                     m_ui->set_file_status("Created new scene", false);
                 }
 
