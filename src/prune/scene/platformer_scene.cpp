@@ -127,6 +127,12 @@ namespace prune {
                 add_platform_at_view_center();
             }
 
+            ImGui::SameLine();
+
+            if (ImGui::Button("Add Hazard")) {
+                add_hazard_at_view_center();
+            }
+
             ImGui::Separator();
 
             m_platformer_tools.draw(m_platformer_state.options, m_platformer_state.player_grounded);
@@ -137,17 +143,7 @@ namespace prune {
 
     void PlatformerScene::draw_scene_inspector(GameObject& selected)
     {
-        if (selected.identity.id != m_platformer_state.player_id) {
-            return;
-        }
-
-        if (tooling::imgui::layout::collapsing_header("Platformer Player")) {
-            if (tooling::imgui::property_table::begin("##platformer_player")) {
-                tooling::imgui::property_table::slider_float("Move speed", "##platformer_player_move_speed", m_platformer_state.options.move_speed, 0.0f, 256.0f, "%.2f");
-                tooling::imgui::property_table::slider_float("Jump velocity", "##platformer_player_jump_velocity", m_platformer_state.options.jump_velocity, 0.0f, 512.0f, "%.2f");
-                tooling::imgui::property_table::end();
-            }
-        }
+        (void) selected;
     }
 
     bool PlatformerScene::save_to_file(std::string_view path, std::string& error) const
@@ -249,6 +245,19 @@ namespace prune {
         const GameObjectId id = m_state.objects.create_object(platform);
         if (GameObject* created = m_state.objects.get_by_id(id)) {
             created->identity.name = "Platform " + std::to_string(id);
+        }
+
+        m_state.objects.select(id);
+    }
+
+    void PlatformerScene::add_hazard_at_view_center()
+    {
+        GameObject hazard = platformer_factory::create_hazard(0.0f, 0.0f);
+        hazard.transform = view_center_spawn_position(hazard.size.width, hazard.size.height);
+
+        const GameObjectId id = m_state.objects.create_object(hazard);
+        if (GameObject* created = m_state.objects.get_by_id(id)) {
+            created->identity.name = "Hazard " + std::to_string(id);
         }
 
         m_state.objects.select(id);

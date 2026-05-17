@@ -52,6 +52,7 @@ namespace prune {
         [[nodiscard]] const GameObject* player_object() const noexcept;
 
         void add_platform_at_view_center();
+        void add_hazard_at_view_center();
         [[nodiscard]] Transform view_center_spawn_position(int width, int height) const;
 
         SceneState m_state;

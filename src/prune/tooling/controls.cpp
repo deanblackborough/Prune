@@ -4,9 +4,16 @@
 namespace prune {
 
     void Controls::draw() {
-		tooling::imgui::layout::text_wrapped("Player");
+		tooling::imgui::layout::text_wrapped("Simple Shooter");
 		tooling::imgui::layout::text_wrapped("WASD keys move the player");
 		tooling::imgui::layout::text_wrapped("Space fires in the current facing direction");
+
+		tooling::imgui::layout::separator();
+
+		tooling::imgui::layout::text_wrapped("Platformer");
+		tooling::imgui::layout::text_wrapped("A/D keys move the player");
+		tooling::imgui::layout::text_wrapped("W or Space jumps");
+		tooling::imgui::layout::text_wrapped("Touching a hazard resets the player");
 
 		tooling::imgui::layout::separator();
 
