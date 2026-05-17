@@ -152,8 +152,6 @@ Work to consider:
 
 This should stay small. The target is a convincing slice, not a complete platformer.
 
-The Simple Shooter should become the clean reference slice for how a scene type is structured. It does not need more features yet; it needs to be clearer, smaller, and more intentional.
-
 ### 6. Tighten shooter into a cleaner demo slice
 
 Focus areas:
@@ -173,6 +171,8 @@ Focus areas:
   - one projectile type
   - one enemy type
   - basic spawn/reset loop if needed
+
+This should stay small. The target is a convincing slice, not a complete shooter.
 
 ### 7. Organise scene types into folders
 
