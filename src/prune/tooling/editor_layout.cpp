@@ -115,7 +115,7 @@ namespace prune::tooling {
         );
     }
 
-    void EditorLayout::simple_shooter()
+    void EditorLayout::scene_panel()
     {
         set_window_default(
             ImVec2(right_panel_x(), top_y() + k_outliner_height + k_margin),

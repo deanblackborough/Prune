@@ -120,7 +120,7 @@ namespace prune {
 
     void PlatformerScene::draw_scene_tools(bool& open)
     {
-        tooling::EditorLayout::simple_shooter();
+        tooling::EditorLayout::scene_panel();
 
         if (ImGui::Begin("Platformer", &open)) {
             if (ImGui::Button("Add Platform")) {
@@ -162,6 +162,12 @@ namespace prune {
             }
 
             output << root;
+
+            if (!output) {
+                error = "Failed to write scene data to file.";
+                return false;
+            }
+
             return true;
         }
         catch (const YAML::Exception& ex) {
