@@ -8,7 +8,8 @@
 namespace prune {
 
     enum class SceneType {
-        SimpleShooter
+        SimpleShooter,
+        Platformer
     };
 
     class SceneFactory {

@@ -28,11 +28,15 @@ add_executable(Prune
         src/prune/scene/scene_camera.cpp
         src/prune/scene/scene_interaction.cpp
         src/prune/scene/scene_serializer.cpp
-        
-        src/prune/scene/simple_shooter_scene.cpp        
+
+        src/prune/scene/simple_shooter_scene.cpp
         src/prune/scene/simple_shooter_factory.cpp
         src/prune/scene/simple_shooter_behaviour.cpp
         src/prune/scene/simple_shooter_serializer.cpp
+        src/prune/scene/platformer_scene.cpp
+        src/prune/scene/platformer_factory.cpp
+        src/prune/scene/platformer_behaviour.cpp
+        src/prune/scene/platformer_serializer.cpp
 
         src/prune/resources/sprites.cpp
 
@@ -45,6 +49,7 @@ add_executable(Prune
         src/prune/tooling/stats.cpp
         src/prune/tooling/editor_layout.cpp
         src/prune/tooling/simple_shooter.cpp
+        src/prune/tooling/platformer.cpp
 
         src/prune/tooling/imgui/property_table.cpp
         src/prune/tooling/imgui/layout.cpp

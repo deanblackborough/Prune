@@ -4,6 +4,7 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "prune/scene/platformer_scene.hpp"
 #include "prune/scene/simple_shooter_scene.hpp"
 
 namespace prune {
@@ -15,6 +16,9 @@ namespace prune {
     )
     {
         switch (type) {
+        case SceneType::Platformer:
+            return std::make_unique<PlatformerScene>(window_width, window_height);
+
         case SceneType::SimpleShooter:
         default:
             return std::make_unique<SimpleShooterScene>(window_width, window_height);
@@ -42,6 +46,9 @@ namespace prune {
 
             if (scene_type == "simple_shooter") {
                 scene = create(SceneType::SimpleShooter, window_width, window_height);
+            }
+            else if (scene_type == "platformer") {
+                scene = create(SceneType::Platformer, window_width, window_height);
             }
             else {
                 error = "Unknown scene_type: " + scene_type;
