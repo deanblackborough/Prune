@@ -1,4 +1,3 @@
-#include <fstream>
 #include <string>
 #include <utility>
 
@@ -6,8 +5,6 @@
 
 #include "prune/resources/sprites.hpp"
 #include "prune/scene/scene_serializer.hpp"
-#include "prune/scene/simple_shooter_factory.hpp"
-#include "prune/scene/simple_shooter_ids.hpp"
 
 namespace prune {
 
@@ -20,7 +17,6 @@ namespace prune {
             GridOptions grid_options{};
             SceneOptions scene_options{};
             CameraState camera_state{};
-            SimpleShooterState simple_shooter_state{};
             float player_speed = 256.0f;
         };
 
@@ -131,10 +127,10 @@ namespace prune {
         YAML::Node make_object_node(const GameObject& object)
         {
             YAML::Node node;
-            node["id"] = object.id;
-            node["name"] = object.name;
-            node["type"] = to_string(object.type);
-            node["active"] = object.active;
+            node["id"] = object.identity.id;
+            node["name"] = object.identity.name;
+            node["type"] = to_string(object.identity.type);
+            node["active"] = object.lifecycle.active;
 
             node["transform"]["x"] = object.transform.x;
             node["transform"]["y"] = object.transform.y;
@@ -316,24 +312,19 @@ namespace prune {
                 return false;
             }
 
-            if (!read_required_uint(node, "id", object.id)) {
-                error = "Object is missing id.";
+            if (!read_required_uint(node, "id", object.identity.id)) {
+                error = "Object id is missing.";
                 return false;
             }
 
-            if (!node["name"]) {
-                error = "Object is missing name.";
-                return false;
-            }
+            object.identity.name = node["name"].as<std::string>();
 
-            object.name = node["name"].as<std::string>();
-
-            if (!parse_game_object_type(node["type"], object.type)) {
+            if (!parse_game_object_type(node["type"], object.identity.type)) {
                 error = "Object type is invalid.";
                 return false;
             }
 
-            if (!read_required_bool(node, "active", object.active)) {
+            if (!read_required_bool(node, "active", object.lifecycle.active)) {
                 error = "Object active flag is missing.";
                 return false;
             }
@@ -370,8 +361,8 @@ namespace prune {
                 return false;
             }
 
-            object.velocity = {};
-            object.lifetime = 0.0f;
+            object.motion.velocity = {};
+            object.lifecycle.remaining = 0.0f;
 
             return true;
         }
@@ -398,284 +389,197 @@ namespace prune {
         }
     }
 
-    bool SceneSerializer::save_to_file(
-        const SceneState& state,
-        const SimpleShooterState& shooter_state,
-        std::string_view path,
-        std::string& error
-    )
+    void SceneSerializer::save_to_node(const SceneState& state, YAML::Node& root)
     {
-        try {
-            YAML::Node root;
+        root["scene"]["next_object_id"] = state.objects.next_id();
+        root["scene"]["player_id"] = state.player_id;
 
-            root["scene"]["next_object_id"] = state.objects.next_id();
-            root["scene"]["player_id"] = state.player_id;
+        if (state.objects.selected_id() != k_invalid_game_object_id) {
+            root["scene"]["selected_object_id"] = state.objects.selected_id();
+        }
 
-            if (state.objects.selected_id() != k_invalid_game_object_id) {
-                root["scene"]["selected_object_id"] = state.objects.selected_id();
+        root["cameras"]["mode"] = state.camera.state().mode == CameraMode::Editor ? "editor" : "game";
+
+        root["cameras"]["editor"]["x"] = state.camera.state().editor.x;
+        root["cameras"]["editor"]["y"] = state.camera.state().editor.y;
+        root["cameras"]["editor"]["speed"] = state.camera.state().editor.speed;
+        root["cameras"]["editor"]["zoom"] = state.camera.state().editor.zoom;
+
+        root["cameras"]["game"]["x"] = state.camera.state().game.x;
+        root["cameras"]["game"]["y"] = state.camera.state().game.y;
+        root["cameras"]["game"]["speed"] = state.camera.state().game.speed;
+        root["cameras"]["game"]["zoom"] = state.camera.state().game.zoom;
+        root["cameras"]["game"]["follow_player"] = state.camera.state().game_options.follow_player;
+
+        root["grid"]["show_grid"] = state.grid_options.show_grid;
+        root["grid"]["snap_to_grid"] = state.grid_options.snap_to_grid;
+        root["grid"]["grid_size"] = state.grid_options.grid_size;
+        root["grid"]["nudge_step"] = state.grid_options.nudge_step;
+        root["grid"]["shift_nudge_steps"] = state.grid_options.shift_nudge_steps;
+
+        root["options"]["highlight_selected"] = state.scene_options.highlight_selected;
+
+        root["player"]["speed"] = state.player_controller.speed();
+
+        YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
+
+        for (const auto& object : state.objects.objects()) {
+            if (!object.runtime.persistent) {
+                continue;
             }
 
-            root["cameras"]["mode"] = state.camera.state().mode == CameraMode::Editor ? "editor" : "game";
-
-            root["cameras"]["editor"]["x"] = state.camera.state().editor.x;
-            root["cameras"]["editor"]["y"] = state.camera.state().editor.y;
-            root["cameras"]["editor"]["speed"] = state.camera.state().editor.speed;
-            root["cameras"]["editor"]["zoom"] = state.camera.state().editor.zoom;
-
-            root["cameras"]["game"]["x"] = state.camera.state().game.x;
-            root["cameras"]["game"]["y"] = state.camera.state().game.y;
-            root["cameras"]["game"]["speed"] = state.camera.state().game.speed;
-            root["cameras"]["game"]["zoom"] = state.camera.state().game.zoom;
-            root["cameras"]["game"]["follow_player"] = state.camera.state().game_options.follow_player;
-
-            root["grid"]["show_grid"] = state.grid_options.show_grid;
-            root["grid"]["snap_to_grid"] = state.grid_options.snap_to_grid;
-            root["grid"]["grid_size"] = state.grid_options.grid_size;
-            root["grid"]["nudge_step"] = state.grid_options.nudge_step;
-            root["grid"]["shift_nudge_steps"] = state.grid_options.shift_nudge_steps;
-
-            root["options"]["highlight_selected"] = state.scene_options.highlight_selected;
-
-            root["player"]["speed"] = state.player_controller.speed();
-
-            root["simple_shooter"]["paused"] = shooter_state.options.paused;
-            root["simple_shooter"]["enemy_speed"] = shooter_state.options.enemy_speed;
-            root["simple_shooter"]["bullet_speed"] = shooter_state.options.bullet_speed;
-            root["simple_shooter"]["bullet_lifetime"] = shooter_state.options.bullet_lifetime;
-
-            YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
-            for (const auto& object : state.objects.objects()) {
-                if (!object.runtime.persistent) {
-                    continue;
-                }
-
-                objects.push_back(make_object_node(object));
-            }
-
-            root["objects"] = objects;
-
-            std::ofstream output{ std::string(path) };
-            if (!output.is_open()) {
-                error = "Could not open save file for writing.";
-                return false;
-            }
-
-            output << root;
-            return true;
+            objects.push_back(make_object_node(object));
         }
-        catch (const YAML::Exception& ex) {
-            error = ex.what();
-            return false;
-        }
-        catch (const std::exception& ex) {
-            error = ex.what();
-            return false;
-        }
+
+        root["objects"] = objects;
     }
 
-    bool SceneSerializer::load_from_file(
-        SceneState& state,
-        SimpleShooterState& shooter_state,
-        std::string_view path,
-        std::string& error
-    )
+    bool SceneSerializer::load_from_node(SceneState& state, const YAML::Node& root, std::string& error)
     {
-        try {
-            const YAML::Node root = YAML::LoadFile(std::string(path));
+        const YAML::Node scene = root["scene"];
+        const YAML::Node cameras = root["cameras"];
+        const YAML::Node player_node = root["player"];
+        const YAML::Node grid = root["grid"];
+        const YAML::Node options = root["options"];
+        const YAML::Node objects = root["objects"];
 
-            const YAML::Node scene = root["scene"];
-            const YAML::Node cameras = root["cameras"];
-            const YAML::Node player_node = root["player"];
-            const YAML::Node simple_shooter = root["simple_shooter"];
-            const YAML::Node grid = root["grid"];
-            const YAML::Node options = root["options"];
-            const YAML::Node objects = root["objects"];
-
-            if (!scene || !cameras || !player_node || !simple_shooter || !grid || !options || !objects || !objects.IsSequence()) {
-                error = "Save file is missing required top-level sections.";
-                return false;
-            }
-
-            LoadedSceneState loaded{};
-
-            if (!read_required_float(player_node, "speed", loaded.player_speed)) {
-                error = "player.speed is missing.";
-                return false;
-            }
-
-            GameObjectId loaded_next_id = 1;
-            GameObjectId loaded_player_id = k_invalid_game_object_id;
-            GameObjectId loaded_selected_id = k_invalid_game_object_id;
-
-            if (!read_required_uint(scene, "next_object_id", loaded_next_id)) {
-                error = "scene.next_object_id is missing.";
-                return false;
-            }
-
-            if (!read_required_uint(scene, "player_id", loaded_player_id)) {
-                error = "scene.player_id is missing.";
-                return false;
-            }
-
-            if (scene["selected_object_id"]) {
-                loaded_selected_id = scene["selected_object_id"].as<GameObjectId>();
-            }
-
-            const YAML::Node editor = cameras["editor"];
-            const YAML::Node game = cameras["game"];
-
-            if (!editor || !game) {
-                error = "cameras section is incomplete.";
-                return false;
-            }
-
-            if (!parse_camera_mode(cameras["mode"], loaded.camera_state.mode)) {
-                error = "cameras.mode is invalid.";
-                return false;
-            }
-
-            if (!read_required_float(editor, "x", loaded.camera_state.editor.x) ||
-                !read_required_float(editor, "y", loaded.camera_state.editor.y) ||
-                !read_required_float(editor, "speed", loaded.camera_state.editor.speed) ||
-                !read_required_float(editor, "zoom", loaded.camera_state.editor.zoom)) {
-                error = "cameras.editor is incomplete.";
-                return false;
-            }
-
-            if (!read_required_float(game, "x", loaded.camera_state.game.x) ||
-                !read_required_float(game, "y", loaded.camera_state.game.y) ||
-                !read_required_float(game, "speed", loaded.camera_state.game.speed) ||
-                !read_required_float(game, "zoom", loaded.camera_state.game.zoom) ||
-                !read_required_bool(game, "follow_player", loaded.camera_state.game_options.follow_player)) {
-                error = "cameras.game is incomplete.";
-                return false;
-            }
-
-            if (!read_required_bool(grid, "show_grid", loaded.grid_options.show_grid) ||
-                !read_required_bool(grid, "snap_to_grid", loaded.grid_options.snap_to_grid) ||
-                !read_required_int(grid, "grid_size", loaded.grid_options.grid_size) ||
-                !read_required_int(grid, "nudge_step", loaded.grid_options.nudge_step) ||
-                !read_required_int(grid, "shift_nudge_steps", loaded.grid_options.shift_nudge_steps)) {
-                error = "grid is incomplete.";
-                return false;
-            }
-
-            if (!read_required_bool(options, "highlight_selected", loaded.scene_options.highlight_selected)) {
-                error = "options.highlight_selected is missing.";
-                return false;
-            }
-
-            if (!read_required_bool(simple_shooter, "paused", loaded.simple_shooter_state.options.paused) ||
-                !read_required_float(simple_shooter, "enemy_speed", loaded.simple_shooter_state.options.enemy_speed) ||
-                !read_required_float(simple_shooter, "bullet_speed", loaded.simple_shooter_state.options.bullet_speed) ||
-                !read_required_float(simple_shooter, "bullet_lifetime", loaded.simple_shooter_state.options.bullet_lifetime)) {
-                error = "simple_shooter options are incomplete.";
-                return false;
-            }
-
-            int player_count = 0;
-
-            for (const auto& entry : objects) {
-                GameObject object{};
-
-                if (!load_object_from_node(entry, object, error)) {
-                    return false;
-                }
-
-                if (!object.runtime.persistent) {
-                    error = "Save file contains a non-persistent object.";
-                    return false;
-                }
-
-                if (!loaded.objects.add_loaded_object(object)) {
-                    error = "Failed to restore object. Duplicate or invalid id.";
-                    return false;
-                }
-
-                if (object.runtime.behaviour == simple_shooter_ids::player_behaviour) {
-                    ++player_count;
-                }
-            }
-
-            if (loaded.objects.empty()) {
-                error = "Save file contains no objects.";
-                return false;
-            }
-
-            if (player_count != 1) {
-                error = "Save file must contain exactly one player object.";
-                return false;
-            }
-
-            loaded.player_id = loaded_player_id;
-
-            const GameObject* loaded_player = loaded.objects.get_by_id(loaded.player_id);
-            if (!loaded_player) {
-                error = "Saved player_id does not exist.";
-                return false;
-            }
-
-            if (loaded_player->runtime.behaviour != simple_shooter_ids::player_behaviour) {
-                error = "Saved player_id does not point to a player object.";
-                return false;
-            }
-
-            GameObjectId max_loaded_id = k_invalid_game_object_id;
-            for (const auto& object : loaded.objects.objects()) {
-                if (object.id > max_loaded_id) {
-                    max_loaded_id = object.id;
-                }
-            }
-
-            if (loaded_next_id <= max_loaded_id) {
-                loaded_next_id = max_loaded_id + 1;
-            }
-
-            loaded.objects.set_next_id(loaded_next_id);
-
-            if (loaded_selected_id != k_invalid_game_object_id &&
-                loaded.objects.get_by_id(loaded_selected_id) != nullptr) {
-                loaded.selected_id = loaded_selected_id;
-            }
-            else {
-                loaded.selected_id = loaded.player_id;
-            }
-
-            loaded.objects.set_selected_id(loaded.selected_id);
-
-            state.objects = std::move(loaded.objects);
-            state.player_id = loaded.player_id;
-
-            shooter_state = loaded.simple_shooter_state;
-            shooter_state.enemy_id = k_invalid_game_object_id;
-
-            for (const auto& object : state.objects.objects()) {
-                if (object.runtime.behaviour == simple_shooter_ids::enemy_behaviour) {
-                    shooter_state.enemy_id = object.id;
-                    break;
-                }
-            }
-
-            if (shooter_state.enemy_id == k_invalid_game_object_id) {
-                shooter_state.enemy_id = state.objects.create_object(simple_shooter_factory::create_enemy());
-            }
-
-            state.grid_options = loaded.grid_options;
-            state.scene_options = loaded.scene_options;
-            state.camera.state() = loaded.camera_state;
-            state.player_controller.set_speed(loaded.player_speed);
-
-            state.camera.update_game_camera(state.viewport, state.objects.get_by_id(state.player_id));
-
-            return true;
-        }
-        catch (const YAML::Exception& ex) {
-            error = ex.what();
+        if (!scene || !cameras || !player_node || !grid || !options || !objects || !objects.IsSequence()) {
+            error = "Save file is missing required generic scene sections.";
             return false;
         }
-        catch (const std::exception& ex) {
-            error = ex.what();
+
+        LoadedSceneState loaded{};
+
+        if (!read_required_float(player_node, "speed", loaded.player_speed)) {
+            error = "player.speed is missing.";
             return false;
         }
+
+        GameObjectId loaded_next_id = 1;
+        GameObjectId loaded_player_id = k_invalid_game_object_id;
+        GameObjectId loaded_selected_id = k_invalid_game_object_id;
+
+        if (!read_required_uint(scene, "next_object_id", loaded_next_id)) {
+            error = "scene.next_object_id is missing.";
+            return false;
+        }
+
+        if (!read_required_uint(scene, "player_id", loaded_player_id)) {
+            error = "scene.player_id is missing.";
+            return false;
+        }
+
+        if (scene["selected_object_id"]) {
+            loaded_selected_id = scene["selected_object_id"].as<GameObjectId>();
+        }
+
+        const YAML::Node editor = cameras["editor"];
+        const YAML::Node game = cameras["game"];
+
+        if (!editor || !game) {
+            error = "cameras section is incomplete.";
+            return false;
+        }
+
+        if (!parse_camera_mode(cameras["mode"], loaded.camera_state.mode)) {
+            error = "cameras.mode is invalid.";
+            return false;
+        }
+
+        if (!read_required_float(editor, "x", loaded.camera_state.editor.x) ||
+            !read_required_float(editor, "y", loaded.camera_state.editor.y) ||
+            !read_required_float(editor, "speed", loaded.camera_state.editor.speed) ||
+            !read_required_float(editor, "zoom", loaded.camera_state.editor.zoom)) {
+            error = "cameras.editor is incomplete.";
+            return false;
+        }
+
+        if (!read_required_float(game, "x", loaded.camera_state.game.x) ||
+            !read_required_float(game, "y", loaded.camera_state.game.y) ||
+            !read_required_float(game, "speed", loaded.camera_state.game.speed) ||
+            !read_required_float(game, "zoom", loaded.camera_state.game.zoom) ||
+            !read_required_bool(game, "follow_player", loaded.camera_state.game_options.follow_player)) {
+            error = "cameras.game is incomplete.";
+            return false;
+        }
+
+        if (!read_required_bool(grid, "show_grid", loaded.grid_options.show_grid) ||
+            !read_required_bool(grid, "snap_to_grid", loaded.grid_options.snap_to_grid) ||
+            !read_required_int(grid, "grid_size", loaded.grid_options.grid_size) ||
+            !read_required_int(grid, "nudge_step", loaded.grid_options.nudge_step) ||
+            !read_required_int(grid, "shift_nudge_steps", loaded.grid_options.shift_nudge_steps)) {
+            error = "grid is incomplete.";
+            return false;
+        }
+
+        if (!read_required_bool(options, "highlight_selected", loaded.scene_options.highlight_selected)) {
+            error = "options.highlight_selected is missing.";
+            return false;
+        }
+
+        for (const auto& entry : objects) {
+            GameObject object{};
+
+            if (!load_object_from_node(entry, object, error)) {
+                return false;
+            }
+
+            if (!object.runtime.persistent) {
+                error = "Save file contains a non-persistent object.";
+                return false;
+            }
+
+            if (!loaded.objects.add_loaded_object(object)) {
+                error = "Failed to restore object. Duplicate or invalid id.";
+                return false;
+            }
+        }
+
+        if (loaded.objects.empty()) {
+            error = "Save file contains no objects.";
+            return false;
+        }
+
+        loaded.player_id = loaded_player_id;
+
+        if (!loaded.objects.get_by_id(loaded.player_id)) {
+            error = "Saved player_id does not exist.";
+            return false;
+        }
+
+        GameObjectId max_loaded_id = k_invalid_game_object_id;
+
+        for (const auto& object : loaded.objects.objects()) {
+            if (object.identity.id > max_loaded_id) {
+                max_loaded_id = object.identity.id;
+            }
+        }
+
+        if (loaded_next_id <= max_loaded_id) {
+            loaded_next_id = max_loaded_id + 1;
+        }
+
+        loaded.objects.set_next_id(loaded_next_id);
+
+        if (loaded_selected_id != k_invalid_game_object_id &&
+            loaded.objects.get_by_id(loaded_selected_id) != nullptr) {
+            loaded.selected_id = loaded_selected_id;
+        }
+        else {
+            loaded.selected_id = loaded.player_id;
+        }
+
+        loaded.objects.set_selected_id(loaded.selected_id);
+
+        state.objects = std::move(loaded.objects);
+        state.player_id = loaded.player_id;
+        state.grid_options = loaded.grid_options;
+        state.scene_options = loaded.scene_options;
+        state.camera.state() = loaded.camera_state;
+        state.player_controller.set_speed(loaded.player_speed);
+
+        state.camera.update_game_camera(state.viewport, state.objects.get_by_id(state.player_id));
+
+        return true;
     }
 }

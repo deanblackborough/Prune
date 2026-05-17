@@ -14,15 +14,15 @@ namespace prune {
     GameObjectId GameObjectManager::create_object(const GameObject& object)
     {
         GameObject copy = object;
-        copy.id = m_next_id++;
+        copy.identity.id = m_next_id++;
 
         m_objects.push_back(copy);
 
         if (m_selected_id == k_invalid_game_object_id) {
-            m_selected_id = copy.id;
+            m_selected_id = copy.identity.id;
         }
 
-        return copy.id;
+        return copy.identity.id;
     }
 
     void GameObjectManager::remove_inactive_runtime_objects(std::string_view behaviour)
@@ -32,7 +32,7 @@ namespace prune {
                 m_objects.begin(),
                 m_objects.end(),
                 [behaviour](const GameObject& object) {
-                    return object.runtime.behaviour == behaviour && !object.active;
+                    return object.runtime.behaviour == behaviour && !object.lifecycle.active;
                 }
             ),
             m_objects.end()
@@ -45,11 +45,11 @@ namespace prune {
 
     bool GameObjectManager::add_loaded_object(const GameObject& object)
     {
-        if (object.id == k_invalid_game_object_id) {
+        if (object.identity.id == k_invalid_game_object_id) {
             return false;
         }
 
-        if (get_by_id(object.id) != nullptr) {
+        if (get_by_id(object.identity.id) != nullptr) {
             return false;
         }
 
@@ -92,9 +92,9 @@ namespace prune {
             if (m_objects.empty()) {
                 m_selected_id = k_invalid_game_object_id;
             } else if (index < m_objects.size()) {
-                m_selected_id = m_objects[index].id;
+                m_selected_id = m_objects[index].identity.id;
             } else {
-                m_selected_id = m_objects.back().id;
+                m_selected_id = m_objects.back().identity.id;
             }
         }
 
@@ -175,7 +175,7 @@ namespace prune {
 
         auto is_taken = [&](const std::string& name) {
             for (const auto& obj : objects()) {
-                if (obj.id != ignore_id && obj.name == name) {
+                if (obj.identity.id != ignore_id && obj.identity.name == name) {
                     return true;
                 }
             }
@@ -203,7 +203,7 @@ namespace prune {
         }
 
         for (std::size_t index = 0; index < m_objects.size(); ++index) {
-            if (m_objects[index].id == id) {
+            if (m_objects[index].identity.id == id) {
                 return index;
             }
         }

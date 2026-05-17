@@ -1,9 +1,19 @@
+#include <fstream>
+#include <string>
+#include <utility>
+
 #include <SDL2/SDL.h>
+#include <yaml-cpp/yaml.h>
+
+#include "imgui.h"
 
 #include "prune/core/input.hpp"
 #include "prune/scene/simple_shooter_scene.hpp"
 #include "prune/scene/scene_serializer.hpp"
 #include "prune/scene/simple_shooter_factory.hpp"
+#include "prune/scene/simple_shooter_ids.hpp"
+#include "prune/scene/simple_shooter_serializer.hpp"
+#include "prune/tooling/editor_layout.hpp"
 
 namespace prune {
 
@@ -53,6 +63,17 @@ namespace prune {
     void SimpleShooterScene::render(SDL_Renderer* renderer)
     {
         m_renderer.render(renderer, m_state);
+    }
+
+    void SimpleShooterScene::draw_scene_tools(bool& open)
+    {
+        tooling::EditorLayout::simple_shooter();
+
+        if (ImGui::Begin("Simple Shooter", &open)) {
+            m_simple_shooter_tools.draw(m_simple_shooter_state.options);
+        }
+
+        ImGui::End();
     }
 
     GameObjectManager& SimpleShooterScene::get_object_manager() {
@@ -185,11 +206,83 @@ namespace prune {
 
     bool SimpleShooterScene::save_to_file(std::string_view path, std::string& error) const
     {
-        return SceneSerializer::save_to_file(m_state, m_simple_shooter_state, path, error);
+        try {
+            YAML::Node root;
+
+            root["scene_type"] = "simple_shooter";
+
+            SceneSerializer::save_to_node(m_state, root);
+            SimpleShooterSerializer::save_to_node(m_simple_shooter_state, root);
+
+            std::ofstream output{ std::string(path) };
+
+            if (!output.is_open()) {
+                error = "Could not open save file for writing.";
+                return false;
+            }
+
+            output << root;
+            return true;
+        }
+        catch (const YAML::Exception& ex) {
+            error = ex.what();
+            return false;
+        }
+        catch (const std::exception& ex) {
+            error = ex.what();
+            return false;
+        }
     }
 
     bool SimpleShooterScene::load_from_file(std::string_view path, std::string& error)
     {
-        return SceneSerializer::load_from_file(m_state, m_simple_shooter_state, path, error);
+        try {
+            const YAML::Node root = YAML::LoadFile(std::string(path));
+
+            if (!root["scene_type"] || root["scene_type"].as<std::string>() != "simple_shooter") {
+                error = "Save file is not a Simple Shooter scene.";
+                return false;
+            }
+
+            SceneState loaded_state = m_state;
+            SimpleShooterState loaded_simple_shooter_state{};
+
+            if (!SceneSerializer::load_from_node(loaded_state, root, error)) {
+                return false;
+            }
+
+            if (!SimpleShooterSerializer::load_from_node(root, loaded_simple_shooter_state, error)) {
+                return false;
+            }
+
+            loaded_simple_shooter_state.enemy_id = k_invalid_game_object_id;
+
+            for (const auto& object : loaded_state.objects.objects()) {
+                if (object.runtime.behaviour == simple_shooter_ids::enemy_behaviour) {
+                    loaded_simple_shooter_state.enemy_id = object.identity.id;
+                    break;
+                }
+            }
+
+            if (loaded_simple_shooter_state.enemy_id == k_invalid_game_object_id) {
+                loaded_simple_shooter_state.enemy_id =
+                    loaded_state.objects.create_object(simple_shooter_factory::create_enemy());
+            }
+
+            m_state = std::move(loaded_state);
+            m_simple_shooter_state = loaded_simple_shooter_state;
+
+            m_state.camera.update_game_camera(m_state.viewport, player_object());
+
+            return true;
+        }
+        catch (const YAML::Exception& ex) {
+            error = ex.what();
+            return false;
+        }
+        catch (const std::exception& ex) {
+            error = ex.what();
+            return false;
+        }
     }
 }

@@ -4,17 +4,17 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "prune/scene/scene_state.hpp"
+#include "prune/scene/simple_shooter_state.hpp"
 
 namespace prune {
 
-    class SceneSerializer {
+    class SimpleShooterSerializer {
     public:
-        static void save_to_node(const SceneState& state, YAML::Node& root);
+        static void save_to_node(const SimpleShooterState& state, YAML::Node& root);
 
         [[nodiscard]] static bool load_from_node(
-            SceneState& state,
             const YAML::Node& root,
+            SimpleShooterState& state,
             std::string& error
         );
     };

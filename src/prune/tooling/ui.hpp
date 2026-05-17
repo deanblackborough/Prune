@@ -9,21 +9,20 @@
 #include "prune/tooling/controls.hpp"
 #include "prune/tooling/stats.hpp"
 #include "prune/tooling/options.hpp"
-#include "prune/tooling/simple_shooter.hpp"
 
 namespace prune {
 
-    class SimpleShooterScene;
+    class Scene;
 
     class Ui {
     public:
         ~Ui();
 
-        void build(SimpleShooterScene& scene, SDL_Renderer* renderer);
-        void render_scene_viewport_content(SimpleShooterScene& scene, SDL_Renderer* renderer);
+        void build(Scene& scene, SDL_Renderer* renderer);
+        void render_scene_viewport_content(Scene& scene, SDL_Renderer* renderer);
 
     private:
-        void draw_scene_viewport(SimpleShooterScene& scene, SDL_Renderer* renderer);
+        void draw_scene_viewport(Scene& scene, SDL_Renderer* renderer);
         void draw_simple_shooter_panel(SimpleShooterScene& scene);
 
         void ensure_scene_render_target(SDL_Renderer* renderer, int width, int height);
@@ -35,14 +34,13 @@ namespace prune {
 
         bool m_show_scene_viewport = true;
 
-        static constexpr const char* kSceneFilePath = "sandbox_scene.yml";
+        static constexpr const char* kSceneFilePath = "simple_shooter_scene.yml";
 
         Outliner m_outliner;
         Inspector m_inspector;
         Controls m_controls;
         Stats m_stats;
         Options m_options;
-        SimpleShooter m_simple_shooter;
 
         std::string m_file_status;
         bool m_file_status_is_error = false;
@@ -52,7 +50,7 @@ namespace prune {
         bool m_show_inspector = true;
         bool m_show_controls = false;
         bool m_show_stats = false;
-        bool m_show_simple_shooter = true;
+        bool m_show_scene_tools = true;
         bool m_show_imgui_demo = false;
     };
 }

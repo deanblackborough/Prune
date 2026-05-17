@@ -9,8 +9,8 @@ namespace prune::simple_shooter_factory {
     GameObject create_player()
     {
         GameObject player;
-        player.name = "Player";
-        player.type = GameObjectType::Object;
+        player.identity.name = "Player";
+        player.identity.type = GameObjectType::Object;
         player.runtime.behaviour = simple_shooter_ids::player_behaviour;
         player.editor.renameable = false;
         player.editor.movable = false;
@@ -25,7 +25,7 @@ namespace prune::simple_shooter_factory {
         player.render.rectangle.color[2] = 0.5f;
         player.transform.x = 128.0f;
         player.transform.y = 128.0f;
-        player.active = true;
+        player.lifecycle.active = true;
         player.render.visible = true;
         player.collision.solid = false;
 
@@ -35,8 +35,8 @@ namespace prune::simple_shooter_factory {
     GameObject create_initial_block()
     {
         GameObject block;
-        block.name = "Static Block";
-        block.type = GameObjectType::Object;
+        block.identity.name = "Static Block";
+        block.identity.type = GameObjectType::Object;
         block.runtime.behaviour = "";
         block.transform.x = 176.0f;
         block.transform.y = 128.0f;
@@ -46,7 +46,7 @@ namespace prune::simple_shooter_factory {
         block.render.rectangle.color[0] = 0.8f;
         block.render.rectangle.color[1] = 0.5f;
         block.render.rectangle.color[2] = 0.2f;
-        block.active = true;
+        block.lifecycle.active = true;
         block.collision.solid = true;
 
         return block;
@@ -55,9 +55,9 @@ namespace prune::simple_shooter_factory {
     GameObject create_enemy()
     {
         GameObject enemy;
-        enemy.name = "Enemy";
-        enemy.type = GameObjectType::Object;
-        enemy.runtime.behaviour = "simple_shooter.enemy";
+        enemy.identity.name = "Enemy";
+        enemy.identity.type = GameObjectType::Object;
+        enemy.runtime.behaviour = simple_shooter_ids::enemy_behaviour;
         enemy.transform.x = 256.0f;
         enemy.transform.y = 128.0f;
         enemy.size.width = k_default_object_size;
@@ -67,7 +67,7 @@ namespace prune::simple_shooter_factory {
         enemy.render.rectangle.color[0] = 0.9f;
         enemy.render.rectangle.color[1] = 0.2f;
         enemy.render.rectangle.color[2] = 0.2f;
-        enemy.active = true;
+        enemy.lifecycle.active = true;
         enemy.render.visible = true;
         enemy.collision.solid = false;
 
@@ -81,9 +81,9 @@ namespace prune::simple_shooter_factory {
     )
     {
         GameObject bullet;
-        bullet.name = "Bullet";
-        bullet.type = GameObjectType::Runtime;
-        bullet.runtime.behaviour = "simple_shooter.bullet";
+        bullet.identity.name = "Bullet";
+        bullet.identity.type = GameObjectType::Runtime;
+        bullet.runtime.behaviour = simple_shooter_ids::bullet_behaviour;
         bullet.runtime.persistent = false;
 
         bullet.editor.selectable = false;
@@ -99,10 +99,10 @@ namespace prune::simple_shooter_factory {
         bullet.render.rectangle.color[1] = 0.9f;
         bullet.render.rectangle.color[2] = 0.35f;
         bullet.collision.solid = false;
-        bullet.active = true;
+        bullet.lifecycle.active = true;
         bullet.render.visible = true;
-        bullet.facing = player.facing;
-        bullet.lifetime = bullet_lifetime;
+        bullet.motion.facing = player.motion.facing;
+        bullet.lifecycle.remaining = bullet_lifetime;
 
         const float player_center_x = player.transform.x + (static_cast<float>(player.size.width) * 0.5f);
         const float player_center_y = player.transform.y + (static_cast<float>(player.size.height) * 0.5f);
@@ -110,18 +110,18 @@ namespace prune::simple_shooter_factory {
         bullet.transform.x = player_center_x - (static_cast<float>(bullet.size.width) * 0.5f);
         bullet.transform.y = player_center_y - (static_cast<float>(bullet.size.height) * 0.5f);
 
-        switch (player.facing) {
+        switch (player.motion.facing) {
         case Direction::Up:
-            bullet.velocity.y = -bullet_speed;
+            bullet.motion.velocity.y = -bullet_speed;
             break;
         case Direction::Down:
-            bullet.velocity.y = bullet_speed;
+            bullet.motion.velocity.y = bullet_speed;
             break;
         case Direction::Left:
-            bullet.velocity.x = -bullet_speed;
+            bullet.motion.velocity.x = -bullet_speed;
             break;
         case Direction::Right:
-            bullet.velocity.x = bullet_speed;
+            bullet.motion.velocity.x = bullet_speed;
             break;
         }
 

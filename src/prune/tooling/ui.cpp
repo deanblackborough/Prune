@@ -1,6 +1,6 @@
 #include "imgui.h"
 
-#include "prune/scene/simple_shooter_scene.hpp"
+#include "prune/scene/scene.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/ui.hpp"
 
@@ -11,7 +11,7 @@ namespace prune {
         destroy_scene_render_target();
     }
 
-    void Ui::build(SimpleShooterScene& scene, SDL_Renderer* renderer)
+    void Ui::build(Scene& scene, SDL_Renderer* renderer)
     {
         draw_scene_viewport(scene, renderer);
 
@@ -69,7 +69,7 @@ namespace prune {
                 ImGui::MenuItem("Scene", nullptr, &m_show_scene_viewport);
                 ImGui::MenuItem("Outliner", nullptr, &m_show_outliner);
                 ImGui::MenuItem("Inspector", nullptr, &m_show_inspector);
-                ImGui::MenuItem("Simple Shooter", nullptr, &m_show_simple_shooter);
+                ImGui::MenuItem(scene.scene_tools_label().data(), nullptr, &m_show_scene_tools);
                 ImGui::MenuItem("Stats", nullptr, &m_show_stats);
                 ImGui::EndMenu();
             }
@@ -127,8 +127,8 @@ namespace prune {
             ImGui::End();
         }
 
-        if (m_show_simple_shooter) {
-            draw_simple_shooter_panel(scene);
+        if (m_show_scene_tools) {
+            scene.draw_scene_tools(m_show_scene_tools);
         }
 
         if (m_show_controls) {
@@ -201,7 +201,7 @@ namespace prune {
         m_scene_render_target_height = height;
     }
 
-    void Ui::draw_scene_viewport(SimpleShooterScene& scene, SDL_Renderer* renderer)
+    void Ui::draw_scene_viewport(Scene& scene, SDL_Renderer* renderer)
     {
         if (!m_show_scene_viewport) {
             scene.set_viewport({});
@@ -254,7 +254,7 @@ namespace prune {
         ImGui::End();
     }
 
-    void Ui::render_scene_viewport_content(SimpleShooterScene& scene, SDL_Renderer* renderer)
+    void Ui::render_scene_viewport_content(Scene& scene, SDL_Renderer* renderer)
     {
         const SceneViewport& viewport = scene.get_viewport();
 
@@ -278,14 +278,4 @@ namespace prune {
 
         SDL_SetRenderTarget(renderer, previous_target);
     }
-
-    void Ui::draw_simple_shooter_panel(SimpleShooterScene& scene)
-    {
-        tooling::EditorLayout::simple_shooter();
-
-        if (ImGui::Begin("Simple Shooter", &m_show_simple_shooter)) {
-            m_simple_shooter.draw(scene.get_simple_shooter_options());
-        }
-        ImGui::End();
-    }
-} 
+}

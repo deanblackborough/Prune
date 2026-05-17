@@ -82,14 +82,27 @@ namespace prune {
         SpriteVisual sprite{};
     };
 
-    struct GameObject {
+    struct ObjectIdentity {
         GameObjectId id = k_invalid_game_object_id;
         std::string name = "Object";
-
         GameObjectType type = GameObjectType::Object;
+    };
+
+    struct ObjectMotion {
+        Velocity velocity{};
+        Direction facing = Direction::Right;
+    };
+
+    struct ObjectLifecycle {
+        bool active = true;
+        float remaining = 0.0f;
+    };
+
+    struct GameObject {
+        ObjectIdentity identity{};
 
         Transform transform{};
-        Velocity velocity{};
+        ObjectMotion motion{};
         Size size{};
 
         CollisionSettings collision{};
@@ -97,11 +110,7 @@ namespace prune {
 
         EditorFlags editor{};
         RuntimeData runtime{};
-
-        Direction facing = Direction::Right;
-		float lifetime = 0.0f;
-
-        bool active = true;
+        ObjectLifecycle lifecycle{};
 
         [[nodiscard]] RectF bounds() const noexcept;
     };

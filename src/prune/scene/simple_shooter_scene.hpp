@@ -5,44 +5,50 @@
 
 #include <SDL2/SDL.h>
 
+#include "prune/scene/scene.hpp"
 #include "prune/scene/scene_interaction.hpp"
 #include "prune/scene/scene_renderer.hpp"
 #include "prune/scene/scene_state.hpp"
 #include "prune/scene/simple_shooter_behaviour.hpp"
 #include "prune/scene/simple_shooter_state.hpp"
+#include "prune/tooling/simple_shooter.hpp"
 
 namespace prune {
 
-    class SimpleShooterScene {
+    class SimpleShooterScene : public Scene {
     public:
         SimpleShooterScene(int window_width, int window_height);
         SimpleShooterScene(const SimpleShooterScene&) = delete;
         SimpleShooterScene& operator=(const SimpleShooterScene&) = delete;
-        void on_enter();
-        void on_exit();
-        void update(float dt, const Input& input);
-        void render(SDL_Renderer* renderer);
+        void on_enter() override;
+        void on_exit() override;
+        void update(float dt, const Input& input) override;
+        void render(SDL_Renderer* renderer) override;
 
-        void new_scene();
+        void new_scene() override;
         [[nodiscard]] SceneState& get_state() noexcept;
         [[nodiscard]] const SceneState& get_state() const noexcept;
 
-        [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) const;
-        [[nodiscard]] bool load_from_file(std::string_view path, std::string& error);
+        [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) const override;
+        [[nodiscard]] bool load_from_file(std::string_view path, std::string& error) override;
 
-        void set_viewport(const SceneViewport& viewport) noexcept;
-        [[nodiscard]] const SceneViewport& get_viewport() const noexcept { return m_state.viewport; }
-        [[nodiscard]] int get_viewport_width() const noexcept { return m_state.viewport.width; }
-        [[nodiscard]] int get_viewport_height() const noexcept { return m_state.viewport.height; }
+        void set_viewport(const SceneViewport& viewport) noexcept override;
+        [[nodiscard]] const SceneViewport& get_viewport() const noexcept override { return m_state.viewport; }
+        [[nodiscard]] int get_viewport_width() const noexcept override { return m_state.viewport.width; }
+        [[nodiscard]] int get_viewport_height() const noexcept override { return m_state.viewport.height; }
 
-        GameObjectManager& get_object_manager();
-        [[nodiscard]] GameObjectId get_player_id() const;
-        PlayerController& get_player_controller();
-        GridOptions& get_grid_options();
-        SceneOptions& get_scene_options();
+        [[nodiscard]] std::string_view scene_name() const noexcept override { return "Simple Shooter"; }
+        [[nodiscard]] std::string_view scene_tools_label() const noexcept override { return "Simple Shooter"; }
+        void draw_scene_tools(bool& open) override;
 
-        SceneCamera& get_camera() noexcept;
-        const SceneCamera& get_camera() const noexcept;
+        GameObjectManager& get_object_manager() override;
+        [[nodiscard]] GameObjectId get_player_id() const override;
+        PlayerController& get_player_controller() override;
+        GridOptions& get_grid_options() override;
+        SceneOptions& get_scene_options() override;
+
+        SceneCamera& get_camera() noexcept override;
+        [[nodiscard]] const SceneCamera& get_camera() const noexcept override;
 
         SimpleShooterOptions& get_simple_shooter_options() noexcept;
         const SimpleShooterOptions& get_simple_shooter_options() const noexcept;
@@ -73,5 +79,6 @@ namespace prune {
         SceneRenderer m_renderer;
         SceneInteraction m_interaction;
         SimpleShooterBehaviour m_simple_shooter;
+        SimpleShooter m_simple_shooter_tools;
     };
 }
