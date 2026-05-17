@@ -195,7 +195,8 @@ namespace prune {
                 return false;
             }
 
-            if (loaded_state.objects.get_by_id(loaded_platformer_state.player_id) == nullptr) {
+            const GameObject* loaded_player = loaded_state.objects.get_by_id(loaded_platformer_state.player_id);
+            if (loaded_player == nullptr || loaded_player->runtime.behaviour != platformer_ids::player_behaviour) {
                 loaded_platformer_state.player_id = k_invalid_game_object_id;
 
                 for (const auto& object : loaded_state.objects.objects()) {
@@ -279,8 +280,9 @@ namespace prune {
         }
 
         const int grid_size = m_state.grid_options.grid_size;
-        transform.x = static_cast<float>(static_cast<int>(transform.x / static_cast<float>(grid_size)) * grid_size);
-        transform.y = static_cast<float>(static_cast<int>(transform.y / static_cast<float>(grid_size)) * grid_size);
+        const float grid = static_cast<float>(grid_size);
+        transform.x = std::floor(transform.x / grid) * grid;
+        transform.y = std::floor(transform.y / grid) * grid;
         return transform;
     }
 
