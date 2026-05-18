@@ -4,6 +4,7 @@
 
 #include "prune/core/defaults.hpp"
 #include "prune/scene/scene.hpp"
+#include "prune/scene/scene_camera.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/ui.hpp"
 
@@ -114,10 +115,11 @@ namespace prune {
             tooling::EditorLayout::inspector();
 
             if (ImGui::Begin("Inspector", &m_show_inspector)) {
+                SceneCamera* cam = scene.get_camera();
                 m_inspector.draw(
                     scene.get_object_manager(),
                     scene.get_grid_options(),
-                    scene.get_camera().active()
+                    cam ? &cam->active() : nullptr
                 );
 
                 if (GameObject* selected = scene.get_object_manager().selected_object()) {

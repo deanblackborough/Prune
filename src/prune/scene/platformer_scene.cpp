@@ -18,31 +18,26 @@
 namespace prune {
 
     PlatformerScene::PlatformerScene(int window_width, int window_height)
-        : EditorScene(window_width, window_height)
     {
+        m_state.viewport.width = window_width;
+        m_state.viewport.height = window_height;
     }
 
-    SceneCamera& PlatformerScene::get_camera() noexcept
+    // ---- Lifecycle ----
+
+    void PlatformerScene::on_enter()
     {
-        return m_camera;
+        new_scene();
     }
 
-    const SceneCamera& PlatformerScene::get_camera() const noexcept
+    void PlatformerScene::on_exit()
     {
-        return m_camera;
-    }
-
-    GridOptions& PlatformerScene::get_grid_options()
-    {
-        return m_grid_options;
-    }
-
-    void PlatformerScene::on_scene_exit()
-    {
+        m_state.objects.clear();
         m_platformer_state.player_id = k_invalid_game_object_id;
+        m_interaction.reset();
     }
 
-    void PlatformerScene::update_scene(float dt, const Input& input)
+    void PlatformerScene::update(float dt, const Input& input)
     {
         m_platformer.update(
             m_state,
@@ -52,40 +47,48 @@ namespace prune {
             input,
             scene_keyboard_input_enabled()
         );
-    }
 
-    GameObject* PlatformerScene::follow_target() noexcept
-    {
-        return player_object();
-    }
-
-    void PlatformerScene::reset_runtime_state()
-    {
-        reset_common_state();
-        m_platformer_state = {};
-        m_camera.reset();
-        m_grid_options = {};
-    }
-
-    void PlatformerScene::restore_defaults()
-    {
-        reset_runtime_state();
-
-        m_platformer_state.player_id = m_state.objects.create_object(platformer_factory::create_player());
-
-        m_state.objects.create_object(platformer_factory::create_ground(0.0f, 160.0f, 288, 16, "Ground"));
-        m_state.objects.create_object(platformer_factory::create_ground(96.0f, 112.0f, 64, 16, "Small Platform"));
-        m_state.objects.create_object(platformer_factory::create_ground(192.0f, 80.0f, 64, 16, "High Platform"));
-        m_state.objects.create_object(platformer_factory::create_hazard(144.0f, 144.0f));
-
-        m_state.objects.select(m_platformer_state.player_id);
+        m_interaction.update(m_state, m_camera, m_grid_options, dt, input);
         m_camera.update_game_camera(m_state.viewport, player_object());
     }
 
-    void PlatformerScene::new_scene()
+    void PlatformerScene::render(SDL_Renderer* renderer)
     {
-        restore_defaults();
+        m_renderer.render(renderer, m_state, m_camera, m_grid_options);
     }
+
+    // ---- Viewport ----
+
+    void PlatformerScene::set_viewport(const SceneViewport& viewport) noexcept
+    {
+        m_state.viewport = viewport;
+    }
+
+    // ---- Universal accessors ----
+
+    GameObjectManager& PlatformerScene::get_object_manager()
+    {
+        return m_state.objects;
+    }
+
+    SceneOptions& PlatformerScene::get_scene_options()
+    {
+        return m_state.scene_options;
+    }
+
+    // ---- Optional feature accessors ----
+
+    SceneCamera* PlatformerScene::get_camera() noexcept
+    {
+        return &m_camera;
+    }
+
+    GridOptions* PlatformerScene::get_grid_options() noexcept
+    {
+        return &m_grid_options;
+    }
+
+    // ---- Scene tools / inspector ----
 
     void PlatformerScene::draw_scene_tools(bool& open)
     {
@@ -115,13 +118,50 @@ namespace prune {
         (void) selected;
     }
 
+    // ---- Reset / init ----
+
+    void PlatformerScene::reset_runtime_state()
+    {
+        m_state.objects.clear();
+        m_state.scene_options = {};
+        m_interaction.reset();
+        m_platformer_state = {};
+        m_camera.reset();
+        m_grid_options = {};
+    }
+
+    void PlatformerScene::restore_defaults()
+    {
+        reset_runtime_state();
+
+        m_platformer_state.player_id = m_state.objects.create_object(platformer_factory::create_player());
+
+        m_state.objects.create_object(platformer_factory::create_ground(0.0f, 160.0f, 288, 16, "Ground"));
+        m_state.objects.create_object(platformer_factory::create_ground(96.0f, 112.0f, 64, 16, "Small Platform"));
+        m_state.objects.create_object(platformer_factory::create_ground(192.0f, 80.0f, 64, 16, "High Platform"));
+        m_state.objects.create_object(platformer_factory::create_hazard(144.0f, 144.0f));
+
+        m_state.objects.select(m_platformer_state.player_id);
+        m_camera.update_game_camera(m_state.viewport, player_object());
+    }
+
+    void PlatformerScene::new_scene()
+    {
+        restore_defaults();
+    }
+
+    // ---- Serialization ----
+
     bool PlatformerScene::save_to_file(std::string_view path, std::string& error) const
     {
         try {
             YAML::Node root;
             root["scene_type"] = "platformer";
 
-            SceneSerializer::save_to_node(m_state, m_camera, m_grid_options, root);
+            SceneSerializer::save_objects(m_state.objects, root);
+            SceneSerializer::save_scene_options(m_state.scene_options, root);
+            SceneSerializer::save_camera(m_camera, root);
+            SceneSerializer::save_grid(m_grid_options, root);
             PlatformerSerializer::save_to_node(m_platformer_state, root);
 
             std::ofstream output{ std::string(path) };
@@ -164,7 +204,19 @@ namespace prune {
             GridOptions loaded_grid_options{};
             PlatformerState loaded_platformer_state{};
 
-            if (!SceneSerializer::load_from_node(loaded_state, loaded_camera, loaded_grid_options, root, error)) {
+            if (!SceneSerializer::load_objects(loaded_state.objects, root, error)) {
+                return false;
+            }
+
+            if (!SceneSerializer::load_scene_options(loaded_state.scene_options, root, error)) {
+                return false;
+            }
+
+            if (!SceneSerializer::load_camera(loaded_camera, root, error)) {
+                return false;
+            }
+
+            if (!SceneSerializer::load_grid(loaded_grid_options, root, error)) {
                 return false;
             }
 
@@ -205,6 +257,13 @@ namespace prune {
             error = ex.what();
             return false;
         }
+    }
+
+    // ---- Private helpers ----
+
+    bool PlatformerScene::scene_keyboard_input_enabled() const noexcept
+    {
+        return m_state.viewport.focused && m_state.viewport.has_area();
     }
 
     GameObject* PlatformerScene::player_object() noexcept

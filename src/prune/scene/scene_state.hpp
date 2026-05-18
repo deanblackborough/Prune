@@ -45,19 +45,11 @@ namespace prune {
         int max_nudge_step = 64;
     };
 
-    struct DragState {
-        bool active = false;
-        GameObjectId object_id = k_invalid_game_object_id;
-        Transform object_start{};
-        Transform mouse_start_world{};
-    };
-
-    // SceneState holds only the universal editor state that every scene type
-    // needs. GridOptions and SceneCamera are intentionally excluded: they are
-    // scene-specific and owned directly by scenes that need them.
+    // SceneState holds only the universal state that every scene type needs.
+    // GridOptions, SceneCamera, and drag state are intentionally excluded:
+    // they are scene-specific concerns owned by the things that need them.
     struct SceneState {
         SceneViewport viewport{};
-        DragState drag_state{};
         SceneOptions scene_options{};
         GameObjectManager objects;
     };

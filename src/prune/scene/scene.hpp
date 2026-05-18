@@ -6,10 +6,11 @@
 
 #include "prune/core/input.hpp"
 #include "prune/scene/game_object_manager.hpp"
-#include "prune/scene/scene_camera.hpp"
 #include "prune/scene/scene_state.hpp"
 
 namespace prune {
+
+    class SceneCamera;
 
     class Scene {
     public:
@@ -39,13 +40,14 @@ namespace prune {
 
         virtual GameObjectManager& get_object_manager() = 0;
 
-        virtual GridOptions& get_grid_options() = 0;
         virtual SceneOptions& get_scene_options() = 0;
 
         virtual void draw_scene_inspector(GameObject& selected) = 0;
 
-        virtual SceneCamera& get_camera() noexcept = 0;
-        [[nodiscard]] virtual const SceneCamera& get_camera() const noexcept = 0;
+        // Optional features: scenes that support a camera or grid override these.
+        // Returns nullptr for scene types that don't have a camera / grid.
+        [[nodiscard]] virtual SceneCamera* get_camera() noexcept { return nullptr; }
+        [[nodiscard]] virtual GridOptions* get_grid_options() noexcept { return nullptr; }
 
     protected:
         Scene() = default;

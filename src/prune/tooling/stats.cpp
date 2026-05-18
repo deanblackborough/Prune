@@ -2,6 +2,7 @@
 #include <string>
 
 #include "prune/tooling/stats.hpp"
+#include "prune/scene/scene_camera.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
 
@@ -10,11 +11,9 @@ namespace prune {
 	void Stats::draw(
 		GameObjectManager& objects,
 		const SceneViewport& viewport,
-		const SceneCamera& camera
+		const SceneCamera* camera
 	)
 	{
-		const CameraState& cameras = camera.state();
-
         ImGuiIO& io = ImGui::GetIO();
 
         if (tooling::imgui::layout::collapsing_header("Performance")) {
@@ -46,7 +45,8 @@ namespace prune {
 			tooling::imgui::property_table::end();
 		}
 
-		if (tooling::imgui::layout::collapsing_header("Camera")) {
+		if (camera && tooling::imgui::layout::collapsing_header("Camera")) {
+			const CameraState& cameras = camera->state();
 			tooling::imgui::property_table::begin("##camera");
 			tooling::imgui::property_table::text("Active", cameras.mode == CameraMode::Editor ? "Editor" : "Game");
 			tooling::imgui::property_table::text("Editor X", std::format("{:.2f}", cameras.editor.x).c_str());

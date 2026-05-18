@@ -11,7 +11,7 @@ namespace prune {
     {
         handle_object_drag(state, camera, grid_options, input);
 
-        if (!state.drag_state.active) {
+        if (!m_drag_state.active) {
             update_editor_camera(state, camera, dt, input);
             handle_scene_click(state, camera, input);
             handle_keyboard_nudge(state, grid_options, input);
@@ -68,27 +68,27 @@ namespace prune {
 
     void SceneInteraction::handle_object_drag(SceneState& state, SceneCamera& camera, const GridOptions& grid_options, const Input& input)
     {
-        if (state.drag_state.active) {
+        if (m_drag_state.active) {
             if (!input.is_mouse_button_down(SDL_BUTTON_LEFT) || !state.viewport.has_area()) {
-                state.drag_state = {};
+                m_drag_state = {};
                 return;
             }
 
-            GameObject* object = state.objects.get_by_id(state.drag_state.object_id);
+            GameObject* object = state.objects.get_by_id(m_drag_state.object_id);
             if (!object || !object->editor.movable) {
-                state.drag_state = {};
+                m_drag_state = {};
                 return;
             }
 
             const Transform mouse_world = camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
 
             object->transform.x =
-                state.drag_state.object_start.x +
-                (mouse_world.x - state.drag_state.mouse_start_world.x);
+                m_drag_state.object_start.x +
+                (mouse_world.x - m_drag_state.mouse_start_world.x);
 
             object->transform.y =
-                state.drag_state.object_start.y +
-                (mouse_world.y - state.drag_state.mouse_start_world.y);
+                m_drag_state.object_start.y +
+                (mouse_world.y - m_drag_state.mouse_start_world.y);
 
             if (grid_options.snap_to_grid) {
                 snap_object_to_grid(grid_options, *object);
@@ -119,10 +119,10 @@ namespace prune {
             return;
         }
 
-        state.drag_state.active = true;
-        state.drag_state.object_id = selected->identity.id;
-        state.drag_state.object_start = selected->transform;
-        state.drag_state.mouse_start_world = camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
+        m_drag_state.active = true;
+        m_drag_state.object_id = selected->identity.id;
+        m_drag_state.object_start = selected->transform;
+        m_drag_state.mouse_start_world = camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
     }
 
     void SceneInteraction::handle_keyboard_nudge(SceneState& state, const GridOptions& grid_options, const Input& input)

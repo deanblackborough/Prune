@@ -10,14 +10,6 @@ namespace prune {
 
     namespace {
 
-        struct LoadedSceneState {
-            GameObjectManager objects;
-            GameObjectId selected_id = k_invalid_game_object_id;
-            GridOptions grid_options{};
-            SceneOptions scene_options{};
-            CameraState camera_state{};
-        };
-
         const char* to_string(GameObjectType type) noexcept
         {
             switch (type) {
@@ -387,14 +379,36 @@ namespace prune {
         }
     }
 
-    void SceneSerializer::save_to_node(const SceneState& state, const SceneCamera& camera, const GridOptions& grid_options, YAML::Node& root)
-    {
-        root["scene"]["next_object_id"] = state.objects.next_id();
+    // ---- Save pieces ----
 
-        if (state.objects.selected_id() != k_invalid_game_object_id) {
-            root["scene"]["selected_object_id"] = state.objects.selected_id();
+    void SceneSerializer::save_objects(const GameObjectManager& objects, YAML::Node& root)
+    {
+        root["scene"]["next_object_id"] = objects.next_id();
+
+        if (objects.selected_id() != k_invalid_game_object_id) {
+            root["scene"]["selected_object_id"] = objects.selected_id();
         }
 
+        YAML::Node seq = YAML::Node(YAML::NodeType::Sequence);
+
+        for (const auto& object : objects.objects()) {
+            if (!object.runtime.persistent) {
+                continue;
+            }
+
+            seq.push_back(make_object_node(object));
+        }
+
+        root["objects"] = seq;
+    }
+
+    void SceneSerializer::save_scene_options(const SceneOptions& options, YAML::Node& root)
+    {
+        root["options"]["highlight_selected"] = options.highlight_selected;
+    }
+
+    void SceneSerializer::save_camera(const SceneCamera& camera, YAML::Node& root)
+    {
         root["cameras"]["mode"] = camera.state().mode == CameraMode::Editor ? "editor" : "game";
 
         root["cameras"]["editor"]["x"] = camera.state().editor.x;
@@ -407,42 +421,28 @@ namespace prune {
         root["cameras"]["game"]["speed"] = camera.state().game.speed;
         root["cameras"]["game"]["zoom"] = camera.state().game.zoom;
         root["cameras"]["game"]["follow_target"] = camera.state().game_options.follow_target;
-
-        root["grid"]["show_grid"] = grid_options.show_grid;
-        root["grid"]["snap_to_grid"] = grid_options.snap_to_grid;
-        root["grid"]["grid_size"] = grid_options.grid_size;
-        root["grid"]["nudge_step"] = grid_options.nudge_step;
-        root["grid"]["shift_nudge_steps"] = grid_options.shift_nudge_steps;
-
-        root["options"]["highlight_selected"] = state.scene_options.highlight_selected;
-
-        YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
-
-        for (const auto& object : state.objects.objects()) {
-            if (!object.runtime.persistent) {
-                continue;
-            }
-
-            objects.push_back(make_object_node(object));
-        }
-
-        root["objects"] = objects;
     }
 
-    bool SceneSerializer::load_from_node(SceneState& state, SceneCamera& camera, GridOptions& grid_options, const YAML::Node& root, std::string& error)
+    void SceneSerializer::save_grid(const GridOptions& grid, YAML::Node& root)
+    {
+        root["grid"]["show_grid"] = grid.show_grid;
+        root["grid"]["snap_to_grid"] = grid.snap_to_grid;
+        root["grid"]["grid_size"] = grid.grid_size;
+        root["grid"]["nudge_step"] = grid.nudge_step;
+        root["grid"]["shift_nudge_steps"] = grid.shift_nudge_steps;
+    }
+
+    // ---- Load pieces ----
+
+    bool SceneSerializer::load_objects(GameObjectManager& objects, const YAML::Node& root, std::string& error)
     {
         const YAML::Node scene = root["scene"];
-        const YAML::Node cameras = root["cameras"];
-        const YAML::Node grid = root["grid"];
-        const YAML::Node options = root["options"];
-        const YAML::Node objects = root["objects"];
+        const YAML::Node seq = root["objects"];
 
-        if(!scene || !cameras || !grid || !options || !objects || !objects.IsSequence()) {
-            error = "Save file is missing required generic scene sections.";
+        if (!scene || !seq || !seq.IsSequence()) {
+            error = "Save file is missing required scene/objects sections.";
             return false;
         }
-
-        LoadedSceneState loaded{};
 
         GameObjectId loaded_next_id = 1;
         GameObjectId loaded_selected_id = k_invalid_game_object_id;
@@ -456,51 +456,9 @@ namespace prune {
             loaded_selected_id = scene["selected_object_id"].as<GameObjectId>();
         }
 
-        const YAML::Node editor = cameras["editor"];
-        const YAML::Node game = cameras["game"];
+        GameObjectManager loaded{};
 
-        if (!editor || !game) {
-            error = "cameras section is incomplete.";
-            return false;
-        }
-
-        if (!parse_camera_mode(cameras["mode"], loaded.camera_state.mode)) {
-            error = "cameras.mode is invalid.";
-            return false;
-        }
-
-        if (!read_required_float(editor, "x", loaded.camera_state.editor.x) ||
-            !read_required_float(editor, "y", loaded.camera_state.editor.y) ||
-            !read_required_float(editor, "speed", loaded.camera_state.editor.speed) ||
-            !read_required_float(editor, "zoom", loaded.camera_state.editor.zoom)) {
-            error = "cameras.editor is incomplete.";
-            return false;
-        }
-
-        if (!read_required_float(game, "x", loaded.camera_state.game.x) ||
-            !read_required_float(game, "y", loaded.camera_state.game.y) ||
-            !read_required_float(game, "speed", loaded.camera_state.game.speed) ||
-            !read_required_float(game, "zoom", loaded.camera_state.game.zoom) ||
-            !read_required_bool(game, "follow_target", loaded.camera_state.game_options.follow_target)) {
-            error = "cameras.game is incomplete.";
-            return false;
-        }
-
-        if (!read_required_bool(grid, "show_grid", loaded.grid_options.show_grid) ||
-            !read_required_bool(grid, "snap_to_grid", loaded.grid_options.snap_to_grid) ||
-            !read_required_int(grid, "grid_size", loaded.grid_options.grid_size) ||
-            !read_required_int(grid, "nudge_step", loaded.grid_options.nudge_step) ||
-            !read_required_int(grid, "shift_nudge_steps", loaded.grid_options.shift_nudge_steps)) {
-            error = "grid is incomplete.";
-            return false;
-        }
-
-        if (!read_required_bool(options, "highlight_selected", loaded.scene_options.highlight_selected)) {
-            error = "options.highlight_selected is missing.";
-            return false;
-        }
-
-        for (const auto& entry : objects) {
+        for (const auto& entry : seq) {
             GameObject object{};
 
             if (!load_object_from_node(entry, object, error)) {
@@ -512,20 +470,19 @@ namespace prune {
                 return false;
             }
 
-            if (!loaded.objects.add_loaded_object(object)) {
+            if (!loaded.add_loaded_object(object)) {
                 error = "Failed to restore object. Duplicate or invalid id.";
                 return false;
             }
         }
 
-        if (loaded.objects.empty()) {
+        if (loaded.empty()) {
             error = "Save file contains no objects.";
             return false;
         }
 
         GameObjectId max_loaded_id = k_invalid_game_object_id;
-
-        for (const auto& object : loaded.objects.objects()) {
+        for (const auto& object : loaded.objects()) {
             if (object.identity.id > max_loaded_id) {
                 max_loaded_id = object.identity.id;
             }
@@ -535,21 +492,95 @@ namespace prune {
             loaded_next_id = max_loaded_id + 1;
         }
 
-        loaded.objects.set_next_id(loaded_next_id);
+        loaded.set_next_id(loaded_next_id);
 
         if (loaded_selected_id != k_invalid_game_object_id &&
-            loaded.objects.get_by_id(loaded_selected_id) != nullptr) {
-            loaded.selected_id = loaded_selected_id;
-        } else if (!loaded.objects.empty()) {
-            loaded.selected_id = loaded.objects.objects().front().identity.id;
+            loaded.get_by_id(loaded_selected_id) != nullptr) {
+            loaded.set_selected_id(loaded_selected_id);
+        } else if (!loaded.empty()) {
+            loaded.set_selected_id(loaded.objects().front().identity.id);
         }
 
-        loaded.objects.set_selected_id(loaded.selected_id);
+        objects = std::move(loaded);
+        return true;
+    }
 
-        state.objects = std::move(loaded.objects);
-        state.scene_options = loaded.scene_options;
-        camera.state() = loaded.camera_state;
-        grid_options = loaded.grid_options;
+    bool SceneSerializer::load_scene_options(SceneOptions& options, const YAML::Node& root, std::string& error)
+    {
+        const YAML::Node opts = root["options"];
+        if (!opts) {
+            error = "Save file is missing options section.";
+            return false;
+        }
+
+        if (!read_required_bool(opts, "highlight_selected", options.highlight_selected)) {
+            error = "options.highlight_selected is missing.";
+            return false;
+        }
+
+        return true;
+    }
+
+    bool SceneSerializer::load_camera(SceneCamera& camera, const YAML::Node& root, std::string& error)
+    {
+        const YAML::Node cameras = root["cameras"];
+        if (!cameras) {
+            error = "Save file is missing cameras section.";
+            return false;
+        }
+
+        const YAML::Node editor = cameras["editor"];
+        const YAML::Node game = cameras["game"];
+
+        if (!editor || !game) {
+            error = "cameras section is incomplete.";
+            return false;
+        }
+
+        CameraState loaded{};
+
+        if (!parse_camera_mode(cameras["mode"], loaded.mode)) {
+            error = "cameras.mode is invalid.";
+            return false;
+        }
+
+        if (!read_required_float(editor, "x", loaded.editor.x) ||
+            !read_required_float(editor, "y", loaded.editor.y) ||
+            !read_required_float(editor, "speed", loaded.editor.speed) ||
+            !read_required_float(editor, "zoom", loaded.editor.zoom)) {
+            error = "cameras.editor is incomplete.";
+            return false;
+        }
+
+        if (!read_required_float(game, "x", loaded.game.x) ||
+            !read_required_float(game, "y", loaded.game.y) ||
+            !read_required_float(game, "speed", loaded.game.speed) ||
+            !read_required_float(game, "zoom", loaded.game.zoom) ||
+            !read_required_bool(game, "follow_target", loaded.game_options.follow_target)) {
+            error = "cameras.game is incomplete.";
+            return false;
+        }
+
+        camera.state() = loaded;
+        return true;
+    }
+
+    bool SceneSerializer::load_grid(GridOptions& grid, const YAML::Node& root, std::string& error)
+    {
+        const YAML::Node g = root["grid"];
+        if (!g) {
+            error = "Save file is missing grid section.";
+            return false;
+        }
+
+        if (!read_required_bool(g, "show_grid", grid.show_grid) ||
+            !read_required_bool(g, "snap_to_grid", grid.snap_to_grid) ||
+            !read_required_int(g, "grid_size", grid.grid_size) ||
+            !read_required_int(g, "nudge_step", grid.nudge_step) ||
+            !read_required_int(g, "shift_nudge_steps", grid.shift_nudge_steps)) {
+            error = "grid section is incomplete.";
+            return false;
+        }
 
         return true;
     }

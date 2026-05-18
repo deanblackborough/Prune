@@ -3,6 +3,7 @@
 
 #include "imgui.h"
 
+#include "prune/scene/scene_camera.hpp"
 #include "prune/tooling/inspector.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
@@ -12,8 +13,8 @@ namespace prune {
 
     void Inspector::draw(
         GameObjectManager& objects,
-        GridOptions& grid_options,
-        const Camera& camera
+        GridOptions* grid_options,
+        const Camera* camera
     ) {
         draw_selected(objects, grid_options);
         draw_properties(objects);
@@ -23,7 +24,7 @@ namespace prune {
 
     void Inspector::draw_selected(
         GameObjectManager& objects,
-        GridOptions& grid_options
+        GridOptions* grid_options
     ) {
         GameObject* selected = objects.selected_object();
 
@@ -84,8 +85,8 @@ namespace prune {
 
                         GameObject clone = *selected;
 
-                        const float step = grid_options.snap_to_grid
-                            ? static_cast<float>(std::max(1, grid_options.grid_size))
+                        const float step = (grid_options && grid_options->snap_to_grid)
+                            ? static_cast<float>(std::max(1, grid_options->grid_size))
                             : static_cast<float>(k_default_object_size);
 
                         clone.transform.x += step;
@@ -226,18 +227,22 @@ namespace prune {
 
     void Inspector::draw_computed(
         GameObjectManager& objects,
-        const Camera& camera
+        const Camera* camera
     ) {
         GameObject* selected = objects.selected_object();
         if (!selected) {
             return;
         }
 
+        if (!camera) {
+            return;
+        }
+
         if (tooling::imgui::layout::collapsing_header("Computed", false)) {
             if (tooling::imgui::property_table::begin("##computed")) {
                 const Transform screen_pos = {
-                    selected->transform.x - camera.x,
-                    selected->transform.y - camera.y
+                    selected->transform.x - camera->x,
+                    selected->transform.y - camera->y
                 };
 
                 char screen_pos_buffer[64];
