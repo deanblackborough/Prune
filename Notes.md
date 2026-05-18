@@ -21,15 +21,7 @@ The problem is that the concrete scene classes still carry too much shared plumb
 
 That is fine for proving the second scene. It should not become the permanent pattern.
 
-## Immediate architecture branch
-
-### Goal
-
-Clean up the architecture now that two scene types exist.
-
-Do this before adding transform gizmos, bigger scene tooling, or a third scene type.
-
-### Non-goals
+## Non-goals for now
 
 - Do not build a plugin system.
 - Do not build a full ECS.
@@ -37,9 +29,9 @@ Do this before adding transform gizmos, bigger scene tooling, or a third scene t
 - Do not over-document unstable internals.
 - Do not make the platformer a full game yet.
 
-## Issues to fix now
+## Issues to fix
 
-### 1. Shared scene shell extraction
+### 1. Shared scene shell extraction (Done, for now)
 
 SimpleShooterScene and PlatformerScene repeat too much of the same shell work.
 
@@ -60,13 +52,13 @@ Repeated responsibilities include:
 
 Suggested direction:
 
-- Introduce a shared scene shell/base that owns common state and editor/runtime plumbing.
+- Introduce a shared world scene that owns common state and editor/runtime plumbing.
 - Let concrete scenes implement only scene-specific behaviour, defaults, tools, inspector sections, and serialization data.
 - Keep the design boring and explicit.
 
 A good outcome would be that a new scene type does not need to reimplement object manager getters, viewport getters, camera getters, and generic render/update plumbing.
 
-### 2. Clearer editor/runtime boundary
+### 2. Clearer editor/runtime boundary (Partially done, but still some work to do)
 
 Current scene update flow still mixes these concerns:
 
@@ -223,7 +215,7 @@ Possible ownership:
 
 This is a structure change only. Do it when the shared shell work starts, not randomly in isolation.
 
-### 8. Duplication in the code
+### 8. Duplication in the code (Partially done, but still some work to do)
 
 Known duplication areas:
 
@@ -245,7 +237,7 @@ Suggested direction:
 
 The useful split is not “no duplication at all”. The useful split is “new scene types should only define what makes them different”.
 
-### 9. Reduce new scene boilerplate
+### 9. Reduce new scene boilerplate (On the way, new scene sis easier but still too much code)
 
 Adding a third scene should not mean creating a large pile of files and repeating the same code.
 
