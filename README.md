@@ -29,7 +29,13 @@ A simple shooter, platformer, artillery/tank game, card scene, or puzzle scene s
 
 The current goal is not to build a full game. The goal is to prove that multiple small game slices can coexist inside the same editor/runtime without turning the scene layer into one large conditional mess.
 
-<img width="1914" height="1123" alt="image" src="https://github.com/user-attachments/assets/9f3705f7-679e-4da1-94dd-e7a9694a3ce1" />
+### Platformer editor and runtime
+
+![Platformer](assets/repo/platformer.png)
+
+### Simple shooter editor and runtime
+
+![Simple Shooter](assets/repo/simple-shooter.png)
 
 ## Current state
 
