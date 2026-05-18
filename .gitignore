@@ -5,6 +5,9 @@
 out/
 vcpkg_installed/
 
+# Build directories
+build/
+
 # Prerequisites
 *.d
 
