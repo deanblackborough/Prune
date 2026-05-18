@@ -237,7 +237,7 @@ Suggested direction:
 
 The useful split is not “no duplication at all”. The useful split is “new scene types should only define what makes them different”.
 
-### 9. Reduce new scene boilerplate (On the way, new scene sis easier but still too much code)
+### 9. Reduce new scene boilerplate (On the way, new scene is easier but still too much code)
 
 Adding a third scene should not mean creating a large pile of files and repeating the same code.
 
