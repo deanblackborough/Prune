@@ -1,6 +1,7 @@
 #pragma once
 
-#include "prune/scene/simple_shooter_scene.hpp"
+#include "prune/scene/scene_camera.hpp"
+#include "prune/scene/scene_state.hpp"
 
 namespace prune {
 

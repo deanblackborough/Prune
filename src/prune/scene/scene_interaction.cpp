@@ -7,14 +7,14 @@
 
 namespace prune {
 
-    void SceneInteraction::update(SceneState& state, float dt, const Input& input)
+    void SceneInteraction::update(SceneState& state, SceneCamera& camera, const GridOptions& grid_options, float dt, const Input& input)
     {
-        handle_object_drag(state, input);
+        handle_object_drag(state, camera, grid_options, input);
 
         if (!state.drag_state.active) {
-            update_editor_camera(state, dt, input);
-            handle_scene_click(state, input);
-            handle_keyboard_nudge(state, input);
+            update_editor_camera(state, camera, dt, input);
+            handle_scene_click(state, camera, input);
+            handle_keyboard_nudge(state, grid_options, input);
         }
     }
 
@@ -28,7 +28,7 @@ namespace prune {
         return state.viewport.hovered && state.viewport.has_area();
     }
 
-    void SceneInteraction::update_editor_camera(SceneState& state, float, const Input& input)
+    void SceneInteraction::update_editor_camera(SceneState& state, SceneCamera& camera, float, const Input& input)
     {
         if (!scene_mouse_input_enabled(state)) {
             return;
@@ -38,11 +38,11 @@ namespace prune {
             return;
         }
 
-        state.camera.activate_editor();
-        state.camera.pan_editor_by_mouse_delta(input.mouse_delta_x(), input.mouse_delta_y());
+        camera.activate_editor();
+        camera.pan_editor_by_mouse_delta(input.mouse_delta_x(), input.mouse_delta_y());
     }
 
-    void SceneInteraction::handle_scene_click(SceneState& state, const Input& input)
+    void SceneInteraction::handle_scene_click(SceneState& state, const SceneCamera& camera, const Input& input)
     {
         if (!scene_mouse_input_enabled(state)) {
             return;
@@ -56,7 +56,7 @@ namespace prune {
             return;
         }
 
-        GameObject* picked = pick_object_at_screen(state, input.mouse_x(), input.mouse_y());
+        GameObject* picked = pick_object_at_screen(state, camera, input.mouse_x(), input.mouse_y());
 
         if (picked && picked->editor.selectable) {
             state.objects.select(picked->identity.id);
@@ -66,7 +66,7 @@ namespace prune {
         state.objects.set_selected_id(k_invalid_game_object_id);
     }
 
-    void SceneInteraction::handle_object_drag(SceneState& state, const Input& input)
+    void SceneInteraction::handle_object_drag(SceneState& state, SceneCamera& camera, const GridOptions& grid_options, const Input& input)
     {
         if (state.drag_state.active) {
             if (!input.is_mouse_button_down(SDL_BUTTON_LEFT) || !state.viewport.has_area()) {
@@ -80,7 +80,7 @@ namespace prune {
                 return;
             }
 
-            const Transform mouse_world = state.camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
+            const Transform mouse_world = camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
 
             object->transform.x =
                 state.drag_state.object_start.x +
@@ -90,8 +90,8 @@ namespace prune {
                 state.drag_state.object_start.y +
                 (mouse_world.y - state.drag_state.mouse_start_world.y);
 
-            if (state.grid_options.snap_to_grid) {
-                snap_object_to_grid(state, *object);
+            if (grid_options.snap_to_grid) {
+                snap_object_to_grid(grid_options, *object);
             }
 
             return;
@@ -114,7 +114,7 @@ namespace prune {
             return;
         }
 
-        GameObject* picked = pick_object_at_screen(state, input.mouse_x(), input.mouse_y());
+        GameObject* picked = pick_object_at_screen(state, camera, input.mouse_x(), input.mouse_y());
         if (!picked || picked->identity.id != selected->identity.id) {
             return;
         }
@@ -122,10 +122,10 @@ namespace prune {
         state.drag_state.active = true;
         state.drag_state.object_id = selected->identity.id;
         state.drag_state.object_start = selected->transform;
-        state.drag_state.mouse_start_world = state.camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
+        state.drag_state.mouse_start_world = camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
     }
 
-    void SceneInteraction::handle_keyboard_nudge(SceneState& state, const Input& input)
+    void SceneInteraction::handle_keyboard_nudge(SceneState& state, const GridOptions& grid_options, const Input& input)
     {
         if (!scene_keyboard_input_enabled(state)) {
             return;
@@ -159,29 +159,29 @@ namespace prune {
             return;
         }
 
-        int step = state.grid_options.snap_to_grid
-            ? std::max(1, state.grid_options.grid_size)
-            : std::max(1, state.grid_options.nudge_step);
+        int step = grid_options.snap_to_grid
+            ? std::max(1, grid_options.grid_size)
+            : std::max(1, grid_options.nudge_step);
 
         const bool shift_down =
             input.is_key_down(SDL_SCANCODE_LSHIFT) ||
             input.is_key_down(SDL_SCANCODE_RSHIFT);
 
         if (shift_down) {
-            step *= state.grid_options.shift_nudge_steps;
+            step *= grid_options.shift_nudge_steps;
         }
 
         selected->transform.x += static_cast<float>(move_x * step);
         selected->transform.y += static_cast<float>(move_y * step);
 
-        if (state.grid_options.snap_to_grid) {
-            snap_object_to_grid(state, *selected);
+        if (grid_options.snap_to_grid) {
+            snap_object_to_grid(grid_options, *selected);
         }
     }
 
-    GameObject* SceneInteraction::pick_object_at_screen(SceneState& state, int screen_x, int screen_y) noexcept
+    GameObject* SceneInteraction::pick_object_at_screen(SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept
     {
-        const Transform world = state.camera.screen_to_world(state.viewport, screen_x, screen_y);
+        const Transform world = camera.screen_to_world(state.viewport, screen_x, screen_y);
         auto& objects = state.objects.objects();
 
         for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
@@ -207,18 +207,18 @@ namespace prune {
         return nullptr;
     }
 
-    float SceneInteraction::snap_value_to_grid(const SceneState& state, float value) noexcept
+    float SceneInteraction::snap_value_to_grid(const GridOptions& grid_options, float value) noexcept
     {
-        const int scene_grid_size = std::max(1, state.grid_options.grid_size);
+        const int scene_grid_size = std::max(1, grid_options.grid_size);
 
         return std::round(value / static_cast<float>(scene_grid_size)) *
             static_cast<float>(scene_grid_size);
     }
 
-    void SceneInteraction::snap_object_to_grid(const SceneState& state, GameObject& object) noexcept
+    void SceneInteraction::snap_object_to_grid(const GridOptions& grid_options, GameObject& object) noexcept
     {
-        object.transform.x = snap_value_to_grid(state, object.transform.x);
-        object.transform.y = snap_value_to_grid(state, object.transform.y);
+        object.transform.x = snap_value_to_grid(grid_options, object.transform.x);
+        object.transform.y = snap_value_to_grid(grid_options, object.transform.y);
     }
 
 }

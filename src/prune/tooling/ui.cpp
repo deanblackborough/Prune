@@ -96,7 +96,13 @@ namespace prune {
             tooling::EditorLayout::options();
 
             if (ImGui::Begin("Options", &m_show_view_grid_options)) {
-                m_options.draw(scene.get_scene_options(), scene.get_grid_options(), scene.get_camera());
+                WorldSceneContext context = scene.world_scene_context();
+                if (context.available()) {
+                    m_options.draw(scene.get_scene_options(), *context.grid_options, *context.camera);
+                }
+                else {
+                    ImGui::TextUnformatted("This scene does not expose generic world options.");
+                }
             }
             ImGui::End();
         }
@@ -114,11 +120,14 @@ namespace prune {
             tooling::EditorLayout::inspector();
 
             if (ImGui::Begin("Inspector", &m_show_inspector)) {
-                m_inspector.draw(
-                    scene.get_object_manager(),
-                    scene.get_grid_options(),
-                    scene.get_camera().active()
-                );
+                WorldSceneContext context = scene.world_scene_context();
+                if (context.available()) {
+                    m_inspector.draw(
+                        scene.get_object_manager(),
+                        *context.grid_options,
+                        context.camera->active()
+                    );
+                }
 
                 if (GameObject* selected = scene.get_object_manager().selected_object()) {
                     scene.draw_scene_inspector(*selected);
@@ -145,11 +154,17 @@ namespace prune {
             tooling::EditorLayout::stats();
 
             if (ImGui::Begin("Stats", &m_show_stats)) {
-                m_stats.draw(
-                    scene.get_object_manager(),
-                    scene.get_viewport(),
-                    scene.get_camera()
-                );
+                WorldSceneContext context = scene.world_scene_context();
+                if (context.available()) {
+                    m_stats.draw(
+                        scene.get_object_manager(),
+                        scene.get_viewport(),
+                        *context.camera
+                    );
+                }
+                else {
+                    ImGui::TextUnformatted("This scene does not expose generic world stats.");
+                }
             }
             ImGui::End();
         }

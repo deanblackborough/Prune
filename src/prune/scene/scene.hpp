@@ -11,6 +11,24 @@
 
 namespace prune {
 
+    struct WorldSceneContext {
+        GridOptions* grid_options = nullptr;
+        SceneCamera* camera = nullptr;
+
+        [[nodiscard]] bool available() const noexcept {
+            return grid_options != nullptr && camera != nullptr;
+        }
+    };
+
+    struct ConstWorldSceneContext {
+        const GridOptions* grid_options = nullptr;
+        const SceneCamera* camera = nullptr;
+
+        [[nodiscard]] bool available() const noexcept {
+            return grid_options != nullptr && camera != nullptr;
+        }
+    };
+
     class Scene {
     public:
         virtual ~Scene() = default;
@@ -39,13 +57,12 @@ namespace prune {
 
         virtual GameObjectManager& get_object_manager() = 0;
 
-        virtual GridOptions& get_grid_options() = 0;
         virtual SceneOptions& get_scene_options() = 0;
 
-        virtual void draw_scene_inspector(GameObject& selected) = 0;
+        [[nodiscard]] virtual WorldSceneContext world_scene_context() noexcept { return {}; }
+        [[nodiscard]] virtual ConstWorldSceneContext world_scene_context() const noexcept { return {}; }
 
-        virtual SceneCamera& get_camera() noexcept = 0;
-        [[nodiscard]] virtual const SceneCamera& get_camera() const noexcept = 0;
+        virtual void draw_scene_inspector(GameObject& selected) = 0;
 
     protected:
         Scene() = default;
