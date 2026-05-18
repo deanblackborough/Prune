@@ -6,6 +6,7 @@
 #include <SDL2/SDL.h>
 
 #include "prune/scene/game_object.hpp"
+#include "prune/scene/scene_camera.hpp"
 #include "prune/scene/scene_state.hpp"
 
 namespace prune {
@@ -18,16 +19,16 @@ namespace prune {
         SceneRenderer(const SceneRenderer&) = delete;
         SceneRenderer& operator=(const SceneRenderer&) = delete;
 
-        void render(SDL_Renderer* renderer, const SceneState& state);
+        void render(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GridOptions& grid_options);
         void clear_cached_textures() noexcept;
 
     private:
         [[nodiscard]] static bool is_rect_visible(const SceneState& state, const SDL_Rect& rect) noexcept;
 
-        void draw_grid(SDL_Renderer* renderer, const SceneState& state) const;
-        void draw_object(SDL_Renderer* renderer, const SceneState& state, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline);
-        void draw_rectangle_object(SDL_Renderer* renderer, const SceneState& state, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline) const;
-        void draw_sprite_object(SDL_Renderer* renderer, const SceneState& state, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline);
+        void draw_grid(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GridOptions& grid_options) const;
+        void draw_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline);
+        void draw_rectangle_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline) const;
+        void draw_sprite_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline);
         void draw_sprite_fallback(SDL_Renderer* renderer, const SDL_Rect& rect) const;
         void capture_selected_outline(const SceneState& state, const GameObject& object, const SDL_Rect& rect, SDL_Rect& selected_outline, bool& has_selected_outline) const noexcept;
 

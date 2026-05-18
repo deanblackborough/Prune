@@ -22,51 +22,33 @@
 namespace prune {
 
     SimpleShooterScene::SimpleShooterScene(int window_width, int window_height)
+        : EditorScene(window_width, window_height)
     {
-        m_state.viewport.width = window_width;
-        m_state.viewport.height = window_height;
     }
 
-    void SimpleShooterScene::set_viewport(const SceneViewport& viewport) noexcept
+    SceneCamera& SimpleShooterScene::get_camera() noexcept
     {
-        m_state.viewport = viewport;
+        return m_camera;
     }
 
-    SceneState& SimpleShooterScene::get_state() noexcept
+    const SceneCamera& SimpleShooterScene::get_camera() const noexcept
     {
-        return m_state;
+        return m_camera;
     }
 
-    const SceneState& SimpleShooterScene::get_state() const noexcept
+    GridOptions& SimpleShooterScene::get_grid_options()
     {
-        return m_state;
+        return m_grid_options;
     }
 
-    bool SimpleShooterScene::scene_keyboard_input_enabled() const noexcept
+    void SimpleShooterScene::on_scene_exit()
     {
-        return m_state.viewport.focused && m_state.viewport.has_area();
-    }
-
-    bool SimpleShooterScene::scene_mouse_input_enabled() const noexcept
-    {
-        return m_state.viewport.hovered && m_state.viewport.has_area();
-    }
-
-    void SimpleShooterScene::on_enter()
-    {
-        new_scene();
-    }
-
-    void SimpleShooterScene::on_exit() {
-        m_state.objects.clear();
         m_simple_shooter_state.player_id = k_invalid_game_object_id;
-
         m_simple_shooter_state.enemy_id = k_invalid_game_object_id;
     }
 
-    void SimpleShooterScene::render(SDL_Renderer* renderer)
+    void SimpleShooterScene::render_scene_overlay(SDL_Renderer* renderer)
     {
-        m_renderer.render(renderer, m_state);
         draw_player_facing_indicator(renderer);
     }
 
@@ -85,28 +67,6 @@ namespace prune {
         }
 
         ImGui::End();
-    }
-
-    GameObjectManager& SimpleShooterScene::get_object_manager() {
-        return m_state.objects;
-    }
-
-    GridOptions& SimpleShooterScene::get_grid_options() {
-        return m_state.grid_options;
-    }
-
-    SceneOptions& SimpleShooterScene::get_scene_options() {
-        return m_state.scene_options;
-    }
-
-    SceneCamera& SimpleShooterScene::get_camera() noexcept
-    {
-        return m_state.camera;
-    }
-
-    const SceneCamera& SimpleShooterScene::get_camera() const noexcept
-    {
-        return m_state.camera;
     }
 
     SimpleShooterOptions& SimpleShooterScene::get_simple_shooter_options() noexcept
@@ -149,18 +109,21 @@ namespace prune {
         m_simple_shooter.reset(m_state, m_simple_shooter_state);
     }
 
-    void SimpleShooterScene::update(float dt, const Input& input)
+    void SimpleShooterScene::update_scene(float dt, const Input& input)
     {
         m_simple_shooter.update(
             m_state,
+            m_camera,
             m_simple_shooter_state,
             dt,
             input,
             scene_keyboard_input_enabled()
         );
+    }
 
-        m_interaction.update(m_state, dt, input);
-        m_state.camera.update_game_camera(m_state.viewport, player_object());
+    GameObject* SimpleShooterScene::follow_target() noexcept
+    {
+        return player_object();
     }
 
     GameObject* SimpleShooterScene::player_object() noexcept
@@ -175,15 +138,9 @@ namespace prune {
 
     void SimpleShooterScene::reset_runtime_state()
     {
-        m_state.objects.clear();
-        m_simple_shooter_state.player_id = k_invalid_game_object_id;
-
-        m_state.camera.reset();
-
-        m_state.grid_options = {};
-        m_state.scene_options = {};
-        m_state.drag_state = {};
-
+        reset_common_state();
+        m_camera.reset();
+        m_grid_options = {};
         m_simple_shooter_state = {};
     }
 
@@ -201,14 +158,14 @@ namespace prune {
 
         m_state.objects.select(m_simple_shooter_state.player_id);
 
-        m_state.camera.update_game_camera(m_state.viewport, player_object());
+        m_camera.update_game_camera(m_state.viewport, player_object());
     }
 
     void SimpleShooterScene::new_scene()
     {
         restore_defaults();
 
-        m_state.camera.update_game_camera(m_state.viewport, player_object());
+        m_camera.update_game_camera(m_state.viewport, player_object());
     }
 
     bool SimpleShooterScene::save_to_file(std::string_view path, std::string& error) const
@@ -218,7 +175,7 @@ namespace prune {
 
             root["scene_type"] = "simple_shooter";
 
-            SceneSerializer::save_to_node(m_state, root);
+            SceneSerializer::save_to_node(m_state, m_camera, m_grid_options, root);
             SimpleShooterSerializer::save_to_node(m_simple_shooter_state, root);
 
             std::ofstream output{ std::string(path) };
@@ -252,9 +209,11 @@ namespace prune {
             }
 
             SceneState loaded_state = m_state;
+            SceneCamera loaded_camera{};
+            GridOptions loaded_grid_options{};
             SimpleShooterState loaded_simple_shooter_state{};
 
-            if (!SceneSerializer::load_from_node(loaded_state, root, error)) {
+            if (!SceneSerializer::load_from_node(loaded_state, loaded_camera, loaded_grid_options, root, error)) {
                 return false;
             }
 
@@ -277,9 +236,11 @@ namespace prune {
             }
 
             m_state = std::move(loaded_state);
+            m_camera = loaded_camera;
+            m_grid_options = loaded_grid_options;
             m_simple_shooter_state = loaded_simple_shooter_state;
 
-            m_state.camera.update_game_camera(m_state.viewport, player_object());
+            m_camera.update_game_camera(m_state.viewport, player_object());
 
             return true;
         }
@@ -317,7 +278,7 @@ namespace prune {
 
     Transform SimpleShooterScene::find_block_spawn_position(const GameObject& block) const
     {
-        const Camera& camera = m_state.camera.active();
+        const Camera& camera = m_camera.active();
 
         const float view_center_x =
             camera.x + (static_cast<float>(m_state.viewport.width) / camera.zoom) * 0.5f;
@@ -325,8 +286,8 @@ namespace prune {
         const float view_center_y =
             camera.y + (static_cast<float>(m_state.viewport.height) / camera.zoom) * 0.5f;
 
-        const int grid_size = m_state.grid_options.grid_size > 0
-            ? m_state.grid_options.grid_size
+        const int grid_size = m_grid_options.grid_size > 0
+            ? m_grid_options.grid_size
             : block.size.width;
 
         auto snap = [grid_size](float value) {
@@ -335,11 +296,11 @@ namespace prune {
                 );
             };
 
-        const float base_x = m_state.grid_options.snap_to_grid
+        const float base_x = m_grid_options.snap_to_grid
             ? snap(view_center_x - static_cast<float>(block.size.width) * 0.5f)
             : view_center_x - static_cast<float>(block.size.width) * 0.5f;
 
-        const float base_y = m_state.grid_options.snap_to_grid
+        const float base_y = m_grid_options.snap_to_grid
             ? snap(view_center_y - static_cast<float>(block.size.height) * 0.5f)
             : view_center_y - static_cast<float>(block.size.height) * 0.5f;
 
@@ -374,7 +335,7 @@ namespace prune {
             return;
         }
 
-        const Camera& camera = m_state.camera.active();
+        const Camera& camera = m_camera.active();
 
         const float player_center_x =
             player->transform.x + (static_cast<float>(player->size.width) * 0.5f);
@@ -465,3 +426,4 @@ namespace prune {
         return true;
     }
 }
+

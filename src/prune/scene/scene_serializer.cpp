@@ -387,7 +387,7 @@ namespace prune {
         }
     }
 
-    void SceneSerializer::save_to_node(const SceneState& state, YAML::Node& root)
+    void SceneSerializer::save_to_node(const SceneState& state, const SceneCamera& camera, const GridOptions& grid_options, YAML::Node& root)
     {
         root["scene"]["next_object_id"] = state.objects.next_id();
 
@@ -395,24 +395,24 @@ namespace prune {
             root["scene"]["selected_object_id"] = state.objects.selected_id();
         }
 
-        root["cameras"]["mode"] = state.camera.state().mode == CameraMode::Editor ? "editor" : "game";
+        root["cameras"]["mode"] = camera.state().mode == CameraMode::Editor ? "editor" : "game";
 
-        root["cameras"]["editor"]["x"] = state.camera.state().editor.x;
-        root["cameras"]["editor"]["y"] = state.camera.state().editor.y;
-        root["cameras"]["editor"]["speed"] = state.camera.state().editor.speed;
-        root["cameras"]["editor"]["zoom"] = state.camera.state().editor.zoom;
+        root["cameras"]["editor"]["x"] = camera.state().editor.x;
+        root["cameras"]["editor"]["y"] = camera.state().editor.y;
+        root["cameras"]["editor"]["speed"] = camera.state().editor.speed;
+        root["cameras"]["editor"]["zoom"] = camera.state().editor.zoom;
 
-        root["cameras"]["game"]["x"] = state.camera.state().game.x;
-        root["cameras"]["game"]["y"] = state.camera.state().game.y;
-        root["cameras"]["game"]["speed"] = state.camera.state().game.speed;
-        root["cameras"]["game"]["zoom"] = state.camera.state().game.zoom;
-        root["cameras"]["game"]["follow_target"] = state.camera.state().game_options.follow_target;
+        root["cameras"]["game"]["x"] = camera.state().game.x;
+        root["cameras"]["game"]["y"] = camera.state().game.y;
+        root["cameras"]["game"]["speed"] = camera.state().game.speed;
+        root["cameras"]["game"]["zoom"] = camera.state().game.zoom;
+        root["cameras"]["game"]["follow_target"] = camera.state().game_options.follow_target;
 
-        root["grid"]["show_grid"] = state.grid_options.show_grid;
-        root["grid"]["snap_to_grid"] = state.grid_options.snap_to_grid;
-        root["grid"]["grid_size"] = state.grid_options.grid_size;
-        root["grid"]["nudge_step"] = state.grid_options.nudge_step;
-        root["grid"]["shift_nudge_steps"] = state.grid_options.shift_nudge_steps;
+        root["grid"]["show_grid"] = grid_options.show_grid;
+        root["grid"]["snap_to_grid"] = grid_options.snap_to_grid;
+        root["grid"]["grid_size"] = grid_options.grid_size;
+        root["grid"]["nudge_step"] = grid_options.nudge_step;
+        root["grid"]["shift_nudge_steps"] = grid_options.shift_nudge_steps;
 
         root["options"]["highlight_selected"] = state.scene_options.highlight_selected;
 
@@ -429,7 +429,7 @@ namespace prune {
         root["objects"] = objects;
     }
 
-    bool SceneSerializer::load_from_node(SceneState& state, const YAML::Node& root, std::string& error)
+    bool SceneSerializer::load_from_node(SceneState& state, SceneCamera& camera, GridOptions& grid_options, const YAML::Node& root, std::string& error)
     {
         const YAML::Node scene = root["scene"];
         const YAML::Node cameras = root["cameras"];
@@ -547,9 +547,9 @@ namespace prune {
         loaded.objects.set_selected_id(loaded.selected_id);
 
         state.objects = std::move(loaded.objects);
-        state.grid_options = loaded.grid_options;
         state.scene_options = loaded.scene_options;
-        state.camera.state() = loaded.camera_state;
+        camera.state() = loaded.camera_state;
+        grid_options = loaded.grid_options;
 
         return true;
     }

@@ -2,6 +2,7 @@
 
 #include "prune/core/input.hpp"
 #include "prune/scene/game_object.hpp"
+#include "prune/scene/scene_camera.hpp"
 #include "prune/scene/scene_state.hpp"
 #include "prune/scene/simple_shooter_state.hpp"
 
@@ -11,6 +12,7 @@ namespace prune {
     public:
         void update(
             SceneState& state,
+            SceneCamera& camera,
             SimpleShooterState& shooter_state,
             float dt,
             const Input& input,
@@ -44,6 +46,7 @@ namespace prune {
 
         void update_player(
             SceneState& state,
+            SceneCamera& camera,
             SimpleShooterState& shooter_state,
             float dt,
             const Input& input,

@@ -3,7 +3,6 @@
 #include "prune/core/defaults.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
-#include "prune/scene/scene_camera.hpp"
 
 namespace prune {
 
@@ -31,6 +30,8 @@ namespace prune {
         bool highlight_selected = true;
     };
 
+    // GridOptions is scene-specific: not every scene type needs a grid
+    // (e.g. a card game). Scenes that want grid support own this directly.
     struct GridOptions {
         bool show_grid = true;
         bool snap_to_grid = true;
@@ -51,14 +52,13 @@ namespace prune {
         Transform mouse_start_world{};
     };
 
+    // SceneState holds only the universal editor state that every scene type
+    // needs. GridOptions and SceneCamera are intentionally excluded: they are
+    // scene-specific and owned directly by scenes that need them.
     struct SceneState {
         SceneViewport viewport{};
-        GridOptions grid_options{};
         DragState drag_state{};
-        SceneCamera camera{};
-
         SceneOptions scene_options{};
-
         GameObjectManager objects;
     };
 
