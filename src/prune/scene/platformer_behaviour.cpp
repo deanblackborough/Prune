@@ -10,6 +10,7 @@ namespace prune {
 
     void PlatformerBehaviour::update(
         SceneState& state,
+        SceneCamera& camera,
         PlatformerState& platformer_state,
         float dt,
         const Input& input,
@@ -20,7 +21,7 @@ namespace prune {
             return;
         }
 
-        update_player(state, platformer_state, dt, input, keyboard_input_enabled);
+        update_player(state, camera, platformer_state, dt, input, keyboard_input_enabled);
     }
 
     GameObject* PlatformerBehaviour::player_object(SceneState& state, const PlatformerState& platformer_state) const noexcept
@@ -35,6 +36,7 @@ namespace prune {
 
     void PlatformerBehaviour::update_player(
         SceneState& state,
+        SceneCamera& camera,
         PlatformerState& platformer_state,
         float dt,
         const Input& input,
@@ -92,7 +94,7 @@ namespace prune {
         }
 
         if (horizontal != 0.0f || player->motion.velocity.y != 0.0f) {
-            state.camera.activate_game();
+            camera.activate_game();
         }
     }
 

@@ -3,7 +3,6 @@
 #include "prune/core/defaults.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
-#include "prune/scene/scene_camera.hpp"
 
 namespace prune {
 
@@ -53,10 +52,7 @@ namespace prune {
 
     struct SceneState {
         SceneViewport viewport{};
-        GridOptions grid_options{};
         DragState drag_state{};
-        SceneCamera camera{};
-
         SceneOptions scene_options{};
 
         GameObjectManager objects;

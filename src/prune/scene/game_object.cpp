@@ -1,7 +1,5 @@
 #include "prune/scene/game_object.hpp"
 
-#include <algorithm>
-
 namespace prune {
 
     RectF GameObject::bounds() const noexcept

@@ -11,6 +11,7 @@ namespace prune {
 
     void SimpleShooterBehaviour::update(
         SceneState& state,
+        SceneCamera& camera,
         SimpleShooterState& shooter_state,
         float dt,
         const Input& input,
@@ -21,7 +22,7 @@ namespace prune {
             return;
         }
 
-        update_player(state, shooter_state, dt, input, keyboard_input_enabled);
+        update_player(state, camera, shooter_state, dt, input, keyboard_input_enabled);
         handle_player_shooting(state, shooter_state, input, keyboard_input_enabled);
         update_enemy(state, shooter_state, dt);
         update_bullets(state, dt);
@@ -95,6 +96,7 @@ namespace prune {
 
     void SimpleShooterBehaviour::update_player(
         SceneState& state,
+        SceneCamera& camera,
         SimpleShooterState& shooter_state,
         float dt,
         const Input& input,
@@ -118,7 +120,7 @@ namespace prune {
             player->motion.velocity.y != 0.0f;
 
         if (is_moving) {
-            state.camera.activate_game();
+            camera.activate_game();
             update_player_facing(*player);
         }
 

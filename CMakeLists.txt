@@ -26,6 +26,7 @@ add_executable(Prune
         src/prune/scene/scene_factory.cpp
         src/prune/scene/scene_renderer.cpp
         src/prune/scene/scene_camera.cpp
+        src/prune/scene/world_scene.cpp
         src/prune/scene/scene_interaction.cpp
         src/prune/scene/scene_serializer.cpp
 

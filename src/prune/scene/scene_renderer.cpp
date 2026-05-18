@@ -24,31 +24,31 @@ namespace prune {
         m_sprite_textures.clear();
     }
 
-    bool SceneRenderer::is_rect_visible(const SceneState& state, const SDL_Rect& rect) noexcept
+    bool SceneRenderer::is_rect_visible(const SceneViewport& viewport, const SDL_Rect& rect) noexcept
     {
         return rect.x + rect.w >= 0 &&
             rect.y + rect.h >= 0 &&
-            rect.x < state.viewport.width &&
-            rect.y < state.viewport.height;
+            rect.x < viewport.width &&
+            rect.y < viewport.height;
     }
 
-    void SceneRenderer::draw_grid(SDL_Renderer* renderer, const SceneState& state) const
+    void SceneRenderer::draw_grid(SDL_Renderer* renderer, const SceneViewport& viewport, const SceneCamera& scene_camera, const GridOptions& grid_options) const
     {
-        if (!state.grid_options.show_grid || state.grid_options.grid_size <= 1) {
+        if (!grid_options.show_grid || grid_options.grid_size <= 1) {
             return;
         }
 
-        const int grid_size = std::max(1, state.grid_options.grid_size);
+        const int grid_size = std::max(1, grid_options.grid_size);
         const int major_every = 4; // 16px * 4 = 64px
 
-        const Camera& camera = state.camera.active();
+        const Camera& camera = scene_camera.active();
 
         const float zoom = std::max(camera.zoom, 0.01f);
 
         const float left_world = camera.x;
-        const float right_world = camera.x + (static_cast<float>(state.viewport.width) / zoom);
+        const float right_world = camera.x + (static_cast<float>(viewport.width) / zoom);
         const float top_world = camera.y;
-        const float bottom_world = camera.y + (static_cast<float>(state.viewport.height) / zoom);
+        const float bottom_world = camera.y + (static_cast<float>(viewport.height) / zoom);
 
         const float first_vertical_world =
             std::floor(left_world / static_cast<float>(grid_size)) * static_cast<float>(grid_size);
@@ -81,7 +81,7 @@ namespace prune {
             }
 
             const int screen_x = static_cast<int>(std::round((world_x - camera.x) * zoom));
-            SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, state.viewport.height);
+            SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, viewport.height);
         }
 
         const int horizontal_line_count =
@@ -109,19 +109,19 @@ namespace prune {
             }
 
             const int screen_y = static_cast<int>(std::round((world_y - camera.y) * zoom));
-            SDL_RenderDrawLine(renderer, 0, screen_y, state.viewport.width, screen_y);
+            SDL_RenderDrawLine(renderer, 0, screen_y, viewport.width, screen_y);
         }
     }
 
-    void SceneRenderer::draw_object(SDL_Renderer* renderer, const SceneState& state, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline)
+    void SceneRenderer::draw_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline)
     {
         switch (object.render.type) {
         case RenderType::Rectangle:
-            draw_rectangle_object(renderer, state, object, selected_outline, has_selected_outline);
+            draw_rectangle_object(renderer, state, camera, object, selected_outline, has_selected_outline);
             break;
 
         case RenderType::Sprite:
-            draw_sprite_object(renderer, state, object, selected_outline, has_selected_outline);
+            draw_sprite_object(renderer, state, camera, object, selected_outline, has_selected_outline);
             break;
 
         default:
@@ -129,11 +129,11 @@ namespace prune {
         }
     }
 
-    void SceneRenderer::draw_rectangle_object(SDL_Renderer* renderer, const SceneState& state, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline) const
+    void SceneRenderer::draw_rectangle_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline) const
     {
-        SDL_Rect rect = state.camera.world_to_screen_rect(object);
+        SDL_Rect rect = camera.world_to_screen_rect(object);
 
-        if (!is_rect_visible(state, rect)) {
+        if (!is_rect_visible(state.viewport, rect)) {
             return;
         }
 
@@ -149,11 +149,11 @@ namespace prune {
         capture_selected_outline(state, object, rect, selected_outline, has_selected_outline);
     }
 
-    void SceneRenderer::draw_sprite_object(SDL_Renderer* renderer, const SceneState& state, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline)
+    void SceneRenderer::draw_sprite_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline)
     {
-        SDL_Rect rect = state.camera.world_to_screen_rect(object);
+        SDL_Rect rect = camera.world_to_screen_rect(object);
 
-        if (!is_rect_visible(state, rect)) {
+        if (!is_rect_visible(state.viewport, rect)) {
             return;
         }
 
@@ -169,13 +169,13 @@ namespace prune {
         capture_selected_outline(state, object, rect, selected_outline, has_selected_outline);
     }
 
-    void SceneRenderer::render(SDL_Renderer* renderer, const SceneState& state)
+    void SceneRenderer::render(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GridOptions& grid_options)
     {
         if (!state.viewport.has_area()) {
             return;
         }
 
-        draw_grid(renderer, state);
+        draw_grid(renderer, state.viewport, camera, grid_options);
 
         SDL_Rect selected_outline{};
         bool has_selected_outline = false;
@@ -185,7 +185,7 @@ namespace prune {
                 continue;
             }
 
-            draw_object(renderer, state, object, selected_outline, has_selected_outline);
+            draw_object(renderer, state, camera, object, selected_outline, has_selected_outline);
         }
 
         if (state.scene_options.highlight_selected && has_selected_outline) {

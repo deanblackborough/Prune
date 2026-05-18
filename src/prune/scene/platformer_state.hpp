@@ -1,7 +1,6 @@
 #pragma once
 
 #include "prune/scene/game_object.hpp"
-#include "prune/scene/player_controller.hpp"
 
 namespace prune {
 
