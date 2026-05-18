@@ -22,18 +22,51 @@
 namespace prune {
 
     SimpleShooterScene::SimpleShooterScene(int window_width, int window_height)
-        : SceneShell(window_width, window_height)
     {
+        m_state.viewport.width = window_width;
+        m_state.viewport.height = window_height;
     }
 
-    void SimpleShooterScene::on_scene_exit()
+    void SimpleShooterScene::set_viewport(const SceneViewport& viewport) noexcept
     {
+        m_state.viewport = viewport;
+    }
+
+    SceneState& SimpleShooterScene::get_state() noexcept
+    {
+        return m_state;
+    }
+
+    const SceneState& SimpleShooterScene::get_state() const noexcept
+    {
+        return m_state;
+    }
+
+    bool SimpleShooterScene::scene_keyboard_input_enabled() const noexcept
+    {
+        return m_state.viewport.focused && m_state.viewport.has_area();
+    }
+
+    bool SimpleShooterScene::scene_mouse_input_enabled() const noexcept
+    {
+        return m_state.viewport.hovered && m_state.viewport.has_area();
+    }
+
+    void SimpleShooterScene::on_enter()
+    {
+        new_scene();
+    }
+
+    void SimpleShooterScene::on_exit() {
+        m_state.objects.clear();
         m_simple_shooter_state.player_id = k_invalid_game_object_id;
+
         m_simple_shooter_state.enemy_id = k_invalid_game_object_id;
     }
 
-    void SimpleShooterScene::render_scene_overlay(SDL_Renderer* renderer)
+    void SimpleShooterScene::render(SDL_Renderer* renderer)
     {
+        m_renderer.render(renderer, m_state);
         draw_player_facing_indicator(renderer);
     }
 
@@ -52,6 +85,28 @@ namespace prune {
         }
 
         ImGui::End();
+    }
+
+    GameObjectManager& SimpleShooterScene::get_object_manager() {
+        return m_state.objects;
+    }
+
+    GridOptions& SimpleShooterScene::get_grid_options() {
+        return m_state.grid_options;
+    }
+
+    SceneOptions& SimpleShooterScene::get_scene_options() {
+        return m_state.scene_options;
+    }
+
+    SceneCamera& SimpleShooterScene::get_camera() noexcept
+    {
+        return m_state.camera;
+    }
+
+    const SceneCamera& SimpleShooterScene::get_camera() const noexcept
+    {
+        return m_state.camera;
     }
 
     SimpleShooterOptions& SimpleShooterScene::get_simple_shooter_options() noexcept
@@ -94,7 +149,7 @@ namespace prune {
         m_simple_shooter.reset(m_state, m_simple_shooter_state);
     }
 
-    void SimpleShooterScene::update_scene(float dt, const Input& input)
+    void SimpleShooterScene::update(float dt, const Input& input)
     {
         m_simple_shooter.update(
             m_state,
@@ -103,11 +158,9 @@ namespace prune {
             input,
             scene_keyboard_input_enabled()
         );
-    }
 
-    GameObject* SimpleShooterScene::follow_target() noexcept
-    {
-        return player_object();
+        m_interaction.update(m_state, dt, input);
+        m_state.camera.update_game_camera(m_state.viewport, player_object());
     }
 
     GameObject* SimpleShooterScene::player_object() noexcept
@@ -122,7 +175,15 @@ namespace prune {
 
     void SimpleShooterScene::reset_runtime_state()
     {
-        reset_common_state();
+        m_state.objects.clear();
+        m_simple_shooter_state.player_id = k_invalid_game_object_id;
+
+        m_state.camera.reset();
+
+        m_state.grid_options = {};
+        m_state.scene_options = {};
+        m_state.drag_state = {};
+
         m_simple_shooter_state = {};
     }
 
@@ -404,4 +465,3 @@ namespace prune {
         return true;
     }
 }
-

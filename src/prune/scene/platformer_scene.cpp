@@ -1,4 +1,3 @@
-#include <cmath>
 #include <fstream>
 #include <string>
 #include <utility>
@@ -19,16 +18,58 @@
 namespace prune {
 
     PlatformerScene::PlatformerScene(int window_width, int window_height)
-        : SceneShell(window_width, window_height)
     {
+        m_state.viewport.width = window_width;
+        m_state.viewport.height = window_height;
     }
 
-    void PlatformerScene::on_scene_exit()
+    void PlatformerScene::on_enter()
     {
+        new_scene();
+    }
+
+    void PlatformerScene::on_exit()
+    {
+        m_state.objects.clear();
         m_platformer_state.player_id = k_invalid_game_object_id;
     }
 
-    void PlatformerScene::update_scene(float dt, const Input& input)
+    void PlatformerScene::set_viewport(const SceneViewport& viewport) noexcept
+    {
+        m_state.viewport = viewport;
+    }
+
+    bool PlatformerScene::scene_keyboard_input_enabled() const noexcept
+    {
+        return m_state.viewport.focused && m_state.viewport.has_area();
+    }
+
+    GameObjectManager& PlatformerScene::get_object_manager()
+    {
+        return m_state.objects;
+    }
+
+    GridOptions& PlatformerScene::get_grid_options()
+    {
+        return m_state.grid_options;
+    }
+
+    SceneOptions& PlatformerScene::get_scene_options()
+    {
+        return m_state.scene_options;
+    }
+
+    SceneCamera& PlatformerScene::get_camera() noexcept
+    {
+        return m_state.camera;
+    }
+
+    const SceneCamera& PlatformerScene::get_camera() const noexcept
+    {
+        return m_state.camera;
+    }
+
+    void PlatformerScene::update(float dt, const Input& input)
     {
         m_platformer.update(
             m_state,
@@ -37,17 +78,24 @@ namespace prune {
             input,
             scene_keyboard_input_enabled()
         );
+
+        m_interaction.update(m_state, dt, input);
+        m_state.camera.update_game_camera(m_state.viewport, player_object());
     }
 
-    GameObject* PlatformerScene::follow_target() noexcept
+    void PlatformerScene::render(SDL_Renderer* renderer)
     {
-        return player_object();
+        m_renderer.render(renderer, m_state);
     }
 
     void PlatformerScene::reset_runtime_state()
     {
-        reset_common_state();
+        m_state.objects.clear();
         m_platformer_state = {};
+        m_state.camera.reset();
+        m_state.grid_options = {};
+        m_state.scene_options = {};
+        m_state.drag_state = {};
     }
 
     void PlatformerScene::restore_defaults()
@@ -245,4 +293,3 @@ namespace prune {
     }
 
 }
-
