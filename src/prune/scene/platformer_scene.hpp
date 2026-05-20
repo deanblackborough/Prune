@@ -4,6 +4,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "prune/core/defaults.hpp"
 #include "prune/scene/platformer_behaviour.hpp"
 #include "prune/scene/platformer_state.hpp"
 #include "prune/scene/world_scene.hpp"
@@ -22,6 +23,7 @@ namespace prune {
 
         [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) const override;
         [[nodiscard]] bool load_from_file(std::string_view path, std::string& error) override;
+        [[nodiscard]] std::string_view default_file_path() const noexcept override { return k_default_platformer_scene_file_path; }
 
         [[nodiscard]] std::string_view scene_name() const noexcept override { return "Platformer"; }
         [[nodiscard]] std::string_view scene_tools_label() const noexcept override { return "Platformer"; }

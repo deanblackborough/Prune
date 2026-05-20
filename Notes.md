@@ -75,7 +75,7 @@ Suggested direction:
 
 The boundary should be clear enough that when a future transform gizmo is added, it obviously belongs to the editor/tooling side, not to SimpleShooterScene or PlatformerScene.
 
-### 3. Real scene-specific inspector support
+### 3. Real scene-specific inspector support (Done, but still very basic)
 
 The interface has `draw_scene_inspector(GameObject& selected)`, and Ui calls it after the generic inspector. That is the right seam.
 
@@ -86,6 +86,12 @@ Suggested direction:
 - Keep generic object properties in the generic inspector.
 - Add scene-owned sections only when the selected object has a scene-specific role.
 - Make these sections explanatory as well as editable.
+
+The first pass is now implemented.
+
+Simple Shooter and Platformer both add scene-specific selected-object sections after the generic inspector. These sections explain object role, behaviour, runtime persistence, and scene meaning without moving generic transform/render/flag editing out of the generic inspector.
+
+This is enough for now. Future passes can make some of these fields editable where it makes sense.
 
 Examples:
 
@@ -104,7 +110,7 @@ Platformer:
 
 This will make the editor demonstrate why scene-specific inspectors matter.
 
-### 4. Stronger scene object semantics
+### 4. Stronger scene object semantics (Partially done)
 
 GameObject is better grouped now, but the meaning of an object is still mostly implied by fields like `runtime.behaviour`, `collision.solid`, colour, and editor flags.
 

@@ -25,14 +25,19 @@ namespace prune {
         return copy.identity.id;
     }
 
-    void GameObjectManager::remove_inactive_runtime_objects(std::string_view behaviour)
+    std::size_t GameObjectManager::remove_inactive_runtime_objects(std::string_view behaviour)
     {
+        const std::size_t before = m_objects.size();
+
         m_objects.erase(
             std::remove_if(
                 m_objects.begin(),
                 m_objects.end(),
                 [behaviour](const GameObject& object) {
-                    return object.runtime.behaviour == behaviour && !object.lifecycle.active;
+                    return object.identity.type == GameObjectType::Runtime &&
+                        !object.runtime.persistent &&
+                        object.runtime.behaviour == behaviour &&
+                        !object.lifecycle.active;
                 }
             ),
             m_objects.end()
@@ -41,6 +46,8 @@ namespace prune {
         if (m_selected_id != k_invalid_game_object_id && get_by_id(m_selected_id) == nullptr) {
             m_selected_id = k_invalid_game_object_id;
         }
+
+        return before - m_objects.size();
     }
 
     bool GameObjectManager::add_loaded_object(const GameObject& object)

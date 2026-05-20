@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstdio>
 #include <fstream>
 #include <string>
 #include <utility>
@@ -16,8 +17,81 @@
 #include "prune/scene/simple_shooter_ids.hpp"
 #include "prune/scene/simple_shooter_serializer.hpp"
 #include "prune/tooling/editor_layout.hpp"
+#include "prune/tooling/imgui/layout.hpp"
+#include "prune/tooling/imgui/property_table.hpp"
 
 namespace prune {
+
+    namespace {
+
+        [[nodiscard]] const char* object_type_label(GameObjectType type) noexcept
+        {
+            return type == GameObjectType::Runtime ? "Runtime" : "Authored";
+        }
+
+        [[nodiscard]] const char* bool_label(bool value) noexcept
+        {
+            return value ? "Yes" : "No";
+        }
+
+        [[nodiscard]] const char* direction_label(Direction direction) noexcept
+        {
+            switch (direction) {
+            case Direction::Up:
+                return "Up";
+            case Direction::Down:
+                return "Down";
+            case Direction::Left:
+                return "Left";
+            case Direction::Right:
+                return "Right";
+            }
+
+            return "Unknown";
+        }
+
+        [[nodiscard]] const char* shooter_role_label(const GameObject& object) noexcept
+        {
+            if (object.runtime.behaviour == simple_shooter_ids::player_behaviour) {
+                return "Player";
+            }
+
+            if (object.runtime.behaviour == simple_shooter_ids::enemy_behaviour) {
+                return "Enemy";
+            }
+
+            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour) {
+                return "Bullet";
+            }
+
+            if (object.collision.solid) {
+                return "Block / Wall";
+            }
+
+            return "Scene Object";
+        }
+
+        [[nodiscard]] const char* shooter_effect_label(const GameObject& object) noexcept
+        {
+            if (object.runtime.behaviour == simple_shooter_ids::player_behaviour) {
+                return "Controlled by WASD/arrow keys and fires bullets.";
+            }
+
+            if (object.runtime.behaviour == simple_shooter_ids::enemy_behaviour) {
+                return "Moves toward the player and can be destroyed by bullets.";
+            }
+
+            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour) {
+                return "Runtime projectile. It is removed when inactive or expired.";
+            }
+
+            if (object.collision.solid) {
+                return "Solid authored obstacle used by movement/collision checks.";
+            }
+
+            return "No Simple Shooter behaviour is assigned.";
+        }
+    }
 
     SimpleShooterScene::SimpleShooterScene(int window_width, int window_height)
     {
@@ -265,7 +339,30 @@ namespace prune {
 
     void SimpleShooterScene::draw_scene_inspector(GameObject& selected)
     {
-        (void) selected;
+        if (!tooling::imgui::layout::collapsing_header("Simple Shooter", true)) {
+            return;
+        }
+
+        if (!tooling::imgui::property_table::begin("##simple_shooter_inspector")) {
+            return;
+        }
+
+        tooling::imgui::property_table::text("Role", shooter_role_label(selected));
+        tooling::imgui::property_table::text("Object Type", object_type_label(selected.identity.type));
+        tooling::imgui::property_table::text("Behaviour", selected.runtime.behaviour.empty() ? "None" : selected.runtime.behaviour.c_str());
+        tooling::imgui::property_table::text("Runtime Saved", bool_label(selected.runtime.persistent));
+        tooling::imgui::property_table::text_wrapped("Effect", shooter_effect_label(selected));
+
+        if (selected.runtime.behaviour == simple_shooter_ids::player_behaviour) {
+            tooling::imgui::property_table::text("Facing", direction_label(selected.motion.facing));
+        }
+        else if (selected.runtime.behaviour == simple_shooter_ids::bullet_behaviour) {
+            char lifetime_buffer[32];
+            std::snprintf(lifetime_buffer, sizeof(lifetime_buffer), "%.2fs", selected.lifecycle.remaining);
+            tooling::imgui::property_table::text("Remaining", lifetime_buffer);
+        }
+
+        tooling::imgui::property_table::end();
     }
 
     GameObjectId SimpleShooterScene::create_block_at_view_center()

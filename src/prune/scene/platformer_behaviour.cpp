@@ -8,6 +8,28 @@
 
 namespace prune {
 
+    namespace {
+
+        [[nodiscard]] bool is_platformer_player(const GameObject& object) noexcept
+        {
+            return object.runtime.behaviour == platformer_ids::player_behaviour;
+        }
+
+        [[nodiscard]] bool is_active_solid_platformer_block(const GameObject& object) noexcept
+        {
+            return object.lifecycle.active &&
+                object.collision.solid &&
+                object.runtime.behaviour == platformer_ids::ground_behaviour;
+        }
+
+        [[nodiscard]] bool is_active_platformer_hazard(const GameObject& object) noexcept
+        {
+            return object.lifecycle.active &&
+                object.runtime.behaviour == platformer_ids::hazard_behaviour;
+        }
+
+    }
+
     void PlatformerBehaviour::update(
         SceneState& state,
         SceneCamera& camera,
@@ -26,12 +48,22 @@ namespace prune {
 
     GameObject* PlatformerBehaviour::player_object(SceneState& state, const PlatformerState& platformer_state) const noexcept
     {
-        return state.objects.get_by_id(platformer_state.player_id);
+        GameObject* object = state.objects.get_by_id(platformer_state.player_id);
+        if (!object || !is_platformer_player(*object)) {
+            return nullptr;
+        }
+
+        return object;
     }
 
     const GameObject* PlatformerBehaviour::player_object(const SceneState& state, const PlatformerState& platformer_state) const noexcept
     {
-        return state.objects.get_by_id(platformer_state.player_id);
+        const GameObject* object = state.objects.get_by_id(platformer_state.player_id);
+        if (!object || !is_platformer_player(*object)) {
+            return nullptr;
+        }
+
+        return object;
     }
 
     void PlatformerBehaviour::update_player(
@@ -104,7 +136,7 @@ namespace prune {
         player.transform.y += delta_y;
 
         for (const auto& object : state.objects.objects()) {
-            if (object.identity.id == player.identity.id || !object.lifecycle.active || !object.collision.solid) {
+            if (object.identity.id == player.identity.id || !is_active_solid_platformer_block(object)) {
                 continue;
             }
 
@@ -136,7 +168,7 @@ namespace prune {
     bool PlatformerBehaviour::touches_hazard(const SceneState& state, const GameObject& player) const noexcept
     {
         for (const auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour != platformer_ids::hazard_behaviour || !object.lifecycle.active) {
+            if (!is_active_platformer_hazard(object)) {
                 continue;
             }
 
@@ -161,5 +193,4 @@ namespace prune {
         player->motion.facing = Direction::Right;
         platformer_state.player_grounded = false;
     }
-
 }

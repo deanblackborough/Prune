@@ -44,6 +44,7 @@ Prune currently has:
 - Dedicated ImGui scene viewport
 - Live object selection and dragging
 - Outliner and inspector panels
+- Inspector includes a scene-specific section which can be extended by each scene type
 - Grid rendering and snapping
 - Editor camera and game camera separation
 - YAML scene save/load
@@ -90,19 +91,6 @@ The Platformer slice currently proves:
 This slice is useful because it has different movement rules, different object semantics, different camera expectations, and different tuning values from the shooter.
 
 *It is still deliberately small. Before adding more tooling, this slice needs to be tightened so it feels like a clear demo rather than only an architecture test.*
-
-## What the two slices have exposed
-
-Having two scene types is already showing the useful pressure points:
-
-- Concrete scene classes duplicate too much shell code.
-- The editor/runtime boundary is not explicit enough.
-- Scene-specific inspectors exist as a hook, but not as a meaningful feature yet.
-- GameObject semantics are still too loose for different scene types.
-- Behaviour strings work, but they are not enough to describe object intent cleanly.
-- The folder structure is flat and will not scale well as more scene types are added.
-- Adding another scene type currently requires too much repeated setup.
-- Documentation should describe the architecture direction, but detailed API documentation is still premature.
 
 ## Near-term focus
 
