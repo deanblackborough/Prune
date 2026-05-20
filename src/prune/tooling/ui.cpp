@@ -1,8 +1,8 @@
+#include <string>
 #include <utility>
 
 #include "imgui.h"
 
-#include "prune/core/defaults.hpp"
 #include "prune/scene/scene.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/ui.hpp"
@@ -44,8 +44,10 @@ namespace prune {
 
                 if (ImGui::MenuItem("Save Scene")) {
                     std::string error;
-                    if (scene.save_to_file(k_default_scene_file_path, error)) {
-                        m_file_status = "Saved scene to " + std::string(k_default_scene_file_path);
+                    const std::string scene_file_path{ scene.default_file_path() };
+
+                    if (scene.save_to_file(scene_file_path, error)) {
+                        m_file_status = "Saved scene to " + scene_file_path;
                         m_file_status_is_error = false;
                     }
                     else {

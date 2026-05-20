@@ -45,6 +45,7 @@ namespace prune {
 
         [[nodiscard]] virtual bool save_to_file(std::string_view path, std::string& error) const = 0;
         [[nodiscard]] virtual bool load_from_file(std::string_view path, std::string& error) = 0;
+        [[nodiscard]] virtual std::string_view default_file_path() const noexcept = 0;
 
         virtual void set_viewport(const SceneViewport& viewport) noexcept = 0;
         [[nodiscard]] virtual const SceneViewport& get_viewport() const noexcept = 0;

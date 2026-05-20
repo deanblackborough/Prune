@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include <filesystem>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include <SDL2/SDL.h>
@@ -102,18 +103,10 @@ namespace prune {
 
                 if (load_scene_requested) {
                     std::string error;
+                    const std::string scene_file_path{ m_scene->default_file_path() };
 
-                    std::unique_ptr<Scene> loaded_scene = SceneFactory::create_from_file(
-                        k_default_scene_file_path,
-                        m_window->width(),
-                        m_window->height(),
-                        error
-                    );
-
-                    if (loaded_scene) {
-                        m_scene->on_exit();
-                        m_scene = std::move(loaded_scene);
-                        m_ui->set_file_status("Loaded scene from " + std::string(k_default_scene_file_path), false);
+                    if (m_scene->load_from_file(scene_file_path, error)) {
+                        m_ui->set_file_status("Loaded scene from " + scene_file_path, false);
                     }
                     else {
                         m_ui->set_file_status("Load failed: " + error, true);
