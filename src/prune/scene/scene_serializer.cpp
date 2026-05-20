@@ -419,7 +419,7 @@ namespace prune {
         YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
 
         for (const auto& object : state.objects.objects()) {
-            if (!object.runtime.persistent) {
+            if (object.identity.type == GameObjectType::Runtime || !object.runtime.persistent) {
                 continue;
             }
 
@@ -507,8 +507,8 @@ namespace prune {
                 return false;
             }
 
-            if (!object.runtime.persistent) {
-                error = "Save file contains a non-persistent object.";
+            if (object.identity.type == GameObjectType::Runtime || !object.runtime.persistent) {
+                error = "Save file contains a runtime-only object.";
                 return false;
             }
 

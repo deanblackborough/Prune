@@ -2,6 +2,7 @@
 
 #include "prune/scene/game_object.hpp"
 
+#include <string_view>
 #include <vector>
 
 namespace prune {
@@ -13,7 +14,7 @@ namespace prune {
         GameObjectId create_object(const GameObject& object);
         bool add_loaded_object(const GameObject& object);
         bool remove_object(GameObjectId id) noexcept;
-        void remove_inactive_runtime_objects(std::string_view behaviour);
+        std::size_t remove_inactive_runtime_objects(std::string_view behaviour);
 
         [[nodiscard]] std::size_t count() const noexcept;
         [[nodiscard]] bool empty() const noexcept;
@@ -43,5 +44,4 @@ namespace prune {
         GameObjectId m_next_id = 1;
         GameObjectId m_selected_id = k_invalid_game_object_id;
     };
-
-} 
+}
