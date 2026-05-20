@@ -44,7 +44,7 @@ Prune currently has:
 - Dedicated ImGui scene viewport
 - Live object selection and dragging
 - Outliner and inspector panels
-- Inspector includes a scene specific section which can be extended by each scene type
+- Inspector includes a scene-specific section which can be extended by each scene type
 - Grid rendering and snapping
 - Editor camera and game camera separation
 - YAML scene save/load
