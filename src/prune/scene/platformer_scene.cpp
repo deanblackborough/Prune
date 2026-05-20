@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <fstream>
 #include <string>
 #include <utility>
@@ -12,8 +13,57 @@
 #include "prune/scene/platformer_serializer.hpp"
 #include "prune/scene/scene_serializer.hpp"
 #include "prune/tooling/editor_layout.hpp"
+#include "prune/tooling/imgui/layout.hpp"
+#include "prune/tooling/imgui/property_table.hpp"
 
 namespace prune {
+
+    namespace {
+
+        [[nodiscard]] const char* object_type_label(GameObjectType type) noexcept
+        {
+            return type == GameObjectType::Runtime ? "Runtime" : "Authored";
+        }
+
+        [[nodiscard]] const char* bool_label(bool value) noexcept
+        {
+            return value ? "Yes" : "No";
+        }
+
+        [[nodiscard]] const char* platformer_role_label(const GameObject& object) noexcept
+        {
+            if (object.runtime.behaviour == platformer_ids::player_behaviour) {
+                return "Player";
+            }
+
+            if (object.runtime.behaviour == platformer_ids::ground_behaviour) {
+                return "Platform / Ground";
+            }
+
+            if (object.runtime.behaviour == platformer_ids::hazard_behaviour) {
+                return "Hazard";
+            }
+
+            return "Scene Object";
+        }
+
+        [[nodiscard]] const char* platformer_effect_label(const GameObject& object) noexcept
+        {
+            if (object.runtime.behaviour == platformer_ids::player_behaviour) {
+                return "Controlled by horizontal movement and jump input. The camera follows this object.";
+            }
+
+            if (object.runtime.behaviour == platformer_ids::ground_behaviour) {
+                return "Solid platformer surface. The player collides with this and can stand on it.";
+            }
+
+            if (object.runtime.behaviour == platformer_ids::hazard_behaviour) {
+                return "Resets the player to the platformer spawn point on contact.";
+            }
+
+            return "No Platformer behaviour is assigned.";
+        }
+    }
 
     PlatformerScene::PlatformerScene(int window_width, int window_height)
     {
@@ -107,7 +157,41 @@ namespace prune {
 
     void PlatformerScene::draw_scene_inspector(GameObject& selected)
     {
-        (void) selected;
+        if (!tooling::imgui::layout::collapsing_header("Platformer", true)) {
+            return;
+        }
+
+        if (!tooling::imgui::property_table::begin("##platformer_inspector")) {
+            return;
+        }
+
+        tooling::imgui::property_table::text("Role", platformer_role_label(selected));
+        tooling::imgui::property_table::text("Object Type", object_type_label(selected.identity.type));
+        tooling::imgui::property_table::text("Behaviour", selected.runtime.behaviour.empty() ? "None" : selected.runtime.behaviour.c_str());
+        tooling::imgui::property_table::text("Runtime Saved", bool_label(selected.runtime.persistent));
+        tooling::imgui::property_table::text_wrapped("Effect", platformer_effect_label(selected));
+
+        if (selected.runtime.behaviour == platformer_ids::player_behaviour) {
+            char velocity_buffer[64];
+            std::snprintf(
+                velocity_buffer,
+                sizeof(velocity_buffer),
+                "x %.1f, y %.1f",
+                selected.motion.velocity.x,
+                selected.motion.velocity.y
+            );
+
+            tooling::imgui::property_table::text("Velocity", velocity_buffer);
+            tooling::imgui::property_table::text("Grounded", bool_label(m_platformer_state.player_grounded));
+        }
+        else if (selected.runtime.behaviour == platformer_ids::ground_behaviour) {
+            tooling::imgui::property_table::text("Collision", selected.collision.solid ? "Solid" : "Not solid");
+        }
+        else if (selected.runtime.behaviour == platformer_ids::hazard_behaviour) {
+            tooling::imgui::property_table::text("Collision", selected.collision.solid ? "Solid" : "Trigger only");
+        }
+
+        tooling::imgui::property_table::end();
     }
 
     bool PlatformerScene::save_to_file(std::string_view path, std::string& error) const
