@@ -9,9 +9,6 @@ namespace prune::tooling {
     namespace {
 
         constexpr float k_margin = 5.0f;
-        constexpr float k_menu_bar_height = 25.0f;
-
-        constexpr float k_right_panel_width = 448.0f;
 
         constexpr float k_outliner_height = 170.0f;
         constexpr float k_scene_panel_height = 190.0f;
@@ -28,6 +25,11 @@ namespace prune::tooling {
 
         constexpr float k_scene_min_width = 320.0f;
         constexpr float k_scene_min_height = 240.0f;
+
+        [[nodiscard]] float right_panel_width(const float work_width)
+        {
+            return std::clamp(work_width * 0.27f, 360.0f, 420.0f);
+        }
 
         struct LayoutMetrics {
             ImVec2 work_pos;
@@ -50,8 +52,8 @@ namespace prune::tooling {
             const ImVec2 work_pos = viewport->WorkPos;
             const ImVec2 work_size = viewport->WorkSize;
 
-            const float top_y = work_pos.y + k_menu_bar_height;
-            const float right_width = k_right_panel_width;
+            const float top_y = work_pos.y;
+            const float right_width = right_panel_width(work_size.x);
 
             const float right_x = work_pos.x + std::max(
                 k_margin,
@@ -120,7 +122,7 @@ namespace prune::tooling {
 
         const float scene_height = std::max(
             k_scene_min_height,
-            layout.work_size.y - k_menu_bar_height - k_margin
+            layout.work_size.y - k_margin
         );
 
         set_window_default(

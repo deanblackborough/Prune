@@ -1,6 +1,8 @@
 #include "prune/core/window.hpp"
 #include <stdexcept>
 
+#include "SDL_image.h"
+
 namespace prune {
 
     Window::Window(const WindowConfig& config)
@@ -34,6 +36,13 @@ namespace prune {
 
         if (config.vsync) {
             renderer_flags |= SDL_RENDERER_PRESENTVSYNC;
+        }
+
+        SDL_Surface* icon = IMG_Load("assets/icon.png");
+
+        if (icon != nullptr) {
+            SDL_SetWindowIcon(m_window, icon);
+            SDL_FreeSurface(icon);
         }
 
         m_renderer = SDL_CreateRenderer(

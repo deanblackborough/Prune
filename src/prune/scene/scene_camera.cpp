@@ -67,7 +67,7 @@ namespace prune {
         m_state = {};
 
         m_state.editor.speed = 256.0f;
-        m_state.editor.zoom = 1.0f;
+        m_state.editor.zoom = 2.0f;
 
         m_state.game.speed = 256.0f;
         m_state.game.zoom = 3.0f;
