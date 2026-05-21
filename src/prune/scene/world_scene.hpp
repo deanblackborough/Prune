@@ -15,6 +15,7 @@ namespace prune {
     class WorldScene : public Scene {
     public:
         void update(float dt, const Input& input) final;
+        void update_editor(float dt, const Input& input) final;
         void render(SDL_Renderer* renderer) final;
 
         void set_viewport(const SceneViewport& viewport) noexcept final;

@@ -1,3 +1,5 @@
+![Platformer](assets/icon.png)
+
 # Prune
 
 Prune is a C++23 live 2D editor/runtime experiment built with SDL2, SDL2_image, Dear ImGui, and yaml-cpp.
