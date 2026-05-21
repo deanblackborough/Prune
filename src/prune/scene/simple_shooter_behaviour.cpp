@@ -39,6 +39,8 @@ namespace prune {
 
     void SimpleShooterBehaviour::reset(SceneState& state, SimpleShooterState& shooter_state)
     {
+        shooter_state.fire_cooldown_remaining = 0.0f;
+
         for (auto& object : state.objects.objects()) {
             if (simple_shooter_concepts::is_projectile(object)) {
                 object.lifecycle.active = false;

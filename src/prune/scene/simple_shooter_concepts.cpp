@@ -79,7 +79,7 @@ namespace prune::simple_shooter_concepts {
         case ObjectKind::Player:
             return "The single controlled actor for the Simple Shooter slice.";
         case ObjectKind::Enemy:
-            return "The single target that moves toward the player and respawns when hit.";
+            return "A target that moves toward the player and respawns when hit.";
         case ObjectKind::Projectile:
             return "A runtime projectile fired by the player.";
         case ObjectKind::Wall:
