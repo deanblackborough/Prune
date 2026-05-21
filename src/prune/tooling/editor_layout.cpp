@@ -11,11 +11,11 @@ namespace prune::tooling {
         constexpr float k_margin = 5.0f;
         constexpr float k_menu_bar_height = 25.0f;
 
-        constexpr float k_right_panel_width = 330.0f;
+        constexpr float k_right_panel_width = 448.0f;
 
-        constexpr float k_outliner_height = 175.0f;
-        constexpr float k_simple_shooter_height = 180.0f;
-        constexpr float k_inspector_height = 330.0f;
+        constexpr float k_outliner_height = 170.0f;
+        constexpr float k_scene_panel_height = 190.0f;
+        constexpr float k_min_inspector_height = 260.0f;
 
         constexpr float k_stats_width = 300.0f;
         constexpr float k_stats_height = 320.0f;
@@ -29,43 +29,68 @@ namespace prune::tooling {
         constexpr float k_scene_min_width = 320.0f;
         constexpr float k_scene_min_height = 240.0f;
 
-        [[nodiscard]] ImGuiViewport* main_viewport()
-        {
-            return ImGui::GetMainViewport();
-        }
+        struct LayoutMetrics {
+            ImVec2 work_pos;
+            ImVec2 work_size;
 
-        [[nodiscard]] ImVec2 work_pos()
-        {
-            return main_viewport()->WorkPos;
-        }
+            float top_y;
+            float right_x;
+            float right_width;
 
-        [[nodiscard]] ImVec2 work_size()
-        {
-            return main_viewport()->WorkSize;
-        }
+            float outliner_y;
+            float scene_panel_y;
+            float inspector_y;
+            float inspector_height;
+        };
 
-        [[nodiscard]] float right_panel_x()
+        [[nodiscard]] LayoutMetrics metrics()
         {
-            const ImVec2 pos = work_pos();
-            const ImVec2 size = work_size();
+            const ImGuiViewport* viewport = ImGui::GetMainViewport();
 
-            return pos.x + std::max(k_margin, size.x - k_right_panel_width - k_margin);
-        }
+            const ImVec2 work_pos = viewport->WorkPos;
+            const ImVec2 work_size = viewport->WorkSize;
 
-        [[nodiscard]] float top_y()
-        {
-            return work_pos().y + k_menu_bar_height;
+            const float top_y = work_pos.y + k_menu_bar_height;
+            const float right_width = k_right_panel_width;
+
+            const float right_x = work_pos.x + std::max(
+                k_margin,
+                work_size.x - right_width - k_margin
+            );
+
+            const float outliner_y = top_y;
+            const float scene_panel_y = outliner_y + k_outliner_height + k_margin;
+            const float inspector_y = scene_panel_y + k_scene_panel_height + k_margin;
+
+            const float inspector_height = std::max(
+                k_min_inspector_height,
+                (work_pos.y + work_size.y) - inspector_y - k_margin
+            );
+
+            return LayoutMetrics{
+                work_pos,
+                work_size,
+                top_y,
+                right_x,
+                right_width,
+                outliner_y,
+                scene_panel_y,
+                inspector_y,
+                inspector_height
+            };
         }
 
         [[nodiscard]] ImVec2 centered_position()
         {
-            return main_viewport()->GetCenter();
+            return ImGui::GetMainViewport()->GetCenter();
         }
 
         void set_window_default(const ImVec2 position, const ImVec2 size)
         {
-            ImGui::SetNextWindowPos(position, ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(size, ImGuiCond_FirstUseEver);
+            //ImGui::SetNextWindowPos(position, ImGuiCond_FirstUseEver);
+            //ImGui::SetNextWindowSize(size, ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowPos(position, ImGuiCond_Always);
+            ImGui::SetNextWindowSize(size, ImGuiCond_Always);
         }
 
         void set_centered_window_default(const ImVec2 size)
@@ -83,22 +108,19 @@ namespace prune::tooling {
 
     void EditorLayout::scene_viewport()
     {
-        const ImVec2 pos = work_pos();
-        const ImVec2 size = work_size();
+        const LayoutMetrics layout = metrics();
 
-        const float right_panel_start_x = right_panel_x();
-
-        const float scene_x = pos.x + k_margin;
-        const float scene_y = top_y();
+        const float scene_x = layout.work_pos.x + k_margin;
+        const float scene_y = layout.top_y;
 
         const float scene_width = std::max(
             k_scene_min_width,
-            right_panel_start_x - scene_x - k_margin
+            layout.right_x - scene_x - k_margin
         );
 
         const float scene_height = std::max(
             k_scene_min_height,
-            size.y - k_menu_bar_height - k_margin
+            layout.work_size.y - k_menu_bar_height - k_margin
         );
 
         set_window_default(
@@ -109,35 +131,40 @@ namespace prune::tooling {
 
     void EditorLayout::outliner()
     {
+        const LayoutMetrics layout = metrics();
+
         set_window_default(
-            ImVec2(right_panel_x(), top_y()),
-            ImVec2(k_right_panel_width, k_outliner_height)
+            ImVec2(layout.right_x, layout.outliner_y),
+            ImVec2(layout.right_width, k_outliner_height)
         );
     }
 
     void EditorLayout::scene_panel()
     {
+        const LayoutMetrics layout = metrics();
+
         set_window_default(
-            ImVec2(right_panel_x(), top_y() + k_outliner_height + k_margin),
-            ImVec2(k_right_panel_width, k_simple_shooter_height)
+            ImVec2(layout.right_x, layout.scene_panel_y),
+            ImVec2(layout.right_width, k_scene_panel_height)
         );
     }
 
     void EditorLayout::inspector()
     {
+        const LayoutMetrics layout = metrics();
+
         set_window_default(
-            ImVec2(
-                right_panel_x(),
-                top_y() + k_outliner_height + k_simple_shooter_height + (k_margin * 2.0f)
-            ),
-            ImVec2(k_right_panel_width, k_inspector_height)
+            ImVec2(layout.right_x, layout.inspector_y),
+            ImVec2(layout.right_width, layout.inspector_height)
         );
     }
 
     void EditorLayout::stats()
     {
+        const LayoutMetrics layout = metrics();
+
         set_window_default(
-            ImVec2(work_pos().x + 10.0f, work_pos().y + 34.0f),
+            ImVec2(layout.work_pos.x + 10.0f, layout.work_pos.y + 34.0f),
             ImVec2(k_stats_width, k_stats_height)
         );
     }
@@ -151,4 +178,5 @@ namespace prune::tooling {
     {
         set_centered_window_default(ImVec2(k_controls_width, k_controls_height));
     }
+
 }
