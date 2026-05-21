@@ -3,9 +3,10 @@
 #include <SDL2/SDL.h>
 
 #include "prune/scene/collision.hpp"
-#include "prune/scene/simple_shooter_ids.hpp"
 #include "prune/scene/simple_shooter_behaviour.hpp"
+#include "prune/scene/simple_shooter_concepts.hpp"
 #include "prune/scene/simple_shooter_factory.hpp"
+#include "prune/scene/simple_shooter_ids.hpp"
 
 namespace prune {
 
@@ -25,36 +26,43 @@ namespace prune {
         update_player(state, camera, shooter_state, dt, input, keyboard_input_enabled);
         handle_player_shooting(state, shooter_state, input, keyboard_input_enabled);
         update_enemy(state, shooter_state, dt);
-        update_bullets(state, dt);
-        handle_bullet_enemy_collisions(state, shooter_state);
+        update_projectiles(state, dt);
+        handle_projectile_wall_collisions(state);
+        handle_projectile_enemy_collisions(state, shooter_state);
         cleanup_runtime_objects(state);
     }
 
     void SimpleShooterBehaviour::reset(SceneState& state, SimpleShooterState& shooter_state)
     {
         for (auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour) {
+            if (simple_shooter_concepts::is_projectile(object)) {
                 object.lifecycle.active = false;
             }
         }
 
         cleanup_runtime_objects(state);
 
+        if (!enemy_spawn_object(state, shooter_state)) {
+            shooter_state.enemy_spawn_id = state.objects.create_object(simple_shooter_factory::create_enemy_spawn());
+        }
+
         GameObject* enemy = enemy_object(state, shooter_state);
         if (!enemy) {
             shooter_state.enemy_id = state.objects.create_object(simple_shooter_factory::create_enemy());
-            return;
+            enemy = enemy_object(state, shooter_state);
         }
 
-        respawn_enemy(*enemy);
+        if (enemy) {
+            respawn_enemy(state, shooter_state, *enemy);
+        }
     }
 
-    int SimpleShooterBehaviour::bullet_count(const SceneState& state) const noexcept
+    int SimpleShooterBehaviour::projectile_count(const SceneState& state) const noexcept
     {
         int count = 0;
 
         for (const auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour && object.lifecycle.active) {
+            if (simple_shooter_concepts::is_projectile(object) && object.lifecycle.active) {
                 ++count;
             }
         }
@@ -76,6 +84,22 @@ namespace prune {
     ) const noexcept
     {
         return state.objects.get_by_id(shooter_state.enemy_id);
+    }
+
+    GameObject* SimpleShooterBehaviour::enemy_spawn_object(
+        SceneState& state,
+        const SimpleShooterState& shooter_state
+    ) const noexcept
+    {
+        return state.objects.get_by_id(shooter_state.enemy_spawn_id);
+    }
+
+    const GameObject* SimpleShooterBehaviour::enemy_spawn_object(
+        const SceneState& state,
+        const SimpleShooterState& shooter_state
+    ) const noexcept
+    {
+        return state.objects.get_by_id(shooter_state.enemy_spawn_id);
     }
 
     GameObject* SimpleShooterBehaviour::player_object(
@@ -138,13 +162,13 @@ namespace prune {
         GameObject& object,
         float delta_x,
         float delta_y,
-        bool resolve_collisions
+        bool resolve_wall_collisions
     )
     {
         object.transform.x += delta_x;
         object.transform.y += delta_y;
 
-        if (resolve_collisions) {
+        if (resolve_wall_collisions) {
             collision::resolve_against_solids(object, state.objects);
         }
     }
@@ -182,10 +206,10 @@ namespace prune {
         }
 
         state.objects.create_object(
-            simple_shooter_factory::create_bullet_from_player(
+            simple_shooter_factory::create_projectile_from_player(
                 *player,
-                shooter_state.options.bullet_speed,
-                shooter_state.options.bullet_lifetime
+                shooter_state.options.projectile_speed,
+                shooter_state.options.projectile_lifetime
             )
         );
     }
@@ -232,10 +256,10 @@ namespace prune {
         );
     }
 
-    void SimpleShooterBehaviour::update_bullets(SceneState& state, float dt)
+    void SimpleShooterBehaviour::update_projectiles(SceneState& state, float dt)
     {
         for (auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour != simple_shooter_ids::bullet_behaviour || !object.lifecycle.active) {
+            if (!simple_shooter_concepts::is_projectile(object) || !object.lifecycle.active) {
                 continue;
             }
 
@@ -249,7 +273,27 @@ namespace prune {
         }
     }
 
-    void SimpleShooterBehaviour::handle_bullet_enemy_collisions(
+    void SimpleShooterBehaviour::handle_projectile_wall_collisions(SceneState& state)
+    {
+        for (auto& projectile : state.objects.objects()) {
+            if (!simple_shooter_concepts::is_projectile(projectile) || !projectile.lifecycle.active) {
+                continue;
+            }
+
+            for (const auto& wall : state.objects.objects()) {
+                if (!simple_shooter_concepts::is_wall(wall) || !wall.lifecycle.active) {
+                    continue;
+                }
+
+                if (collision::is_overlapping(projectile, wall)) {
+                    projectile.lifecycle.active = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    void SimpleShooterBehaviour::handle_projectile_enemy_collisions(
         SceneState& state,
         const SimpleShooterState& shooter_state
     )
@@ -260,7 +304,7 @@ namespace prune {
         }
 
         for (auto& object : state.objects.objects()) {
-            if (object.runtime.behaviour != simple_shooter_ids::bullet_behaviour || !object.lifecycle.active) {
+            if (!simple_shooter_concepts::is_projectile(object) || !object.lifecycle.active) {
                 continue;
             }
 
@@ -269,15 +313,28 @@ namespace prune {
             }
 
             object.lifecycle.active = false;
-            respawn_enemy(*enemy);
+            respawn_enemy(state, shooter_state, *enemy);
             return;
         }
     }
 
-    void SimpleShooterBehaviour::respawn_enemy(GameObject& enemy) const noexcept
+    void SimpleShooterBehaviour::respawn_enemy(
+        SceneState& state,
+        const SimpleShooterState& shooter_state,
+        GameObject& enemy
+    ) const noexcept
     {
-        enemy.transform.x = 256.0f;
-        enemy.transform.y = 128.0f;
+        const GameObject* spawn = enemy_spawn_object(state, shooter_state);
+
+        if (spawn) {
+            enemy.transform.x = spawn->transform.x;
+            enemy.transform.y = spawn->transform.y;
+        }
+        else {
+            enemy.transform.x = 256.0f;
+            enemy.transform.y = 128.0f;
+        }
+
         enemy.motion.velocity = {};
         enemy.lifecycle.active = true;
         enemy.render.visible = true;
@@ -285,6 +342,6 @@ namespace prune {
 
     void SimpleShooterBehaviour::cleanup_runtime_objects(SceneState& state)
     {
-        state.objects.remove_inactive_runtime_objects(simple_shooter_ids::bullet_behaviour);
+        state.objects.remove_inactive_runtime_objects(simple_shooter_ids::projectile_behaviour);
     }
 }

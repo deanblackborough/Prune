@@ -1,0 +1,1336 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1a7c248..8c24ad8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -33,6 +33,7 @@ add_executable(Prune
+         src/prune/scene/simple_shooter_scene.cpp
+         src/prune/scene/simple_shooter_factory.cpp
+         src/prune/scene/simple_shooter_behaviour.cpp
++        src/prune/scene/simple_shooter_concepts.cpp
+         src/prune/scene/simple_shooter_serializer.cpp
+         src/prune/scene/platformer_scene.cpp
+         src/prune/scene/platformer_factory.cpp
+diff --git a/src/prune/scene/scene.hpp b/src/prune/scene/scene.hpp
+index c34fa4c..b82ba57 100644
+--- a/src/prune/scene/scene.hpp
++++ b/src/prune/scene/scene.hpp
+@@ -1,5 +1,6 @@
+ #pragma once
+ 
++#include <string>
+ #include <string_view>
+ 
+ #include <SDL2/SDL.h>
+@@ -53,6 +54,11 @@ namespace prune {
+         [[nodiscard]] virtual int get_viewport_height() const noexcept = 0;
+ 
+         [[nodiscard]] virtual std::string_view scene_name() const noexcept = 0;
++
++        [[nodiscard]] virtual std::string object_role_label(const GameObject& object) const
++        {
++            return object.identity.type == GameObjectType::Runtime ? "Runtime" : "Object";
++        }
+         [[nodiscard]] virtual std::string_view scene_tools_label() const noexcept = 0;
+         virtual void draw_scene_tools(bool& open) = 0;
+ 
+diff --git a/src/prune/scene/simple_shooter_behaviour.cpp b/src/prune/scene/simple_shooter_behaviour.cpp
+index 6e9113b..a93e69f 100644
+--- a/src/prune/scene/simple_shooter_behaviour.cpp
++++ b/src/prune/scene/simple_shooter_behaviour.cpp
+@@ -3,9 +3,10 @@
+ #include <SDL2/SDL.h>
+ 
+ #include "prune/scene/collision.hpp"
+-#include "prune/scene/simple_shooter_ids.hpp"
+ #include "prune/scene/simple_shooter_behaviour.hpp"
++#include "prune/scene/simple_shooter_concepts.hpp"
+ #include "prune/scene/simple_shooter_factory.hpp"
++#include "prune/scene/simple_shooter_ids.hpp"
+ 
+ namespace prune {
+ 
+@@ -25,36 +26,43 @@ namespace prune {
+         update_player(state, camera, shooter_state, dt, input, keyboard_input_enabled);
+         handle_player_shooting(state, shooter_state, input, keyboard_input_enabled);
+         update_enemy(state, shooter_state, dt);
+-        update_bullets(state, dt);
+-        handle_bullet_enemy_collisions(state, shooter_state);
++        update_projectiles(state, dt);
++        handle_projectile_wall_collisions(state);
++        handle_projectile_enemy_collisions(state, shooter_state);
+         cleanup_runtime_objects(state);
+     }
+ 
+     void SimpleShooterBehaviour::reset(SceneState& state, SimpleShooterState& shooter_state)
+     {
+         for (auto& object : state.objects.objects()) {
+-            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour) {
++            if (simple_shooter_concepts::is_projectile(object)) {
+                 object.lifecycle.active = false;
+             }
+         }
+ 
+         cleanup_runtime_objects(state);
+ 
++        if (!enemy_spawn_object(state, shooter_state)) {
++            shooter_state.enemy_spawn_id = state.objects.create_object(simple_shooter_factory::create_enemy_spawn());
++        }
++
+         GameObject* enemy = enemy_object(state, shooter_state);
+         if (!enemy) {
+             shooter_state.enemy_id = state.objects.create_object(simple_shooter_factory::create_enemy());
+-            return;
++            enemy = enemy_object(state, shooter_state);
+         }
+ 
+-        respawn_enemy(*enemy);
++        if (enemy) {
++            respawn_enemy(state, shooter_state, *enemy);
++        }
+     }
+ 
+-    int SimpleShooterBehaviour::bullet_count(const SceneState& state) const noexcept
++    int SimpleShooterBehaviour::projectile_count(const SceneState& state) const noexcept
+     {
+         int count = 0;
+ 
+         for (const auto& object : state.objects.objects()) {
+-            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour && object.lifecycle.active) {
++            if (simple_shooter_concepts::is_projectile(object) && object.lifecycle.active) {
+                 ++count;
+             }
+         }
+@@ -78,6 +86,22 @@ namespace prune {
+         return state.objects.get_by_id(shooter_state.enemy_id);
+     }
+ 
++    GameObject* SimpleShooterBehaviour::enemy_spawn_object(
++        SceneState& state,
++        const SimpleShooterState& shooter_state
++    ) const noexcept
++    {
++        return state.objects.get_by_id(shooter_state.enemy_spawn_id);
++    }
++
++    const GameObject* SimpleShooterBehaviour::enemy_spawn_object(
++        const SceneState& state,
++        const SimpleShooterState& shooter_state
++    ) const noexcept
++    {
++        return state.objects.get_by_id(shooter_state.enemy_spawn_id);
++    }
++
+     GameObject* SimpleShooterBehaviour::player_object(
+         SceneState& state,
+         const SimpleShooterState& shooter_state
+@@ -138,13 +162,13 @@ namespace prune {
+         GameObject& object,
+         float delta_x,
+         float delta_y,
+-        bool resolve_collisions
++        bool resolve_wall_collisions
+     )
+     {
+         object.transform.x += delta_x;
+         object.transform.y += delta_y;
+ 
+-        if (resolve_collisions) {
++        if (resolve_wall_collisions) {
+             collision::resolve_against_solids(object, state.objects);
+         }
+     }
+@@ -182,10 +206,10 @@ namespace prune {
+         }
+ 
+         state.objects.create_object(
+-            simple_shooter_factory::create_bullet_from_player(
++            simple_shooter_factory::create_projectile_from_player(
+                 *player,
+-                shooter_state.options.bullet_speed,
+-                shooter_state.options.bullet_lifetime
++                shooter_state.options.projectile_speed,
++                shooter_state.options.projectile_lifetime
+             )
+         );
+     }
+@@ -232,10 +256,10 @@ namespace prune {
+         );
+     }
+ 
+-    void SimpleShooterBehaviour::update_bullets(SceneState& state, float dt)
++    void SimpleShooterBehaviour::update_projectiles(SceneState& state, float dt)
+     {
+         for (auto& object : state.objects.objects()) {
+-            if (object.runtime.behaviour != simple_shooter_ids::bullet_behaviour || !object.lifecycle.active) {
++            if (!simple_shooter_concepts::is_projectile(object) || !object.lifecycle.active) {
+                 continue;
+             }
+ 
+@@ -249,7 +273,27 @@ namespace prune {
+         }
+     }
+ 
+-    void SimpleShooterBehaviour::handle_bullet_enemy_collisions(
++    void SimpleShooterBehaviour::handle_projectile_wall_collisions(SceneState& state)
++    {
++        for (auto& projectile : state.objects.objects()) {
++            if (!simple_shooter_concepts::is_projectile(projectile) || !projectile.lifecycle.active) {
++                continue;
++            }
++
++            for (const auto& wall : state.objects.objects()) {
++                if (!simple_shooter_concepts::is_wall(wall) || !wall.lifecycle.active) {
++                    continue;
++                }
++
++                if (collision::is_overlapping(projectile, wall)) {
++                    projectile.lifecycle.active = false;
++                    break;
++                }
++            }
++        }
++    }
++
++    void SimpleShooterBehaviour::handle_projectile_enemy_collisions(
+         SceneState& state,
+         const SimpleShooterState& shooter_state
+     )
+@@ -260,7 +304,7 @@ namespace prune {
+         }
+ 
+         for (auto& object : state.objects.objects()) {
+-            if (object.runtime.behaviour != simple_shooter_ids::bullet_behaviour || !object.lifecycle.active) {
++            if (!simple_shooter_concepts::is_projectile(object) || !object.lifecycle.active) {
+                 continue;
+             }
+ 
+@@ -269,15 +313,28 @@ namespace prune {
+             }
+ 
+             object.lifecycle.active = false;
+-            respawn_enemy(*enemy);
++            respawn_enemy(state, shooter_state, *enemy);
+             return;
+         }
+     }
+ 
+-    void SimpleShooterBehaviour::respawn_enemy(GameObject& enemy) const noexcept
++    void SimpleShooterBehaviour::respawn_enemy(
++        SceneState& state,
++        const SimpleShooterState& shooter_state,
++        GameObject& enemy
++    ) const noexcept
+     {
+-        enemy.transform.x = 256.0f;
+-        enemy.transform.y = 128.0f;
++        const GameObject* spawn = enemy_spawn_object(state, shooter_state);
++
++        if (spawn) {
++            enemy.transform.x = spawn->transform.x;
++            enemy.transform.y = spawn->transform.y;
++        }
++        else {
++            enemy.transform.x = 256.0f;
++            enemy.transform.y = 128.0f;
++        }
++
+         enemy.motion.velocity = {};
+         enemy.lifecycle.active = true;
+         enemy.render.visible = true;
+@@ -285,6 +342,6 @@ namespace prune {
+ 
+     void SimpleShooterBehaviour::cleanup_runtime_objects(SceneState& state)
+     {
+-        state.objects.remove_inactive_runtime_objects(simple_shooter_ids::bullet_behaviour);
++        state.objects.remove_inactive_runtime_objects(simple_shooter_ids::projectile_behaviour);
+     }
+ }
+diff --git a/src/prune/scene/simple_shooter_behaviour.hpp b/src/prune/scene/simple_shooter_behaviour.hpp
+index 65e3c71..1e21421 100644
+--- a/src/prune/scene/simple_shooter_behaviour.hpp
++++ b/src/prune/scene/simple_shooter_behaviour.hpp
+@@ -21,7 +21,7 @@ namespace prune {
+ 
+         void reset(SceneState& state, SimpleShooterState& shooter_state);
+ 
+-        [[nodiscard]] int bullet_count(const SceneState& state) const noexcept;
++        [[nodiscard]] int projectile_count(const SceneState& state) const noexcept;
+ 
+         [[nodiscard]] GameObject* enemy_object(
+             SceneState& state,
+@@ -33,6 +33,16 @@ namespace prune {
+             const SimpleShooterState& shooter_state
+         ) const noexcept;
+ 
++        [[nodiscard]] GameObject* enemy_spawn_object(
++            SceneState& state,
++            const SimpleShooterState& shooter_state
++        ) const noexcept;
++
++        [[nodiscard]] const GameObject* enemy_spawn_object(
++            const SceneState& state,
++            const SimpleShooterState& shooter_state
++        ) const noexcept;
++
+     private:
+         GameObject* player_object(
+             SceneState& state,
+@@ -52,7 +62,8 @@ namespace prune {
+             const Input& input,
+             bool keyboard_input_enabled
+         );
+-        void move_object(SceneState& state, GameObject& object, float delta_x, float delta_y, bool resolve_collisions);
++
++        void move_object(SceneState& state, GameObject& object, float delta_x, float delta_y, bool resolve_wall_collisions);
+         void update_player_facing(GameObject& player) const noexcept;
+ 
+         void handle_player_shooting(
+@@ -63,9 +74,10 @@ namespace prune {
+         );
+ 
+         void update_enemy(SceneState& state, const SimpleShooterState& shooter_state, float dt);
+-        void update_bullets(SceneState& state, float dt);
+-        void handle_bullet_enemy_collisions(SceneState& state, const SimpleShooterState& shooter_state);
+-        void respawn_enemy(GameObject& enemy) const noexcept;
++        void update_projectiles(SceneState& state, float dt);
++        void handle_projectile_wall_collisions(SceneState& state);
++        void handle_projectile_enemy_collisions(SceneState& state, const SimpleShooterState& shooter_state);
++        void respawn_enemy(SceneState& state, const SimpleShooterState& shooter_state, GameObject& enemy) const noexcept;
+         void cleanup_runtime_objects(SceneState& state);
+     };
+ 
+diff --git a/src/prune/scene/simple_shooter_concepts.cpp b/src/prune/scene/simple_shooter_concepts.cpp
+new file mode 100644
+index 0000000..a37245a
+--- /dev/null
++++ b/src/prune/scene/simple_shooter_concepts.cpp
+@@ -0,0 +1,114 @@
++#include "prune/scene/simple_shooter_concepts.hpp"
++
++#include "prune/scene/simple_shooter_ids.hpp"
++
++namespace prune::simple_shooter_concepts {
++
++    ObjectKind kind_for(const GameObject& object) noexcept
++    {
++        if (is_player(object)) {
++            return ObjectKind::Player;
++        }
++
++        if (is_enemy(object)) {
++            return ObjectKind::Enemy;
++        }
++
++        if (is_projectile(object)) {
++            return ObjectKind::Projectile;
++        }
++
++        if (is_wall(object)) {
++            return ObjectKind::Wall;
++        }
++
++        if (is_spawn(object)) {
++            return ObjectKind::Spawn;
++        }
++
++        return ObjectKind::SceneObject;
++    }
++
++    bool is_player(const GameObject& object) noexcept
++    {
++        return object.runtime.behaviour == simple_shooter_ids::player_behaviour;
++    }
++
++    bool is_enemy(const GameObject& object) noexcept
++    {
++        return object.runtime.behaviour == simple_shooter_ids::enemy_behaviour;
++    }
++
++    bool is_projectile(const GameObject& object) noexcept
++    {
++        return object.runtime.behaviour == simple_shooter_ids::projectile_behaviour;
++    }
++
++    bool is_wall(const GameObject& object) noexcept
++    {
++        return object.runtime.behaviour == simple_shooter_ids::wall_behaviour;
++    }
++
++    bool is_spawn(const GameObject& object) noexcept
++    {
++        return object.runtime.behaviour == simple_shooter_ids::spawn_behaviour;
++    }
++
++    const char* label(ObjectKind kind) noexcept
++    {
++        switch (kind) {
++        case ObjectKind::Player:
++            return "Player";
++        case ObjectKind::Enemy:
++            return "Enemy";
++        case ObjectKind::Projectile:
++            return "Projectile";
++        case ObjectKind::Wall:
++            return "Wall";
++        case ObjectKind::Spawn:
++            return "Enemy Spawn";
++        case ObjectKind::SceneObject:
++        default:
++            return "Scene Object";
++        }
++    }
++
++    const char* purpose(ObjectKind kind) noexcept
++    {
++        switch (kind) {
++        case ObjectKind::Player:
++            return "The single controlled actor for the Simple Shooter slice.";
++        case ObjectKind::Enemy:
++            return "The single target that moves toward the player and respawns when hit.";
++        case ObjectKind::Projectile:
++            return "A runtime projectile fired by the player.";
++        case ObjectKind::Wall:
++            return "An authored solid obstacle used for player and projectile collision.";
++        case ObjectKind::Spawn:
++            return "The authored reset position used when the enemy respawns.";
++        case ObjectKind::SceneObject:
++        default:
++            return "No Simple Shooter concept is assigned.";
++        }
++    }
++
++    const char* collision_rule(ObjectKind kind) noexcept
++    {
++        switch (kind) {
++        case ObjectKind::Player:
++            return "Movement is blocked by solid wall objects.";
++        case ObjectKind::Enemy:
++            return "Projectile hits reset the enemy. Enemy/player contact is not handled in this slice.";
++        case ObjectKind::Projectile:
++            return "Hits enemies, stops at walls, and expires after its lifetime.";
++        case ObjectKind::Wall:
++            return "Blocks player movement and stops projectiles.";
++        case ObjectKind::Spawn:
++            return "Marker only. It does not collide.";
++        case ObjectKind::SceneObject:
++        default:
++            return "No shooter collision rule.";
++        }
++    }
++
++}
+diff --git a/src/prune/scene/simple_shooter_concepts.hpp b/src/prune/scene/simple_shooter_concepts.hpp
+new file mode 100644
+index 0000000..d3309b9
+--- /dev/null
++++ b/src/prune/scene/simple_shooter_concepts.hpp
+@@ -0,0 +1,28 @@
++#pragma once
++
++#include "prune/scene/game_object.hpp"
++
++namespace prune::simple_shooter_concepts {
++
++    enum class ObjectKind {
++        Player,
++        Enemy,
++        Projectile,
++        Wall,
++        Spawn,
++        SceneObject
++    };
++
++    [[nodiscard]] ObjectKind kind_for(const GameObject& object) noexcept;
++
++    [[nodiscard]] bool is_player(const GameObject& object) noexcept;
++    [[nodiscard]] bool is_enemy(const GameObject& object) noexcept;
++    [[nodiscard]] bool is_projectile(const GameObject& object) noexcept;
++    [[nodiscard]] bool is_wall(const GameObject& object) noexcept;
++    [[nodiscard]] bool is_spawn(const GameObject& object) noexcept;
++
++    [[nodiscard]] const char* label(ObjectKind kind) noexcept;
++    [[nodiscard]] const char* purpose(ObjectKind kind) noexcept;
++    [[nodiscard]] const char* collision_rule(ObjectKind kind) noexcept;
++
++}
+diff --git a/src/prune/scene/simple_shooter_factory.cpp b/src/prune/scene/simple_shooter_factory.cpp
+index d95f23d..9373b86 100644
+--- a/src/prune/scene/simple_shooter_factory.cpp
++++ b/src/prune/scene/simple_shooter_factory.cpp
+@@ -32,24 +32,25 @@ namespace prune::simple_shooter_factory {
+         return player;
+     }
+ 
+-    GameObject create_initial_block()
++    GameObject create_wall()
+     {
+-        GameObject block;
+-        block.identity.name = "Static Block";
+-        block.identity.type = GameObjectType::Object;
+-        block.runtime.behaviour = "";
+-        block.transform.x = 176.0f;
+-        block.transform.y = 128.0f;
+-        block.size.width = k_default_object_size;
+-        block.size.height = k_default_object_size;
+-        block.render.type = RenderType::Rectangle;
+-        block.render.rectangle.color[0] = 0.8f;
+-        block.render.rectangle.color[1] = 0.5f;
+-        block.render.rectangle.color[2] = 0.2f;
+-        block.lifecycle.active = true;
+-        block.collision.solid = true;
+-
+-        return block;
++        GameObject wall;
++        wall.identity.name = "Wall";
++        wall.identity.type = GameObjectType::Object;
++        wall.runtime.behaviour = simple_shooter_ids::wall_behaviour;
++        wall.transform.x = 176.0f;
++        wall.transform.y = 128.0f;
++        wall.size.width = k_default_object_size;
++        wall.size.height = k_default_object_size;
++        wall.render.type = RenderType::Rectangle;
++        wall.render.rectangle.color[0] = 0.8f;
++        wall.render.rectangle.color[1] = 0.5f;
++        wall.render.rectangle.color[2] = 0.2f;
++        wall.lifecycle.active = true;
++        wall.render.visible = true;
++        wall.collision.solid = true;
++
++        return wall;
+     }
+ 
+     GameObject create_enemy()
+@@ -74,57 +75,81 @@ namespace prune::simple_shooter_factory {
+         return enemy;
+     }
+ 
+-    GameObject create_bullet_from_player(
++    GameObject create_enemy_spawn()
++    {
++        GameObject spawn;
++        spawn.identity.name = "Enemy Spawn";
++        spawn.identity.type = GameObjectType::Object;
++        spawn.runtime.behaviour = simple_shooter_ids::spawn_behaviour;
++        spawn.editor.renameable = false;
++        spawn.editor.deletable = false;
++        spawn.editor.cloneable = false;
++        spawn.transform.x = 256.0f;
++        spawn.transform.y = 128.0f;
++        spawn.size.width = k_default_object_size;
++        spawn.size.height = k_default_object_size;
++        spawn.render.type = RenderType::Rectangle;
++        spawn.render.rectangle.color[0] = 0.25f;
++        spawn.render.rectangle.color[1] = 0.35f;
++        spawn.render.rectangle.color[2] = 0.9f;
++        spawn.lifecycle.active = true;
++        spawn.render.visible = true;
++        spawn.collision.solid = false;
++
++        return spawn;
++    }
++
++    GameObject create_projectile_from_player(
+         const GameObject& player,
+-        float bullet_speed,
+-        float bullet_lifetime
++        float projectile_speed,
++        float projectile_lifetime
+     )
+     {
+-        GameObject bullet;
+-        bullet.identity.name = "Bullet";
+-        bullet.identity.type = GameObjectType::Runtime;
+-        bullet.runtime.behaviour = simple_shooter_ids::bullet_behaviour;
+-        bullet.runtime.persistent = false;
+-
+-        bullet.editor.selectable = false;
+-        bullet.editor.renameable = false;
+-        bullet.editor.movable = false;
+-        bullet.editor.deletable = false;
+-        bullet.editor.cloneable = false;
+-
+-        bullet.size.width = 4;
+-        bullet.size.height = 4;
+-        bullet.render.type = RenderType::Rectangle;
+-        bullet.render.rectangle.color[0] = 0.95f;
+-        bullet.render.rectangle.color[1] = 0.9f;
+-        bullet.render.rectangle.color[2] = 0.35f;
+-        bullet.collision.solid = false;
+-        bullet.lifecycle.active = true;
+-        bullet.render.visible = true;
+-        bullet.motion.facing = player.motion.facing;
+-        bullet.lifecycle.remaining = bullet_lifetime;
++        GameObject projectile;
++        projectile.identity.name = "Projectile";
++        projectile.identity.type = GameObjectType::Runtime;
++        projectile.runtime.behaviour = simple_shooter_ids::projectile_behaviour;
++        projectile.runtime.persistent = false;
++
++        projectile.editor.selectable = false;
++        projectile.editor.renameable = false;
++        projectile.editor.movable = false;
++        projectile.editor.deletable = false;
++        projectile.editor.cloneable = false;
++
++        projectile.size.width = 4;
++        projectile.size.height = 4;
++        projectile.render.type = RenderType::Rectangle;
++        projectile.render.rectangle.color[0] = 0.95f;
++        projectile.render.rectangle.color[1] = 0.9f;
++        projectile.render.rectangle.color[2] = 0.35f;
++        projectile.collision.solid = false;
++        projectile.lifecycle.active = true;
++        projectile.render.visible = true;
++        projectile.motion.facing = player.motion.facing;
++        projectile.lifecycle.remaining = projectile_lifetime;
+ 
+         const float player_center_x = player.transform.x + (static_cast<float>(player.size.width) * 0.5f);
+         const float player_center_y = player.transform.y + (static_cast<float>(player.size.height) * 0.5f);
+ 
+-        bullet.transform.x = player_center_x - (static_cast<float>(bullet.size.width) * 0.5f);
+-        bullet.transform.y = player_center_y - (static_cast<float>(bullet.size.height) * 0.5f);
++        projectile.transform.x = player_center_x - (static_cast<float>(projectile.size.width) * 0.5f);
++        projectile.transform.y = player_center_y - (static_cast<float>(projectile.size.height) * 0.5f);
+ 
+         switch (player.motion.facing) {
+         case Direction::Up:
+-            bullet.motion.velocity.y = -bullet_speed;
++            projectile.motion.velocity.y = -projectile_speed;
+             break;
+         case Direction::Down:
+-            bullet.motion.velocity.y = bullet_speed;
++            projectile.motion.velocity.y = projectile_speed;
+             break;
+         case Direction::Left:
+-            bullet.motion.velocity.x = -bullet_speed;
++            projectile.motion.velocity.x = -projectile_speed;
+             break;
+         case Direction::Right:
+-            bullet.motion.velocity.x = bullet_speed;
++            projectile.motion.velocity.x = projectile_speed;
+             break;
+         }
+ 
+-        return bullet;
++        return projectile;
+     }
+ }
+diff --git a/src/prune/scene/simple_shooter_factory.hpp b/src/prune/scene/simple_shooter_factory.hpp
+index eb86915..64dea94 100644
+--- a/src/prune/scene/simple_shooter_factory.hpp
++++ b/src/prune/scene/simple_shooter_factory.hpp
+@@ -5,12 +5,13 @@
+ namespace prune::simple_shooter_factory {
+ 
+     [[nodiscard]] GameObject create_player();
+-    [[nodiscard]] GameObject create_initial_block();
++    [[nodiscard]] GameObject create_wall();
+     [[nodiscard]] GameObject create_enemy();
+-    [[nodiscard]] GameObject create_bullet_from_player(
++    [[nodiscard]] GameObject create_enemy_spawn();
++    [[nodiscard]] GameObject create_projectile_from_player(
+         const GameObject& player,
+-        float bullet_speed,
+-        float bullet_lifetime
++        float projectile_speed,
++        float projectile_lifetime
+     );
+ 
+ }
+diff --git a/src/prune/scene/simple_shooter_ids.hpp b/src/prune/scene/simple_shooter_ids.hpp
+index 5fa2ece..e651c1f 100644
+--- a/src/prune/scene/simple_shooter_ids.hpp
++++ b/src/prune/scene/simple_shooter_ids.hpp
+@@ -4,6 +4,8 @@ namespace prune::simple_shooter_ids {
+ 
+     inline constexpr const char* player_behaviour = "simple_shooter.player";
+     inline constexpr const char* enemy_behaviour = "simple_shooter.enemy";
+-    inline constexpr const char* bullet_behaviour = "simple_shooter.bullet";
++    inline constexpr const char* projectile_behaviour = "simple_shooter.projectile";
++    inline constexpr const char* wall_behaviour = "simple_shooter.wall";
++    inline constexpr const char* spawn_behaviour = "simple_shooter.enemy_spawn";
+ 
+ }
+diff --git a/src/prune/scene/simple_shooter_scene.cpp b/src/prune/scene/simple_shooter_scene.cpp
+index 13547dd..050d559 100644
+--- a/src/prune/scene/simple_shooter_scene.cpp
++++ b/src/prune/scene/simple_shooter_scene.cpp
+@@ -1,3 +1,4 @@
++#include <algorithm>
+ #include <cmath>
+ #include <cstdio>
+ #include <fstream>
+@@ -11,10 +12,11 @@
+ 
+ #include "prune/core/input.hpp"
+ #include "prune/scene/collision.hpp"
+-#include "prune/scene/simple_shooter_scene.hpp"
+ #include "prune/scene/scene_serializer.hpp"
++#include "prune/scene/simple_shooter_concepts.hpp"
+ #include "prune/scene/simple_shooter_factory.hpp"
+ #include "prune/scene/simple_shooter_ids.hpp"
++#include "prune/scene/simple_shooter_scene.hpp"
+ #include "prune/scene/simple_shooter_serializer.hpp"
+ #include "prune/tooling/editor_layout.hpp"
+ #include "prune/tooling/imgui/layout.hpp"
+@@ -50,46 +52,72 @@ namespace prune {
+             return "Unknown";
+         }
+ 
+-        [[nodiscard]] const char* shooter_role_label(const GameObject& object) noexcept
++        [[nodiscard]] GameObjectId first_object_id_for_kind(
++            const SceneState& state,
++            simple_shooter_concepts::ObjectKind kind
++        ) noexcept
+         {
+-            if (object.runtime.behaviour == simple_shooter_ids::player_behaviour) {
+-                return "Player";
++            for (const auto& object : state.objects.objects()) {
++                if (simple_shooter_concepts::kind_for(object) == kind) {
++                    return object.identity.id;
++                }
+             }
+ 
+-            if (object.runtime.behaviour == simple_shooter_ids::enemy_behaviour) {
+-                return "Enemy";
+-            }
++            return k_invalid_game_object_id;
++        }
+ 
+-            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour) {
+-                return "Bullet";
+-            }
++        [[nodiscard]] bool object_has_kind(
++            const SceneState& state,
++            GameObjectId id,
++            simple_shooter_concepts::ObjectKind kind
++        ) noexcept
++        {
++            const GameObject* object = state.objects.get_by_id(id);
++            return object && simple_shooter_concepts::kind_for(*object) == kind;
++        }
+ 
+-            if (object.collision.solid) {
+-                return "Block / Wall";
++        void restore_legacy_wall_concepts(SceneState& state)
++        {
++            for (auto& object : state.objects.objects()) {
++                if (object.runtime.behaviour.empty() && object.collision.solid) {
++                    object.runtime.behaviour = simple_shooter_ids::wall_behaviour;
++                }
+             }
+-
+-            return "Scene Object";
+         }
+ 
+-        [[nodiscard]] const char* shooter_effect_label(const GameObject& object) noexcept
++        void restore_loaded_shooter_concepts(SceneState& state, SimpleShooterState& shooter_state)
+         {
+-            if (object.runtime.behaviour == simple_shooter_ids::player_behaviour) {
+-                return "Controlled by WASD/arrow keys and fires bullets.";
++            if (GameObject* player = state.objects.get_by_id(shooter_state.player_id)) {
++                if (player->runtime.behaviour.empty()) {
++                    player->runtime.behaviour = simple_shooter_ids::player_behaviour;
++                }
+             }
+ 
+-            if (object.runtime.behaviour == simple_shooter_ids::enemy_behaviour) {
+-                return "Moves toward the player and can be destroyed by bullets.";
++            restore_legacy_wall_concepts(state);
++
++            if (!object_has_kind(state, shooter_state.player_id, simple_shooter_concepts::ObjectKind::Player)) {
++                shooter_state.player_id = first_object_id_for_kind(state, simple_shooter_concepts::ObjectKind::Player);
+             }
+ 
+-            if (object.runtime.behaviour == simple_shooter_ids::bullet_behaviour) {
+-                return "Runtime projectile. It is removed when inactive or expired.";
++            if (shooter_state.player_id == k_invalid_game_object_id) {
++                shooter_state.player_id = state.objects.create_object(simple_shooter_factory::create_player());
+             }
+ 
+-            if (object.collision.solid) {
+-                return "Solid authored obstacle used by movement/collision checks.";
++            if (!object_has_kind(state, shooter_state.enemy_spawn_id, simple_shooter_concepts::ObjectKind::Spawn)) {
++                shooter_state.enemy_spawn_id = first_object_id_for_kind(state, simple_shooter_concepts::ObjectKind::Spawn);
+             }
+ 
+-            return "No Simple Shooter behaviour is assigned.";
++            if (shooter_state.enemy_spawn_id == k_invalid_game_object_id) {
++                shooter_state.enemy_spawn_id = state.objects.create_object(simple_shooter_factory::create_enemy_spawn());
++            }
++
++            if (!object_has_kind(state, shooter_state.enemy_id, simple_shooter_concepts::ObjectKind::Enemy)) {
++                shooter_state.enemy_id = first_object_id_for_kind(state, simple_shooter_concepts::ObjectKind::Enemy);
++            }
++
++            if (shooter_state.enemy_id == k_invalid_game_object_id) {
++                shooter_state.enemy_id = state.objects.create_object(simple_shooter_factory::create_enemy());
++            }
+         }
+     }
+ 
+@@ -116,11 +144,12 @@ namespace prune {
+         new_scene();
+     }
+ 
+-    void SimpleShooterScene::on_exit() {
++    void SimpleShooterScene::on_exit()
++    {
+         m_state.objects.clear();
+         m_simple_shooter_state.player_id = k_invalid_game_object_id;
+-
+         m_simple_shooter_state.enemy_id = k_invalid_game_object_id;
++        m_simple_shooter_state.enemy_spawn_id = k_invalid_game_object_id;
+     }
+ 
+ 
+@@ -129,8 +158,8 @@ namespace prune {
+         tooling::EditorLayout::scene_panel();
+ 
+         if (ImGui::Begin("Simple Shooter", &open)) {
+-            if (ImGui::Button("Add Block")) {
+-                create_block_at_view_center();
++            if (ImGui::Button("Add Wall")) {
++                create_wall_at_view_center();
+             }
+ 
+             ImGui::Separator();
+@@ -141,6 +170,11 @@ namespace prune {
+         ImGui::End();
+     }
+ 
++    std::string SimpleShooterScene::object_role_label(const GameObject& object) const
++    {
++        return simple_shooter_concepts::label(simple_shooter_concepts::kind_for(object));
++    }
++
+     SimpleShooterOptions& SimpleShooterScene::get_simple_shooter_options() noexcept
+     {
+         return m_simple_shooter_state.options;
+@@ -171,9 +205,9 @@ namespace prune {
+         return m_simple_shooter.enemy_object(m_state, m_simple_shooter_state);
+     }
+ 
+-    int SimpleShooterScene::bullet_count() const noexcept
++    int SimpleShooterScene::projectile_count() const noexcept
+     {
+-        return m_simple_shooter.bullet_count(m_state);
++        return m_simple_shooter.projectile_count(m_state);
+     }
+ 
+     void SimpleShooterScene::reset_simple_shooter()
+@@ -217,6 +251,8 @@ namespace prune {
+     {
+         m_state.objects.clear();
+         m_simple_shooter_state.player_id = k_invalid_game_object_id;
++        m_simple_shooter_state.enemy_id = k_invalid_game_object_id;
++        m_simple_shooter_state.enemy_spawn_id = k_invalid_game_object_id;
+ 
+         m_camera.reset();
+ 
+@@ -234,11 +270,16 @@ namespace prune {
+         m_simple_shooter_state.player_id =
+             m_state.objects.create_object(simple_shooter_factory::create_player());
+ 
+-        m_state.objects.create_object(simple_shooter_factory::create_initial_block());
++        m_state.objects.create_object(simple_shooter_factory::create_wall());
++
++        m_simple_shooter_state.enemy_spawn_id =
++            m_state.objects.create_object(simple_shooter_factory::create_enemy_spawn());
+ 
+         m_simple_shooter_state.enemy_id =
+             m_state.objects.create_object(simple_shooter_factory::create_enemy());
+ 
++        m_simple_shooter.reset(m_state, m_simple_shooter_state);
++
+         m_state.objects.select(m_simple_shooter_state.player_id);
+ 
+         m_camera.update_game_camera(m_state.viewport, player_object());
+@@ -304,25 +345,14 @@ namespace prune {
+                 return false;
+             }
+ 
+-            loaded_simple_shooter_state.enemy_id = k_invalid_game_object_id;
+-
+-            for (const auto& object : loaded_state.objects.objects()) {
+-                if (object.runtime.behaviour == simple_shooter_ids::enemy_behaviour) {
+-                    loaded_simple_shooter_state.enemy_id = object.identity.id;
+-                    break;
+-                }
+-            }
+-
+-            if (loaded_simple_shooter_state.enemy_id == k_invalid_game_object_id) {
+-                loaded_simple_shooter_state.enemy_id =
+-                    loaded_state.objects.create_object(simple_shooter_factory::create_enemy());
+-            }
++            restore_loaded_shooter_concepts(loaded_state, loaded_simple_shooter_state);
+ 
+             m_state = std::move(loaded_state);
+             m_camera = loaded_camera;
+             m_grid_options = loaded_grid_options;
+             m_simple_shooter_state = loaded_simple_shooter_state;
+ 
++            m_simple_shooter.reset(m_state, m_simple_shooter_state);
+             m_camera.update_game_camera(m_state.viewport, player_object());
+ 
+             return true;
+@@ -347,34 +377,42 @@ namespace prune {
+             return;
+         }
+ 
+-        tooling::imgui::property_table::text("Role", shooter_role_label(selected));
++        const auto kind = simple_shooter_concepts::kind_for(selected);
++
++        tooling::imgui::property_table::text("Concept", simple_shooter_concepts::label(kind));
+         tooling::imgui::property_table::text("Object Type", object_type_label(selected.identity.type));
+-        tooling::imgui::property_table::text("Behaviour", selected.runtime.behaviour.empty() ? "None" : selected.runtime.behaviour.c_str());
+         tooling::imgui::property_table::text("Runtime Saved", bool_label(selected.runtime.persistent));
+-        tooling::imgui::property_table::text_wrapped("Effect", shooter_effect_label(selected));
++        tooling::imgui::property_table::text_wrapped("Purpose", simple_shooter_concepts::purpose(kind));
++        tooling::imgui::property_table::text_wrapped("Collision", simple_shooter_concepts::collision_rule(kind));
+ 
+-        if (selected.runtime.behaviour == simple_shooter_ids::player_behaviour) {
++        if (kind == simple_shooter_concepts::ObjectKind::Player) {
+             tooling::imgui::property_table::text("Facing", direction_label(selected.motion.facing));
+         }
+-        else if (selected.runtime.behaviour == simple_shooter_ids::bullet_behaviour) {
++        else if (kind == simple_shooter_concepts::ObjectKind::Projectile) {
+             char lifetime_buffer[32];
+             std::snprintf(lifetime_buffer, sizeof(lifetime_buffer), "%.2fs", selected.lifecycle.remaining);
+             tooling::imgui::property_table::text("Remaining", lifetime_buffer);
+         }
++        else if (kind == simple_shooter_concepts::ObjectKind::Wall) {
++            tooling::imgui::property_table::text("Solid", bool_label(selected.collision.solid));
++        }
++        else if (kind == simple_shooter_concepts::ObjectKind::Spawn) {
++            tooling::imgui::property_table::text("Used By", "Enemy reset loop");
++        }
+ 
+         tooling::imgui::property_table::end();
+     }
+ 
+-    GameObjectId SimpleShooterScene::create_block_at_view_center()
++    GameObjectId SimpleShooterScene::create_wall_at_view_center()
+     {
+-        GameObject block = simple_shooter_factory::create_initial_block();
++        GameObject wall = simple_shooter_factory::create_wall();
+ 
+-        block.transform = find_block_spawn_position(block);
++        wall.transform = find_wall_spawn_position(wall);
+ 
+-        const GameObjectId id = m_state.objects.create_object(block);
++        const GameObjectId id = m_state.objects.create_object(wall);
+ 
+         if (GameObject* created = m_state.objects.get_by_id(id)) {
+-            created->identity.name = "Block " + std::to_string(id);
++            created->identity.name = "Wall " + std::to_string(id);
+         }
+ 
+         m_state.objects.select(id);
+@@ -382,7 +420,7 @@ namespace prune {
+         return id;
+     }
+ 
+-    Transform SimpleShooterScene::find_block_spawn_position(const GameObject& block) const
++    Transform SimpleShooterScene::find_wall_spawn_position(const GameObject& wall) const
+     {
+         const Camera& camera = m_camera.active();
+ 
+@@ -394,21 +432,21 @@ namespace prune {
+ 
+         const int grid_size = m_grid_options.grid_size > 0
+             ? m_grid_options.grid_size
+-            : block.size.width;
++            : wall.size.width;
+ 
+         auto snap = [grid_size](float value) {
+             return static_cast<float>(
+                 static_cast<int>(value / static_cast<float>(grid_size)) * grid_size
+-                );
+-            };
++            );
++        };
+ 
+         const float base_x = m_grid_options.snap_to_grid
+-            ? snap(view_center_x - static_cast<float>(block.size.width) * 0.5f)
+-            : view_center_x - static_cast<float>(block.size.width) * 0.5f;
++            ? snap(view_center_x - static_cast<float>(wall.size.width) * 0.5f)
++            : view_center_x - static_cast<float>(wall.size.width) * 0.5f;
+ 
+         const float base_y = m_grid_options.snap_to_grid
+-            ? snap(view_center_y - static_cast<float>(block.size.height) * 0.5f)
+-            : view_center_y - static_cast<float>(block.size.height) * 0.5f;
++            ? snap(view_center_y - static_cast<float>(wall.size.height) * 0.5f)
++            : view_center_y - static_cast<float>(wall.size.height) * 0.5f;
+ 
+         constexpr int max_radius = 20;
+ 
+@@ -419,7 +457,7 @@ namespace prune {
+                         continue;
+                     }
+ 
+-                    GameObject candidate = block;
++                    GameObject candidate = wall;
+                     candidate.transform.x = base_x + static_cast<float>(x * grid_size);
+                     candidate.transform.y = base_y + static_cast<float>(y * grid_size);
+ 
+diff --git a/src/prune/scene/simple_shooter_scene.hpp b/src/prune/scene/simple_shooter_scene.hpp
+index 36df318..5dc8e33 100644
+--- a/src/prune/scene/simple_shooter_scene.hpp
++++ b/src/prune/scene/simple_shooter_scene.hpp
+@@ -6,9 +6,9 @@
+ #include <SDL2/SDL.h>
+ 
+ #include "prune/core/defaults.hpp"
+-#include "prune/scene/world_scene.hpp"
+ #include "prune/scene/simple_shooter_behaviour.hpp"
+ #include "prune/scene/simple_shooter_state.hpp"
++#include "prune/scene/world_scene.hpp"
+ #include "prune/tooling/simple_shooter.hpp"
+ 
+ namespace prune {
+@@ -30,6 +30,7 @@ namespace prune {
+         [[nodiscard]] std::string_view default_file_path() const noexcept override { return k_default_simple_shooter_scene_file_path; }
+ 
+         [[nodiscard]] std::string_view scene_name() const noexcept override { return "Simple Shooter"; }
++        [[nodiscard]] std::string object_role_label(const GameObject& object) const override;
+         [[nodiscard]] std::string_view scene_tools_label() const noexcept override { return "Simple Shooter"; }
+         void draw_scene_tools(bool& open) override;
+ 
+@@ -43,7 +44,7 @@ namespace prune {
+ 
+         void reset_simple_shooter();
+ 
+-        [[nodiscard]] int bullet_count() const noexcept;
++        [[nodiscard]] int projectile_count() const noexcept;
+ 
+         [[nodiscard]] GameObject* enemy_object() noexcept;
+         [[nodiscard]] const GameObject* enemy_object() const noexcept;
+@@ -57,9 +58,9 @@ namespace prune {
+         void reset_runtime_state();
+         void restore_defaults();
+ 
+-        GameObjectId create_block_at_view_center();
++        GameObjectId create_wall_at_view_center();
+ 
+-        [[nodiscard]] Transform find_block_spawn_position(const GameObject& block) const;
++        [[nodiscard]] Transform find_wall_spawn_position(const GameObject& wall) const;
+         [[nodiscard]] bool is_space_free(const GameObject& candidate) const noexcept;
+ 
+         void draw_player_facing_indicator(SDL_Renderer* renderer) const;
+diff --git a/src/prune/scene/simple_shooter_serializer.cpp b/src/prune/scene/simple_shooter_serializer.cpp
+index 42e585c..7a698ef 100644
+--- a/src/prune/scene/simple_shooter_serializer.cpp
++++ b/src/prune/scene/simple_shooter_serializer.cpp
+@@ -2,15 +2,30 @@
+ 
+ namespace prune {
+ 
++    namespace {
++
++        [[nodiscard]] bool has_projectile_options(const YAML::Node& simple_shooter)
++        {
++            return simple_shooter["projectile_speed"] && simple_shooter["projectile_lifetime"];
++        }
++
++        [[nodiscard]] bool has_legacy_bullet_options(const YAML::Node& simple_shooter)
++        {
++            return simple_shooter["bullet_speed"] && simple_shooter["bullet_lifetime"];
++        }
++    }
++
+     void SimpleShooterSerializer::save_to_node(const SimpleShooterState& state, YAML::Node& root)
+     {
+         root["simple_shooter"]["player_id"] = state.player_id;
++        root["simple_shooter"]["enemy_id"] = state.enemy_id;
++        root["simple_shooter"]["enemy_spawn_id"] = state.enemy_spawn_id;
+         root["simple_shooter"]["player_speed"] = state.player_controller.speed();
+ 
+         root["simple_shooter"]["paused"] = state.options.paused;
+         root["simple_shooter"]["enemy_speed"] = state.options.enemy_speed;
+-        root["simple_shooter"]["bullet_speed"] = state.options.bullet_speed;
+-        root["simple_shooter"]["bullet_lifetime"] = state.options.bullet_lifetime;
++        root["simple_shooter"]["projectile_speed"] = state.options.projectile_speed;
++        root["simple_shooter"]["projectile_lifetime"] = state.options.projectile_lifetime;
+     }
+ 
+     bool SimpleShooterSerializer::load_from_node(
+@@ -30,19 +45,31 @@ namespace prune {
+             !simple_shooter["player_speed"] ||
+             !simple_shooter["paused"] ||
+             !simple_shooter["enemy_speed"] ||
+-            !simple_shooter["bullet_speed"] ||
+-            !simple_shooter["bullet_lifetime"]) {
++            (!has_projectile_options(simple_shooter) && !has_legacy_bullet_options(simple_shooter))) {
+             error = "simple_shooter options are incomplete.";
+             return false;
+         }
+ 
+         state.player_id = simple_shooter["player_id"].as<GameObjectId>();
++        state.enemy_id = simple_shooter["enemy_id"]
++            ? simple_shooter["enemy_id"].as<GameObjectId>()
++            : k_invalid_game_object_id;
++        state.enemy_spawn_id = simple_shooter["enemy_spawn_id"]
++            ? simple_shooter["enemy_spawn_id"].as<GameObjectId>()
++            : k_invalid_game_object_id;
+         state.player_controller.set_speed(simple_shooter["player_speed"].as<float>());
+ 
+         state.options.paused = simple_shooter["paused"].as<bool>();
+         state.options.enemy_speed = simple_shooter["enemy_speed"].as<float>();
+-        state.options.bullet_speed = simple_shooter["bullet_speed"].as<float>();
+-        state.options.bullet_lifetime = simple_shooter["bullet_lifetime"].as<float>();
++
++        if (has_projectile_options(simple_shooter)) {
++            state.options.projectile_speed = simple_shooter["projectile_speed"].as<float>();
++            state.options.projectile_lifetime = simple_shooter["projectile_lifetime"].as<float>();
++        }
++        else {
++            state.options.projectile_speed = simple_shooter["bullet_speed"].as<float>();
++            state.options.projectile_lifetime = simple_shooter["bullet_lifetime"].as<float>();
++        }
+ 
+         return true;
+     }
+diff --git a/src/prune/scene/simple_shooter_state.hpp b/src/prune/scene/simple_shooter_state.hpp
+index 70082b1..046f963 100644
+--- a/src/prune/scene/simple_shooter_state.hpp
++++ b/src/prune/scene/simple_shooter_state.hpp
+@@ -8,13 +8,14 @@ namespace prune {
+     struct SimpleShooterOptions {
+         bool paused = false;
+         float enemy_speed = 24.0f;
+-        float bullet_speed = 180.0f;
+-        float bullet_lifetime = 1.25f;
++        float projectile_speed = 180.0f;
++        float projectile_lifetime = 1.25f;
+     };
+ 
+     struct SimpleShooterState {
+         GameObjectId player_id = k_invalid_game_object_id;
+         GameObjectId enemy_id = k_invalid_game_object_id;
++        GameObjectId enemy_spawn_id = k_invalid_game_object_id;
+ 
+         PlayerController player_controller{};
+         SimpleShooterOptions options{};
+diff --git a/src/prune/tooling/controls.cpp b/src/prune/tooling/controls.cpp
+index 719f74d..f5502a1 100644
+--- a/src/prune/tooling/controls.cpp
++++ b/src/prune/tooling/controls.cpp
+@@ -2,30 +2,34 @@
+ #include "prune/tooling/imgui/layout.hpp"
+ 
+ namespace prune {
+-
+-    void Controls::draw() {
+-		tooling::imgui::layout::text_wrapped("Simple Shooter");
+-		tooling::imgui::layout::text_wrapped("WASD keys move the player");
+-		tooling::imgui::layout::text_wrapped("Space fires in the current facing direction");
+-
+-		tooling::imgui::layout::separator();
+-
+-		tooling::imgui::layout::text_wrapped("Platformer");
+-		tooling::imgui::layout::text_wrapped("A/D keys move the player");
+-		tooling::imgui::layout::text_wrapped("W or Space jumps");
+-		tooling::imgui::layout::text_wrapped("Touching a hazard resets the player");
+-
+-		tooling::imgui::layout::separator();
+-
+-		tooling::imgui::layout::text_wrapped("Objects");
+-		tooling::imgui::layout::text_wrapped("Arrow keys move selected non-player object");
+-		tooling::imgui::layout::text_wrapped("Hold Shift for larger movements");
+-		tooling::imgui::layout::text_wrapped("Mouse button left: Move non-player object");
+-
+-		tooling::imgui::layout::separator();
+-
+-		tooling::imgui::layout::text_wrapped("Camera");
+-		tooling::imgui::layout::text_wrapped("Middle mouse drag: Pan editor camera");
+-		tooling::imgui::layout::text_wrapped("IJKL keys move the editor camera");
++    void Controls::draw()
++    {
++        tooling::imgui::layout::header_text("Controls");
++        tooling::imgui::layout::text_wrapped("Simple Shooter");
++        tooling::imgui::layout::text_wrapped("WASD keys move the player");
++        tooling::imgui::layout::text_wrapped("Space fires one projectile in the current facing direction");
++        tooling::imgui::layout::text_wrapped("Walls block player movement and stop projectiles");
++        tooling::imgui::layout::text_wrapped("Projectiles reset the enemy when they hit");
++        tooling::imgui::layout::text_wrapped("Enemy/player contact does not damage or reset the player in this slice");
++
++        tooling::imgui::layout::spacing(2);
++
++        tooling::imgui::layout::text_wrapped("Platformer");
++        tooling::imgui::layout::text_wrapped("A/D keys move the player");
++        tooling::imgui::layout::text_wrapped("W or Space jumps");
++        tooling::imgui::layout::text_wrapped("Touching a hazard resets the player");
++
++        tooling::imgui::layout::spacing(2);
++
++        tooling::imgui::layout::text_wrapped("Objects");
++        tooling::imgui::layout::text_wrapped("Arrow keys move selected non-player object");
++        tooling::imgui::layout::text_wrapped("Hold Shift for larger movements");
++        tooling::imgui::layout::text_wrapped("Mouse button left: Move non-player object");
++
++        tooling::imgui::layout::spacing(2);
++
++        tooling::imgui::layout::text_wrapped("Camera");
++        tooling::imgui::layout::text_wrapped("Middle mouse drag: Pan editor camera");
++        tooling::imgui::layout::text_wrapped("IJKL keys move the editor camera");
+     }
+ }
+diff --git a/src/prune/tooling/outliner.cpp b/src/prune/tooling/outliner.cpp
+index 9a7bbbe..ca3f894 100644
+--- a/src/prune/tooling/outliner.cpp
++++ b/src/prune/tooling/outliner.cpp
+@@ -1,12 +1,15 @@
++#include <cctype>
++
+ #include "imgui.h"
+ 
+ #include "prune/scene/game_object.hpp"
+ #include "prune/scene/game_object_manager.hpp"
++#include "prune/scene/scene.hpp"
+ #include "prune/tooling/outliner.hpp"
+ 
+ namespace prune {
+ 
+-    void Outliner::draw(GameObjectManager& objects) {
++    void Outliner::draw(GameObjectManager& objects, const Scene& scene) {
+         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
+         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
+         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
+@@ -32,12 +35,15 @@ namespace prune {
+             const std::string_view filter = m_object_search.data();
+ 
+             for (const auto& object : objects.objects()) {
+-                if (!filter.empty() && !contains_case_insensitive(object.identity.name, filter)) {
++                const std::string label = object_label(object, scene);
++
++                if (!filter.empty() &&
++                    !contains_case_insensitive(label, filter) &&
++                    !contains_case_insensitive(object.identity.name, filter)) {
+                     continue;
+                 }
+ 
+                 const bool is_selected = object.identity.id == objects.selected_id();
+-                const std::string label = object_label(object);
+ 
+                 if (ImGui::Selectable(label.c_str(), is_selected)) {
+                     objects.select(object.identity.id);
+@@ -47,17 +53,18 @@ namespace prune {
+         ImGui::EndChild();
+     }
+ 
+-    std::string Outliner::object_label(const GameObject& object)
++    std::string Outliner::object_label(const GameObject& object, const Scene& scene)
+     {
+-        const char* type = object.identity.type == GameObjectType::Runtime
+-            ? "[Runtime]"
+-            : "[Object]";
++        std::string label = "[";
++        label += scene.object_role_label(object);
++        label += "] ";
++        label += object.identity.name;
+ 
+-        if (object.lifecycle.active) {
+-            return std::string(type) + " " + object.identity.name;
++        if (!object.lifecycle.active) {
++            label += " (inactive)";
+         }
+ 
+-        return std::string(type) + " " + object.identity.name + " (inactive)";
++        return label;
+     }
+ 
+     bool Outliner::contains_case_insensitive(std::string_view text, std::string_view query) const
+@@ -78,7 +85,7 @@ namespace prune {
+                     to_lower(static_cast<unsigned char>(query[j]))) {
+                     matches = false;
+                     break;
+-                    }
++                }
+             }
+ 
+             if (matches) {
+diff --git a/src/prune/tooling/outliner.hpp b/src/prune/tooling/outliner.hpp
+index d035f01..7267171 100644
+--- a/src/prune/tooling/outliner.hpp
++++ b/src/prune/tooling/outliner.hpp
+@@ -1,17 +1,21 @@
+ #pragma once
+ 
+ #include <array>
++#include <string>
++#include <string_view>
+ 
+ #include "prune/scene/game_object.hpp"
+ #include "prune/scene/game_object_manager.hpp"
+ 
+ namespace prune {
+ 
++    class Scene;
++
+     class Outliner {
+     public:
+-        void draw(GameObjectManager& objects);
++        void draw(GameObjectManager& objects, const Scene& scene);
+     private:
+-        static std::string object_label(const GameObject& object);
++        static std::string object_label(const GameObject& object, const Scene& scene);
+         bool contains_case_insensitive(std::string_view text, std::string_view query) const;
+ 
+         std::array<char, 128> m_object_search{};
+diff --git a/src/prune/tooling/simple_shooter.cpp b/src/prune/tooling/simple_shooter.cpp
+index b9d0460..bf9a13c 100644
+--- a/src/prune/tooling/simple_shooter.cpp
++++ b/src/prune/tooling/simple_shooter.cpp
+@@ -1,12 +1,14 @@
+-#include "prune/tooling/simple_shooter.hpp"
++#include "imgui.h"
++
+ #include "prune/tooling/imgui/layout.hpp"
+ #include "prune/tooling/imgui/property_table.hpp"
++#include "prune/tooling/simple_shooter.hpp"
+ 
+ namespace prune {
+     void SimpleShooter::draw(SimpleShooterState& state)
+     {
+         if (tooling::imgui::layout::collapsing_header("Game")) {
+-            if (tooling::imgui::property_table::begin("##game")) {
++            if (tooling::imgui::property_table::begin("##simple_shooter_game")) {
+                 tooling::imgui::property_table::checkbox("Paused", "##paused", state.options.paused);
+ 
+                 float player_speed = state.player_controller.speed();
+@@ -22,11 +24,18 @@ namespace prune {
+                     state.player_controller.set_speed(player_speed);
+                 }
+ 
+-                tooling::imgui::property_table::slider_float("Enemy Speed", "enemy_speed", state.options.enemy_speed, 0.0f, 160.0f);
+-                tooling::imgui::property_table::slider_float("Bullet Speed", "bullet_speed", state.options.bullet_speed, 40.0f, 400.0f);
+-                tooling::imgui::property_table::slider_float("Bullet Lifetime", "bullet_lifetime", state.options.bullet_lifetime, 0.2f, 4.0f);
++                tooling::imgui::property_table::slider_float("Enemy Speed", "##enemy_speed", state.options.enemy_speed, 0.0f, 160.0f);
++                tooling::imgui::property_table::slider_float("Projectile Speed", "##projectile_speed", state.options.projectile_speed, 40.0f, 400.0f);
++                tooling::imgui::property_table::slider_float("Projectile Lifetime", "##projectile_lifetime", state.options.projectile_lifetime, 0.2f, 4.0f);
+                 tooling::imgui::property_table::end();
+             }
+         }
++
++        if (tooling::imgui::layout::collapsing_header("Slice Rules")) {
++            ImGui::TextWrapped("One player, one enemy, one projectile type, authored wall objects, and one enemy spawn marker.");
++            ImGui::BulletText("Player movement is blocked by solid walls.");
++            ImGui::BulletText("Projectiles hit enemies and stop at walls.");
++            ImGui::BulletText("Enemy/player contact has no damage rule in this slice.");
++        }
+     }
+ }
+diff --git a/src/prune/tooling/ui.cpp b/src/prune/tooling/ui.cpp
+index ae3e825..6409dbc 100644
+--- a/src/prune/tooling/ui.cpp
++++ b/src/prune/tooling/ui.cpp
+@@ -113,7 +113,7 @@ namespace prune {
+             tooling::EditorLayout::outliner();
+ 
+             if (ImGui::Begin("Outliner", &m_show_outliner)) {
+-                m_outliner.draw(scene.get_object_manager());
++                m_outliner.draw(scene.get_object_manager(), scene);
+             }
+             ImGui::End();
+         }

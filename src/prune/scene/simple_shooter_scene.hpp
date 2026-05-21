@@ -6,9 +6,9 @@
 #include <SDL2/SDL.h>
 
 #include "prune/core/defaults.hpp"
-#include "prune/scene/world_scene.hpp"
 #include "prune/scene/simple_shooter_behaviour.hpp"
 #include "prune/scene/simple_shooter_state.hpp"
+#include "prune/scene/world_scene.hpp"
 #include "prune/tooling/simple_shooter.hpp"
 
 namespace prune {
@@ -30,6 +30,7 @@ namespace prune {
         [[nodiscard]] std::string_view default_file_path() const noexcept override { return k_default_simple_shooter_scene_file_path; }
 
         [[nodiscard]] std::string_view scene_name() const noexcept override { return "Simple Shooter"; }
+        [[nodiscard]] std::string object_role_label(const GameObject& object) const override;
         [[nodiscard]] std::string_view scene_tools_label() const noexcept override { return "Simple Shooter"; }
         void draw_scene_tools(bool& open) override;
 
@@ -43,7 +44,7 @@ namespace prune {
 
         void reset_simple_shooter();
 
-        [[nodiscard]] int bullet_count() const noexcept;
+        [[nodiscard]] int projectile_count() const noexcept;
 
         [[nodiscard]] GameObject* enemy_object() noexcept;
         [[nodiscard]] const GameObject* enemy_object() const noexcept;
@@ -57,9 +58,9 @@ namespace prune {
         void reset_runtime_state();
         void restore_defaults();
 
-        GameObjectId create_block_at_view_center();
+        GameObjectId create_wall_at_view_center();
 
-        [[nodiscard]] Transform find_block_spawn_position(const GameObject& block) const;
+        [[nodiscard]] Transform find_wall_spawn_position(const GameObject& wall) const;
         [[nodiscard]] bool is_space_free(const GameObject& candidate) const noexcept;
 
         void draw_player_facing_indicator(SDL_Renderer* renderer) const;

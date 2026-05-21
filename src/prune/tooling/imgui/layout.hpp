@@ -9,8 +9,10 @@ namespace prune::tooling::imgui::layout {
 
     // Visual separators
     void separator();
+    void spacing(int count = 1);
 
     // Text blocks
+    void header_text(const char* text);
     void text(const char* text);
     void text_wrapped(const char* text);
 } 
