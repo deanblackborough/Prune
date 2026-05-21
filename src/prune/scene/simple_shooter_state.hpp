@@ -10,6 +10,8 @@ namespace prune {
         float enemy_speed = 24.0f;
         float projectile_speed = 180.0f;
         float projectile_lifetime = 1.25f;
+        float fire_cooldown = 0.18f;
+        int max_live_enemies = 1;
     };
 
     struct SimpleShooterState {
@@ -19,5 +21,6 @@ namespace prune {
 
         PlayerController player_controller{};
         SimpleShooterOptions options{};
+        float fire_cooldown_remaining = 0.0f;
     };
 }

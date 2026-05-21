@@ -26,6 +26,8 @@ namespace prune {
         root["simple_shooter"]["enemy_speed"] = state.options.enemy_speed;
         root["simple_shooter"]["projectile_speed"] = state.options.projectile_speed;
         root["simple_shooter"]["projectile_lifetime"] = state.options.projectile_lifetime;
+        root["simple_shooter"]["fire_cooldown"] = state.options.fire_cooldown;
+        root["simple_shooter"]["max_live_enemies"] = state.options.max_live_enemies;
     }
 
     bool SimpleShooterSerializer::load_from_node(
@@ -69,6 +71,14 @@ namespace prune {
         else {
             state.options.projectile_speed = simple_shooter["bullet_speed"].as<float>();
             state.options.projectile_lifetime = simple_shooter["bullet_lifetime"].as<float>();
+        }
+
+        if (simple_shooter["fire_cooldown"]) {
+            state.options.fire_cooldown = simple_shooter["fire_cooldown"].as<float>();
+        }
+
+        if (simple_shooter["max_live_enemies"]) {
+            state.options.max_live_enemies = simple_shooter["max_live_enemies"].as<int>();
         }
 
         return true;

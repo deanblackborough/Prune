@@ -27,12 +27,14 @@ namespace prune {
                 tooling::imgui::property_table::slider_float("Enemy Speed", "##enemy_speed", state.options.enemy_speed, 0.0f, 160.0f);
                 tooling::imgui::property_table::slider_float("Projectile Speed", "##projectile_speed", state.options.projectile_speed, 40.0f, 400.0f);
                 tooling::imgui::property_table::slider_float("Projectile Lifetime", "##projectile_lifetime", state.options.projectile_lifetime, 0.2f, 4.0f);
+                tooling::imgui::property_table::slider_float("Fire Cooldown", "##fire_cooldown", state.options.fire_cooldown, 0.05f, 1.0f);
+                tooling::imgui::property_table::slider_int("Max Live Enemies", "##max_live_enemies", state.options.max_live_enemies, 0, 8);
                 tooling::imgui::property_table::end();
             }
         }
 
         if (tooling::imgui::layout::collapsing_header("Slice Rules")) {
-            ImGui::TextWrapped("One player, one enemy, one projectile type, authored wall objects, and one enemy spawn marker.");
+            ImGui::TextWrapped("One player, one projectile type, one enemy type, authored wall objects, and one enemy spawn marker.");
             ImGui::BulletText("Player movement is blocked by solid walls.");
             ImGui::BulletText("Projectiles hit enemies and stop at walls.");
             ImGui::BulletText("Enemy/player contact has no damage rule in this slice.");
