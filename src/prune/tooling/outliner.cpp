@@ -1,12 +1,15 @@
+#include <cctype>
+
 #include "imgui.h"
 
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
+#include "prune/scene/scene.hpp"
 #include "prune/tooling/outliner.hpp"
 
 namespace prune {
 
-    void Outliner::draw(GameObjectManager& objects) {
+    void Outliner::draw(GameObjectManager& objects, const Scene& scene) {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.2f, 0.6f, 1.0f));        // Normal state
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.3f, 0.7f, 1.0f)); // Hover state
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.5f, 1.0f));
@@ -32,12 +35,15 @@ namespace prune {
             const std::string_view filter = m_object_search.data();
 
             for (const auto& object : objects.objects()) {
-                if (!filter.empty() && !contains_case_insensitive(object.identity.name, filter)) {
+                const std::string label = object_label(object, scene);
+
+                if (!filter.empty() &&
+                    !contains_case_insensitive(label, filter) &&
+                    !contains_case_insensitive(object.identity.name, filter)) {
                     continue;
                 }
 
                 const bool is_selected = object.identity.id == objects.selected_id();
-                const std::string label = object_label(object);
 
                 if (ImGui::Selectable(label.c_str(), is_selected)) {
                     objects.select(object.identity.id);
@@ -47,17 +53,18 @@ namespace prune {
         ImGui::EndChild();
     }
 
-    std::string Outliner::object_label(const GameObject& object)
+    std::string Outliner::object_label(const GameObject& object, const Scene& scene)
     {
-        const char* type = object.identity.type == GameObjectType::Runtime
-            ? "[Runtime]"
-            : "[Object]";
+        std::string label = "[";
+        label += scene.object_role_label(object);
+        label += "] ";
+        label += object.identity.name;
 
-        if (object.lifecycle.active) {
-            return std::string(type) + " " + object.identity.name;
+        if (!object.lifecycle.active) {
+            label += " (inactive)";
         }
 
-        return std::string(type) + " " + object.identity.name + " (inactive)";
+        return label;
     }
 
     bool Outliner::contains_case_insensitive(std::string_view text, std::string_view query) const
@@ -78,7 +85,7 @@ namespace prune {
                     to_lower(static_cast<unsigned char>(query[j]))) {
                     matches = false;
                     break;
-                    }
+                }
             }
 
             if (matches) {

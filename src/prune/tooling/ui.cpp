@@ -113,7 +113,7 @@ namespace prune {
             tooling::EditorLayout::outliner();
 
             if (ImGui::Begin("Outliner", &m_show_outliner)) {
-                m_outliner.draw(scene.get_object_manager());
+                m_outliner.draw(scene.get_object_manager(), scene);
             }
             ImGui::End();
         }

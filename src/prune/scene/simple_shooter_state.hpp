@@ -8,15 +8,19 @@ namespace prune {
     struct SimpleShooterOptions {
         bool paused = false;
         float enemy_speed = 24.0f;
-        float bullet_speed = 180.0f;
-        float bullet_lifetime = 1.25f;
+        float projectile_speed = 180.0f;
+        float projectile_lifetime = 1.25f;
+        float fire_cooldown = 0.18f;
+        int max_live_enemies = 1;
     };
 
     struct SimpleShooterState {
         GameObjectId player_id = k_invalid_game_object_id;
         GameObjectId enemy_id = k_invalid_game_object_id;
+        GameObjectId enemy_spawn_id = k_invalid_game_object_id;
 
         PlayerController player_controller{};
         SimpleShooterOptions options{};
+        float fire_cooldown_remaining = 0.0f;
     };
 }

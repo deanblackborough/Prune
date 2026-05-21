@@ -1,2 +1,7 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Default all text files to LF in the repository
+* text=auto eol=lf
+
+# C++ source
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.h   text eol=lf

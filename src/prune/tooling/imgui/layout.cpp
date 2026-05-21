@@ -11,11 +11,25 @@ namespace prune::tooling::imgui::layout {
         ImGui::Separator();
     }
 
+    void spacing(int count) {
+		for (int i = 0; i < count; ++i) {
+			ImGui::Spacing();
+		}
+    }
+
     void text(const char* text) {
         ImGui::TextUnformatted(text);
     }
 
     void text_wrapped(const char* text) {
         ImGui::TextWrapped("%s", text);
+    }
+
+    void header_text(const char* text)
+    {
+        ImGui::Spacing();
+        ImGui::TextUnformatted(text);
+        ImGui::Separator();
+        ImGui::Spacing();
     }
 }

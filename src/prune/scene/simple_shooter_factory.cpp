@@ -32,24 +32,25 @@ namespace prune::simple_shooter_factory {
         return player;
     }
 
-    GameObject create_initial_block()
+    GameObject create_wall()
     {
-        GameObject block;
-        block.identity.name = "Static Block";
-        block.identity.type = GameObjectType::Object;
-        block.runtime.behaviour = "";
-        block.transform.x = 176.0f;
-        block.transform.y = 128.0f;
-        block.size.width = k_default_object_size;
-        block.size.height = k_default_object_size;
-        block.render.type = RenderType::Rectangle;
-        block.render.rectangle.color[0] = 0.8f;
-        block.render.rectangle.color[1] = 0.5f;
-        block.render.rectangle.color[2] = 0.2f;
-        block.lifecycle.active = true;
-        block.collision.solid = true;
+        GameObject wall;
+        wall.identity.name = "Wall";
+        wall.identity.type = GameObjectType::Object;
+        wall.runtime.behaviour = simple_shooter_ids::wall_behaviour;
+        wall.transform.x = 176.0f;
+        wall.transform.y = 128.0f;
+        wall.size.width = k_default_object_size;
+        wall.size.height = k_default_object_size;
+        wall.render.type = RenderType::Rectangle;
+        wall.render.rectangle.color[0] = 0.8f;
+        wall.render.rectangle.color[1] = 0.5f;
+        wall.render.rectangle.color[2] = 0.2f;
+        wall.lifecycle.active = true;
+        wall.render.visible = true;
+        wall.collision.solid = true;
 
-        return block;
+        return wall;
     }
 
     GameObject create_enemy()
@@ -74,57 +75,81 @@ namespace prune::simple_shooter_factory {
         return enemy;
     }
 
-    GameObject create_bullet_from_player(
+    GameObject create_enemy_spawn()
+    {
+        GameObject spawn;
+        spawn.identity.name = "Enemy Spawn";
+        spawn.identity.type = GameObjectType::Object;
+        spawn.runtime.behaviour = simple_shooter_ids::spawn_behaviour;
+        spawn.editor.renameable = false;
+        spawn.editor.deletable = false;
+        spawn.editor.cloneable = false;
+        spawn.transform.x = 256.0f;
+        spawn.transform.y = 128.0f;
+        spawn.size.width = k_default_object_size;
+        spawn.size.height = k_default_object_size;
+        spawn.render.type = RenderType::Rectangle;
+        spawn.render.rectangle.color[0] = 0.25f;
+        spawn.render.rectangle.color[1] = 0.35f;
+        spawn.render.rectangle.color[2] = 0.9f;
+        spawn.lifecycle.active = true;
+        spawn.render.visible = true;
+        spawn.collision.solid = false;
+
+        return spawn;
+    }
+
+    GameObject create_projectile_from_player(
         const GameObject& player,
-        float bullet_speed,
-        float bullet_lifetime
+        float projectile_speed,
+        float projectile_lifetime
     )
     {
-        GameObject bullet;
-        bullet.identity.name = "Bullet";
-        bullet.identity.type = GameObjectType::Runtime;
-        bullet.runtime.behaviour = simple_shooter_ids::bullet_behaviour;
-        bullet.runtime.persistent = false;
+        GameObject projectile;
+        projectile.identity.name = "Projectile";
+        projectile.identity.type = GameObjectType::Runtime;
+        projectile.runtime.behaviour = simple_shooter_ids::projectile_behaviour;
+        projectile.runtime.persistent = false;
 
-        bullet.editor.selectable = false;
-        bullet.editor.renameable = false;
-        bullet.editor.movable = false;
-        bullet.editor.deletable = false;
-        bullet.editor.cloneable = false;
+        projectile.editor.selectable = false;
+        projectile.editor.renameable = false;
+        projectile.editor.movable = false;
+        projectile.editor.deletable = false;
+        projectile.editor.cloneable = false;
 
-        bullet.size.width = 4;
-        bullet.size.height = 4;
-        bullet.render.type = RenderType::Rectangle;
-        bullet.render.rectangle.color[0] = 0.95f;
-        bullet.render.rectangle.color[1] = 0.9f;
-        bullet.render.rectangle.color[2] = 0.35f;
-        bullet.collision.solid = false;
-        bullet.lifecycle.active = true;
-        bullet.render.visible = true;
-        bullet.motion.facing = player.motion.facing;
-        bullet.lifecycle.remaining = bullet_lifetime;
+        projectile.size.width = 4;
+        projectile.size.height = 4;
+        projectile.render.type = RenderType::Rectangle;
+        projectile.render.rectangle.color[0] = 0.95f;
+        projectile.render.rectangle.color[1] = 0.9f;
+        projectile.render.rectangle.color[2] = 0.35f;
+        projectile.collision.solid = false;
+        projectile.lifecycle.active = true;
+        projectile.render.visible = true;
+        projectile.motion.facing = player.motion.facing;
+        projectile.lifecycle.remaining = projectile_lifetime;
 
         const float player_center_x = player.transform.x + (static_cast<float>(player.size.width) * 0.5f);
         const float player_center_y = player.transform.y + (static_cast<float>(player.size.height) * 0.5f);
 
-        bullet.transform.x = player_center_x - (static_cast<float>(bullet.size.width) * 0.5f);
-        bullet.transform.y = player_center_y - (static_cast<float>(bullet.size.height) * 0.5f);
+        projectile.transform.x = player_center_x - (static_cast<float>(projectile.size.width) * 0.5f);
+        projectile.transform.y = player_center_y - (static_cast<float>(projectile.size.height) * 0.5f);
 
         switch (player.motion.facing) {
         case Direction::Up:
-            bullet.motion.velocity.y = -bullet_speed;
+            projectile.motion.velocity.y = -projectile_speed;
             break;
         case Direction::Down:
-            bullet.motion.velocity.y = bullet_speed;
+            projectile.motion.velocity.y = projectile_speed;
             break;
         case Direction::Left:
-            bullet.motion.velocity.x = -bullet_speed;
+            projectile.motion.velocity.x = -projectile_speed;
             break;
         case Direction::Right:
-            bullet.motion.velocity.x = bullet_speed;
+            projectile.motion.velocity.x = projectile_speed;
             break;
         }
 
-        return bullet;
+        return projectile;
     }
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <string_view>
 
 #include <SDL2/SDL.h>
@@ -53,6 +54,11 @@ namespace prune {
         [[nodiscard]] virtual int get_viewport_height() const noexcept = 0;
 
         [[nodiscard]] virtual std::string_view scene_name() const noexcept = 0;
+
+        [[nodiscard]] virtual std::string object_role_label(const GameObject& object) const
+        {
+            return object.identity.type == GameObjectType::Runtime ? "Runtime" : "Object";
+        }
         [[nodiscard]] virtual std::string_view scene_tools_label() const noexcept = 0;
         virtual void draw_scene_tools(bool& open) = 0;
 
