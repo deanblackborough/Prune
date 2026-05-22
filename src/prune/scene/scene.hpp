@@ -40,6 +40,7 @@ namespace prune {
         virtual void on_enter() = 0;
         virtual void on_exit() = 0;
         virtual void update(float dt, const Input& input) = 0;
+        virtual void update_editor(float, const Input&) {}
         virtual void render(SDL_Renderer* renderer) = 0;
 
         virtual void new_scene() = 0;

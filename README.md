@@ -1,5 +1,7 @@
 # Prune
 
+![Prune](assets/icon.png)
+
 Prune is a C++23 live 2D editor/runtime experiment built with SDL2, SDL2_image, Dear ImGui, and yaml-cpp.
 
 It is not trying to be a traditional engine where editing happens in one mode and gameplay happens in another. The goal is a play-and-build system where the editor remains part of the runtime, and different scene types can define their own behaviour, tools, panels, inspectors, and workflows without replacing the shared editor shell.

@@ -112,6 +112,8 @@ namespace prune {
                         m_ui->set_file_status("Load failed: " + error, true);
                     }
                 }
+
+                m_scene->update_editor(frame_time, *m_input);
             }
 
             while (m_accumulator >= m_fixed_timestep) {

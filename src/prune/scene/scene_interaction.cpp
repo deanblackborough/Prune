@@ -109,19 +109,16 @@ namespace prune {
             return;
         }
 
-        GameObject* selected = state.objects.selected_object();
-        if (!selected || !selected->editor.movable) {
+        GameObject* picked = pick_object_at_screen(state, camera, input.mouse_x(), input.mouse_y());
+        if (!picked || !picked->editor.movable) {
             return;
         }
 
-        GameObject* picked = pick_object_at_screen(state, camera, input.mouse_x(), input.mouse_y());
-        if (!picked || picked->identity.id != selected->identity.id) {
-            return;
-        }
+        state.objects.select(picked->identity.id);
 
         state.drag_state.active = true;
-        state.drag_state.object_id = selected->identity.id;
-        state.drag_state.object_start = selected->transform;
+        state.drag_state.object_id = picked->identity.id;
+        state.drag_state.object_start = picked->transform;
         state.drag_state.mouse_start_world = camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
     }
 

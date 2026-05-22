@@ -5,6 +5,11 @@ namespace prune {
     void WorldScene::update(float dt, const Input& input)
     {
         update_runtime(dt, input, scene_keyboard_input_enabled());
+        m_camera.update_game_camera(m_state.viewport, game_camera_target());
+    }
+
+    void WorldScene::update_editor(float dt, const Input& input)
+    {
         m_interaction.update(m_state, m_camera, m_grid_options, dt, input);
         m_camera.update_game_camera(m_state.viewport, game_camera_target());
     }

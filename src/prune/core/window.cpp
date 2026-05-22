@@ -1,5 +1,9 @@
 #include "prune/core/window.hpp"
+
+#include <filesystem>
 #include <stdexcept>
+
+#include "SDL_image.h"
 
 namespace prune {
 
@@ -34,6 +38,21 @@ namespace prune {
 
         if (config.vsync) {
             renderer_flags |= SDL_RENDERER_PRESENTVSYNC;
+        }
+
+        std::string icon_path;
+        if (char* base = SDL_GetBasePath()) {
+            icon_path = (std::filesystem::path(base) / "assets/icon.png").string();
+            SDL_free(base);
+        } else {
+            icon_path = "assets/icon.png"; // fallback
+        }
+
+        SDL_Surface* icon = IMG_Load(icon_path.c_str());
+
+        if (icon != nullptr) {
+            SDL_SetWindowIcon(m_window, icon);
+            SDL_FreeSurface(icon);
         }
 
         m_renderer = SDL_CreateRenderer(
