@@ -15,9 +15,10 @@ namespace prune {
         tooling::imgui::layout::spacing(2);
 
         tooling::imgui::layout::text_wrapped("Platformer");
-        tooling::imgui::layout::text_wrapped("A/D keys move the player");
-        tooling::imgui::layout::text_wrapped("W or Space jumps");
-        tooling::imgui::layout::text_wrapped("Touching a hazard resets the player");
+        tooling::imgui::layout::text_wrapped("A/D keys move the player left and right");
+        tooling::imgui::layout::text_wrapped("W or Space jumps, but only while grounded");
+        tooling::imgui::layout::text_wrapped("Platforms block movement and provide grounded state");
+        tooling::imgui::layout::text_wrapped("Hazards reset the player to the Player Start marker");
 
         tooling::imgui::layout::spacing(2);
 
