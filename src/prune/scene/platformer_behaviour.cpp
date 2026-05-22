@@ -4,28 +4,23 @@
 
 #include "prune/scene/collision.hpp"
 #include "prune/scene/platformer_behaviour.hpp"
-#include "prune/scene/platformer_ids.hpp"
+#include "prune/scene/platformer_concepts.hpp"
 
 namespace prune {
 
     namespace {
 
-        [[nodiscard]] bool is_platformer_player(const GameObject& object) noexcept
-        {
-            return object.runtime.behaviour == platformer_ids::player_behaviour;
-        }
-
         [[nodiscard]] bool is_active_solid_platformer_block(const GameObject& object) noexcept
         {
             return object.lifecycle.active &&
                 object.collision.solid &&
-                object.runtime.behaviour == platformer_ids::ground_behaviour;
+                platformer_concepts::is_ground(object);
         }
 
         [[nodiscard]] bool is_active_platformer_hazard(const GameObject& object) noexcept
         {
             return object.lifecycle.active &&
-                object.runtime.behaviour == platformer_ids::hazard_behaviour;
+                platformer_concepts::is_hazard(object);
         }
 
     }
@@ -49,7 +44,7 @@ namespace prune {
     GameObject* PlatformerBehaviour::player_object(SceneState& state, const PlatformerState& platformer_state) const noexcept
     {
         GameObject* object = state.objects.get_by_id(platformer_state.player_id);
-        if (!object || !is_platformer_player(*object)) {
+        if (!object || !platformer_concepts::is_player(*object)) {
             return nullptr;
         }
 
@@ -59,7 +54,20 @@ namespace prune {
     const GameObject* PlatformerBehaviour::player_object(const SceneState& state, const PlatformerState& platformer_state) const noexcept
     {
         const GameObject* object = state.objects.get_by_id(platformer_state.player_id);
-        if (!object || !is_platformer_player(*object)) {
+        if (!object || !platformer_concepts::is_player(*object)) {
+            return nullptr;
+        }
+
+        return object;
+    }
+
+    const GameObject* PlatformerBehaviour::player_start_object(
+        const SceneState& state,
+        const PlatformerState& platformer_state
+    ) const noexcept
+    {
+        const GameObject* object = state.objects.get_by_id(platformer_state.player_start_id);
+        if (!object || !platformer_concepts::is_player_start(*object)) {
             return nullptr;
         }
 
@@ -187,8 +195,15 @@ namespace prune {
             return;
         }
 
-        player->transform.x = 64.0f;
-        player->transform.y = 96.0f;
+        if (const GameObject* start = player_start_object(state, platformer_state)) {
+            player->transform.x = start->transform.x;
+            player->transform.y = start->transform.y;
+        }
+        else {
+            player->transform.x = 32.0f;
+            player->transform.y = 112.0f;
+        }
+
         player->motion.velocity = {};
         player->motion.facing = Direction::Right;
         platformer_state.player_grounded = false;

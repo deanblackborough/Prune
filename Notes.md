@@ -137,6 +137,7 @@ Improve it before moving on.
 
 Work to consider:
 
+- Updated to use concepts like the top-down shooter
 - Better initial level layout
 - Better default camera/zoom expectations
 - Clear player start/reset point

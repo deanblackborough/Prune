@@ -5,6 +5,7 @@ namespace prune {
     void PlatformerSerializer::save_to_node(const PlatformerState& state, YAML::Node& root)
     {
         root["platformer"]["player_id"] = state.player_id;
+        root["platformer"]["player_start_id"] = state.player_start_id;
         root["platformer"]["paused"] = state.options.paused;
         root["platformer"]["move_speed"] = state.options.move_speed;
         root["platformer"]["jump_velocity"] = state.options.jump_velocity;
@@ -27,6 +28,10 @@ namespace prune {
         }
 
         state.player_id = platformer["player_id"].as<GameObjectId>();
+
+        if (platformer["player_start_id"]) {
+            state.player_start_id = platformer["player_start_id"].as<GameObjectId>();
+        }
 
         if (platformer["paused"]) {
             state.options.paused = platformer["paused"].as<bool>();

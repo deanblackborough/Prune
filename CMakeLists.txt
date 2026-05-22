@@ -35,9 +35,11 @@ add_executable(Prune
         src/prune/scene/simple_shooter_behaviour.cpp
         src/prune/scene/simple_shooter_concepts.cpp
         src/prune/scene/simple_shooter_serializer.cpp
+
         src/prune/scene/platformer_scene.cpp
         src/prune/scene/platformer_factory.cpp
         src/prune/scene/platformer_behaviour.cpp
+        src/prune/scene/platformer_concepts.cpp
         src/prune/scene/platformer_serializer.cpp
 
         src/prune/resources/sprites.cpp

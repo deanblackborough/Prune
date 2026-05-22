@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <string_view>
 
 #include <SDL2/SDL.h>
@@ -27,6 +28,7 @@ namespace prune {
 
         [[nodiscard]] std::string_view scene_name() const noexcept override { return "Platformer"; }
         [[nodiscard]] std::string_view scene_tools_label() const noexcept override { return "Platformer"; }
+        [[nodiscard]] std::string object_role_label(const GameObject& object) const override;
         void draw_scene_tools(bool& open) override;
 
         void draw_scene_inspector(GameObject& selected) override;

@@ -6,7 +6,7 @@ namespace prune {
 
     class Platformer {
     public:
-        void draw(PlatformerOptions& options, bool grounded);
+        void draw(PlatformerState& state);
     };
 
 }

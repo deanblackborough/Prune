@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <string>
@@ -7,8 +8,8 @@
 
 #include "imgui.h"
 
+#include "prune/scene/platformer_concepts.hpp"
 #include "prune/scene/platformer_factory.hpp"
-#include "prune/scene/platformer_ids.hpp"
 #include "prune/scene/platformer_scene.hpp"
 #include "prune/scene/platformer_serializer.hpp"
 #include "prune/scene/scene_serializer.hpp"
@@ -30,38 +31,43 @@ namespace prune {
             return value ? "Yes" : "No";
         }
 
-        [[nodiscard]] const char* platformer_role_label(const GameObject& object) noexcept
+        [[nodiscard]] GameObjectId first_object_id_for_kind(
+            const SceneState& state,
+            platformer_concepts::ObjectKind kind
+        ) noexcept
         {
-            if (object.runtime.behaviour == platformer_ids::player_behaviour) {
-                return "Player";
+            for (const auto& object : state.objects.objects()) {
+                if (platformer_concepts::kind_for(object) == kind) {
+                    return object.identity.id;
+                }
             }
 
-            if (object.runtime.behaviour == platformer_ids::ground_behaviour) {
-                return "Platform / Ground";
-            }
-
-            if (object.runtime.behaviour == platformer_ids::hazard_behaviour) {
-                return "Hazard";
-            }
-
-            return "Scene Object";
+            return k_invalid_game_object_id;
         }
 
-        [[nodiscard]] const char* platformer_effect_label(const GameObject& object) noexcept
+        [[nodiscard]] bool object_has_kind(
+            const SceneState& state,
+            GameObjectId id,
+            platformer_concepts::ObjectKind kind
+        ) noexcept
         {
-            if (object.runtime.behaviour == platformer_ids::player_behaviour) {
-                return "Controlled by horizontal movement and jump input. The camera follows this object.";
+            const GameObject* object = state.objects.get_by_id(id);
+            return object && platformer_concepts::kind_for(*object) == kind;
+        }
+
+        void restore_loaded_platformer_concepts(SceneState& state, PlatformerState& platformer_state)
+        {
+            if (!object_has_kind(state, platformer_state.player_id, platformer_concepts::ObjectKind::Player)) {
+                platformer_state.player_id = first_object_id_for_kind(state, platformer_concepts::ObjectKind::Player);
             }
 
-            if (object.runtime.behaviour == platformer_ids::ground_behaviour) {
-                return "Solid platformer surface. The player collides with this and can stand on it.";
+            if (!object_has_kind(state, platformer_state.player_start_id, platformer_concepts::ObjectKind::PlayerStart)) {
+                platformer_state.player_start_id = first_object_id_for_kind(state, platformer_concepts::ObjectKind::PlayerStart);
             }
 
-            if (object.runtime.behaviour == platformer_ids::hazard_behaviour) {
-                return "Resets the player to the platformer spawn point on contact.";
+            if (platformer_state.player_start_id == k_invalid_game_object_id) {
+                platformer_state.player_start_id = state.objects.create_object(platformer_factory::create_player_start(32.0f, 112.0f));
             }
-
-            return "No Platformer behaviour is assigned.";
         }
     }
 
@@ -80,6 +86,7 @@ namespace prune {
     {
         m_state.objects.clear();
         m_platformer_state.player_id = k_invalid_game_object_id;
+        m_platformer_state.player_start_id = k_invalid_game_object_id;
     }
 
 
@@ -116,20 +123,37 @@ namespace prune {
     {
         reset_runtime_state();
 
-        m_platformer_state.player_id = m_state.objects.create_object(platformer_factory::create_player());
+        m_platformer_state.player_start_id =
+            m_state.objects.create_object(platformer_factory::create_player_start(32.0f, 112.0f));
 
-        m_state.objects.create_object(platformer_factory::create_ground(0.0f, 160.0f, 288, 16, "Ground"));
-        m_state.objects.create_object(platformer_factory::create_ground(96.0f, 112.0f, 64, 16, "Small Platform"));
-        m_state.objects.create_object(platformer_factory::create_ground(192.0f, 80.0f, 64, 16, "High Platform"));
-        m_state.objects.create_object(platformer_factory::create_hazard(144.0f, 144.0f));
+        m_platformer_state.player_id =
+            m_state.objects.create_object(platformer_factory::create_player());
 
+        m_state.objects.create_object(platformer_factory::create_ground(0.0f, 176.0f, 400, 16, "Main Ground"));
+        m_state.objects.create_object(platformer_factory::create_ground(96.0f, 144.0f, 80, 16, "Lower Step"));
+        m_state.objects.create_object(platformer_factory::create_ground(208.0f, 112.0f, 80, 16, "Mid Platform"));
+        m_state.objects.create_object(platformer_factory::create_ground(320.0f, 80.0f, 64, 16, "High Platform"));
+        m_state.objects.create_object(platformer_factory::create_hazard(144.0f, 160.0f, 32, 16, "Spike Pit"));
+        m_state.objects.create_object(platformer_factory::create_hazard(288.0f, 160.0f, 32, 16, "Exit Pit"));
+
+        m_platformer.reset_player(m_state, m_platformer_state);
         m_state.objects.select(m_platformer_state.player_id);
+
+        m_camera.game().zoom = 3.0f;
+        m_camera.editor().zoom = 3.0f;
         m_camera.update_game_camera(m_state.viewport, player_object());
+        m_camera.editor().x = m_camera.game().x;
+        m_camera.editor().y = m_camera.game().y;
     }
 
     void PlatformerScene::new_scene()
     {
         restore_defaults();
+    }
+
+    std::string PlatformerScene::object_role_label(const GameObject& object) const
+    {
+        return platformer_concepts::label(platformer_concepts::kind_for(object));
     }
 
     void PlatformerScene::draw_scene_tools(bool& open)
@@ -149,7 +173,7 @@ namespace prune {
 
             ImGui::Separator();
 
-            m_platformer_tools.draw(m_platformer_state.options, m_platformer_state.player_grounded);
+            m_platformer_tools.draw(m_platformer_state);
         }
 
         ImGui::End();
@@ -165,13 +189,15 @@ namespace prune {
             return;
         }
 
-        tooling::imgui::property_table::text("Role", platformer_role_label(selected));
-        tooling::imgui::property_table::text("Object Type", object_type_label(selected.identity.type));
-        tooling::imgui::property_table::text("Behaviour", selected.runtime.behaviour.empty() ? "None" : selected.runtime.behaviour.c_str());
-        tooling::imgui::property_table::text("Runtime Saved", bool_label(selected.runtime.persistent));
-        tooling::imgui::property_table::text_wrapped("Effect", platformer_effect_label(selected));
+        const auto kind = platformer_concepts::kind_for(selected);
 
-        if (selected.runtime.behaviour == platformer_ids::player_behaviour) {
+        tooling::imgui::property_table::text("Concept", platformer_concepts::label(kind));
+        tooling::imgui::property_table::text("Object Type", object_type_label(selected.identity.type));
+        tooling::imgui::property_table::text("Runtime Saved", bool_label(selected.runtime.persistent));
+        tooling::imgui::property_table::text_wrapped("Purpose", platformer_concepts::purpose(kind));
+        tooling::imgui::property_table::text_wrapped("Collision", platformer_concepts::collision_rule(kind));
+
+        if (kind == platformer_concepts::ObjectKind::Player) {
             char velocity_buffer[64];
             std::snprintf(
                 velocity_buffer,
@@ -184,11 +210,14 @@ namespace prune {
             tooling::imgui::property_table::text("Velocity", velocity_buffer);
             tooling::imgui::property_table::text("Grounded", bool_label(m_platformer_state.player_grounded));
         }
-        else if (selected.runtime.behaviour == platformer_ids::ground_behaviour) {
-            tooling::imgui::property_table::text("Collision", selected.collision.solid ? "Solid" : "Not solid");
+        else if (kind == platformer_concepts::ObjectKind::PlayerStart) {
+            tooling::imgui::property_table::text("Used By", "Hazard and fall reset");
         }
-        else if (selected.runtime.behaviour == platformer_ids::hazard_behaviour) {
-            tooling::imgui::property_table::text("Collision", selected.collision.solid ? "Solid" : "Trigger only");
+        else if (kind == platformer_concepts::ObjectKind::Ground) {
+            tooling::imgui::property_table::text("Solid", bool_label(selected.collision.solid));
+        }
+        else if (kind == platformer_concepts::ObjectKind::Hazard) {
+            tooling::imgui::property_table::text("Behaviour", "Reset player on contact");
         }
 
         tooling::imgui::property_table::end();
@@ -251,17 +280,7 @@ namespace prune {
                 return false;
             }
 
-            const GameObject* loaded_player = loaded_state.objects.get_by_id(loaded_platformer_state.player_id);
-            if (loaded_player == nullptr || loaded_player->runtime.behaviour != platformer_ids::player_behaviour) {
-                loaded_platformer_state.player_id = k_invalid_game_object_id;
-
-                for (const auto& object : loaded_state.objects.objects()) {
-                    if (object.runtime.behaviour == platformer_ids::player_behaviour) {
-                        loaded_platformer_state.player_id = object.identity.id;
-                        break;
-                    }
-                }
-            }
+            restore_loaded_platformer_concepts(loaded_state, loaded_platformer_state);
 
             if (loaded_platformer_state.player_id == k_invalid_game_object_id) {
                 error = "Platformer scene is missing its player object.";

@@ -20,12 +20,32 @@ namespace prune::platformer_factory {
         player.size.height = k_default_object_size;
         player.render.type = RenderType::Sprite;
         player.render.sprite.sprite_key = std::string(k_default_player_sprite_key);
-        player.transform.x = 64.0f;
-        player.transform.y = 96.0f;
+        player.transform.x = 32.0f;
+        player.transform.y = 112.0f;
         player.lifecycle.active = true;
         player.render.visible = true;
         player.collision.solid = false;
         return player;
+    }
+
+    GameObject create_player_start(float x, float y)
+    {
+        GameObject start;
+        start.identity.name = "Player Start";
+        start.identity.type = GameObjectType::Object;
+        start.runtime.behaviour = platformer_ids::player_start_behaviour;
+        start.transform.x = x;
+        start.transform.y = y;
+        start.size.width = k_default_object_size;
+        start.size.height = k_default_object_size;
+        start.render.type = RenderType::Rectangle;
+        start.render.rectangle.color[0] = 0.25f;
+        start.render.rectangle.color[1] = 0.75f;
+        start.render.rectangle.color[2] = 0.95f;
+        start.lifecycle.active = true;
+        start.render.visible = true;
+        start.collision.solid = false;
+        return start;
     }
 
     GameObject create_ground(float x, float y, int width, int height, const char* name)
@@ -50,14 +70,19 @@ namespace prune::platformer_factory {
 
     GameObject create_hazard(float x, float y)
     {
+        return create_hazard(x, y, k_default_object_size, k_default_object_size, "Hazard");
+    }
+
+    GameObject create_hazard(float x, float y, int width, int height, const char* name)
+    {
         GameObject hazard;
-        hazard.identity.name = "Hazard";
+        hazard.identity.name = name;
         hazard.identity.type = GameObjectType::Object;
         hazard.runtime.behaviour = platformer_ids::hazard_behaviour;
         hazard.transform.x = x;
         hazard.transform.y = y;
-        hazard.size.width = k_default_object_size;
-        hazard.size.height = k_default_object_size;
+        hazard.size.width = width;
+        hazard.size.height = height;
         hazard.render.type = RenderType::Rectangle;
         hazard.render.rectangle.color[0] = 0.9f;
         hazard.render.rectangle.color[1] = 0.2f;
