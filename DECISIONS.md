@@ -19,7 +19,7 @@ Existing `.yml` scene files are allowed to break during this phase.
 
 The object model, scene descriptors, behaviour ids, concept metadata, and scene-specific save data are still very much being designed and shaped.
 
-Whilst I am still very obviosuly in alpha and soon 0.x.x territory I don't want to feel locked into a save format designed when one scene existed and all you could was move a box around.
+Whilst I am still very obviosuly in alpha and soon 0.x.x territory I don't want to feel locked into a save format designed when one scene existed and all you could do was move a box around.
 
 ### Consequences
 
@@ -136,7 +136,7 @@ Prune's value is in the live editor/runtime boundary, not in proving browser-bas
 
 That would be a separate project.
 
-Prune needs editor tooling, not a UI framework, I wanot to focus on the game tools and how the editor works, not building a UI library when ImGui already exists and is already used in some many tools in the gaming industry.
+Prune needs editor tooling, not a UI framework, I want to focus on the game tools and how the editor works, not building a UI library when ImGui already exists and is already used in some many tools in the gaming industry.
 
 ### Revisit when
 
@@ -505,7 +505,7 @@ After object semantics and duplication cleanup, focus on editor tooling before m
 
 Prune's value is the editor/runtime model, not the complexity of the sample games, they are just proof of concept slices, a real game with Prune is quite a way off from now.
 
-More gameplay or a better games does not prove the core idea of Prune is worthwhile, if I want to build the game I have planned I will use Godot or Unreal.
+More gameplay or better games do not prove the core idea of Prune is worthwhile, if I want to build the game I have planned I will use Godot or Unreal.
 
 ### First tooling targets
 
@@ -588,7 +588,7 @@ Its purpose is to prove:
 
 Adding waves, scoring, powerups, menus, and extensive enemy types would distract from the editor/runtime architecture.
 
-It does however need to be a bit of fun for my kids so I might add some of this tuff, it will just never be the core focus of the Prune, my work with them in Godot will cover the majority of the gaming fix.
+It does however need to be a bit of fun for my kids so I might add some of this stuff, it will just never be the core focus of the Prune, my work with them in Godot will cover the majority of the gaming fix.
 
 ### Revisit when
 
