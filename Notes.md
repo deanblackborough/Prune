@@ -272,7 +272,6 @@ scene/core
   scene_interaction.hpp/.cpp
   scene_serializer.hpp/.cpp
   scene_factory.hpp/.cpp
-  scene_descriptor.hpp
   game_object.hpp/.cpp
   game_object_manager.hpp/.cpp
   collision.hpp/.cpp

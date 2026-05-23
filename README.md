@@ -62,6 +62,19 @@ The current goal is not to build a complete game. The goal is to prove that mult
 
 ![Simple Shooter](assets/repo/simple-shooter.png)
 
+## Prune is not...
+
+Prune is not currently trying to be:
+
+- A general-purpose commercial game engine
+- A plugin-based editor framework
+- An ECS experiment
+- A complete platformer engine
+- A complete shooter engine
+- A stable scene file format
+
+The project is still in the phase where concrete slices are being used to discover the right editor/runtime boundaries.
+
 ## Current architecture direction
 
 The project is moving towards this rule:
@@ -125,8 +138,6 @@ The Platformer slice currently proves:
 - Player reset
 - Scene-specific tuning panel
 - Scene-specific save/load data
-
-## Near-term focus
 
 ## Near-term focus
 
