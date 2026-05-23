@@ -163,7 +163,7 @@ Binary saves would be premature at this stage and make debugging everything that
 
 ### Why not JSON
 
-JSON would work, nearly always the choice in the Web world but this for Prune, YAML is a much better fit, all audiences can understand and parese YAML.
+JSON would work, nearly always the choice in the Web world but this for Prune, YAML is a much better fit, all audiences can understand and parse YAML.
 
 ### Revisit when
 
@@ -588,7 +588,7 @@ Its purpose is to prove:
 
 Adding waves, scoring, powerups, menus, and extensive enemy types would distract from the editor/runtime architecture.
 
-It does however need to be a bit of fun for my kids so I might add some of this stuff, it will just never be the core focus of the Prune, my work with them in Godot will cover the majority of the gaming fix.
+It does however need to be a bit of fun for my kids so I might add some of this stuff, it will just never be the core focus of Prune, my work with them in Godot will cover the majority of the gaming fix.
 
 ### Revisit when
 
