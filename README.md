@@ -75,6 +75,8 @@ Prune is not currently trying to be:
 
 The project is still in the phase where concrete slices are being used to discover the right editor/runtime boundaries.
 
+I have a [DECISIONS.md](DECISIONS.md) file which explains some of the choices I have made and why and more importantly why I have rejected to do some things.
+
 ## Current architecture direction
 
 The project is moving towards this rule:
@@ -152,7 +154,7 @@ Current priorities:
 5. Behaviour and save/load review
 6. Third scene proof candidate
 
-The current plan is tracked in [Notes.md](Notes.md).
+The current plan is tracked in [NOTES.md](NOTES.md).
 
 ## Documentation stance
 
