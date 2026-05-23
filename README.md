@@ -2,9 +2,17 @@
 
 ![Prune](assets/icon.png)
 
-Prune is a C++23 live 2D editor/runtime experiment built with SDL2, SDL2_image, Dear ImGui, and yaml-cpp.
+Prune is a C++23 live 2D editor/runtime prototype built with SDL2, SDL2_image, Dear ImGui, and yaml-cpp.
 
-It is not trying to be a traditional engine where editing happens in one mode and gameplay happens in another. The goal is a play-and-build system where the editor remains part of the runtime, and different scene types can define their own behaviour, tools, panels, inspectors, and workflows without replacing the shared editor shell.
+It is not trying to be a traditional engine where editing happens in one mode and gameplay happens in another. The goal is a play-and-build system where the editor remains part of the runtime.
+
+Different scene types can share the same editor shell while defining their own behaviour, tools, panels, inspectors, object semantics, defaults, and save data.
+
+> **Save compatibility warning**
+>
+> Prune is still pre-release. Existing `.yml` scene files may break while the object model, scene descriptors, behaviour ids, concept metadata, and scene-specific save data are being shaped.
+>
+> Save compatibility will matter later. For now, the priority is getting the scene model and editor/runtime architecture right.
 
 ## Why this exists
 
@@ -16,20 +24,35 @@ The goal is to build the editor, runtime, and interaction model together from th
 
 ## Core idea
 
-Prune is built around this split:
+Prune is built around a shared editor shell with scene-specific behaviour layered on top.
 
-- Shared editor shell
-- Shared object editing
-- Shared viewport, grid, camera, outliner, inspector, stats, controls, rendering, and save/load foundations
-- Scene-specific runtime behaviour
-- Scene-specific tools and panels
-- Scene-specific object creation rules
+The shared side owns:
+
+- Viewport
+- Grid
+- Camera foundations
+- Selection
+- Outliner
+- Generic inspector
+- Basic object editing
+- Rendering foundations
+- Save/load foundations
+- Scene creation/loading flow
+
+Each scene type owns:
+
+- Object roles and semantics
+- Runtime behaviour
+- Scene-specific tools
+- Scene-specific panels
 - Scene-specific inspector sections
-- Scene-specific serialization data
+- Scene-specific object creation rules
+- Scene-specific default layout
+- Scene-specific save data
 
 A simple shooter, platformer, artillery/tank game, card scene, or puzzle scene should be able to reuse most of the editor while still defining the parts that make that scene type unique.
 
-The current goal is not to build a full game. The goal is to prove that multiple small game slices can coexist inside the same editor/runtime without turning the scene layer into one large conditional mess.
+The current goal is not to build a complete game. The goal is to prove that multiple small game slices can coexist inside the same live editor/runtime without turning the scene layer into one large conditional mess.
 
 ### Platformer editor and runtime
 
@@ -39,6 +62,18 @@ The current goal is not to build a full game. The goal is to prove that multiple
 
 ![Simple Shooter](assets/repo/simple-shooter.png)
 
+## Current architecture direction
+
+The project is moving towards this rule:
+
+> A new scene type should only need to define what makes it different.
+
+That means a scene type should not need to reimplement generic viewport access, camera access, object manager access, grid access, generic rendering flow, generic editor interaction, or basic save/load plumbing.
+
+The current architecture is intentionally not a plugin system, not an ECS, and not a general-purpose engine API. The code is still being shaped around concrete scene slices first.
+
+The next important step is stronger object semantics: the editor needs to understand what an object means in the active scene, not just that it has a rectangle, colour, transform, and runtime behaviour string.
+
 ## Current state
 
 Prune currently has:
@@ -46,7 +81,7 @@ Prune currently has:
 - Dedicated ImGui scene viewport
 - Live object selection and dragging
 - Outliner and inspector panels
-- Inspector includes a scene-specific section which can be extended by each scene type
+- Generic inspector plus scene-specific inspector sections
 - Grid rendering and snapping
 - Editor camera and game camera separation
 - YAML scene save/load
@@ -54,10 +89,15 @@ Prune currently has:
 - Rectangle and sprite rendering
 - Basic sprite resource map
 - Shared scene renderer, interaction, camera, state, collision, and serialization pieces
-- Simple Shooter slice
-- Platformer slice
+- Shared `WorldScene` foundation for scene types
+- Simple Shooter scene slice
+- Platformer scene slice
 
 ## Current scene slices
+
+The current scenes are proof slices. They are deliberately small, but they exercise different parts of the editor/runtime boundary.
+
+They are not intended to be complete games yet.
 
 ### Simple Shooter
 
@@ -73,10 +113,6 @@ The Simple Shooter slice currently proves:
 - Scene-specific tuning panel
 - Scene-specific save/load data
 
-This slice is useful because it has runtime objects, spawned bullets, a persistent enemy, and top-down movement.
-
-*It is still deliberately small. Before adding more tooling, this slice needs to be tightened so it feels like a clear demo rather than only an architecture test.*
-
 ### Platformer
 
 The Platformer slice currently proves:
@@ -90,13 +126,22 @@ The Platformer slice currently proves:
 - Scene-specific tuning panel
 - Scene-specific save/load data
 
-This slice is useful because it has different movement rules, different object semantics, different camera expectations, and different tuning values from the shooter.
-
-*It is still deliberately small. Before adding more tooling, this slice needs to be tightened so it feels like a clear demo rather than only an architecture test.*
+## Near-term focus
 
 ## Near-term focus
 
-I have a [notes](Notes.md) file which details everything I will be doing to clean up the core concept and prove Prune works and is worth building on.
+The next development phase is focused on making the scene-type model stronger before adding more scenes.
+
+Current priorities:
+
+1. Stronger object semantics
+2. Targeted duplication removal between scene types
+3. Clearer scene folder organisation
+4. First real editor tooling pass
+5. Behaviour and save/load review
+6. Third scene proof candidate
+
+The current plan is tracked in [Notes.md](Notes.md).
 
 ## Documentation stance
 
@@ -107,7 +152,7 @@ Useful documentation now:
 - README explaining the project goal and current architecture direction
 - Notes tracking next architecture work
 - Short comments where C++ intent is not obvious
-- Scene-type checklist once the shared shell exists
+- Scene-type checklist once object semantics and scene descriptors settle
 
 Too early:
 

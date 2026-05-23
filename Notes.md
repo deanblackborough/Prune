@@ -1,340 +1,439 @@
-# Notes
+# Prune dev plan
 
-## Current focus
+## Where we are
 
-Prune now has two working scene slices:
+Prune now has enough evidence to make architectural decisions instead of guessing.
+
+There are two working scene slices:
 
 - Simple Shooter
 - Platformer
 
-That is enough to stop guessing about the architecture and start fixing what the second slice has exposed.
+The second slice has proven the basic idea: different scene types can share the editor shell while owning their own behaviour, tools, inspectors, defaults, and save data.
 
-The immediate priority is not more tools and not another game type. The immediate priority is making the existing two-slice architecture cleaner so the next scene type does not multiply duplication.
+The next phase should not be another scene type yet. The next phase should make the two existing scene types easier to reason about, easier to extend, and safer to use as examples before more tooling is built on top.
 
-## Current assessment
+**Save compatibility warning**
 
-The project is moving in the right direction.
+>
+> During this phase, existing `.yml` scene files are allowed to break.
+>
+> The object model, scene descriptors, behaviour ids, concept metadata, and scene-specific save data are still being shaped. Do not spend time writing migration code yet.
+>
+> Once the scene-type model, object semantics, and first real editor tooling pass are stable enough for a prototype release, save compatibility rules can be introduced properly.
 
-The editor shell is real. The viewport, outliner, inspector, grid, camera, renderer, interaction, object manager, YAML save/load, and scene factory are all useful foundations.
+## Priorities
 
-The problem is that the concrete scene classes still carry too much shared plumbing. SimpleShooterScene and PlatformerScene should eventually read mostly as scene-specific code, but right now they still repeat general scene lifecycle, state access, viewport handling, camera access, object manager access, save/load shape, and editor interaction calls.
+> Stronger object semantics first, then targeted duplication removal, then editor tooling.
 
-That is fine for proving the second scene. It should not become the permanent pattern.
+The main problem exposed by the current code is that objects still rely too much on string behaviours, flags, colour, and scene-local interpretation. Before adding real editor tools, the editor needs a clearer answer to this question:
 
-## Non-goals for now
+> What is this object in this scene, and which systems are allowed to manipulate it?
+
+Once that is clearer, the duplicate scene save/load wrappers, scene menu registration, object creation helpers, and inspector wording become easier to clean up without over-abstracting.
+
+## Prune principle
+
+A new scene type should only need to define what makes it different.
+
+It should not need to reimplement generic viewport access, camera access, object manager access, grid access, generic render/update flow, generic save/load plumbing, or generic editor interaction.
+
+Scene-specific code should still own:
+
+- object roles
+- behaviour rules
+- default object layout
+- runtime state/options
+- scene-specific inspector sections
+- scene-specific creation actions
+- scene-specific save data
+
+### Non-goals for this phase
 
 - Do not build a plugin system.
-- Do not build a full ECS.
-- Do not rewrite GameObject completely.
-- Do not over-document unstable internals.
-- Do not make the platformer a full game yet.
+- Do not build an ECS.
+- Do not rewrite `GameObject` from scratch.
+- Do not add a third scene yet.
+- Do not build undo/redo yet.
+- Do not create a full public API.
+- Do not make either slice into a complete game.
 
-## Issues to fix
+### What is working
 
-### 1. Shared scene shell extraction (Done, for now)
+- `WorldScene` is the right direction. It has already removed a lot of duplicated scene shell code.
+- `SimpleShooterScene` and `PlatformerScene` are now visibly scene-specific rather than fully standalone scenes.
+- Scene-specific concepts exist in `simple_shooter_concepts` and `platformer_concepts`.
+- Scene-specific factories are useful and should stay.
+- Scene-specific serializers are useful and should stay.
+- The generic inspector plus scene-specific inspector section is the right model.
+- The editor/runtime boundary is much clearer than it was before the second scene existed.
 
-SimpleShooterScene and PlatformerScene repeat too much of the same shell work.
+### What is not working
 
-Repeated responsibilities include:
+- Object meaning is still stringly typed through `runtime.behaviour`.
+- `runtime.behaviour` is doing too many jobs: role, behaviour, collision meaning, inspector meaning, and runtime query key.
+- Concept metadata is duplicated in shape across scene types.
+- The outliner and inspector still depend on each scene translating objects on demand rather than objects carrying a clearer scene role.
+- Save/load wrappers in the concrete scenes are very similar.
+- Scene type strings are repeated in scene classes and factory code.
+- The scene creation menu is hard-coded in UI code.
+- Add-at-view-centre logic is duplicated.
+- The scene folder is now too flat.
 
-- Owning SceneState
-- Owning SceneRenderer
-- Owning SceneInteraction
-- Viewport get/set
-- Object manager access
-- Grid options access
-- Scene options access
-- Camera access
-- Common update shape
-- Common render shape
-- Common reset/default lifecycle shape
-- Common save/load shape
+## Phase 1 — Stronger object semantics
 
-Suggested direction:
+Goal: make object intent explicit enough that editor tools can make sensible decisions.
 
-- Introduce a shared world scene that owns common state and editor/runtime plumbing.
-- Let concrete scenes implement only scene-specific behaviour, defaults, tools, inspector sections, and serialization data.
-- Keep the design boring and explicit.
+### Tasks
 
-A good outcome would be that a new scene type does not need to reimplement object manager getters, viewport getters, camera getters, and generic render/update plumbing.
+- [ ] Introduce a small shared object concept description type.
 
-### 2. Clearer editor/runtime boundary (Partially done, but still some work to do)
+Suggested shape:
 
-Current scene update flow still mixes these concerns:
+```cpp
+struct ObjectConcept {
+    std::string_view id;
+    std::string_view label;
+    std::string_view purpose;
+    std::string_view collision_rule;
+    bool runtime_only = false;
+    bool selectable = true;
+    bool editable = true;
+};
+```
 
-- Runtime behaviour update
-- Editor interaction update
-- Camera follow update
-- Viewport input gating
+This does not need to become a plugin API. It is just a shared way for scene types to describe objects.
 
-Suggested direction:
-
-- Shared shell owns editor interaction and generic camera/update sequencing.
-- Scene type owns runtime update.
-- Scene type receives a small context rather than reaching into everything directly where possible.
-
-The boundary should be clear enough that when a future transform gizmo is added, it obviously belongs to the editor/tooling side, not to SimpleShooterScene or PlatformerScene.
-
-### 3. Real scene-specific inspector support (Done, but still very basic)
-
-The interface has `draw_scene_inspector(GameObject& selected)`, and Ui calls it after the generic inspector. That is the right seam.
-
-The current implementation is effectively empty.
+- [ ] Add a scene-level function for concept lookup.
 
 Suggested direction:
 
-- Keep generic object properties in the generic inspector.
-- Add scene-owned sections only when the selected object has a scene-specific role.
-- Make these sections explanatory as well as editable.
+```cpp
+virtual ObjectConcept concept_for(const GameObject& object) const = 0;
+```
 
-The first pass is now implemented.
+Then `object_role_label()` can become a small wrapper around this.
 
-Simple Shooter and Platformer both add scene-specific selected-object sections after the generic inspector. These sections explain object role, behaviour, runtime persistence, and scene meaning without moving generic transform/render/flag editing out of the generic inspector.
+- [ ] Stop using colour as implicit meaning anywhere in explanations or logic.
 
-This is enough for now. Future passes can make some of these fields editable where it makes sense.
+Colour remains presentation only.
+
+- [ ] Separate object role from runtime behaviour, or at minimum wrap access so the code stops directly comparing raw strings everywhere.
+
+Short-term acceptable option:
+
+```cpp
+object.runtime.behaviour == platformer_ids::hazard_behaviour
+```
+
+becomes hidden behind:
+
+```cpp
+platformer_concepts::is_hazard(object)
+```
+
+Longer-term better option:
+
+```cpp
+struct SceneObjectBinding {
+    std::string role;
+    std::string behaviour;
+};
+```
+
+Do not do the longer-term option unless the small concept metadata pass shows it is needed.
+
+- [ ] Make editor permissions derive from object semantics where possible.
 
 Examples:
 
-Simple Shooter:
+- runtime projectiles should not be renameable, cloneable, or persistent
+- spawn markers can be selectable and movable
+- player start markers can be selectable and movable
+- generated/runtime enemies can be hidden from normal editing unless explicitly debug-visible
 
-- Player: movement speed, facing, shooting status
-- Enemy: enemy speed, respawn role
-- Bullet: runtime object, lifetime, velocity
-- Block: solid obstacle role
+- [ ] Update generic inspector wording so it distinguishes generic object data from scene meaning.
 
-Platformer:
+Generic inspector:
 
-- Player: grounded state, velocity, jump/move tuning
-- Ground/platform: solid platform role
-- Hazard: causes player reset on overlap
+- transform
+- size
+- render
+- collision flag
+- editor flags
+- lifecycle state
 
-This will make the editor demonstrate why scene-specific inspectors matter.
+Scene inspector:
 
-### 4. Stronger scene object semantics (Partially done)
+- player
+- hazard
+- wall
+- enemy
+- projectile
+- spawn marker
+- scene-specific meaning
 
-GameObject is better grouped now, but the meaning of an object is still mostly implied by fields like `runtime.behaviour`, `collision.solid`, colour, and editor flags.
+### Complete when
 
-The next pass should make object intent clearer.
+- Selecting any authored object clearly tells you what it means in the active scene.
+- Runtime objects are clearly identified as runtime-created.
+- Hazards, walls, platforms, projectiles, enemies, and spawn markers do not rely on colour to explain behaviour.
+- Scene-specific concept metadata is reusable by inspector, outliner, and future tools.
 
-Questions to answer:
+## Phase 2 — Targeted duplication removal
 
-- Is this an authored object or runtime-spawned object?
-- What scene role does it have?
-- Is it solid, hazardous, decorative, player-controlled, enemy-controlled, projectile, terrain, or spawn-only?
-- Which system is allowed to create it?
-- Which system is allowed to delete it?
-- Should the editor expose the fields directly or through scene-specific controls?
+Goal: remove duplication that now has a proven shared concept.
 
-Important example:
+### Tasks
 
-A platformer hazard should work because it has a platformer hazard role/behaviour that the Platformer runtime checks. The red colour is only presentation.
+- [ ] Move generic save/load wrapper flow into `WorldScene` if it stays the same for both scenes.
 
-### 5. Tighten Platformer into a cleaner demo slice
+Concrete scenes should ideally only provide:
 
-The Platformer slice is useful but still feels like an architecture probe.
-
-Improve it before moving on.
-
-Work to consider:
-
-- Updated to use concepts like the top-down shooter
-- Better initial level layout
-- Better default camera/zoom expectations
-- Clear player start/reset point
-- Clear hazard placement
-- Clear platform names
-- Grounded state visible in the platformer panel or inspector
-- Hazard behaviour visible in inspector
-- Controls updated so A/D/W/Space behaviour is obvious
-- Consistent pause behaviour with Simple Shooter
-- Sensible tuning values that feel deliberate
-
-This should stay small. The target is a convincing slice, not a complete platformer.
-
-### 6. Tighten shooter into a cleaner demo slice
-
-Focus areas:
-
-- Keep shooter-specific behaviour inside the shooter scene/control code, not the generic inspector.
-- Make the player, enemy, projectile, wall, and spawn objects explicit concepts instead of relying mostly on colour, flags, or loose behaviour IDs.
-- Remove duplicated tuning values from generic UI panels and keep them in the shooter-specific controls.
-- Make collision rules obvious:
-  - player movement blocked by solid walls
-  - bullets hit enemies
-  - bullets stop at walls
-  - enemies damage or collide with the player only if that behaviour is part of the slice
-- Ensure the outliner and inspector describe what each object is in game terms, not just rectangle data.
-- Keep the slice deliberately small:
-  - one player
-  - simple movement
-  - one projectile type
-  - one enemy type
-  - basic spawn/reset loop if needed
-
-This should stay small. The target is a convincing slice, not a complete shooter.
-
-### 7. Organise scene types into folders
-
-The scene folder is now too flat.
+- scene type id
+- scene-specific save node writing
+- scene-specific load node reading
+- post-load validation/repair
 
 Suggested direction:
 
+```cpp
+std::string_view scene_type_id() const noexcept override;
+void save_scene_data(YAML::Node& root) const override;
+bool load_scene_data(const YAML::Node& root, std::string& error) override;
+bool restore_loaded_scene(SceneState& state, std::string& error) override;
+```
+
+Keep this boring. Do not make it generic beyond current needs.
+
+- [ ] Centralise scene type ids.
+
+Current ids:
+
+- `simple_shooter`
+- `platformer`
+
+They should not be repeated in multiple files.
+
+- [ ] Replace hard-coded scene menu entries with static scene descriptors.
+
+Suggested descriptor:
+
+```cpp
+struct SceneDescriptor {
+    SceneType type;
+    std::string_view id;
+    std::string_view label;
+    std::string_view default_file_path;
+};
+```
+
+This is not dynamic plugin registration. It is just a static list.
+
+- [ ] Extract common view-centre spawn helper into `WorldScene`.
+
+Both scenes need “create object around active camera centre, optionally snapped to grid”.
+
+- [ ] Remove redundant public accessors from concrete scenes unless another system genuinely needs them.
+
+For example, avoid exposing scene-specific state just because it is convenient.
+
+### Complete when
+
+- Adding a third scene does not require editing unrelated UI menu code in several places.
+- Save/load structure is consistent between scene types.
+- Scene type ids exist in one place.
+- View-centre object creation is shared.
+
+## Phase 3 — Folder organisation
+
+Target time: 2 to 3 days.
+
+Goal: make ownership obvious before the project gets larger.
+
+Suggested structure:
+
 ```text
 src/prune/scene/core
-src/prune/scene/simple_shooter
+src/prune/scene/top_down_shooter? (simple_shooter now)
 src/prune/scene/platformer
-src/prune/scene/artillery
 ```
 
 Possible ownership:
 
-`scene/core`:
+```text
+scene/core
+  scene.hpp
+  world_scene.hpp/.cpp
+  scene_state.hpp
+  scene_camera.hpp/.cpp
+  scene_descriptor.hpp/.cpp
+  scene_renderer.hpp/.cpp
+  scene_interaction.hpp/.cpp
+  scene_serializer.hpp/.cpp
+  scene_factory.hpp/.cpp
+  scene_descriptor.hpp
+  game_object.hpp/.cpp
+  game_object_manager.hpp/.cpp
+  collision.hpp/.cpp
+  player_controller.hpp/.cpp (Do we need this at the core level? Should it be scene specific?)
 
-- Scene interface
-- Shared scene shell/base
-- SceneState
-- SceneCamera
-- SceneRenderer
-- SceneInteraction
-- SceneSerializer
-- GameObject
-- GameObjectManager
-- Collision helpers
-- SceneFactory, unless factory moves higher-level later
+scene/top_down_shooter (simple_shooter now)
+  top_down_shooter_scene.hpp/.cpp
+  top_down_shooter_behaviour.hpp/.cpp
+  top_down_shooter_concepts.hpp/.cpp
+  top_down_shooter_factory.hpp/.cpp
+  top_down_shooter_serializer.hpp/.cpp
+  top_down_shooter_state.hpp
+  top_down_shooter_ids.hpp
 
-`scene/simple_shooter`:
+scene/platformer
+  platformer_scene.hpp/.cpp
+  platformer_behaviour.hpp/.cpp
+  platformer_concepts.hpp/.cpp
+  platformer_factory.hpp/.cpp
+  platformer_serializer.hpp/.cpp
+  platformer_state.hpp
+  platformer_ids.hpp
+```
 
-- SimpleShooterScene
-- SimpleShooterBehaviour
-- SimpleShooterFactory
-- SimpleShooterSerializer
-- SimpleShooterState
-- SimpleShooter IDs
+Do this after Phase 2, not before. Moving files first will make useful diffs harder to read.
 
-`scene/platformer`:
+### Complete when
 
-- PlatformerScene
-- PlatformerBehaviour
-- PlatformerFactory
-- PlatformerSerializer
-- PlatformerState
-- Platformer IDs
+- Core scene infrastructure is visually separated from scene-specific code.
+- CMake is updated.
+- Include paths are consistent.
+- No behaviour changes are included in the folder move branch.
 
-This is a structure change only. Do it when the shared shell work starts, not randomly in isolation.
+## Phase 4 — First real editor tooling pass
 
-### 8. Duplication in the code (Partially done, but still some work to do)
+Goal: start proving Prune is a game editor, not just two scenes with some simple editor panels showing data and allowing minor changes.
 
-Known duplication areas:
+### Tooling order
 
-- Concrete scene lifecycle
-- Concrete scene state accessors
-- Viewport accessors
-- Camera accessors
-- Save/load wrapper structure
-- Spawn-at-view-centre logic
-- Scene-specific panel setup shape
-- Scene creation menu entries
-- Scene type string handling
+1. Transform gizmo / selected object handles
+2. Collision/debug overlays
+3. Scene-specific creation actions
+4. Better sprite picker
+
+### First target: transform gizmo
+
+Keep it small.
+
+- [ ] Draw a simple selected-object outline/handle overlay in the viewport.
+- [ ] Allow moving selected authored objects from a visible handle.
+- [ ] Respect `object.editor.movable`.
+- [ ] Respect viewport input focus.
+- [ ] Keep runtime objects protected by default.
+- [ ] Do not add rotate/scale yet.
+
+### Second target: debug overlays
+
+- [ ] Toggle collision bounds.
+- [ ] Toggle runtime object markers.
+- [ ] Toggle scene role labels above objects.
+- [ ] Make overlays generic but role labels scene-specific.
+
+### Third target: scene-specific creation actions
+
+Move beyond raw “Add Wall” / “Add Platform” buttons.
 
 Suggested direction:
 
-- Remove duplication only when there is a clear shared concept.
-- Keep scene-specific code scene-specific.
-- Do not abstract behaviour just because two files look similar.
+- shared creation panel shell
+- scene supplies creation actions
+- action creates an object using scene factory
+- placement uses shared view-centre helper
+- created object is selected
 
-The useful split is not “no duplication at all”. The useful split is “new scene types should only define what makes them different”.
+### Complete when
 
-### 9. Reduce new scene boilerplate (On the way, new scene is easier but still too much code)
+- The editor has visible manipulation affordances in the viewport.
+- Scene-specific object creation feels like a tool system beginning, not just buttons in a panel.
+- Runtime/editor protection rules are visible in actual tool behaviour.
 
-Adding a third scene should not mean creating a large pile of files and repeating the same code.
+## Phase 5 — Behaviour and save/load review
 
-Target pattern for a small scene:
+Goal: deliberate review after semantics and tooling expose the next problems.
 
-- One scene class
-- One state/options file
-- One behaviour file if needed
-- One factory/defaults file if needed
-- One serializer file only if scene-specific save data exists
-- One tooling panel only if it has scene-specific controls
-- Optional inspector section only if useful
+### Review areas
 
-The shared shell should make unused pieces optional.
+- [ ] Input focus and viewport gating.
+- [ ] Game camera/editor camera switching.
+- [ ] Pause behaviour across scenes.
+- [ ] Save/load round trips for both scenes.
+- [ ] Runtime object cleanup.
+- [ ] Object selection after save/load/new scene.
+- [ ] Collision consistency.
+- [ ] Scene factory behaviour.
+- [ ] Default scene layouts.
+- [ ] Naming conventions.
 
-The project does not need dynamic plugins yet. A static registration/list is enough.
+### Complete when
 
-### 10. Documentation level
+- Both slices still compile and run cleanly.
+- New scene, save scene, load scene, pause, select, drag, and inspect are stable.
+- No runtime-only object is accidentally persisted.
+- The editor does not manipulate protected runtime objects unless explicitly allowed.
 
-Some documentation is useful now, but deep documentation is too early.
+## Phase 6 — Third scene proof candidate
 
-Useful now:
+Recommended third scene: artillery/tank.
 
-- README with current goal and architecture direction
-- Notes with immediate architecture plan
-- A short scene-type checklist after the shared shell exists
-- Comments explaining non-obvious C++/SDL/ImGui decisions
+Minimum slice:
 
-Too early now:
+- two tanks
+- generated simple line terrain
+- turn state
+- current player indicator
+- angle control
+- power control
+- fire projectile
+- projectile arc
+- collision with terrain or tank
+- reset round
 
-- Full architecture guide
-- Plugin guide
-- Public API docs
-- Long tutorials
-
-The architecture is still moving. Document intent and decisions, not every class in detail.
-
-## Next steps
-
-Once the boundaries are cleaner, continue editor tooling.
-
-Good candidates:
-
-- Transform gizmo
-- Better sprite picker
-- Collision/debug overlays
-- Object duplication improvements
-- Basic scene-specific creation tools
-
-## Possible third scene: artillery/tank
-
-A simple artillery/tank scene is a good third slice candidate.
-
-Minimum version:
-
-- Two tanks
-- Generated line terrain
-- Turn state
-- Current player indicator
-- Angle control
-- Power control
-- Fire projectile
-- Projectile arc
-- Collision with terrain or tank
-- Reset/restart round
-
-Why this is a strong architecture test:
+Why this is the right third test:
 
 - It is turn-based, not continuous movement.
-- It uses generated terrain.
-- It has two controlled actors.
-- It needs a very different scene-specific panel.
-- It needs aiming/power tooling rather than movement tuning.
-- It uses projectile behaviour differently from Simple Shooter.
+- It needs generated scene data.
+- It has two player-controlled actors.
+- It has a very different scene-specific panel.
+- It uses projectiles differently from Simple Shooter.
+- It needs scene-specific tools that are not movement tuning.
 
-This is likely a better next architecture test than a card game. A card game is still interesting, but it would force UI and object model questions that are probably too early while the scene shell is still settling.
+Do not start with a card game yet. A card scene is interesting, but it will pull the project towards UI layout, hands, decks, zones, drag/drop rules, and data modelling before the world-scene editor tooling is mature.
 
-## Later backlog
+## Phase 7 — Prototype release preparation
 
-- Transform gizmos
-- Rotate and scale tools
+Goal: make Prune presentable as a prototype milestone.
+
+### Tasks
+
+- [ ] Update README screenshots.
+- [ ] Update README current-state section.
+- [ ] Add a short scene-type checklist.
+- [ ] Add a short “how to add a scene type” developer note, but keep it high level.
+- [ ] Confirm clean build from scratch.
+- [ ] Confirm assets load relative to expected working directory.
+- [ ] Confirm default scene files are sensible.
+- [ ] Tag as prototype/pre-release, not stable API.
+
+## Later...
+
 - Undo/redo
 - Multi-select
-- Object duplication improvements
-- Scene-specific creation tools
-- Better sprite system
-- Facing/animation support
+- Rotate tool
+- Scale tool
+- Object duplication workflow
+- Scene-specific tool palettes
+- Better sprite/resource browser
+- Animation/facing support
 - Audio hooks
-- Collision visualisation
-- Runtime object overlays
-- Scene switching polish
-- Example projects
+- Runtime object overlay controls
 - Packaging/build polish
+- Example projects
+- Card scene
+- Puzzle scene
+- More robust scene file versioning
