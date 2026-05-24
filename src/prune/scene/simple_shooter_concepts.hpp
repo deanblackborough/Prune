@@ -1,6 +1,7 @@
 #pragma once
 
 #include "prune/scene/game_object.hpp"
+#include "prune/scene/object_concept.hpp"
 
 namespace prune::simple_shooter_concepts {
 
@@ -24,5 +25,7 @@ namespace prune::simple_shooter_concepts {
     [[nodiscard]] const char* label(ObjectKind kind) noexcept;
     [[nodiscard]] const char* purpose(ObjectKind kind) noexcept;
     [[nodiscard]] const char* collision_rule(ObjectKind kind) noexcept;
+    [[nodiscard]] ObjectConcept describe(ObjectKind kind) noexcept;
+    [[nodiscard]] ObjectConcept describe_object(const GameObject& object) noexcept;
 
 }

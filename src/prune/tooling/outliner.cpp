@@ -36,6 +36,7 @@ namespace prune {
 
             for (const auto& object : objects.objects()) {
                 const std::string label = object_label(object, scene);
+                const ObjectConcept object_concept = scene.object_concept_for(object);
 
                 if (!filter.empty() &&
                     !contains_case_insensitive(label, filter) &&
@@ -44,6 +45,13 @@ namespace prune {
                 }
 
                 const bool is_selected = object.identity.id == objects.selected_id();
+
+                if (!object_concept.selectable || !object.editor.selectable) {
+                    ImGui::BeginDisabled();
+                    ImGui::Selectable(label.c_str(), is_selected);
+                    ImGui::EndDisabled();
+                    continue;
+                }
 
                 if (ImGui::Selectable(label.c_str(), is_selected)) {
                     objects.select(object.identity.id);
@@ -56,9 +64,15 @@ namespace prune {
     std::string Outliner::object_label(const GameObject& object, const Scene& scene)
     {
         std::string label = "[";
-        label += scene.object_role_label(object);
+        const ObjectConcept object_concept = scene.object_concept_for(object);
+
+        label += object_concept.label;
         label += "] ";
         label += object.identity.name;
+
+        if (object_concept.runtime_only) {
+            label += " (runtime)";
+        }
 
         if (!object.lifecycle.active) {
             label += " (inactive)";

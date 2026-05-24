@@ -26,11 +26,6 @@ namespace prune {
 
     namespace {
 
-        [[nodiscard]] const char* object_type_label(GameObjectType type) noexcept
-        {
-            return type == GameObjectType::Runtime ? "Runtime" : "Authored";
-        }
-
         [[nodiscard]] const char* bool_label(bool value) noexcept
         {
             return value ? "Yes" : "No";
@@ -170,9 +165,9 @@ namespace prune {
         ImGui::End();
     }
 
-    std::string SimpleShooterScene::object_role_label(const GameObject& object) const
+    ObjectConcept SimpleShooterScene::object_concept_for(const GameObject& object) const
     {
-        return simple_shooter_concepts::label(simple_shooter_concepts::kind_for(object));
+        return simple_shooter_concepts::describe_object(object);
     }
 
     SimpleShooterOptions& SimpleShooterScene::get_simple_shooter_options() noexcept
@@ -379,25 +374,40 @@ namespace prune {
 
         const auto kind = simple_shooter_concepts::kind_for(selected);
 
-        tooling::imgui::property_table::text("Concept", simple_shooter_concepts::label(kind));
-        tooling::imgui::property_table::text("Object Type", object_type_label(selected.identity.type));
-        tooling::imgui::property_table::text("Runtime Saved", bool_label(selected.runtime.persistent));
-        tooling::imgui::property_table::text_wrapped("Purpose", simple_shooter_concepts::purpose(kind));
-        tooling::imgui::property_table::text_wrapped("Collision", simple_shooter_concepts::collision_rule(kind));
-
         if (kind == simple_shooter_concepts::ObjectKind::Player) {
             tooling::imgui::property_table::text("Facing", direction_label(selected.motion.facing));
+            tooling::imgui::property_table::text("Controller Speed", std::to_string(static_cast<int>(m_simple_shooter_state.player_controller.speed())).c_str());
+            tooling::imgui::property_table::text("Fire Ready", bool_label(m_simple_shooter_state.fire_cooldown_remaining <= 0.0f));
+
+            char cooldown_buffer[32];
+            std::snprintf(cooldown_buffer, sizeof(cooldown_buffer), "%.2fs", m_simple_shooter_state.fire_cooldown_remaining);
+            tooling::imgui::property_table::text("Cooldown Remaining", cooldown_buffer);
+        }
+        else if (kind == simple_shooter_concepts::ObjectKind::Enemy) {
+            tooling::imgui::property_table::text("Tracked Enemy", bool_label(selected.identity.id == m_simple_shooter_state.enemy_id));
+            tooling::imgui::property_table::text("Enemy Speed", std::to_string(static_cast<int>(m_simple_shooter_state.options.enemy_speed)).c_str());
+            tooling::imgui::property_table::text("Spawn Object Id", std::to_string(m_simple_shooter_state.enemy_spawn_id).c_str());
+            tooling::imgui::property_table::text("Max Live Enemies", std::to_string(m_simple_shooter_state.options.max_live_enemies).c_str());
         }
         else if (kind == simple_shooter_concepts::ObjectKind::Projectile) {
             char lifetime_buffer[32];
             std::snprintf(lifetime_buffer, sizeof(lifetime_buffer), "%.2fs", selected.lifecycle.remaining);
+
             tooling::imgui::property_table::text("Remaining", lifetime_buffer);
+            tooling::imgui::property_table::text("Projectile Speed", std::to_string(static_cast<int>(m_simple_shooter_state.options.projectile_speed)).c_str());
+            tooling::imgui::property_table::text("Configured Lifetime", std::to_string(m_simple_shooter_state.options.projectile_lifetime).c_str());
         }
         else if (kind == simple_shooter_concepts::ObjectKind::Wall) {
-            tooling::imgui::property_table::text("Solid", bool_label(selected.collision.solid));
+            tooling::imgui::property_table::text("Blocks Player", bool_label(selected.collision.solid));
+            tooling::imgui::property_table::text("Stops Projectiles", bool_label(selected.collision.solid));
         }
         else if (kind == simple_shooter_concepts::ObjectKind::Spawn) {
-            tooling::imgui::property_table::text("Used By", "Enemy reset loop");
+            tooling::imgui::property_table::text("Tracked Spawn", bool_label(selected.identity.id == m_simple_shooter_state.enemy_spawn_id));
+            tooling::imgui::property_table::text("Used By", "Enemy respawn/reset loop");
+            tooling::imgui::property_table::text("Enemy Object Id", std::to_string(m_simple_shooter_state.enemy_id).c_str());
+        }
+        else {
+            tooling::imgui::property_table::text("Shooter Behaviour", "No Simple Shooter behaviour is assigned");
         }
 
         tooling::imgui::property_table::end();

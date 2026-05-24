@@ -125,7 +125,7 @@ namespace prune {
                 WorldSceneContext context = scene.world_scene_context();
                 if (context.available()) {
                     m_inspector.draw(
-                        scene.get_object_manager(),
+                        scene,
                         *context.grid_options,
                         context.camera->active()
                     );
