@@ -57,6 +57,12 @@ namespace prune {
 
         [[nodiscard]] virtual std::string_view scene_name() const noexcept = 0;
 
+        // @todo - We need to implement this or something like it as there is a disconnect between whether something is selectable and the tools that operate on them, for example transform
+        [[nodiscard]] virtual bool object_is_selectable(const GameObject& object) const
+        {
+            return object.editor.selectable && object_concept_for(object).selectable;
+        }
+
         [[nodiscard]] virtual ObjectConcept object_concept_for(const GameObject& object) const
         {
             return object_concepts::fallback_for(object);
