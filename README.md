@@ -112,7 +112,7 @@ Prune currently has:
 
 Prune separates shared object editing from scene-specific behaviour.
 
-The generic inspector shows shared object data and scene meaning; the scene-specific inspector shows what that object does in the current scene type.
+The generic inspector shows shared object data and scene meaning; the scene-specific inspectors show what that object does in the current scene type.
 
 ## Current scene slices
 
