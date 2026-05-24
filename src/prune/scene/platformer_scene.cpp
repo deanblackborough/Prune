@@ -21,11 +21,6 @@ namespace prune {
 
     namespace {
 
-        [[nodiscard]] const char* object_type_label(GameObjectType type) noexcept
-        {
-            return type == GameObjectType::Runtime ? "Runtime" : "Authored";
-        }
-
         [[nodiscard]] const char* bool_label(bool value) noexcept
         {
             return value ? "Yes" : "No";
@@ -190,14 +185,6 @@ namespace prune {
         }
 
         const auto kind = platformer_concepts::kind_for(selected);
-        const ObjectConcept object_concept = object_concept_for(selected);
-
-        tooling::imgui::property_table::text("Scene Concept", object_concept.label.data());
-        tooling::imgui::property_table::text("Object Type", object_type_label(selected.identity.type));
-        tooling::imgui::property_table::text("Runtime Created", bool_label(object_concept.runtime_only));
-        tooling::imgui::property_table::text("Runtime Saved", bool_label(selected.runtime.persistent));
-        tooling::imgui::property_table::text_wrapped("Purpose", object_concept.purpose.data());
-        tooling::imgui::property_table::text_wrapped("Collision Rule", object_concept.collision_rule.data());
 
         if (kind == platformer_concepts::ObjectKind::Player) {
             char velocity_buffer[64];
@@ -211,15 +198,26 @@ namespace prune {
 
             tooling::imgui::property_table::text("Velocity", velocity_buffer);
             tooling::imgui::property_table::text("Grounded", bool_label(m_platformer_state.player_grounded));
+            tooling::imgui::property_table::text("Move Speed", std::to_string(static_cast<int>(m_platformer_state.options.move_speed)).c_str());
+            tooling::imgui::property_table::text("Jump Velocity", std::to_string(static_cast<int>(m_platformer_state.options.jump_velocity)).c_str());
+            tooling::imgui::property_table::text("Gravity", std::to_string(static_cast<int>(m_platformer_state.options.gravity)).c_str());
+            tooling::imgui::property_table::text("Reset Target Id", std::to_string(m_platformer_state.player_start_id).c_str());
         }
         else if (kind == platformer_concepts::ObjectKind::PlayerStart) {
+            tooling::imgui::property_table::text("Tracked Reset Marker", bool_label(selected.identity.id == m_platformer_state.player_start_id));
             tooling::imgui::property_table::text("Used By", "Hazard and fall reset");
+            tooling::imgui::property_table::text("Player Object Id", std::to_string(m_platformer_state.player_id).c_str());
         }
         else if (kind == platformer_concepts::ObjectKind::Ground) {
-            tooling::imgui::property_table::text("Solid", bool_label(selected.collision.solid));
+            tooling::imgui::property_table::text("Collision Surface", bool_label(selected.collision.solid));
+            tooling::imgui::property_table::text("Can Ground Player", bool_label(selected.collision.solid));
         }
         else if (kind == platformer_concepts::ObjectKind::Hazard) {
-            tooling::imgui::property_table::text("Behaviour", "Reset player on contact");
+            tooling::imgui::property_table::text("Resets Player", "On contact");
+            tooling::imgui::property_table::text("Reset Target Id", std::to_string(m_platformer_state.player_start_id).c_str());
+        }
+        else {
+            tooling::imgui::property_table::text("Platformer Behaviour", "No Platformer behaviour is assigned");
         }
 
         tooling::imgui::property_table::end();

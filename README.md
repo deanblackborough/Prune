@@ -108,6 +108,12 @@ Prune currently has:
 - Simple Shooter scene slice
 - Platformer scene slice
 
+## Editor model
+
+Prune separates shared object editing from scene-specific behaviour.
+
+The generic inspector shows shared object data and scene meaning; the scene-specific inspector shows what that object does in the current scene type.
+
 ## Current scene slices
 
 The current scenes are proof slices. They are deliberately small, but they exercise different parts of the editor/runtime boundary.
