@@ -115,7 +115,7 @@ Prune separates shared object editing from scene-specific behaviour.
 The generic inspector shows shared object data and scene meaning; the scene-specific inspectors show what that object does in the current scene type.
 
 - Scene meaning: What this object is in the context of the scene, authored or created by the runtime, selectable, editable, the purpose and collision rules.
-- Scene type section: What the object it doing in the scene, for example if the player, are they ready to show, is there a cooldown, the current speed, and so on.
+- Scene type section: What the object is doing in the scene; for example, if it is the player, are they ready to shoot, is there a cooldown, what is the current speed, and so on.
 
 ## Current scene slices
 
