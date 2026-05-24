@@ -1,6 +1,10 @@
 #pragma once
 
+#include <string>
+#include <string_view>
+
 #include <SDL2/SDL.h>
+#include <yaml-cpp/yaml.h>
 
 #include "prune/core/input.hpp"
 #include "prune/scene/game_object.hpp"
@@ -17,6 +21,9 @@ namespace prune {
         void update(float dt, const Input& input) final;
         void update_editor(float dt, const Input& input) final;
         void render(SDL_Renderer* renderer) final;
+
+        [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) const final;
+        [[nodiscard]] bool load_from_file(std::string_view path, std::string& error) final;
 
         void set_viewport(const SceneViewport& viewport) noexcept final;
         [[nodiscard]] const SceneViewport& get_viewport() const noexcept final { return m_state.viewport; }
@@ -35,7 +42,15 @@ namespace prune {
         [[nodiscard]] bool scene_keyboard_input_enabled() const noexcept;
         [[nodiscard]] bool scene_mouse_input_enabled() const noexcept;
 
+        [[nodiscard]] Transform view_center_spawn_position(int width, int height) const;
+        [[nodiscard]] Transform first_free_view_center_spawn_position(const GameObject& object) const;
+        [[nodiscard]] bool is_space_free(const GameObject& candidate) const noexcept;
+
         virtual void update_runtime(float dt, const Input& input, bool keyboard_input_enabled) = 0;
+        virtual void save_scene_data(YAML::Node& root) const = 0;
+        [[nodiscard]] virtual bool load_scene_data(const YAML::Node& root, std::string& error) = 0;
+        [[nodiscard]] virtual bool restore_loaded_scene(SceneState& state, std::string& error) = 0;
+
         [[nodiscard]] virtual GameObject* game_camera_target() noexcept { return nullptr; }
         virtual void render_overlay(SDL_Renderer*) {}
 

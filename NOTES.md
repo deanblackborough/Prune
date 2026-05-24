@@ -186,7 +186,7 @@ Goal: remove duplication that now has a proven shared concept.
 
 ### Tasks
 
-- [ ] Move generic save/load wrapper flow into `WorldScene` if it stays the same for both scenes.
+- [x] Move generic save/load wrapper flow into `WorldScene` if it stays the same for both scenes.
 
 Concrete scenes should ideally only provide:
 
@@ -206,7 +206,7 @@ bool restore_loaded_scene(SceneState& state, std::string& error) override;
 
 Keep this boring. Do not make it generic beyond current needs.
 
-- [ ] Centralise scene type ids.
+- [x] Centralise scene type ids.
 
 Current ids:
 
@@ -215,7 +215,7 @@ Current ids:
 
 They should not be repeated in multiple files.
 
-- [ ] Replace hard-coded scene menu entries with static scene descriptors.
+- [x] Replace hard-coded scene menu entries with static scene descriptors.
 
 Suggested descriptor:
 
@@ -230,11 +230,11 @@ struct SceneDescriptor {
 
 This is not dynamic plugin registration. It is just a static list.
 
-- [ ] Extract common view-centre spawn helper into `WorldScene`.
+- [x] Extract common view-centre spawn helper into `WorldScene`.
 
 Both scenes need “create object around active camera centre, optionally snapped to grid”.
 
-- [ ] Remove redundant public accessors from concrete scenes unless another system genuinely needs them.
+- [x] Remove redundant public accessors from concrete scenes unless another system genuinely needs them.
 
 For example, avoid exposing scene-specific state just because it is convenient.
 

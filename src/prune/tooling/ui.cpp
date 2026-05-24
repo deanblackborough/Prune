@@ -27,14 +27,11 @@ namespace prune {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::BeginMenu("New Scene")) {
-                    if (ImGui::MenuItem("Simple Shooter")) {
-                        new_scene_type = SceneType::SimpleShooter;
-                        new_scene_requested = true;
-                    }
-
-                    if (ImGui::MenuItem("Platformer")) {
-                        new_scene_type = SceneType::Platformer;
-                        new_scene_requested = true;
+                    for (const SceneDescriptor& descriptor : k_scene_descriptors) {
+                        if (ImGui::MenuItem(descriptor.label.data())) {
+                            new_scene_type = descriptor.type;
+                            new_scene_requested = true;
+                        }
                     }
 
                     ImGui::EndMenu();
@@ -65,12 +62,7 @@ namespace prune {
 
                 if (!m_file_status.empty()) {
                     ImGui::Separator();
-                    if (m_file_status_is_error) {
-                        ImGui::TextWrapped("Status: %s", m_file_status.c_str());
-                    }
-                    else {
-                        ImGui::TextWrapped("Status: %s", m_file_status.c_str());
-                    }
+                    ImGui::TextWrapped("Status: %s", m_file_status.c_str());
                 }
 
                 ImGui::EndMenu();
