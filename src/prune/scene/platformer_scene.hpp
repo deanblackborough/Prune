@@ -1,8 +1,8 @@
 #pragma once
 
+#include <string>
 #include <string_view>
 
-#include <SDL2/SDL.h>
 #include <yaml-cpp/yaml.h>
 
 #include "prune/scene/platformer_behaviour.hpp"

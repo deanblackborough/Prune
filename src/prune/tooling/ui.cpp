@@ -62,12 +62,7 @@ namespace prune {
 
                 if (!m_file_status.empty()) {
                     ImGui::Separator();
-                    if (m_file_status_is_error) {
-                        ImGui::TextWrapped("Status: %s", m_file_status.c_str());
-                    }
-                    else {
-                        ImGui::TextWrapped("Status: %s", m_file_status.c_str());
-                    }
+                    ImGui::TextWrapped("Status: %s", m_file_status.c_str());
                 }
 
                 ImGui::EndMenu();
