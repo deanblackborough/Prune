@@ -1,8 +1,5 @@
-#include <cmath>
 #include <cstdio>
-#include <fstream>
 #include <string>
-#include <utility>
 
 #include <yaml-cpp/yaml.h>
 
@@ -11,8 +8,8 @@
 #include "prune/scene/platformer_concepts.hpp"
 #include "prune/scene/platformer_factory.hpp"
 #include "prune/scene/platformer_scene.hpp"
+#include "prune/scene/scene_factory.hpp"
 #include "prune/scene/platformer_serializer.hpp"
-#include "prune/scene/scene_serializer.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
@@ -223,86 +220,51 @@ namespace prune {
         tooling::imgui::property_table::end();
     }
 
-    bool PlatformerScene::save_to_file(std::string_view path, std::string& error) const
+    std::string_view PlatformerScene::default_file_path() const noexcept
     {
-        try {
-            YAML::Node root;
-            root["scene_type"] = "platformer";
-
-            SceneSerializer::save_to_node(m_state, m_camera, m_grid_options, root);
-            PlatformerSerializer::save_to_node(m_platformer_state, root);
-
-            std::ofstream output{ std::string(path) };
-            if (!output.is_open()) {
-                error = "Could not open save file for writing.";
-                return false;
-            }
-
-            output << root;
-
-            if (!output) {
-                error = "Failed to write scene data to file.";
-                return false;
-            }
-
-            return true;
+        if (const SceneDescriptor* descriptor = scene_descriptor_for(SceneType::Platformer)) {
+            return descriptor->default_file_path;
         }
-        catch (const YAML::Exception& ex) {
-            error = ex.what();
-            return false;
-        }
-        catch (const std::exception& ex) {
-            error = ex.what();
-            return false;
-        }
+
+        return {};
     }
 
-    bool PlatformerScene::load_from_file(std::string_view path, std::string& error)
+    std::string_view PlatformerScene::scene_type_id() const noexcept
     {
-        try {
-            const YAML::Node root = YAML::LoadFile(std::string(path));
-
-            if (!root["scene_type"] || root["scene_type"].as<std::string>() != "platformer") {
-                error = "Save file is not a Platformer scene.";
-                return false;
-            }
-
-            SceneState loaded_state = m_state;
-            SceneCamera loaded_camera = m_camera;
-            GridOptions loaded_grid_options = m_grid_options;
-            PlatformerState loaded_platformer_state{};
-
-            if (!SceneSerializer::load_from_node(loaded_state, loaded_camera, loaded_grid_options, root, error)) {
-                return false;
-            }
-
-            if (!PlatformerSerializer::load_from_node(root, loaded_platformer_state, error)) {
-                return false;
-            }
-
-            restore_loaded_platformer_concepts(loaded_state, loaded_platformer_state);
-
-            if (loaded_platformer_state.player_id == k_invalid_game_object_id) {
-                error = "Platformer scene is missing its player object.";
-                return false;
-            }
-
-            m_state = std::move(loaded_state);
-            m_camera = loaded_camera;
-            m_grid_options = loaded_grid_options;
-            m_platformer_state = loaded_platformer_state;
-            m_camera.update_game_camera(m_state.viewport, player_object());
-
-            return true;
+        if (const SceneDescriptor* descriptor = scene_descriptor_for(SceneType::Platformer)) {
+            return descriptor->id;
         }
-        catch (const YAML::Exception& ex) {
-            error = ex.what();
+
+        return {};
+    }
+
+    void PlatformerScene::save_scene_data(YAML::Node& root) const
+    {
+        PlatformerSerializer::save_to_node(m_platformer_state, root);
+    }
+
+    bool PlatformerScene::load_scene_data(const YAML::Node& root, std::string& error)
+    {
+        PlatformerState loaded_platformer_state{};
+
+        if (!PlatformerSerializer::load_from_node(root, loaded_platformer_state, error)) {
             return false;
         }
-        catch (const std::exception& ex) {
-            error = ex.what();
+
+        m_platformer_state = loaded_platformer_state;
+        return true;
+    }
+
+    bool PlatformerScene::restore_loaded_scene(SceneState& state, std::string& error)
+    {
+        restore_loaded_platformer_concepts(state, m_platformer_state);
+
+        if (m_platformer_state.player_id == k_invalid_game_object_id) {
+            error = "Platformer scene is missing its player object.";
             return false;
         }
+
+        return true;
     }
 
     GameObject* PlatformerScene::player_object() noexcept
@@ -341,26 +303,5 @@ namespace prune {
         m_state.objects.select(id);
     }
 
-    Transform PlatformerScene::view_center_spawn_position(int width, int height) const
-    {
-        const Camera& camera = m_camera.active();
-
-        const float view_center_x = camera.x + (static_cast<float>(m_state.viewport.width) / camera.zoom) * 0.5f;
-        const float view_center_y = camera.y + (static_cast<float>(m_state.viewport.height) / camera.zoom) * 0.5f;
-
-        Transform transform{};
-        transform.x = view_center_x - (static_cast<float>(width) * 0.5f);
-        transform.y = view_center_y - (static_cast<float>(height) * 0.5f);
-
-        if (!m_grid_options.snap_to_grid || m_grid_options.grid_size <= 0) {
-            return transform;
-        }
-
-        const int grid_size = m_grid_options.grid_size;
-        const float grid = static_cast<float>(grid_size);
-        transform.x = std::floor(transform.x / grid) * grid;
-        transform.y = std::floor(transform.y / grid) * grid;
-        return transform;
-    }
 
 }

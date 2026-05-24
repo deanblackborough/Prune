@@ -1,9 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
-#include <fstream>
 #include <string>
-#include <utility>
 
 #include <SDL2/SDL.h>
 #include <yaml-cpp/yaml.h>
@@ -11,12 +9,11 @@
 #include "imgui.h"
 
 #include "prune/core/input.hpp"
-#include "prune/scene/collision.hpp"
-#include "prune/scene/scene_serializer.hpp"
 #include "prune/scene/simple_shooter_concepts.hpp"
 #include "prune/scene/simple_shooter_factory.hpp"
 #include "prune/scene/simple_shooter_ids.hpp"
 #include "prune/scene/simple_shooter_scene.hpp"
+#include "prune/scene/scene_factory.hpp"
 #include "prune/scene/simple_shooter_serializer.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/imgui/layout.hpp"
@@ -123,17 +120,6 @@ namespace prune {
     }
 
 
-    SceneState& SimpleShooterScene::get_state() noexcept
-    {
-        return m_state;
-    }
-
-    const SceneState& SimpleShooterScene::get_state() const noexcept
-    {
-        return m_state;
-    }
-
-
     void SimpleShooterScene::on_enter()
     {
         new_scene();
@@ -170,45 +156,6 @@ namespace prune {
         return simple_shooter_concepts::describe_object(object);
     }
 
-    SimpleShooterOptions& SimpleShooterScene::get_simple_shooter_options() noexcept
-    {
-        return m_simple_shooter_state.options;
-    }
-
-    const SimpleShooterOptions& SimpleShooterScene::get_simple_shooter_options() const noexcept
-    {
-        return m_simple_shooter_state.options;
-    }
-
-    SimpleShooterState& SimpleShooterScene::get_simple_shooter_state() noexcept
-    {
-        return m_simple_shooter_state;
-    }
-
-    const SimpleShooterState& SimpleShooterScene::get_simple_shooter_state() const noexcept
-    {
-        return m_simple_shooter_state;
-    }
-
-    GameObject* SimpleShooterScene::enemy_object() noexcept
-    {
-        return m_simple_shooter.enemy_object(m_state, m_simple_shooter_state);
-    }
-
-    const GameObject* SimpleShooterScene::enemy_object() const noexcept
-    {
-        return m_simple_shooter.enemy_object(m_state, m_simple_shooter_state);
-    }
-
-    int SimpleShooterScene::projectile_count() const noexcept
-    {
-        return m_simple_shooter.projectile_count(m_state);
-    }
-
-    void SimpleShooterScene::reset_simple_shooter()
-    {
-        m_simple_shooter.reset(m_state, m_simple_shooter_state);
-    }
 
     void SimpleShooterScene::update_runtime(float dt, const Input& input, bool keyboard_input_enabled)
     {
@@ -287,79 +234,46 @@ namespace prune {
         m_camera.update_game_camera(m_state.viewport, player_object());
     }
 
-    bool SimpleShooterScene::save_to_file(std::string_view path, std::string& error) const
+    std::string_view SimpleShooterScene::default_file_path() const noexcept
     {
-        try {
-            YAML::Node root;
-
-            root["scene_type"] = "simple_shooter";
-
-            SceneSerializer::save_to_node(m_state, m_camera, m_grid_options, root);
-            SimpleShooterSerializer::save_to_node(m_simple_shooter_state, root);
-
-            std::ofstream output{ std::string(path) };
-
-            if (!output.is_open()) {
-                error = "Could not open save file for writing.";
-                return false;
-            }
-
-            output << root;
-            return true;
+        if (const SceneDescriptor* descriptor = scene_descriptor_for(SceneType::SimpleShooter)) {
+            return descriptor->default_file_path;
         }
-        catch (const YAML::Exception& ex) {
-            error = ex.what();
-            return false;
-        }
-        catch (const std::exception& ex) {
-            error = ex.what();
-            return false;
-        }
+
+        return {};
     }
 
-    bool SimpleShooterScene::load_from_file(std::string_view path, std::string& error)
+    std::string_view SimpleShooterScene::scene_type_id() const noexcept
     {
-        try {
-            const YAML::Node root = YAML::LoadFile(std::string(path));
-
-            if (!root["scene_type"] || root["scene_type"].as<std::string>() != "simple_shooter") {
-                error = "Save file is not a Simple Shooter scene.";
-                return false;
-            }
-
-            SceneState loaded_state = m_state;
-            SceneCamera loaded_camera = m_camera;
-            GridOptions loaded_grid_options = m_grid_options;
-            SimpleShooterState loaded_simple_shooter_state{};
-
-            if (!SceneSerializer::load_from_node(loaded_state, loaded_camera, loaded_grid_options, root, error)) {
-                return false;
-            }
-
-            if (!SimpleShooterSerializer::load_from_node(root, loaded_simple_shooter_state, error)) {
-                return false;
-            }
-
-            restore_loaded_shooter_concepts(loaded_state, loaded_simple_shooter_state);
-
-            m_state = std::move(loaded_state);
-            m_camera = loaded_camera;
-            m_grid_options = loaded_grid_options;
-            m_simple_shooter_state = loaded_simple_shooter_state;
-
-            m_simple_shooter.reset(m_state, m_simple_shooter_state);
-            m_camera.update_game_camera(m_state.viewport, player_object());
-
-            return true;
+        if (const SceneDescriptor* descriptor = scene_descriptor_for(SceneType::SimpleShooter)) {
+            return descriptor->id;
         }
-        catch (const YAML::Exception& ex) {
-            error = ex.what();
+
+        return {};
+    }
+
+    void SimpleShooterScene::save_scene_data(YAML::Node& root) const
+    {
+        SimpleShooterSerializer::save_to_node(m_simple_shooter_state, root);
+    }
+
+    bool SimpleShooterScene::load_scene_data(const YAML::Node& root, std::string& error)
+    {
+        SimpleShooterState loaded_simple_shooter_state{};
+
+        if (!SimpleShooterSerializer::load_from_node(root, loaded_simple_shooter_state, error)) {
             return false;
         }
-        catch (const std::exception& ex) {
-            error = ex.what();
-            return false;
-        }
+
+        m_simple_shooter_state = loaded_simple_shooter_state;
+        return true;
+    }
+
+    bool SimpleShooterScene::restore_loaded_scene(SceneState& state, std::string&)
+    {
+        restore_loaded_shooter_concepts(state, m_simple_shooter_state);
+        m_simple_shooter.reset(state, m_simple_shooter_state);
+        return true;
     }
 
     void SimpleShooterScene::draw_scene_inspector(GameObject& selected)
@@ -417,7 +331,7 @@ namespace prune {
     {
         GameObject wall = simple_shooter_factory::create_wall();
 
-        wall.transform = find_wall_spawn_position(wall);
+        wall.transform = first_free_view_center_spawn_position(wall);
 
         const GameObjectId id = m_state.objects.create_object(wall);
 
@@ -428,57 +342,6 @@ namespace prune {
         m_state.objects.select(id);
 
         return id;
-    }
-
-    Transform SimpleShooterScene::find_wall_spawn_position(const GameObject& wall) const
-    {
-        const Camera& camera = m_camera.active();
-
-        const float view_center_x =
-            camera.x + (static_cast<float>(m_state.viewport.width) / camera.zoom) * 0.5f;
-
-        const float view_center_y =
-            camera.y + (static_cast<float>(m_state.viewport.height) / camera.zoom) * 0.5f;
-
-        const int grid_size = m_grid_options.grid_size > 0
-            ? m_grid_options.grid_size
-            : wall.size.width;
-
-        auto snap = [grid_size](float value) {
-            return static_cast<float>(
-                static_cast<int>(value / static_cast<float>(grid_size)) * grid_size
-            );
-        };
-
-        const float base_x = m_grid_options.snap_to_grid
-            ? snap(view_center_x - static_cast<float>(wall.size.width) * 0.5f)
-            : view_center_x - static_cast<float>(wall.size.width) * 0.5f;
-
-        const float base_y = m_grid_options.snap_to_grid
-            ? snap(view_center_y - static_cast<float>(wall.size.height) * 0.5f)
-            : view_center_y - static_cast<float>(wall.size.height) * 0.5f;
-
-        constexpr int max_radius = 20;
-
-        for (int radius = 0; radius <= max_radius; ++radius) {
-            for (int y = -radius; y <= radius; ++y) {
-                for (int x = -radius; x <= radius; ++x) {
-                    if (std::abs(x) != radius && std::abs(y) != radius) {
-                        continue;
-                    }
-
-                    GameObject candidate = wall;
-                    candidate.transform.x = base_x + static_cast<float>(x * grid_size);
-                    candidate.transform.y = base_y + static_cast<float>(y * grid_size);
-
-                    if (is_space_free(candidate)) {
-                        return candidate.transform;
-                    }
-                }
-            }
-        }
-
-        return Transform{ base_x, base_y };
     }
 
     void SimpleShooterScene::draw_player_facing_indicator(SDL_Renderer* renderer) const
@@ -561,22 +424,5 @@ namespace prune {
         SDL_RenderDrawLines(renderer, points, 4);
     }
 
-    bool SimpleShooterScene::is_space_free(const GameObject& candidate) const noexcept
-    {
-        for (const auto& object : m_state.objects.objects()) {
-            if (!object.lifecycle.active) {
-                continue;
-            }
 
-            if (!object.runtime.persistent) {
-                continue;
-            }
-
-            if (collision::is_overlapping(candidate, object)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
 }

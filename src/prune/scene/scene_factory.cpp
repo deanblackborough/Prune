@@ -9,6 +9,28 @@
 
 namespace prune {
 
+    const SceneDescriptor* scene_descriptor_for(SceneType type) noexcept
+    {
+        for (const SceneDescriptor& descriptor : k_scene_descriptors) {
+            if (descriptor.type == type) {
+                return &descriptor;
+            }
+        }
+
+        return nullptr;
+    }
+
+    const SceneDescriptor* scene_descriptor_for_id(std::string_view id) noexcept
+    {
+        for (const SceneDescriptor& descriptor : k_scene_descriptors) {
+            if (descriptor.id == id) {
+                return &descriptor;
+            }
+        }
+
+        return nullptr;
+    }
+
     std::unique_ptr<Scene> SceneFactory::create(
         SceneType type,
         int window_width,
@@ -41,19 +63,14 @@ namespace prune {
             }
 
             const std::string scene_type = root["scene_type"].as<std::string>();
+            const SceneDescriptor* descriptor = scene_descriptor_for_id(scene_type);
 
-            std::unique_ptr<Scene> scene;
-
-            if (scene_type == "simple_shooter") {
-                scene = create(SceneType::SimpleShooter, window_width, window_height);
-            }
-            else if (scene_type == "platformer") {
-                scene = create(SceneType::Platformer, window_width, window_height);
-            }
-            else {
+            if (!descriptor) {
                 error = "Unknown scene_type: " + scene_type;
                 return nullptr;
             }
+
+            std::unique_ptr<Scene> scene = create(descriptor->type, window_width, window_height);
 
             if (!scene->load_from_file(path, error)) {
                 return nullptr;

@@ -105,7 +105,16 @@ namespace prune {
                     std::string error;
                     const std::string scene_file_path{ m_scene->default_file_path() };
 
-                    if (m_scene->load_from_file(scene_file_path, error)) {
+                    std::unique_ptr<Scene> loaded_scene = SceneFactory::create_from_file(
+                        scene_file_path,
+                        m_window->width(),
+                        m_window->height(),
+                        error
+                    );
+
+                    if (loaded_scene) {
+                        m_scene->on_exit();
+                        m_scene = std::move(loaded_scene);
                         m_ui->set_file_status("Loaded scene from " + scene_file_path, false);
                     }
                     else {
