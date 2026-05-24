@@ -208,3 +208,14 @@ cmake -B build -S . \
 
 cmake --build build
 ```
+
+## Acknowledgements
+
+- [SDL2](https://www.libsdl.org/) — windowing, input, and rendering foundation
+- [Dear ImGui](https://github.com/ocornut/imgui) — editor UI
+- [yaml-cpp](https://github.com/jbeder/yaml-cpp) — scene save/load
+- [SDL2_image](https://github.com/libsdl-org/SDL_image) — sprite loading
+
+## Licence
+
+MIT — see [LICENSE](LICENSE)
