@@ -12,13 +12,14 @@ namespace prune {
     class Inspector {
     public:
         void draw(
-            GameObjectManager& objects,
+            Scene& scene,
             GridOptions& grid_options,
             const Camera& camera
         );
 
     private:
-        void draw_selected(GameObjectManager& objects, GridOptions& grid_options);
+        void draw_selected(Scene& scene, GridOptions& grid_options);
+        void draw_scene_meaning(Scene& scene);
         void draw_properties(GameObjectManager& objects);
         void draw_computed(GameObjectManager& objects, const Camera& camera);
         void draw_flags(GameObjectManager& objects);

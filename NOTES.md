@@ -86,7 +86,7 @@ Goal: make object intent explicit enough that editor tools can make sensible dec
 
 ### Tasks
 
-- [ ] Introduce a small shared object concept description type.
+- [x] Introduce a small shared object concept description type.
 
 Suggested shape:
 
@@ -104,21 +104,21 @@ struct ObjectConcept {
 
 This does not need to become a plugin API. It is just a shared way for scene types to describe objects.
 
-- [ ] Add a scene-level function for concept lookup.
+- [x] Add a scene-level function for concept lookup.
 
 Suggested direction:
 
 ```cpp
-virtual ObjectConcept concept_for(const GameObject& object) const = 0;
+virtual ObjectConcept object_concept_for(const GameObject& object) const = 0;
 ```
 
 Then `object_role_label()` can become a small wrapper around this.
 
-- [ ] Stop using colour as implicit meaning anywhere in explanations or logic.
+- [x] Stop using colour as implicit meaning anywhere in explanations or logic.
 
 Colour remains presentation only.
 
-- [ ] Separate object role from runtime behaviour, or at minimum wrap access so the code stops directly comparing raw strings everywhere.
+- [x] Separate object role from runtime behaviour, or at minimum wrap access so the code stops directly comparing raw strings everywhere.
 
 Short-term acceptable option:
 
@@ -143,7 +143,7 @@ struct SceneObjectBinding {
 
 Do not do the longer-term option unless the small concept metadata pass shows it is needed.
 
-- [ ] Make editor permissions derive from object semantics where possible.
+- [x] Make editor permissions derive from object semantics where possible.
 
 Examples:
 
@@ -152,7 +152,7 @@ Examples:
 - player start markers can be selectable and movable
 - generated/runtime enemies can be hidden from normal editing unless explicitly debug-visible
 
-- [ ] Update generic inspector wording so it distinguishes generic object data from scene meaning.
+- [x] Update generic inspector wording so it distinguishes generic object data from scene meaning.
 
 Generic inspector:
 

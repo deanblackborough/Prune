@@ -170,9 +170,9 @@ namespace prune {
         ImGui::End();
     }
 
-    std::string SimpleShooterScene::object_role_label(const GameObject& object) const
+    ObjectConcept SimpleShooterScene::object_concept_for(const GameObject& object) const
     {
-        return simple_shooter_concepts::label(simple_shooter_concepts::kind_for(object));
+        return simple_shooter_concepts::describe_object(object);
     }
 
     SimpleShooterOptions& SimpleShooterScene::get_simple_shooter_options() noexcept
@@ -378,12 +378,14 @@ namespace prune {
         }
 
         const auto kind = simple_shooter_concepts::kind_for(selected);
+        const ObjectConcept object_concept = object_concept_for(selected);
 
-        tooling::imgui::property_table::text("Concept", simple_shooter_concepts::label(kind));
+        tooling::imgui::property_table::text("Scene Concept", object_concept.label.data());
         tooling::imgui::property_table::text("Object Type", object_type_label(selected.identity.type));
+        tooling::imgui::property_table::text("Runtime Created", bool_label(object_concept.runtime_only));
         tooling::imgui::property_table::text("Runtime Saved", bool_label(selected.runtime.persistent));
-        tooling::imgui::property_table::text_wrapped("Purpose", simple_shooter_concepts::purpose(kind));
-        tooling::imgui::property_table::text_wrapped("Collision", simple_shooter_concepts::collision_rule(kind));
+        tooling::imgui::property_table::text_wrapped("Purpose", object_concept.purpose.data());
+        tooling::imgui::property_table::text_wrapped("Collision Rule", object_concept.collision_rule.data());
 
         if (kind == simple_shooter_concepts::ObjectKind::Player) {
             tooling::imgui::property_table::text("Facing", direction_label(selected.motion.facing));

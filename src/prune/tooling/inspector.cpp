@@ -11,32 +11,42 @@
 namespace prune {
 
     void Inspector::draw(
-        GameObjectManager& objects,
+        Scene& scene,
         GridOptions& grid_options,
         const Camera& camera
     ) {
-        draw_selected(objects, grid_options);
+        GameObjectManager& objects = scene.get_object_manager();
+
+        draw_selected(scene, grid_options);
+        draw_scene_meaning(scene);
         draw_properties(objects);
         draw_computed(objects, camera);
         draw_flags(objects);
     }
 
     void Inspector::draw_selected(
-        GameObjectManager& objects,
+        Scene& scene,
         GridOptions& grid_options
     ) {
+        GameObjectManager& objects = scene.get_object_manager();
         GameObject* selected = objects.selected_object();
 
         if (!selected) {
             return;
         }
 
+        const ObjectConcept object_concept = scene.object_concept_for(*selected);
+        const bool can_edit = object_concept.editable && !object_concept.runtime_only;
+        const bool can_rename = selected->editor.renameable && can_edit;
+        const bool can_delete = selected->editor.deletable && can_edit;
+        const bool can_clone = selected->editor.cloneable && can_edit;
+
         if (tooling::imgui::layout::collapsing_header("Selected")) {
             if (tooling::imgui::property_table::begin("Selected")) {
 
                 tooling::imgui::property_table::text("Id", std::to_string(selected->identity.id).c_str());
 
-                if (!selected->editor.renameable) {
+                if (!can_rename) {
                     tooling::imgui::property_table::text("Name", selected->identity.name.c_str());
                 } else {
                     sync_rename_buffer(selected);
@@ -63,13 +73,13 @@ namespace prune {
                     }
                 }
 
-                if (selected->editor.deletable || selected->editor.cloneable) {
+                if (can_delete || can_clone) {
 
                     tooling::imgui::layout::separator();
 
                     tooling::imgui::property_table::begin_row("Actions");
 
-                    if (tooling::imgui::property_table::button_raw("Delete")) {
+                    if (can_delete && tooling::imgui::property_table::button_raw("Delete")) {
                         const GameObjectId id_to_remove = selected->identity.id;
                         objects.remove_object(id_to_remove);
 
@@ -77,9 +87,11 @@ namespace prune {
                         return;
                     }
 
-                    ImGui::SameLine();
+                    if (can_delete && can_clone) {
+                        ImGui::SameLine();
+                    }
 
-                    if (tooling::imgui::property_table::button_raw("Clone")) {
+                    if (can_clone && tooling::imgui::property_table::button_raw("Clone")) {
                         const std::string source_name = selected->identity.name;
 
                         GameObject clone = *selected;
@@ -103,6 +115,29 @@ namespace prune {
                         return;
                     }
                 }
+
+                tooling::imgui::property_table::end();
+            }
+        }
+    }
+
+    void Inspector::draw_scene_meaning(Scene& scene)
+    {
+        GameObject* selected = scene.get_object_manager().selected_object();
+        if (!selected) {
+            return;
+        }
+
+        if (tooling::imgui::layout::collapsing_header("Scene Meaning")) {
+            if (tooling::imgui::property_table::begin("##scene_meaning")) {
+                const ObjectConcept object_concept = scene.object_concept_for(*selected);
+
+                tooling::imgui::property_table::text("Concept", object_concept.label.data());
+                tooling::imgui::property_table::text("Runtime Created", object_concept.runtime_only ? "Yes" : "No");
+                tooling::imgui::property_table::text("Selectable", object_concept.selectable ? "Yes" : "No");
+                tooling::imgui::property_table::text("Editable", object_concept.editable ? "Yes" : "No");
+                tooling::imgui::property_table::text_wrapped("Purpose", object_concept.purpose.data());
+                tooling::imgui::property_table::text_wrapped("Collision Rule", object_concept.collision_rule.data());
 
                 tooling::imgui::property_table::end();
             }
@@ -159,7 +194,7 @@ namespace prune {
             }
         }
 
-        if (tooling::imgui::layout::collapsing_header("Rendering")) {
+        if (tooling::imgui::layout::collapsing_header("Render")) {
             if (tooling::imgui::property_table::begin("##rendering")) {
                 int render_type = (selected->render.type == RenderType::Rectangle) ? 0 : 1;
                 const char* render_items[] = { "Rectangle", "Sprite" };
@@ -262,11 +297,15 @@ namespace prune {
             return;
         }
 
-        if (tooling::imgui::layout::collapsing_header("Flags", false)) {
+        if (tooling::imgui::layout::collapsing_header("Collision / Editor / Lifecycle", false)) {
             if (tooling::imgui::property_table::begin("##flags")) {
-                tooling::imgui::property_table::checkbox("Active", "##active", selected->lifecycle.active);
-                tooling::imgui::property_table::checkbox("Visible", "##visible", selected->render.visible);
-                tooling::imgui::property_table::checkbox("Solid", "##solid", selected->collision.solid);
+                tooling::imgui::property_table::checkbox("Lifecycle Active", "##active", selected->lifecycle.active);
+                tooling::imgui::property_table::checkbox("Render Visible", "##visible", selected->render.visible);
+                tooling::imgui::property_table::checkbox("Collision Solid", "##solid", selected->collision.solid);
+                tooling::imgui::property_table::checkbox_readonly("Editor Selectable", "##editor_selectable", selected->editor.selectable);
+                tooling::imgui::property_table::checkbox_readonly("Editor Renameable", "##editor_renameable", selected->editor.renameable);
+                tooling::imgui::property_table::checkbox_readonly("Editor Cloneable", "##editor_cloneable", selected->editor.cloneable);
+                tooling::imgui::property_table::checkbox_readonly("Runtime Persistent", "##runtime_persistent", selected->runtime.persistent);
                 tooling::imgui::property_table::end();
             }
         }

@@ -96,4 +96,66 @@ namespace prune::platformer_concepts {
         }
     }
 
+    ObjectConcept describe(ObjectKind kind) noexcept
+    {
+        switch (kind) {
+        case ObjectKind::Player:
+            return {
+                "platformer.player",
+                "Player",
+                "The single controlled actor for the Platformer slice. The game camera follows this object.",
+                "Blocked by Platform / Ground objects. Hazards reset the player.",
+                false,
+                true,
+                true
+            };
+        case ObjectKind::PlayerStart:
+            return {
+                "platformer.player_start",
+                "Player Start",
+                "Authored reset marker used when the player hits a hazard or falls out of the level.",
+                "Marker only. It does not collide.",
+                false,
+                true,
+                true
+            };
+        case ObjectKind::Ground:
+            return {
+                "platformer.ground",
+                "Platform / Ground",
+                "An authored solid surface the player can stand on or collide with.",
+                "Solid. Blocks horizontal movement and provides grounded state when landed on.",
+                false,
+                true,
+                true
+            };
+        case ObjectKind::Hazard:
+            return {
+                "platformer.hazard",
+                "Hazard",
+                "An authored trigger that resets the player to the player start marker on contact.",
+                "Trigger only. It is not solid, but player contact causes a reset.",
+                false,
+                true,
+                true
+            };
+        case ObjectKind::SceneObject:
+        default:
+            return object_concepts::scene_object;
+        }
+    }
+
+    ObjectConcept describe_object(const GameObject& object) noexcept
+    {
+        ObjectConcept result = describe(kind_for(object));
+
+        if (object.identity.type == GameObjectType::Runtime) {
+            result.runtime_only = true;
+            result.selectable = false;
+            result.editable = false;
+        }
+
+        return result;
+    }
+
 }

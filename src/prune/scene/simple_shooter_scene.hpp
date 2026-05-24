@@ -30,7 +30,7 @@ namespace prune {
         [[nodiscard]] std::string_view default_file_path() const noexcept override { return k_default_simple_shooter_scene_file_path; }
 
         [[nodiscard]] std::string_view scene_name() const noexcept override { return "Simple Shooter"; }
-        [[nodiscard]] std::string object_role_label(const GameObject& object) const override;
+        [[nodiscard]] ObjectConcept object_concept_for(const GameObject& object) const override;
         [[nodiscard]] std::string_view scene_tools_label() const noexcept override { return "Simple Shooter"; }
         void draw_scene_tools(bool& open) override;
 

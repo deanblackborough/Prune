@@ -7,6 +7,7 @@
 
 #include "prune/core/input.hpp"
 #include "prune/scene/game_object_manager.hpp"
+#include "prune/scene/object_concept.hpp"
 #include "prune/scene/scene_camera.hpp"
 #include "prune/scene/scene_state.hpp"
 
@@ -56,9 +57,14 @@ namespace prune {
 
         [[nodiscard]] virtual std::string_view scene_name() const noexcept = 0;
 
+        [[nodiscard]] virtual ObjectConcept object_concept_for(const GameObject& object) const
+        {
+            return object_concepts::fallback_for(object);
+        }
+
         [[nodiscard]] virtual std::string object_role_label(const GameObject& object) const
         {
-            return object.identity.type == GameObjectType::Runtime ? "Runtime" : "Object";
+            return std::string(object_concept_for(object).label);
         }
         [[nodiscard]] virtual std::string_view scene_tools_label() const noexcept = 0;
         virtual void draw_scene_tools(bool& open) = 0;
