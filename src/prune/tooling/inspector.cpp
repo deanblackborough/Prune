@@ -6,7 +6,7 @@
 #include "prune/tooling/inspector.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
-#include "prune/resources/sprites.hpp"
+#include "prune/tooling/sprite_picker.hpp"
 
 namespace prune {
 
@@ -221,36 +221,11 @@ namespace prune {
                     break;
 
                 case RenderType::Sprite:
-                    const auto& resources = sprite_resources();
-
-                    std::vector<const char*> sprite_items;
-                    sprite_items.reserve(resources.size());
-
-                    int current_sprite = 0;
-
-                    for (int i = 0; i < static_cast<int>(resources.size()); ++i) {
-                        sprite_items.push_back(resources[i].key.data());
-
-                        if (selected->render.sprite.sprite_key == resources[i].key) {
-                            current_sprite = i;
-                        }
-                    }
-
-                    if (!sprite_items.empty()) {
-                        if (tooling::imgui::property_table::combo(
-                            "Sprite",
-                            "##sprite_key",
-                            current_sprite,
-                            sprite_items.data(),
-                            static_cast<int>(sprite_items.size())
-                        )) {
-                            selected->render.sprite.sprite_key = resources[current_sprite].key;
-                        }
-                    }
-                    else {
-                        tooling::imgui::property_table::text("Sprite", "No sprites defined");
-                    }
-
+                    tooling::draw_sprite_picker(
+                        "Sprite",
+                        "##sprite_key",
+                        selected->render.sprite.sprite_key
+                    );
                     break;
                 }
 
