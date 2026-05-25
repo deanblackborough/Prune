@@ -78,6 +78,8 @@ namespace prune {
             return;
         }
 
+        tooling::imgui::layout::spacing(3);
+
         const std::span<const SceneCreationAction> actions = scene_creation_actions();
         if (actions.empty()) {
             ImGui::TextUnformatted("No creation actions for this scene.");
@@ -96,6 +98,8 @@ namespace prune {
 
             first = false;
         }
+
+        tooling::imgui::layout::spacing(3);
     }
 
     void WorldScene::draw_debug_tools()
