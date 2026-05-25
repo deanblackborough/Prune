@@ -355,6 +355,7 @@ Improve the sprite picker, right now it is a select box with a list of sprite in
 - The editor has visible manipulation affordances in the viewport.
 - Scene-specific object creation feels like a tool system beginning, not just buttons in a panel.
 - Runtime/editor protection rules are visible in actual tool behaviour.
+- We have reviewed and thought about improving the sprite picker.
 
 ## Phase 5 — Behaviour and save/load review
 
