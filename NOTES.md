@@ -247,8 +247,6 @@ For example, avoid exposing scene-specific state just because it is convenient.
 
 ## Phase 3 — Folder organisation
 
-Target time: 2 to 3 days.
-
 Goal: make ownership obvious before the project gets larger.
 
 Suggested structure:
