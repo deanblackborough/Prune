@@ -415,6 +415,9 @@ namespace prune {
         root["grid"]["shift_nudge_steps"] = grid_options.shift_nudge_steps;
 
         root["options"]["highlight_selected"] = state.scene_options.highlight_selected;
+        root["options"]["debug_overlays"]["collision_bounds"] = state.scene_options.debug_overlays.show_collision_bounds;
+        root["options"]["debug_overlays"]["runtime_markers"] = state.scene_options.debug_overlays.show_runtime_markers;
+        root["options"]["debug_overlays"]["role_labels"] = state.scene_options.debug_overlays.show_role_labels;
 
         YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
 
@@ -498,6 +501,18 @@ namespace prune {
         if (!read_required_bool(options, "highlight_selected", loaded.scene_options.highlight_selected)) {
             error = "options.highlight_selected is missing.";
             return false;
+        }
+
+        const YAML::Node debug_overlays = options["debug_overlays"];
+        if (debug_overlays) {
+            loaded.scene_options.debug_overlays.show_collision_bounds =
+                debug_overlays["collision_bounds"] ? debug_overlays["collision_bounds"].as<bool>() : false;
+
+            loaded.scene_options.debug_overlays.show_runtime_markers =
+                debug_overlays["runtime_markers"] ? debug_overlays["runtime_markers"].as<bool>() : false;
+
+            loaded.scene_options.debug_overlays.show_role_labels =
+                debug_overlays["role_labels"] ? debug_overlays["role_labels"].as<bool>() : false;
         }
 
         for (const auto& entry : objects) {

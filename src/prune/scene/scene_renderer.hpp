@@ -32,6 +32,7 @@ namespace prune {
         void draw_rectangle_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline) const;
         void draw_sprite_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline);
         void draw_sprite_fallback(SDL_Renderer* renderer, const SDL_Rect& rect) const;
+        void draw_debug_overlays(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object) const;
         void draw_selected_gizmo(SDL_Renderer* renderer, const SDL_Rect& selected_outline, bool movable) const;
         void capture_selected_outline(const SceneState& state, const GameObject& object, const SDL_Rect& rect, SDL_Rect& selected_outline, bool& has_selected_outline) const noexcept;
 

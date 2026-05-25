@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -29,6 +30,11 @@ namespace prune {
         [[nodiscard]] bool available() const noexcept {
             return grid_options != nullptr && camera != nullptr;
         }
+    };
+
+    struct SceneCreationAction {
+        std::string_view id;
+        std::string_view label;
     };
 
     class Scene {
@@ -83,8 +89,20 @@ namespace prune {
         {
             return std::string(object_concept_for(object).label);
         }
+
+        [[nodiscard]] virtual std::span<const SceneCreationAction> scene_creation_actions() const noexcept
+        {
+            return {};
+        }
+
+        virtual GameObjectId create_scene_object(std::string_view)
+        {
+            return k_invalid_game_object_id;
+        }
+
         [[nodiscard]] virtual std::string_view scene_tools_label() const noexcept = 0;
         virtual void draw_scene_tools(bool& open) = 0;
+        virtual void draw_viewport_overlays() = 0;
 
         virtual GameObjectManager& get_object_manager() = 0;
 

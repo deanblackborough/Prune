@@ -26,8 +26,15 @@ namespace prune {
         }
     };
 
+    struct DebugOverlayOptions {
+        bool show_collision_bounds = false;
+        bool show_runtime_markers = false;
+        bool show_role_labels = false;
+    };
+
     struct SceneOptions {
         bool highlight_selected = true;
+        DebugOverlayOptions debug_overlays{};
     };
 
     struct GridOptions {

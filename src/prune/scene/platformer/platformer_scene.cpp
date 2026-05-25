@@ -1,3 +1,4 @@
+#include <array>
 #include <cstdio>
 #include <string>
 
@@ -148,20 +149,36 @@ namespace prune {
         return platformer_concepts::describe_object(object);
     }
 
+    std::span<const SceneCreationAction> PlatformerScene::scene_creation_actions() const noexcept
+    {
+        static constexpr std::array<SceneCreationAction, 2> actions{ {
+            { "platform", "Platform" },
+            { "hazard", "Hazard" }
+        } };
+
+        return actions;
+    }
+
+    GameObjectId PlatformerScene::create_scene_object(std::string_view action_id)
+    {
+        if (action_id == "platform") {
+            return add_platform_at_view_center();
+        }
+
+        if (action_id == "hazard") {
+            return add_hazard_at_view_center();
+        }
+
+        return k_invalid_game_object_id;
+    }
+
     void PlatformerScene::draw_scene_tools(bool& open)
     {
         tooling::EditorLayout::scene_panel();
 
         if (ImGui::Begin("Platformer", &open)) {
-            if (ImGui::Button("Add Platform")) {
-                add_platform_at_view_center();
-            }
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("Add Hazard")) {
-                add_hazard_at_view_center();
-            }
+            draw_creation_tools();
+            draw_debug_tools();
 
             ImGui::Separator();
 
@@ -277,10 +294,10 @@ namespace prune {
         return m_state.objects.get_by_id(m_platformer_state.player_id);
     }
 
-    void PlatformerScene::add_platform_at_view_center()
+    GameObjectId PlatformerScene::add_platform_at_view_center()
     {
         GameObject platform = platformer_factory::create_ground(0.0f, 0.0f, 64, 16, "Platform");
-        platform.transform = view_center_spawn_position(platform.size.width, platform.size.height);
+        platform.transform = first_free_view_center_spawn_position(platform);
 
         const GameObjectId id = m_state.objects.create_object(platform);
         if (GameObject* created = m_state.objects.get_by_id(id)) {
@@ -288,12 +305,13 @@ namespace prune {
         }
 
         m_state.objects.select(id);
+        return id;
     }
 
-    void PlatformerScene::add_hazard_at_view_center()
+    GameObjectId PlatformerScene::add_hazard_at_view_center()
     {
         GameObject hazard = platformer_factory::create_hazard(0.0f, 0.0f);
-        hazard.transform = view_center_spawn_position(hazard.size.width, hazard.size.height);
+        hazard.transform = first_free_view_center_spawn_position(hazard);
 
         const GameObjectId id = m_state.objects.create_object(hazard);
         if (GameObject* created = m_state.objects.get_by_id(id)) {
@@ -301,6 +319,7 @@ namespace prune {
         }
 
         m_state.objects.select(id);
+        return id;
     }
 
 

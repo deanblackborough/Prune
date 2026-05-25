@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -26,6 +27,8 @@ namespace prune {
         [[nodiscard]] std::string_view scene_name() const noexcept override { return "Platformer"; }
         [[nodiscard]] std::string_view scene_tools_label() const noexcept override { return "Platformer"; }
         [[nodiscard]] ObjectConcept object_concept_for(const GameObject& object) const override;
+        [[nodiscard]] std::span<const SceneCreationAction> scene_creation_actions() const noexcept override;
+        GameObjectId create_scene_object(std::string_view action_id) override;
         void draw_scene_tools(bool& open) override;
 
         void draw_scene_inspector(GameObject& selected) override;
@@ -43,8 +46,8 @@ namespace prune {
         [[nodiscard]] GameObject* player_object() noexcept;
         [[nodiscard]] const GameObject* player_object() const noexcept;
 
-        void add_platform_at_view_center();
-        void add_hazard_at_view_center();
+        [[nodiscard]] GameObjectId add_platform_at_view_center();
+        [[nodiscard]] GameObjectId add_hazard_at_view_center();
 
         PlatformerState m_platformer_state;
         PlatformerBehaviour m_platformer;
