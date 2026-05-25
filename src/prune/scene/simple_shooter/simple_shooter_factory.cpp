@@ -19,7 +19,7 @@ namespace prune::simple_shooter_factory {
         player.size.width = k_default_object_size;
         player.size.height = k_default_object_size;
         player.render.type = RenderType::Sprite;
-        player.render.sprite.sprite_key = std::string(k_default_player_sprite_key);
+        player.render.sprite.sprite_key = std::string(k_default_player_simple_shooter_sprite_key);
         player.render.rectangle.color[0] = 0.3f;
         player.render.rectangle.color[1] = 0.8f;
         player.render.rectangle.color[2] = 0.5f;
