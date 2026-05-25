@@ -93,9 +93,11 @@ namespace prune {
                 ImGui::SameLine();
             }
 
+            ImGui::PushID(action.id.data());
             if (ImGui::Button(action.label.data())) {
                 create_scene_object(action.id);
             }
+            ImGui::PopID();
 
             first = false;
         }
