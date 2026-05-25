@@ -5,13 +5,13 @@ namespace prune {
     const std::vector<Sprites>& sprite_resources()
     {
         static const std::vector<Sprites> resources{
-            { "tank-green", "assets/sprites/tank-green.png" },
-            { "tank-blue", "assets/sprites/tank-blue.png" },
-            { "tank-red", "assets/sprites/tank-red.png" },
-            { "player-1-bit", "assets/sprites/player-1-bit.png" },
+            { "tank-green", "assets/sprites/tank-green.png", "Tanks" },
+            { "tank-blue", "assets/sprites/tank-blue.png", "Tanks" },
+            { "tank-red", "assets/sprites/tank-red.png", "Tanks" },
 
-            // Missing sprite
-            { "missing", "assets/sprites/missing.png" }
+            { "player-1-bit", "assets/sprites/player-1-bit.png", "Characters" },
+
+            { "missing", "assets/sprites/missing.png", "Debug" }
         };
 
         return resources;
