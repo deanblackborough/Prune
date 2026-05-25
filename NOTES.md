@@ -320,12 +320,12 @@ Goal: start proving Prune is a game editor, not just two scenes with some simple
 
 Keep it small.
 
-- [ ] Draw a simple selected-object outline/handle overlay in the viewport.
-- [ ] Allow moving selected authored objects from a visible handle.
-- [ ] Respect `object.editor.movable`.
-- [ ] Respect viewport input focus.
-- [ ] Keep runtime objects protected by default.
-- [ ] Do not add rotate/scale yet.
+- [x] Draw a simple selected-object outline/handle overlay in the viewport.
+- [x] Allow moving selected authored objects from a visible handle.
+- [x] Respect `object.editor.movable`.
+- [x] Respect viewport input focus.
+- [x] Keep runtime objects protected by default.
+- [x] Do not add rotate/scale yet.
 
 ### Second target: debug overlays
 
@@ -346,11 +346,16 @@ Suggested direction:
 - placement uses shared view-centre helper
 - created object is selected
 
+### Fourth target: better sprite picker
+
+Improve the sprite picker, right now it is a select box with a list of sprite indexes, lets think about a simple browser - defer this if it proves to be a little too awkward working out how to adjust the existing inspector.
+
 ### Complete when
 
 - The editor has visible manipulation affordances in the viewport.
 - Scene-specific object creation feels like a tool system beginning, not just buttons in a panel.
 - Runtime/editor protection rules are visible in actual tool behaviour.
+- We have reviewed and thought about improving the sprite picker.
 
 ## Phase 5 — Behaviour and save/load review
 

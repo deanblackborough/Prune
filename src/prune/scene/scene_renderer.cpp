@@ -5,6 +5,8 @@
 
 #include "prune/scene/scene_renderer.hpp"
 #include "prune/resources/sprites.hpp"
+#include "prune/scene/scene.hpp"
+#include "prune/scene/tools/transform_gizmo.hpp"
 
 namespace prune {
 
@@ -169,7 +171,7 @@ namespace prune {
         capture_selected_outline(state, object, rect, selected_outline, has_selected_outline);
     }
 
-    void SceneRenderer::render(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GridOptions& grid_options)
+    void SceneRenderer::render(SDL_Renderer* renderer, const Scene& scene, const SceneState& state, const SceneCamera& camera, const GridOptions& grid_options)
     {
         if (!state.viewport.has_area()) {
             return;
@@ -189,9 +191,25 @@ namespace prune {
         }
 
         if (state.scene_options.highlight_selected && has_selected_outline) {
-            SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
-            SDL_RenderDrawRect(renderer, &selected_outline);
+            const GameObject* selected = state.objects.selected_object();
+            const bool movable = selected && scene.object_is_movable(*selected);
+            draw_selected_gizmo(renderer, selected_outline, movable);
         }
+    }
+
+    void SceneRenderer::draw_selected_gizmo(SDL_Renderer* renderer, const SDL_Rect& selected_outline, bool movable) const
+    {
+        SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
+        SDL_RenderDrawRect(renderer, &selected_outline);
+
+        if (!movable) {
+            return;
+        }
+
+        const SDL_Rect move_handle = tools::transform_gizmo::move_handle_rect(selected_outline);
+
+        SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
+        SDL_RenderFillRect(renderer, &move_handle);
     }
 
     void SceneRenderer::draw_sprite_fallback(SDL_Renderer* renderer, const SDL_Rect& rect) const
@@ -209,7 +227,7 @@ namespace prune {
     void SceneRenderer::capture_selected_outline(const SceneState& state, const GameObject& object, const SDL_Rect& rect, SDL_Rect& selected_outline, bool& has_selected_outline) const noexcept
     {
         if (object.identity.id == state.objects.selected_id()) {
-            selected_outline = rect;
+            selected_outline = tools::transform_gizmo::selected_outline_rect(rect);
             has_selected_outline = true;
         }
     }

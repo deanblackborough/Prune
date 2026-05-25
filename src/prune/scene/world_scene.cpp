@@ -18,13 +18,13 @@ namespace prune {
 
     void WorldScene::update_editor(float dt, const Input& input)
     {
-        m_interaction.update(m_state, m_camera, m_grid_options, dt, input);
+        m_interaction.update(*this, m_state, m_camera, m_grid_options, dt, input);
         m_camera.update_game_camera(m_state.viewport, game_camera_target());
     }
 
     void WorldScene::render(SDL_Renderer* renderer)
     {
-        m_renderer.render(renderer, m_state, m_camera, m_grid_options);
+        m_renderer.render(renderer, *this, m_state, m_camera, m_grid_options);
         render_overlay(renderer);
     }
 

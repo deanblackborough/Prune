@@ -6,9 +6,12 @@
 
 namespace prune {
 
+    class Scene;
+
     class SceneInteraction {
     public:
         void update(
+            Scene& scene,
             SceneState& state,
             SceneCamera& camera,
             const GridOptions& grid_options,
@@ -21,11 +24,12 @@ namespace prune {
         [[nodiscard]] static bool scene_mouse_input_enabled(const SceneState& state) noexcept;
 
         void update_editor_camera(SceneState& state, SceneCamera& camera, float dt, const Input& input);
-        void handle_scene_click(SceneState& state, const SceneCamera& camera, const Input& input);
-        void handle_object_drag(SceneState& state, SceneCamera& camera, const GridOptions& grid_options, const Input& input);
-        void handle_keyboard_nudge(SceneState& state, const GridOptions& grid_options, const Input& input);
+        void handle_scene_click(Scene& scene, SceneState& state, const SceneCamera& camera, const Input& input);
+        void handle_object_drag(Scene& scene, SceneState& state, SceneCamera& camera, const GridOptions& grid_options, const Input& input);
+        void handle_keyboard_nudge(Scene& scene, SceneState& state, const GridOptions& grid_options, const Input& input);
 
-        [[nodiscard]] GameObject* pick_object_at_screen(SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept;
+        [[nodiscard]] GameObject* pick_object_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept;
+        [[nodiscard]] GameObject* movable_object_from_handle_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept;
 
         [[nodiscard]] static float snap_value_to_grid(
             const GridOptions& grid_options,

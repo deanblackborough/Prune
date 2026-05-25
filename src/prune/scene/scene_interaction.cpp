@@ -1,5 +1,8 @@
 #include "prune/scene/scene_interaction.hpp"
 
+#include "prune/scene/scene.hpp"
+#include "prune/scene/tools/transform_gizmo.hpp"
+
 #include <algorithm>
 #include <cmath>
 
@@ -7,14 +10,21 @@
 
 namespace prune {
 
-    void SceneInteraction::update(SceneState& state, SceneCamera& camera, const GridOptions& grid_options, float dt, const Input& input)
+    void SceneInteraction::update(
+        Scene& scene,
+        SceneState& state,
+        SceneCamera& camera,
+        const GridOptions& grid_options,
+        float dt,
+        const Input& input
+    )
     {
-        handle_object_drag(state, camera, grid_options, input);
+        handle_object_drag(scene, state, camera, grid_options, input);
 
         if (!state.drag_state.active) {
             update_editor_camera(state, camera, dt, input);
-            handle_scene_click(state, camera, input);
-            handle_keyboard_nudge(state, grid_options, input);
+            handle_scene_click(scene, state, camera, input);
+            handle_keyboard_nudge(scene, state, grid_options, input);
         }
     }
 
@@ -42,7 +52,7 @@ namespace prune {
         camera.pan_editor_by_mouse_delta(input.mouse_delta_x(), input.mouse_delta_y());
     }
 
-    void SceneInteraction::handle_scene_click(SceneState& state, const SceneCamera& camera, const Input& input)
+    void SceneInteraction::handle_scene_click(Scene& scene, SceneState& state, const SceneCamera& camera, const Input& input)
     {
         if (!scene_mouse_input_enabled(state)) {
             return;
@@ -56,9 +66,9 @@ namespace prune {
             return;
         }
 
-        GameObject* picked = pick_object_at_screen(state, camera, input.mouse_x(), input.mouse_y());
+        GameObject* picked = pick_object_at_screen(scene, state, camera, input.mouse_x(), input.mouse_y());
 
-        if (picked && picked->editor.selectable) {
+        if (picked && scene.object_is_selectable(*picked)) {
             state.objects.select(picked->identity.id);
             return;
         }
@@ -66,7 +76,7 @@ namespace prune {
         state.objects.set_selected_id(k_invalid_game_object_id);
     }
 
-    void SceneInteraction::handle_object_drag(SceneState& state, SceneCamera& camera, const GridOptions& grid_options, const Input& input)
+    void SceneInteraction::handle_object_drag(Scene& scene, SceneState& state, SceneCamera& camera, const GridOptions& grid_options, const Input& input)
     {
         if (state.drag_state.active) {
             if (!input.is_mouse_button_down(SDL_BUTTON_LEFT) || !state.viewport.has_area()) {
@@ -75,7 +85,7 @@ namespace prune {
             }
 
             GameObject* object = state.objects.get_by_id(state.drag_state.object_id);
-            if (!object || !object->editor.movable) {
+            if (!object || !scene.object_is_movable(*object)) {
                 state.drag_state = {};
                 return;
             }
@@ -109,27 +119,25 @@ namespace prune {
             return;
         }
 
-        GameObject* picked = pick_object_at_screen(state, camera, input.mouse_x(), input.mouse_y());
-        if (!picked || !picked->editor.movable) {
+        GameObject* selected = movable_object_from_handle_at_screen(scene, state, camera, input.mouse_x(), input.mouse_y());
+        if (!selected) {
             return;
         }
 
-        state.objects.select(picked->identity.id);
-
         state.drag_state.active = true;
-        state.drag_state.object_id = picked->identity.id;
-        state.drag_state.object_start = picked->transform;
+        state.drag_state.object_id = selected->identity.id;
+        state.drag_state.object_start = selected->transform;
         state.drag_state.mouse_start_world = camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
     }
 
-    void SceneInteraction::handle_keyboard_nudge(SceneState& state, const GridOptions& grid_options, const Input& input)
+    void SceneInteraction::handle_keyboard_nudge(Scene& scene, SceneState& state, const GridOptions& grid_options, const Input& input)
     {
         if (!scene_keyboard_input_enabled(state)) {
             return;
         }
 
         GameObject* selected = state.objects.selected_object();
-        if (!selected || !selected->editor.movable) {
+        if (!selected || !scene.object_is_movable(*selected)) {
             return;
         }
 
@@ -176,7 +184,7 @@ namespace prune {
         }
     }
 
-    GameObject* SceneInteraction::pick_object_at_screen(SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept
+    GameObject* SceneInteraction::pick_object_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept
     {
         const Transform world = camera.screen_to_world(state.viewport, screen_x, screen_y);
         auto& objects = state.objects.objects();
@@ -184,7 +192,7 @@ namespace prune {
         for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
             GameObject& object = *it;
 
-            if (!object.lifecycle.active || !object.render.visible || !object.editor.selectable) {
+            if (!object.lifecycle.active || !object.render.visible || !scene.object_is_selectable(object)) {
                 continue;
             }
 
@@ -202,6 +210,32 @@ namespace prune {
         }
 
         return nullptr;
+    }
+
+
+    GameObject* SceneInteraction::movable_object_from_handle_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept
+    {
+        if (!state.scene_options.highlight_selected) {
+            return nullptr;
+        }
+
+        GameObject* selected = state.objects.selected_object();
+        if (!selected || !scene.object_is_movable(*selected)) {
+            return nullptr;
+        }
+
+        const SDL_Rect object_rect = camera.world_to_screen_rect(*selected);
+        const SDL_Rect selected_outline = tools::transform_gizmo::selected_outline_rect(object_rect);
+        const SDL_Rect move_handle = tools::transform_gizmo::move_handle_rect(selected_outline);
+
+        const int local_mouse_x = screen_x - state.viewport.screen_x;
+        const int local_mouse_y = screen_y - state.viewport.screen_y;
+
+        if (!tools::transform_gizmo::contains_point(move_handle, local_mouse_x, local_mouse_y)) {
+            return nullptr;
+        }
+
+        return selected;
     }
 
     float SceneInteraction::snap_value_to_grid(const GridOptions& grid_options, float value) noexcept
