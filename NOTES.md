@@ -327,10 +327,10 @@ Keep it small.
 
 ### Second target: debug overlays
 
-- [ ] Toggle collision bounds.
-- [ ] Toggle runtime object markers.
-- [ ] Toggle scene role labels above objects.
-- [ ] Make overlays generic but role labels scene-specific.
+- [x] Toggle collision bounds.
+- [x] Toggle runtime object markers.
+- [x] Toggle scene role labels above objects.
+- [x] Make overlays generic but role labels scene-specific.
 
 ### Third target: scene-specific creation actions
 
@@ -338,11 +338,11 @@ Move beyond raw “Add Wall” / “Add Platform” buttons.
 
 Suggested direction:
 
-- shared creation panel shell
-- scene supplies creation actions
-- action creates an object using scene factory
-- placement uses shared view-centre helper
-- created object is selected
+- [x] shared creation panel shell
+- [x] scene supplies creation actions
+- [x] action creates an object using scene factory
+- [x] placement uses shared view-centre helper
+- [x] created object is selected
 
 ### Fourth target: better sprite picker
 
