@@ -346,6 +346,10 @@ Suggested direction:
 - placement uses shared view-centre helper
 - created object is selected
 
+### Fourth target: better sprite picker
+
+Improve the sprite picker, right now it is a select box with a list of sprite indexes, lets think about a simple browser - defer this if it proves to be a little too awkward working out how to adjust the existing inspector.
+
 ### Complete when
 
 - The editor has visible manipulation affordances in the viewport.
