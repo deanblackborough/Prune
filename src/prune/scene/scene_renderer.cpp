@@ -188,12 +188,52 @@ namespace prune {
             }
 
             draw_object(renderer, state, camera, object, selected_outline, has_selected_outline);
+            draw_debug_overlays(renderer, state, camera, object);
         }
 
         if (state.scene_options.highlight_selected && has_selected_outline) {
             const GameObject* selected = state.objects.selected_object();
             const bool movable = selected && scene.object_is_movable(*selected);
             draw_selected_gizmo(renderer, selected_outline, movable);
+        }
+    }
+
+    void SceneRenderer::draw_debug_overlays(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object) const
+    {
+        const DebugOverlayOptions& overlays = state.scene_options.debug_overlays;
+
+        if (!overlays.show_collision_bounds && !overlays.show_runtime_markers) {
+            return;
+        }
+
+        const SDL_Rect rect = camera.world_to_screen_rect(object);
+
+        if (!is_rect_visible(state.viewport, rect)) {
+            return;
+        }
+
+        if (overlays.show_collision_bounds) {
+            if (object.collision.solid) {
+                SDL_SetRenderDrawColor(renderer, 255, 215, 90, 210);
+            }
+            else {
+                SDL_SetRenderDrawColor(renderer, 110, 180, 255, 170);
+            }
+
+            SDL_RenderDrawRect(renderer, &rect);
+        }
+
+        if (overlays.show_runtime_markers && object.identity.type == GameObjectType::Runtime) {
+            const int marker_size = 5;
+            const SDL_Rect marker{
+                rect.x + std::max(0, rect.w - marker_size),
+                rect.y,
+                marker_size,
+                marker_size
+            };
+
+            SDL_SetRenderDrawColor(renderer, 255, 90, 140, 230);
+            SDL_RenderFillRect(renderer, &marker);
         }
     }
 

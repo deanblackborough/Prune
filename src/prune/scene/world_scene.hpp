@@ -21,6 +21,7 @@ namespace prune {
         void update(float dt, const Input& input) final;
         void update_editor(float dt, const Input& input) final;
         void render(SDL_Renderer* renderer) final;
+        void draw_viewport_overlays() final;
 
         [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) const final;
         [[nodiscard]] bool load_from_file(std::string_view path, std::string& error) final;
@@ -45,6 +46,9 @@ namespace prune {
         [[nodiscard]] Transform view_center_spawn_position(int width, int height) const;
         [[nodiscard]] Transform first_free_view_center_spawn_position(const GameObject& object) const;
         [[nodiscard]] bool is_space_free(const GameObject& candidate) const noexcept;
+
+        void draw_creation_tools();
+        void draw_debug_tools();
 
         virtual void update_runtime(float dt, const Input& input, bool keyboard_input_enabled) = 0;
         virtual void save_scene_data(YAML::Node& root) const = 0;

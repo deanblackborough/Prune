@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -27,6 +28,8 @@ namespace prune {
         [[nodiscard]] std::string_view scene_type_id() const noexcept override;
         [[nodiscard]] std::string_view scene_name() const noexcept override { return "Simple Shooter"; }
         [[nodiscard]] ObjectConcept object_concept_for(const GameObject& object) const override;
+        [[nodiscard]] std::span<const SceneCreationAction> scene_creation_actions() const noexcept override;
+        GameObjectId create_scene_object(std::string_view action_id) override;
         [[nodiscard]] std::string_view scene_tools_label() const noexcept override { return "Simple Shooter"; }
         void draw_scene_tools(bool& open) override;
 

@@ -251,6 +251,9 @@ namespace prune {
                 viewport_pos,
                 ImVec2(viewport_pos.x + viewport_size.x, viewport_pos.y + viewport_size.y)
             );
+
+            scene.set_viewport(viewport);
+            scene.draw_viewport_overlays();
         }
         else {
             ImGui::Dummy(viewport_size);
@@ -258,7 +261,9 @@ namespace prune {
             viewport.hovered = false;
         }
 
-        scene.set_viewport(viewport);
+        if (!m_scene_render_target) {
+            scene.set_viewport(viewport);
+        }
 
         ImGui::End();
     }

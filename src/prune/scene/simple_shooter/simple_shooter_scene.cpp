@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <string>
@@ -139,9 +140,8 @@ namespace prune {
         tooling::EditorLayout::scene_panel();
 
         if (ImGui::Begin("Simple Shooter", &open)) {
-            if (ImGui::Button("Add Wall")) {
-                create_wall_at_view_center();
-            }
+            draw_creation_tools();
+            draw_debug_tools();
 
             ImGui::Separator();
 
@@ -154,6 +154,24 @@ namespace prune {
     ObjectConcept SimpleShooterScene::object_concept_for(const GameObject& object) const
     {
         return simple_shooter_concepts::describe_object(object);
+    }
+
+    std::span<const SceneCreationAction> SimpleShooterScene::scene_creation_actions() const noexcept
+    {
+        static constexpr std::array<SceneCreationAction, 1> actions{ {
+            { "wall", "Wall" }
+        } };
+
+        return actions;
+    }
+
+    GameObjectId SimpleShooterScene::create_scene_object(std::string_view action_id)
+    {
+        if (action_id == "wall") {
+            return create_wall_at_view_center();
+        }
+
+        return k_invalid_game_object_id;
     }
 
 
