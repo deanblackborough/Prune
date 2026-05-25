@@ -1,6 +1,7 @@
 #include "prune/scene/scene_interaction.hpp"
 
 #include "prune/scene/scene.hpp"
+#include "prune/scene/tools/transform_gizmo.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -118,16 +119,14 @@ namespace prune {
             return;
         }
 
-        GameObject* picked = pick_object_at_screen(scene, state, camera, input.mouse_x(), input.mouse_y());
-        if (!picked || !scene.object_is_movable(*picked)) {
+        GameObject* selected = movable_object_from_handle_at_screen(scene, state, camera, input.mouse_x(), input.mouse_y());
+        if (!selected) {
             return;
         }
 
-        state.objects.select(picked->identity.id);
-
         state.drag_state.active = true;
-        state.drag_state.object_id = picked->identity.id;
-        state.drag_state.object_start = picked->transform;
+        state.drag_state.object_id = selected->identity.id;
+        state.drag_state.object_start = selected->transform;
         state.drag_state.mouse_start_world = camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
     }
 
@@ -211,6 +210,32 @@ namespace prune {
         }
 
         return nullptr;
+    }
+
+
+    GameObject* SceneInteraction::movable_object_from_handle_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept
+    {
+        if (!state.scene_options.highlight_selected) {
+            return nullptr;
+        }
+
+        GameObject* selected = state.objects.selected_object();
+        if (!selected || !scene.object_is_movable(*selected)) {
+            return nullptr;
+        }
+
+        const SDL_Rect object_rect = camera.world_to_screen_rect(*selected);
+        const SDL_Rect selected_outline = tools::transform_gizmo::selected_outline_rect(object_rect);
+        const SDL_Rect move_handle = tools::transform_gizmo::move_handle_rect(selected_outline);
+
+        const int local_mouse_x = screen_x - state.viewport.screen_x;
+        const int local_mouse_y = screen_y - state.viewport.screen_y;
+
+        if (!tools::transform_gizmo::contains_point(move_handle, local_mouse_x, local_mouse_y)) {
+            return nullptr;
+        }
+
+        return selected;
     }
 
     float SceneInteraction::snap_value_to_grid(const GridOptions& grid_options, float value) noexcept

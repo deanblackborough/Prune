@@ -27,7 +27,7 @@ namespace prune {
         m_window = std::make_unique<Window>(config.window);
         m_input = std::make_unique<Input>();
         m_time = std::make_unique<Time>();
-        m_scene = SceneFactory::create(SceneType::SimpleShooter, m_window->width(), m_window->height());
+        m_scene = SceneFactory::create(SceneType::Platformer, m_window->width(), m_window->height());
         m_scene->on_enter();
         m_ui = std::make_unique<Ui>();
 

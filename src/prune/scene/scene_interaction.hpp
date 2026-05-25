@@ -29,6 +29,7 @@ namespace prune {
         void handle_keyboard_nudge(Scene& scene, SceneState& state, const GridOptions& grid_options, const Input& input);
 
         [[nodiscard]] GameObject* pick_object_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept;
+        [[nodiscard]] GameObject* movable_object_from_handle_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept;
 
         [[nodiscard]] static float snap_value_to_grid(
             const GridOptions& grid_options,
