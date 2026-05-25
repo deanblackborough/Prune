@@ -320,12 +320,12 @@ Goal: start proving Prune is a game editor, not just two scenes with some simple
 
 Keep it small.
 
-- [ ] Draw a simple selected-object outline/handle overlay in the viewport.
-- [ ] Allow moving selected authored objects from a visible handle.
-- [ ] Respect `object.editor.movable`.
-- [ ] Respect viewport input focus.
-- [ ] Keep runtime objects protected by default.
-- [ ] Do not add rotate/scale yet.
+- [x] Draw a simple selected-object outline/handle overlay in the viewport.
+- [x] Allow moving selected authored objects from a visible handle.
+- [x] Respect `object.editor.movable`.
+- [x] Respect viewport input focus.
+- [x] Keep runtime objects protected by default.
+- [x] Do not add rotate/scale yet.
 
 ### Second target: debug overlays
 
