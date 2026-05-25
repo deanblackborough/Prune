@@ -1,6 +1,5 @@
-#include "prune/scene/platformer_concepts.hpp"
-
-#include "prune/scene/platformer_ids.hpp"
+#include "prune/scene/platformer/platformer_concepts.hpp"
+#include "prune/scene/platformer/platformer_ids.hpp"
 
 namespace prune::platformer_concepts {
 

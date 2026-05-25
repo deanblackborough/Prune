@@ -4,8 +4,8 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "prune/scene/platformer_scene.hpp"
-#include "prune/scene/simple_shooter_scene.hpp"
+#include "prune/scene/platformer/platformer_scene.hpp"
+#include "prune/scene/simple_shooter/simple_shooter_scene.hpp"
 
 namespace prune {
 

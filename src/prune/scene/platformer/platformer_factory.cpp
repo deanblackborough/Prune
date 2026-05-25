@@ -1,8 +1,8 @@
 #include <string>
 
 #include "prune/core/defaults.hpp"
-#include "prune/scene/platformer_factory.hpp"
-#include "prune/scene/platformer_ids.hpp"
+#include "prune/scene/platformer/platformer_factory.hpp"
+#include "prune/scene/platformer/platformer_ids.hpp"
 
 namespace prune::platformer_factory {
 
@@ -19,7 +19,7 @@ namespace prune::platformer_factory {
         player.size.width = k_default_object_size;
         player.size.height = k_default_object_size;
         player.render.type = RenderType::Sprite;
-        player.render.sprite.sprite_key = std::string(k_default_player_sprite_key);
+        player.render.sprite.sprite_key = std::string(k_default_player_platformer_sprite_key);
         player.transform.x = 32.0f;
         player.transform.y = 112.0f;
         player.lifecycle.active = true;

@@ -2,7 +2,7 @@
 
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
-#include "prune/tooling/platformer.hpp"
+#include "prune/tooling/platformer/platformer.hpp"
 
 namespace prune {
 

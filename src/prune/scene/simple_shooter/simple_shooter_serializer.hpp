@@ -4,7 +4,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "prune/scene/simple_shooter_state.hpp"
+#include "prune/scene/simple_shooter/simple_shooter_state.hpp"
 
 namespace prune {
 

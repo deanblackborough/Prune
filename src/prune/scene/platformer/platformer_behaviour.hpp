@@ -4,7 +4,7 @@
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/scene_camera.hpp"
 #include "prune/scene/scene_state.hpp"
-#include "prune/scene/platformer_state.hpp"
+#include "prune/scene/platformer/platformer_state.hpp"
 
 namespace prune {
 

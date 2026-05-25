@@ -8,6 +8,7 @@ namespace prune {
             { "tank-green", "assets/sprites/tank-green.png" },
             { "tank-blue", "assets/sprites/tank-blue.png" },
             { "tank-red", "assets/sprites/tank-red.png" },
+            { "player-1-bit", "assets/sprites/player-1-bit.png" },
 
             // Missing sprite
             { "missing", "assets/sprites/missing.png" }
