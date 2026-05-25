@@ -1,6 +1,6 @@
 #pragma once
 
-#include "prune/scene/platformer_state.hpp"
+#include "prune/scene/platformer/platformer_state.hpp"
 
 namespace prune {
 

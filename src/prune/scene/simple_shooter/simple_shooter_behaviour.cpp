@@ -3,10 +3,10 @@
 #include <SDL2/SDL.h>
 
 #include "prune/scene/collision.hpp"
-#include "prune/scene/simple_shooter_behaviour.hpp"
-#include "prune/scene/simple_shooter_concepts.hpp"
-#include "prune/scene/simple_shooter_factory.hpp"
-#include "prune/scene/simple_shooter_ids.hpp"
+#include "prune/scene/simple_shooter/simple_shooter_behaviour.hpp"
+#include "prune/scene/simple_shooter/simple_shooter_concepts.hpp"
+#include "prune/scene/simple_shooter/simple_shooter_factory.hpp"
+#include "prune/scene/simple_shooter/simple_shooter_ids.hpp"
 
 namespace prune {
 

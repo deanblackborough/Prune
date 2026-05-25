@@ -3,8 +3,8 @@
 #include <SDL2/SDL.h>
 
 #include "prune/scene/collision.hpp"
-#include "prune/scene/platformer_behaviour.hpp"
-#include "prune/scene/platformer_concepts.hpp"
+#include "prune/scene/platformer/platformer_behaviour.hpp"
+#include "prune/scene/platformer/platformer_concepts.hpp"
 
 namespace prune {
 

@@ -1,8 +1,8 @@
 #include <string>
 
 #include "prune/core/defaults.hpp"
-#include "prune/scene/platformer_factory.hpp"
-#include "prune/scene/platformer_ids.hpp"
+#include "prune/scene/platformer/platformer_factory.hpp"
+#include "prune/scene/platformer/platformer_ids.hpp"
 
 namespace prune::platformer_factory {
 

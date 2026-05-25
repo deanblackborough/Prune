@@ -1,4 +1,4 @@
-#include "prune/scene/simple_shooter_serializer.hpp"
+#include "prune/scene/simple_shooter/simple_shooter_serializer.hpp"
 
 namespace prune {
 

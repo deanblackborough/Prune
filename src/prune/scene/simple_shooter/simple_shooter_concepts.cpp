@@ -1,6 +1,5 @@
-#include "prune/scene/simple_shooter_concepts.hpp"
-
-#include "prune/scene/simple_shooter_ids.hpp"
+#include "prune/scene/simple_shooter/simple_shooter_concepts.hpp"
+#include "prune/scene/simple_shooter/simple_shooter_ids.hpp"
 
 namespace prune::simple_shooter_concepts {
 

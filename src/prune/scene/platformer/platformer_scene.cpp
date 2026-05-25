@@ -5,11 +5,11 @@
 
 #include "imgui.h"
 
-#include "prune/scene/platformer_concepts.hpp"
-#include "prune/scene/platformer_factory.hpp"
-#include "prune/scene/platformer_scene.hpp"
+#include "prune/scene/platformer/platformer_concepts.hpp"
+#include "prune/scene/platformer/platformer_factory.hpp"
+#include "prune/scene/platformer/platformer_scene.hpp"
+#include "prune/scene/platformer/platformer_serializer.hpp"
 #include "prune/scene/scene_factory.hpp"
-#include "prune/scene/platformer_serializer.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"

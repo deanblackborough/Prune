@@ -2,7 +2,7 @@
 
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
-#include "prune/tooling/simple_shooter.hpp"
+#include "prune/tooling/simple_shooter/simple_shooter.hpp"
 
 namespace prune {
     void SimpleShooter::draw(SimpleShooterState& state)
