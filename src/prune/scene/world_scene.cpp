@@ -10,6 +10,7 @@
 
 #include "prune/scene/collision.hpp"
 #include "prune/tooling/imgui/layout.hpp"
+#include "prune/tooling/imgui/property_table.hpp"
 #include "prune/scene/scene_serializer.hpp"
 
 namespace prune {
@@ -110,9 +111,12 @@ namespace prune {
 
         DebugOverlayOptions& overlays = m_state.scene_options.debug_overlays;
 
-        ImGui::Checkbox("Collision bounds", &overlays.show_collision_bounds);
-        ImGui::Checkbox("Runtime object markers", &overlays.show_runtime_markers);
-        ImGui::Checkbox("Scene role labels", &overlays.show_role_labels);
+        if (tooling::imgui::property_table::begin("Debug")) {
+            tooling::imgui::property_table::checkbox("Collision bounds", "###collision_bounds", overlays.show_collision_bounds);
+            tooling::imgui::property_table::checkbox("Runtime object markers", "###runtime_markers", overlays.show_runtime_markers);
+            tooling::imgui::property_table::checkbox("Scene role labels", "###scene_role_labels", overlays.show_role_labels);
+            tooling::imgui::property_table::end();
+        }
     }
 
     bool WorldScene::save_to_file(std::string_view path, std::string& error) const
