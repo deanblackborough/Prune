@@ -89,16 +89,24 @@ The current architecture is intentionally not a plugin system, not an ECS, and n
 
 The next important step is stronger object semantics: the editor needs to understand what an object means in the active scene, not just that it has a rectangle, colour, transform, and runtime behaviour string.
 
-## Current state
+## Where we are now
+
+Prune has moved beyond a single-scene prototype. The project now has a shared editor/runtime foundation with two scene slices proving that different game types can reuse the same editor shell while owning their own behaviour, semantics, tuning, inspector sections, and save data.
+
+The current focus is no longer “can a scene run?” It is now “can scenes be edited clearly and safely while the runtime remains live?”
 
 Prune currently has:
 
 - Dedicated ImGui scene viewport
-- Live object selection and dragging
-- Outliner and inspector panels
-- Generic inspector plus scene-specific inspector sections
+- Shared editor camera and game camera foundations
 - Grid rendering and snapping
-- Editor camera and game camera separation
+- Live object selection
+- Selected-object outline and first transform handle
+- Handle-based object movement for authored movable objects
+- Runtime object protection by default
+- Outliner and generic inspector panels
+- Scene-specific inspector sections
+- Scene-aware object concepts for selection, editability, movement, runtime-only objects, and collision meaning
 - YAML scene save/load
 - Scene factory creation and scene-type loading from save files
 - Rectangle and sprite rendering
@@ -107,6 +115,10 @@ Prune currently has:
 - Shared `WorldScene` foundation for scene types
 - Simple Shooter scene slice
 - Platformer scene slice
+
+The first real editor tooling pass has started with the transform gizmo. It is intentionally small: selected authored objects show a visible manipulation affordance, and movement starts from the handle rather than from arbitrary object-body dragging.
+
+This matters because it shifts Prune from “objects can be edited through panels” towards “the viewport itself is becoming an editor surface”.
 
 ## Editor model
 
@@ -152,16 +164,20 @@ The Platformer slice currently proves:
 
 ## Near-term focus
 
-The next development phase is focused on making the scene-type model stronger before adding more scenes.
+The scene-type model is now strong enough to begin the first real editor tooling pass.
+
+The immediate focus is proving that viewport tools can operate safely on scene objects without bypassing scene ownership rules.
 
 Current priorities:
 
-1. Stronger object semantics
-2. Targeted duplication removal between scene types
-3. Clearer scene folder organisation
-4. First real editor tooling pass
+1. Transform gizmo and selected-object handles (Done)
+2. Collision/debug overlays
+3. Scene-specific creation actions
+4. Better sprite picker
 5. Behaviour and save/load review
 6. Third scene proof candidate
+
+The key rule for this phase is that tools should ask the active scene what an object means before acting on it. A selected object is not just a rectangle; it may be authored, runtime-created, selectable, editable, movable, persistent, solid, hazardous, or scene-specific in some other way.
 
 The current plan is tracked in [NOTES.md](NOTES.md).
 
