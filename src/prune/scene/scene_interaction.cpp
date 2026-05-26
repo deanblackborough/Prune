@@ -30,7 +30,7 @@ namespace prune {
 
     bool SceneInteraction::scene_keyboard_input_enabled(const SceneState& state) noexcept
     {
-        return state.viewport.focused && state.viewport.has_area();
+        return state.viewport.keyboard_input_enabled && state.viewport.has_area();
     }
 
     bool SceneInteraction::scene_mouse_input_enabled(const SceneState& state) noexcept

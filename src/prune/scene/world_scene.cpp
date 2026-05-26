@@ -226,7 +226,7 @@ namespace prune {
 
     bool WorldScene::scene_keyboard_input_enabled() const noexcept
     {
-        return m_state.viewport.focused && m_state.viewport.has_area();
+        return m_state.viewport.keyboard_input_enabled && m_state.viewport.has_area();
     }
 
     bool WorldScene::scene_mouse_input_enabled() const noexcept

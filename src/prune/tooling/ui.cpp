@@ -238,6 +238,12 @@ namespace prune {
         viewport.height = static_cast<int>(viewport_size.y);
         viewport.focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 
+        const ImGuiIO& io = ImGui::GetIO();
+        viewport.keyboard_input_enabled =
+            viewport.focused &&
+            !io.WantCaptureKeyboard &&
+            !io.WantTextInput;
+
         ensure_scene_render_target(renderer, viewport.width, viewport.height);
 
         if (m_scene_render_target) {

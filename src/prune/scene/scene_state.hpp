@@ -13,6 +13,7 @@ namespace prune {
         int height = 0;
         bool hovered = false;
         bool focused = false;
+        bool keyboard_input_enabled = false;
 
         [[nodiscard]] bool has_area() const noexcept {
             return width > 0 && height > 0;
