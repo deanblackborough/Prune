@@ -63,6 +63,8 @@ namespace prune {
         SceneCamera m_camera;
 
     private:
+        void sanitize_loaded_selection() noexcept;
+
         SceneRenderer m_renderer;
         SceneInteraction m_interaction;
     };
