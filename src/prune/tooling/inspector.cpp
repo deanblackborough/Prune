@@ -19,9 +19,9 @@ namespace prune {
 
         draw_selected(scene, grid_options);
         draw_scene_meaning(scene);
-        draw_properties(objects);
+        draw_properties(scene, objects);
         draw_computed(objects, camera);
-        draw_flags(objects);
+        draw_flags(scene, objects);
     }
 
     void Inspector::draw_selected(
@@ -35,8 +35,7 @@ namespace prune {
             return;
         }
 
-        const ObjectConcept object_concept = scene.object_concept_for(*selected);
-        const bool can_edit = object_concept.editable && !object_concept.runtime_only;
+        const bool can_edit = scene.object_is_editable(*selected);
         const bool can_rename = selected->editor.renameable && can_edit;
         const bool can_delete = selected->editor.deletable && can_edit;
         const bool can_clone = selected->editor.cloneable && can_edit;
@@ -144,7 +143,7 @@ namespace prune {
         }
     }
 
-    void Inspector::draw_properties(GameObjectManager& objects) {
+    void Inspector::draw_properties(Scene& scene, GameObjectManager& objects) {
         GameObject* selected = objects.selected_object();
         if (!selected) {
 
@@ -178,24 +177,36 @@ namespace prune {
             return;
         }
 
+        const bool can_edit = scene.object_is_editable(*selected);
+        const bool can_move = scene.object_is_movable(*selected);
+
+        if (!can_edit) {
+            ImGui::TextWrapped("This object is protected by the scene and cannot be edited from the generic inspector.");
+        }
+
         if (tooling::imgui::layout::collapsing_header("Transform")) {
             if (tooling::imgui::property_table::begin("##transform")) {
+                ImGui::BeginDisabled(!can_move);
                 tooling::imgui::property_table::drag_float("X", "transform_x", selected->transform.x, 1.0f);
                 tooling::imgui::property_table::drag_float("Y", "transform_y", selected->transform.y, 1.0f);
+                ImGui::EndDisabled();
                 tooling::imgui::property_table::end();
             }
         }
 
         if (tooling::imgui::layout::collapsing_header("Size")) {
             if (tooling::imgui::property_table::begin("##size")) {
+                ImGui::BeginDisabled(!can_edit);
                 tooling::imgui::property_table::slider_int("Width", "##width", selected->size.width, k_min_object_size, k_max_object_size);
                 tooling::imgui::property_table::slider_int("Height", "##height", selected->size.height, k_min_object_size, k_max_object_size);
+                ImGui::EndDisabled();
                 tooling::imgui::property_table::end();
             }
         }
 
         if (tooling::imgui::layout::collapsing_header("Render")) {
             if (tooling::imgui::property_table::begin("##rendering")) {
+                ImGui::BeginDisabled(!can_edit);
                 int render_type = (selected->render.type == RenderType::Rectangle) ? 0 : 1;
                 const char* render_items[] = { "Rectangle", "Sprite" };
 
@@ -229,6 +240,7 @@ namespace prune {
                     break;
                 }
 
+                ImGui::EndDisabled();
                 tooling::imgui::property_table::end();
             }
         }
@@ -265,7 +277,7 @@ namespace prune {
         }
     }
 
-    void Inspector::draw_flags(GameObjectManager& objects)
+    void Inspector::draw_flags(Scene& scene, GameObjectManager& objects)
     {
         GameObject* selected = objects.selected_object();
         if (!selected) {
@@ -274,9 +286,12 @@ namespace prune {
 
         if (tooling::imgui::layout::collapsing_header("Collision / Editor / Lifecycle", false)) {
             if (tooling::imgui::property_table::begin("##flags")) {
+                const bool can_edit = scene.object_is_editable(*selected);
+                ImGui::BeginDisabled(!can_edit);
                 tooling::imgui::property_table::checkbox("Lifecycle Active", "##active", selected->lifecycle.active);
                 tooling::imgui::property_table::checkbox("Render Visible", "##visible", selected->render.visible);
                 tooling::imgui::property_table::checkbox("Collision Solid", "##solid", selected->collision.solid);
+                ImGui::EndDisabled();
                 tooling::imgui::property_table::checkbox_readonly("Editor Selectable", "##editor_selectable", selected->editor.selectable);
                 tooling::imgui::property_table::checkbox_readonly("Editor Renameable", "##editor_renameable", selected->editor.renameable);
                 tooling::imgui::property_table::checkbox_readonly("Editor Cloneable", "##editor_cloneable", selected->editor.cloneable);

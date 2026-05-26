@@ -122,6 +122,11 @@ namespace prune {
             return true;
         }
 
+        bool object_is_persistable(const GameObject& object) noexcept
+        {
+            return object.identity.type != GameObjectType::Runtime && object.runtime.persistent;
+        }
+
         YAML::Node make_object_node(const GameObject& object)
         {
             YAML::Node node;
@@ -391,8 +396,9 @@ namespace prune {
     {
         root["scene"]["next_object_id"] = state.objects.next_id();
 
-        if (state.objects.selected_id() != k_invalid_game_object_id) {
-            root["scene"]["selected_object_id"] = state.objects.selected_id();
+        if (const GameObject* selected = state.objects.selected_object();
+            selected != nullptr && object_is_persistable(*selected)) {
+            root["scene"]["selected_object_id"] = selected->identity.id;
         }
 
         root["cameras"]["mode"] = camera.state().mode == CameraMode::Editor ? "editor" : "game";
@@ -422,7 +428,7 @@ namespace prune {
         YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
 
         for (const auto& object : state.objects.objects()) {
-            if (object.identity.type == GameObjectType::Runtime || !object.runtime.persistent) {
+            if (!object_is_persistable(object)) {
                 continue;
             }
 
@@ -522,8 +528,8 @@ namespace prune {
                 return false;
             }
 
-            if (object.identity.type == GameObjectType::Runtime || !object.runtime.persistent) {
-                error = "Save file contains a runtime-only object.";
+            if (!object_is_persistable(object)) {
+                error = "Save file contains a non-persistable runtime object.";
                 return false;
             }
 

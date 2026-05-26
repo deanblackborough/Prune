@@ -20,9 +20,9 @@ namespace prune {
     private:
         void draw_selected(Scene& scene, GridOptions& grid_options);
         void draw_scene_meaning(Scene& scene);
-        void draw_properties(GameObjectManager& objects);
+        void draw_properties(Scene& scene, GameObjectManager& objects);
         void draw_computed(GameObjectManager& objects, const Camera& camera);
-        void draw_flags(GameObjectManager& objects);
+        void draw_flags(Scene& scene, GameObjectManager& objects);
 
         void sync_rename_buffer(const GameObject* selected);
 
