@@ -106,7 +106,7 @@ Prune currently has:
 - Runtime object protection by default
 - Outliner and generic inspector panels
 - Scene-specific inspector sections
-- Scene-aware object concepts for selection, editability, movement, runtime-only objects, and collision meaning
+- Scene-aware object concepts (scene roles) for selection, editability, movement, runtime-only objects, and collision meaning
 - YAML scene save/load
 - Scene factory creation and scene-type loading from save files
 - Rectangle and sprite rendering
