@@ -23,9 +23,9 @@ namespace prune {
             switch (type) {
             case GameObjectType::Runtime:
                 return "runtime";
-            case GameObjectType::Object:
+            case GameObjectType::Authored:
             default:
-                return "object";
+                return "authored";
             }
         }
 
@@ -37,8 +37,8 @@ namespace prune {
 
             const std::string value = node.as<std::string>();
 
-            if (value == "object") {
-                out = GameObjectType::Object;
+            if (value == "authored") {
+                out = GameObjectType::Authored;
                 return true;
             }
 

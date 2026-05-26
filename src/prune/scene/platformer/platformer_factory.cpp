@@ -10,7 +10,7 @@ namespace prune::platformer_factory {
     {
         GameObject player;
         player.identity.name = "Platformer Player";
-        player.identity.type = GameObjectType::Object;
+        player.identity.type = GameObjectType::Authored;
         player.runtime.behaviour = platformer_ids::player_behaviour;
         player.editor.renameable = false;
         player.editor.movable = false;
@@ -32,7 +32,7 @@ namespace prune::platformer_factory {
     {
         GameObject start;
         start.identity.name = "Player Start";
-        start.identity.type = GameObjectType::Object;
+        start.identity.type = GameObjectType::Authored;
         start.runtime.behaviour = platformer_ids::player_start_behaviour;
         start.transform.x = x;
         start.transform.y = y;
@@ -48,24 +48,24 @@ namespace prune::platformer_factory {
         return start;
     }
 
-    GameObject create_ground(float x, float y, int width, int height, const char* name)
+    GameObject create_platform(float x, float y, int width, int height, const char* name)
     {
-        GameObject ground;
-        ground.identity.name = name;
-        ground.identity.type = GameObjectType::Object;
-        ground.runtime.behaviour = platformer_ids::ground_behaviour;
-        ground.transform.x = x;
-        ground.transform.y = y;
-        ground.size.width = width;
-        ground.size.height = height;
-        ground.render.type = RenderType::Rectangle;
-        ground.render.rectangle.color[0] = 0.45f;
-        ground.render.rectangle.color[1] = 0.35f;
-        ground.render.rectangle.color[2] = 0.55f;
-        ground.lifecycle.active = true;
-        ground.render.visible = true;
-        ground.collision.solid = true;
-        return ground;
+        GameObject platform;
+        platform.identity.name = name;
+        platform.identity.type = GameObjectType::Authored;
+        platform.runtime.behaviour = platformer_ids::platform_behaviour;
+        platform.transform.x = x;
+        platform.transform.y = y;
+        platform.size.width = width;
+        platform.size.height = height;
+        platform.render.type = RenderType::Rectangle;
+        platform.render.rectangle.color[0] = 0.45f;
+        platform.render.rectangle.color[1] = 0.35f;
+        platform.render.rectangle.color[2] = 0.55f;
+        platform.lifecycle.active = true;
+        platform.render.visible = true;
+        platform.collision.solid = true;
+        return platform;
     }
 
     GameObject create_hazard(float x, float y)
@@ -77,7 +77,7 @@ namespace prune::platformer_factory {
     {
         GameObject hazard;
         hazard.identity.name = name;
-        hazard.identity.type = GameObjectType::Object;
+        hazard.identity.type = GameObjectType::Authored;
         hazard.runtime.behaviour = platformer_ids::hazard_behaviour;
         hazard.transform.x = x;
         hazard.transform.y = y;

@@ -6,7 +6,7 @@ namespace prune::platformer_factory {
 
     [[nodiscard]] GameObject create_player();
     [[nodiscard]] GameObject create_player_start(float x, float y);
-    [[nodiscard]] GameObject create_ground(float x, float y, int width, int height, const char* name);
+    [[nodiscard]] GameObject create_platform(float x, float y, int width, int height, const char* name);
     [[nodiscard]] GameObject create_hazard(float x, float y);
     [[nodiscard]] GameObject create_hazard(float x, float y, int width, int height, const char* name);
 

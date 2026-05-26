@@ -11,7 +11,7 @@ namespace prune {
     constexpr GameObjectId k_invalid_game_object_id = 0;
 
     enum class GameObjectType {
-        Object = 0,
+        Authored = 0,
         Runtime
     };
 
@@ -85,7 +85,7 @@ namespace prune {
     struct ObjectIdentity {
         GameObjectId id = k_invalid_game_object_id;
         std::string name = "Object";
-        GameObjectType type = GameObjectType::Object;
+        GameObjectType type = GameObjectType::Authored;
     };
 
     struct ObjectMotion {

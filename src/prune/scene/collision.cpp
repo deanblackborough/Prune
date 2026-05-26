@@ -15,6 +15,11 @@ namespace prune::collision {
             (a_bounds.y + a_bounds.height) > b_bounds.y;
     }
 
+    bool are_active_overlapping(const GameObject& a, const GameObject& b) noexcept
+    {
+        return a.lifecycle.active && b.lifecycle.active && is_overlapping(a, b);
+    }
+
     void resolve_against_solids(GameObject& object, const GameObjectManager& objects)
     {
         for (const auto& other : objects.objects()) {
@@ -26,7 +31,7 @@ namespace prune::collision {
                 continue;
             }
 
-            if (!is_overlapping(object, other)) {
+            if (!are_active_overlapping(object, other)) {
                 continue;
             }
 

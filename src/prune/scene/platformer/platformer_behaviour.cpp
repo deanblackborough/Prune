@@ -14,7 +14,7 @@ namespace prune {
         {
             return object.lifecycle.active &&
                 object.collision.solid &&
-                platformer_concepts::is_ground(object);
+                platformer_concepts::is_platform(object);
         }
 
         [[nodiscard]] bool is_active_platformer_hazard(const GameObject& object) noexcept
@@ -148,7 +148,7 @@ namespace prune {
                 continue;
             }
 
-            if (!collision::is_overlapping(player, object)) {
+            if (!collision::are_active_overlapping(player, object)) {
                 continue;
             }
 
@@ -180,7 +180,7 @@ namespace prune {
                 continue;
             }
 
-            if (collision::is_overlapping(player, object)) {
+            if (collision::are_active_overlapping(player, object)) {
                 return true;
             }
         }

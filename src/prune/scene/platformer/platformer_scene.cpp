@@ -122,12 +122,12 @@ namespace prune {
         m_platformer_state.player_id =
             m_state.objects.create_object(platformer_factory::create_player());
 
-        m_state.objects.create_object(platformer_factory::create_ground(0.0f, 176.0f, 400, 16, "Main Ground"));
-        m_state.objects.create_object(platformer_factory::create_ground(96.0f, 144.0f, 80, 16, "Lower Step"));
-        m_state.objects.create_object(platformer_factory::create_ground(208.0f, 112.0f, 80, 16, "Mid Platform"));
-        m_state.objects.create_object(platformer_factory::create_ground(320.0f, 80.0f, 64, 16, "High Platform"));
+        m_state.objects.create_object(platformer_factory::create_platform(0.0f, 176.0f, 400, 16, "Main Platform"));
+        m_state.objects.create_object(platformer_factory::create_platform(96.0f, 144.0f, 80, 16, "Lower Step"));
+        m_state.objects.create_object(platformer_factory::create_platform(208.0f, 112.0f, 80, 16, "Mid Platform"));
+        m_state.objects.create_object(platformer_factory::create_platform(320.0f, 80.0f, 64, 16, "High Platform"));
         m_state.objects.create_object(platformer_factory::create_hazard(144.0f, 160.0f, 32, 16, "Spike Pit"));
-        m_state.objects.create_object(platformer_factory::create_hazard(288.0f, 160.0f, 32, 16, "Exit Pit"));
+        m_state.objects.create_object(platformer_factory::create_hazard(288.0f, 160.0f, 32, 16, "Second Spike Pit"));
 
         m_platformer.reset_player(m_state, m_platformer_state);
         m_state.objects.select(m_platformer_state.player_id);
@@ -222,7 +222,7 @@ namespace prune {
             tooling::imgui::property_table::text("Used By", "Hazard and fall reset");
             tooling::imgui::property_table::text("Player Object Id", std::to_string(m_platformer_state.player_id).c_str());
         }
-        else if (kind == platformer_concepts::ObjectKind::Ground) {
+        else if (kind == platformer_concepts::ObjectKind::Platform) {
             tooling::imgui::property_table::text("Collision Surface", bool_label(selected.collision.solid));
             tooling::imgui::property_table::text("Can Ground Player", bool_label(selected.collision.solid));
         }
@@ -296,7 +296,7 @@ namespace prune {
 
     GameObjectId PlatformerScene::add_platform_at_view_center()
     {
-        GameObject platform = platformer_factory::create_ground(0.0f, 0.0f, 64, 16, "Platform");
+        GameObject platform = platformer_factory::create_platform(0.0f, 0.0f, 64, 16, "Platform");
         platform.transform = first_free_view_center_spawn_position(platform);
 
         const GameObjectId id = m_state.objects.create_object(platform);
