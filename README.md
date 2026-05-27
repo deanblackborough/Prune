@@ -50,9 +50,11 @@ Each scene type owns:
 - Scene-specific default layout
 - Scene-specific save data
 
-A simple shooter, platformer, artillery/tank game, card scene, or puzzle scene should be able to reuse most of the editor while still defining the parts that make that scene type unique.
+A simple shooter, platformer, artillery/tank game, card scene, or puzzle scene should be able to reuse most of the editor and general tools whilst still defining the parts that make that particular scene type unique.
 
-The current goal is not to build a complete game. The goal is to prove that multiple small game slices can coexist inside the same live editor/runtime without turning the scene layer into one large conditional mess.
+The current goal is not to build complete games. The goal is to prove that multiple small game slices can coexist inside the same live editor/runtime without turning the scene layer into one large conditional mess.
+
+As the projects develops, the game slices will improve and expand. Tools will be added when they are needed by the scenes, as these new tools get added the game slices, features and UX will improve.
 
 ### Platformer editor and runtime
 
