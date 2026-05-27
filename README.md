@@ -54,7 +54,7 @@ A simple shooter, platformer, artillery/tank game, card scene, or puzzle scene s
 
 The current goal is not to build complete games. The goal is to prove that multiple small game slices can coexist inside the same live editor/runtime without turning the scene layer into one large conditional mess.
 
-As the projects develops, the game slices will improve and expand. Tools will be added when they are needed by the scenes, as these new tools get added the game slices, features and UX will improve.
+As the project develops, the game slices will improve and expand. Tools will be added as scenes need them; as those tools arrive, game slice quality, features, and editor UX will improve.
 
 ### Platformer editor and runtime
 
