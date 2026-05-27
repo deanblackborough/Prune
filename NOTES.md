@@ -361,16 +361,16 @@ Goal: deliberate review after semantics and tooling expose the next problems.
 
 ### Review areas
 
-- [ ] Input focus and viewport gating.
-- [ ] Game camera/editor camera switching.
-- [ ] Pause behaviour across scenes.
-- [ ] Save/load round trips for both scenes.
-- [ ] Runtime object cleanup.
-- [ ] Object selection after save/load/new scene.
-- [ ] Collision consistency.
-- [ ] Scene factory behaviour.
-- [ ] Default scene layouts.
-- [ ] Naming conventions.
+- [x] Input focus and viewport gating.
+- [x] Game camera/editor camera switching.
+- [x] Pause behaviour across scenes.
+- [x] Save/load round trips for both scenes.
+- [x] Runtime object cleanup.
+- [x] Object selection after save/load/new scene.
+- [x] Collision consistency.
+- [x] Scene factory behaviour.
+- [x] Default scene layouts.
+- [x] Naming conventions.
 
 ### Complete when
 

@@ -10,7 +10,7 @@ namespace prune::simple_shooter_factory {
     {
         GameObject player;
         player.identity.name = "Player";
-        player.identity.type = GameObjectType::Object;
+        player.identity.type = GameObjectType::Authored;
         player.runtime.behaviour = simple_shooter_ids::player_behaviour;
         player.editor.renameable = false;
         player.editor.movable = false;
@@ -34,14 +34,19 @@ namespace prune::simple_shooter_factory {
 
     GameObject create_wall()
     {
+        return create_wall(176.0f, 128.0f, k_default_object_size, k_default_object_size, "Wall");
+    }
+
+    GameObject create_wall(float x, float y, int width, int height, const char* name)
+    {
         GameObject wall;
-        wall.identity.name = "Wall";
-        wall.identity.type = GameObjectType::Object;
+        wall.identity.name = name;
+        wall.identity.type = GameObjectType::Authored;
         wall.runtime.behaviour = simple_shooter_ids::wall_behaviour;
-        wall.transform.x = 176.0f;
-        wall.transform.y = 128.0f;
-        wall.size.width = k_default_object_size;
-        wall.size.height = k_default_object_size;
+        wall.transform.x = x;
+        wall.transform.y = y;
+        wall.size.width = width;
+        wall.size.height = height;
         wall.render.type = RenderType::Rectangle;
         wall.render.rectangle.color[0] = 0.8f;
         wall.render.rectangle.color[1] = 0.5f;
@@ -57,7 +62,7 @@ namespace prune::simple_shooter_factory {
     {
         GameObject enemy;
         enemy.identity.name = "Enemy";
-        enemy.identity.type = GameObjectType::Object;
+        enemy.identity.type = GameObjectType::Authored;
         enemy.runtime.behaviour = simple_shooter_ids::enemy_behaviour;
         enemy.transform.x = 256.0f;
         enemy.transform.y = 128.0f;
@@ -79,7 +84,7 @@ namespace prune::simple_shooter_factory {
     {
         GameObject spawn;
         spawn.identity.name = "Enemy Spawn";
-        spawn.identity.type = GameObjectType::Object;
+        spawn.identity.type = GameObjectType::Authored;
         spawn.runtime.behaviour = simple_shooter_ids::spawn_behaviour;
         spawn.editor.renameable = false;
         spawn.editor.deletable = false;

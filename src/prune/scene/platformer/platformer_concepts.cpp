@@ -13,8 +13,8 @@ namespace prune::platformer_concepts {
             return ObjectKind::PlayerStart;
         }
 
-        if (is_ground(object)) {
-            return ObjectKind::Ground;
+        if (is_platform(object)) {
+            return ObjectKind::Platform;
         }
 
         if (is_hazard(object)) {
@@ -34,9 +34,9 @@ namespace prune::platformer_concepts {
         return object.runtime.behaviour == platformer_ids::player_start_behaviour;
     }
 
-    bool is_ground(const GameObject& object) noexcept
+    bool is_platform(const GameObject& object) noexcept
     {
-        return object.runtime.behaviour == platformer_ids::ground_behaviour;
+        return object.runtime.behaviour == platformer_ids::platform_behaviour;
     }
 
     bool is_hazard(const GameObject& object) noexcept
@@ -51,8 +51,8 @@ namespace prune::platformer_concepts {
             return "Player";
         case ObjectKind::PlayerStart:
             return "Player Start";
-        case ObjectKind::Ground:
-            return "Platform / Ground";
+        case ObjectKind::Platform:
+            return "Platform";
         case ObjectKind::Hazard:
             return "Hazard";
         case ObjectKind::SceneObject:
@@ -68,7 +68,7 @@ namespace prune::platformer_concepts {
             return "The single controlled actor for the Platformer slice. The game camera follows this object.";
         case ObjectKind::PlayerStart:
             return "Authored reset marker used when the player hits a hazard or falls out of the level.";
-        case ObjectKind::Ground:
+        case ObjectKind::Platform:
             return "An authored solid surface the player can stand on or collide with.";
         case ObjectKind::Hazard:
             return "An authored trigger that resets the player to the player start marker on contact.";
@@ -82,10 +82,10 @@ namespace prune::platformer_concepts {
     {
         switch (kind) {
         case ObjectKind::Player:
-            return "Blocked by Platform / Ground objects. Hazards reset the player.";
+            return "Blocked by Platform objects. Hazards reset the player.";
         case ObjectKind::PlayerStart:
             return "Marker only. It does not collide.";
-        case ObjectKind::Ground:
+        case ObjectKind::Platform:
             return "Solid. Blocks horizontal movement and provides grounded state when landed on.";
         case ObjectKind::Hazard:
             return "Trigger only. It is not solid, but player contact causes a reset.";
@@ -103,7 +103,7 @@ namespace prune::platformer_concepts {
                 "platformer.player",
                 "Player",
                 "The single controlled actor for the Platformer slice. The game camera follows this object.",
-                "Blocked by Platform / Ground objects. Hazards reset the player.",
+                "Blocked by Platform objects. Hazards reset the player.",
                 false,
                 true,
                 true
@@ -118,10 +118,10 @@ namespace prune::platformer_concepts {
                 true,
                 true
             };
-        case ObjectKind::Ground:
+        case ObjectKind::Platform:
             return {
-                "platformer.ground",
-                "Platform / Ground",
+                "platformer.platform",
+                "Platform",
                 "An authored solid surface the player can stand on or collide with.",
                 "Solid. Blocks horizontal movement and provides grounded state when landed on.",
                 false,

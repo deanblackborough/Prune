@@ -8,7 +8,7 @@ namespace prune::platformer_concepts {
     enum class ObjectKind {
         Player,
         PlayerStart,
-        Ground,
+        Platform,
         Hazard,
         SceneObject
     };
@@ -17,7 +17,7 @@ namespace prune::platformer_concepts {
 
     [[nodiscard]] bool is_player(const GameObject& object) noexcept;
     [[nodiscard]] bool is_player_start(const GameObject& object) noexcept;
-    [[nodiscard]] bool is_ground(const GameObject& object) noexcept;
+    [[nodiscard]] bool is_platform(const GameObject& object) noexcept;
     [[nodiscard]] bool is_hazard(const GameObject& object) noexcept;
 
     [[nodiscard]] const char* label(ObjectKind kind) noexcept;

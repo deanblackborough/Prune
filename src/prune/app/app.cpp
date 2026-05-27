@@ -59,7 +59,8 @@ namespace prune {
         while (m_running) {
             process_events();
 
-            if (m_input->was_key_pressed(SDL_SCANCODE_ESCAPE)) {
+            const ImGuiIO& io = ImGui::GetIO();
+            if (m_input->was_key_pressed(SDL_SCANCODE_ESCAPE) && !io.WantCaptureKeyboard && !io.WantTextInput) {
                 m_running = false;
                 break;
             }

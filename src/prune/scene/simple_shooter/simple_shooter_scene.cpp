@@ -230,7 +230,15 @@ namespace prune {
         m_simple_shooter_state.player_id =
             m_state.objects.create_object(simple_shooter_factory::create_player());
 
-        m_state.objects.create_object(simple_shooter_factory::create_wall());
+        m_state.objects.create_object(
+            simple_shooter_factory::create_wall(176.0f, 96.0f, 16, 64, "Central Wall")
+        );
+        m_state.objects.create_object(
+            simple_shooter_factory::create_wall(80.0f, 192.0f, 96, 16, "Lower Cover")
+        );
+        m_state.objects.create_object(
+            simple_shooter_factory::create_wall(224.0f, 64.0f, 96, 16, "Upper Cover")
+        );
 
         m_simple_shooter_state.enemy_spawn_id =
             m_state.objects.create_object(simple_shooter_factory::create_enemy_spawn());

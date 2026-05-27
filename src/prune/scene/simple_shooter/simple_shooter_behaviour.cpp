@@ -307,11 +307,11 @@ namespace prune {
             }
 
             for (const auto& wall : state.objects.objects()) {
-                if (!simple_shooter_concepts::is_wall(wall) || !wall.lifecycle.active) {
+                if (!simple_shooter_concepts::is_wall(wall) || !wall.lifecycle.active || !wall.collision.solid) {
                     continue;
                 }
 
-                if (collision::is_overlapping(projectile, wall)) {
+                if (collision::are_active_overlapping(projectile, wall)) {
                     projectile.lifecycle.active = false;
                     break;
                 }
@@ -331,7 +331,7 @@ namespace prune {
                     continue;
                 }
 
-                if (!collision::is_overlapping(projectile, enemy)) {
+                if (!collision::are_active_overlapping(projectile, enemy)) {
                     continue;
                 }
 

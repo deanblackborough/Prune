@@ -183,8 +183,11 @@ namespace prune {
             }
 
             m_state = std::move(loaded_state);
+            m_state.drag_state = {};
             m_camera = loaded_camera;
             m_grid_options = loaded_grid_options;
+
+            sanitize_loaded_selection();
             m_camera.update_game_camera(m_state.viewport, game_camera_target());
 
             return true;
@@ -197,6 +200,24 @@ namespace prune {
             error = ex.what();
             return false;
         }
+    }
+
+
+    void WorldScene::sanitize_loaded_selection() noexcept
+    {
+        if (GameObject* selected = m_state.objects.selected_object();
+            selected != nullptr && object_is_selectable(*selected)) {
+            return;
+        }
+
+        for (const auto& object : m_state.objects.objects()) {
+            if (object_is_selectable(object)) {
+                m_state.objects.set_selected_id(object.identity.id);
+                return;
+            }
+        }
+
+        m_state.objects.set_selected_id(k_invalid_game_object_id);
     }
 
     void WorldScene::set_viewport(const SceneViewport& viewport) noexcept
@@ -226,7 +247,7 @@ namespace prune {
 
     bool WorldScene::scene_keyboard_input_enabled() const noexcept
     {
-        return m_state.viewport.focused && m_state.viewport.has_area();
+        return m_state.viewport.keyboard_input_enabled && m_state.viewport.has_area();
     }
 
     bool WorldScene::scene_mouse_input_enabled() const noexcept

@@ -69,15 +69,21 @@ namespace prune {
             return object.editor.selectable && object_concept_for(object).selectable;
         }
 
-        [[nodiscard]] virtual bool object_is_movable(const GameObject& object) const
+        [[nodiscard]] virtual bool object_is_editable(const GameObject& object) const
         {
             const ObjectConcept concept_for = object_concept_for(object);
 
-            return object_is_selectable(object) &&
-                object.editor.movable &&
+            return object.editor.selectable &&
                 concept_for.editable &&
                 !concept_for.runtime_only &&
                 object.identity.type != GameObjectType::Runtime;
+        }
+
+        [[nodiscard]] virtual bool object_is_movable(const GameObject& object) const
+        {
+            return object_is_selectable(object) &&
+                object_is_editable(object) &&
+                object.editor.movable;
         }
 
         [[nodiscard]] virtual ObjectConcept object_concept_for(const GameObject& object) const
