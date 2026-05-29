@@ -61,6 +61,7 @@ namespace prune {
         state.options.angle_step = artillery["angle_step"].as<float>();
         state.options.power_step = artillery["power_step"].as<float>();
         state.projectile_id = k_invalid_game_object_id;
+        state.projectile_owner_id = k_invalid_game_object_id;
         state.projectile_active = false;
 
         return true;

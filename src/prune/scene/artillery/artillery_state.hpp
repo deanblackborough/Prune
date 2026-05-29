@@ -23,6 +23,7 @@ namespace prune {
         GameObjectId player_one_id = k_invalid_game_object_id;
         GameObjectId player_two_id = k_invalid_game_object_id;
         GameObjectId projectile_id = k_invalid_game_object_id;
+        GameObjectId projectile_owner_id = k_invalid_game_object_id;
 
         ArtilleryTurn current_turn = ArtilleryTurn::PlayerOne;
         float angle_degrees = 45.0f;

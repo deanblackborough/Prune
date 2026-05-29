@@ -269,6 +269,7 @@ namespace prune {
         }
 
         m_artillery_state.projectile_id = k_invalid_game_object_id;
+        m_artillery_state.projectile_owner_id = k_invalid_game_object_id;
         m_artillery_state.projectile_active = false;
         return true;
     }
