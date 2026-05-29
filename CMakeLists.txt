@@ -42,6 +42,12 @@ add_executable(Prune
         src/prune/scene/platformer/platformer_concepts.cpp
         src/prune/scene/platformer/platformer_serializer.cpp
 
+        src/prune/scene/artillery/artillery_scene.cpp
+        src/prune/scene/artillery/artillery_factory.cpp
+        src/prune/scene/artillery/artillery_behaviour.cpp
+        src/prune/scene/artillery/artillery_concepts.cpp
+        src/prune/scene/artillery/artillery_serializer.cpp
+
         src/prune/resources/sprites.cpp
 
         src/prune/tooling/theme.cpp
@@ -55,6 +61,7 @@ add_executable(Prune
         src/prune/tooling/editor_layout.cpp
         src/prune/tooling/simple_shooter/simple_shooter.cpp
         src/prune/tooling/platformer/platformer.cpp
+        src/prune/tooling/artillery/artillery.cpp
 
         src/prune/tooling/imgui/property_table.cpp
         src/prune/tooling/imgui/layout.cpp

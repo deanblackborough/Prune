@@ -10,7 +10,8 @@ namespace prune {
 
     enum class SceneType {
         SimpleShooter,
-        Platformer
+        Platformer,
+        Artillery
     };
 
     struct SceneDescriptor {
@@ -20,9 +21,10 @@ namespace prune {
         std::string_view default_file_path;
     };
 
-    inline constexpr std::array<SceneDescriptor, 2> k_scene_descriptors{
+    inline constexpr std::array<SceneDescriptor, 3> k_scene_descriptors{
         SceneDescriptor{ SceneType::SimpleShooter, "simple_shooter", "Simple Shooter", "simple_shooter_scene.yml" },
-        SceneDescriptor{ SceneType::Platformer, "platformer", "Platformer", "platformer_scene.yml" }
+        SceneDescriptor{ SceneType::Platformer, "platformer", "Platformer", "platformer_scene.yml" },
+        SceneDescriptor{ SceneType::Artillery, "artillery", "Artillery", "artillery_scene.yml" }
     };
 
     [[nodiscard]] const SceneDescriptor* scene_descriptor_for(SceneType type) noexcept;
