@@ -407,6 +407,14 @@ Why this is the right third test:
 
 Do not start with a card game yet. A card scene is interesting, but it will pull the project towards UI layout, hands, decks, zones, drag/drop rules, and data modelling before the world-scene editor tooling is mature.
 
+### Implementation issues
+
+- Player 2 is the wrong way around
+- Controls reversed for player 2
+- Need to create variations for reset, a couple of options for terian
+- Anger and poer need to be per player
+- Maybe draw angle and power next to player icon? (Maybe too much for slice)
+
 ## Phase 7 — Prototype release preparation
 
 Goal: make Prune presentable as a prototype milestone.
