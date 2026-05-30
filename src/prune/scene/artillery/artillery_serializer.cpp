@@ -13,7 +13,7 @@ namespace prune {
             return value == "player_two" ? ArtilleryTurn::PlayerTwo : ArtilleryTurn::PlayerOne;
         }
 
-        void save_aim(YAML::Node& node, const ArtilleryAim& aim)
+        void save_aim(YAML::Node node, const ArtilleryAim& aim)
         {
             node["angle_degrees"] = aim.angle_degrees;
             node["power"] = aim.power;
@@ -33,18 +33,20 @@ namespace prune {
 
     void ArtillerySerializer::save_to_node(const ArtilleryState& state, YAML::Node& root)
     {
-        root["artillery"]["player_one_id"] = state.player_one_id;
-        root["artillery"]["player_two_id"] = state.player_two_id;
-        root["artillery"]["current_turn"] = turn_to_string(state.current_turn);
-        save_aim(root["artillery"]["player_one_aim"], state.player_one_aim);
-        save_aim(root["artillery"]["player_two_aim"], state.player_two_aim);
-        root["artillery"]["paused"] = state.options.paused;
-        root["artillery"]["gravity"] = state.options.gravity;
-        root["artillery"]["projectile_lifetime"] = state.options.projectile_lifetime;
-        root["artillery"]["min_power"] = state.options.min_power;
-        root["artillery"]["max_power"] = state.options.max_power;
-        root["artillery"]["angle_step"] = state.options.angle_step;
-        root["artillery"]["power_step"] = state.options.power_step;
+        YAML::Node artillery = root["artillery"];
+
+        artillery["player_one_id"] = state.player_one_id;
+        artillery["player_two_id"] = state.player_two_id;
+        artillery["current_turn"] = turn_to_string(state.current_turn);
+        save_aim(artillery["player_one_aim"], state.player_one_aim);
+        save_aim(artillery["player_two_aim"], state.player_two_aim);
+        artillery["paused"] = state.options.paused;
+        artillery["gravity"] = state.options.gravity;
+        artillery["projectile_lifetime"] = state.options.projectile_lifetime;
+        artillery["min_power"] = state.options.min_power;
+        artillery["max_power"] = state.options.max_power;
+        artillery["angle_step"] = state.options.angle_step;
+        artillery["power_step"] = state.options.power_step;
     }
 
     bool ArtillerySerializer::load_from_node(const YAML::Node& root, ArtilleryState& state, std::string& error)
