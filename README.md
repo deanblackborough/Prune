@@ -158,7 +158,7 @@ The Platformer slice currently proves:
 ### Artillery
 
 - Two player
-- Indivual player state
+- Individual player state
 - Randomised levels (3 defined, random on reset)
 - Game reset on tank collision
 - Scene-specific tuning panel
