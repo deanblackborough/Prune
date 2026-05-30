@@ -141,6 +141,14 @@ namespace prune {
             return;
         }
 
+        const bool ctrl_down =
+            input.is_key_down(SDL_SCANCODE_LCTRL) ||
+            input.is_key_down(SDL_SCANCODE_RCTRL);
+
+        if (!ctrl_down) {
+            return;
+        }
+
         int move_x = 0;
         int move_y = 0;
 
