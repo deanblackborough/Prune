@@ -338,6 +338,10 @@ Adding another scene now would multiply that weakness.
 - Inspector/outliner/tooling can reuse scene concept metadata.
 - Scene-specific creation is cleaner.
 
+### Status
+
+Artillery was added as a third scene type after the current object semantics were already in place.
+
 ---
 
 ## ObjectConcept rather than full plugin API
@@ -652,6 +656,52 @@ A card game is more interesting to me but it pulls the project towards UI layout
 - The editor/runtime model can handle non-world or UI-heavy scene types.
 - Drag/drop and zone-based interactions become a deliberate focus.
 - My Wife pushes for the card game slice, she loves card games and I have some ideas.
+
+### Status
+
+The artillery slice was added as the third scene type.
+
+---
+
+## Do not add a fourth scene yet
+
+### Decision
+
+Do not add a fourth scene type until the three current scene types have exposed and resolved the next shared boundaries.
+
+### Why
+
+Simple Shooter, Platformer, and Artillery now prove enough variety:
+
+- free movement and projectile combat
+- platform collision and grounded movement
+- turn-based artillery with generated authored terrain
+
+The third scene has done its job. It exposed the next architectural pressure points:
+
+- editor input vs runtime input ownership
+- scene-specific load transaction safety
+- scene-specific generated authored data
+- clearer authored/runtime object rules
+- stronger documentation around what belongs in `WorldScene`
+
+Adding another scene now would mostly multiply unresolved design pressure.
+
+### Consequences
+
+- Improve the shared editor/runtime foundation before increasing scene count.
+- Use the existing three scenes as regression coverage for architecture changes.
+- Treat new scene ideas as design notes, not implementation targets.
+
+### Revisit when
+
+- Editor/runtime input ownership is explicit.
+- Save/load is transaction-safe for scene-specific state.
+- Generated authored objects are documented and handled consistently.
+- Runtime-only objects are consistently excluded from normal editing and persistence.
+- The current three scenes remain coherent after another tooling pass.
+- The current three scenes have been iterated on enough to feel like they are showing off the potential of Prune rather than just being basic proof of concept slices.
+- Tooling exists and is stable enough to make a new scene type feel unique rather than more of the same.
 
 ---
 

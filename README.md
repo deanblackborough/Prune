@@ -97,7 +97,7 @@ The next important step is stronger object semantics: the editor needs to unders
 
 ## Where we are now
 
-Prune has moved beyond a single-scene prototype. The project now has a shared editor/runtime foundation with two scene slices proving that different game types can reuse the same editor shell while owning their own behaviour, semantics, tuning, inspector sections, and save data.
+Prune has moved beyond a single-scene prototype. The project now has a shared editor/runtime foundation with three scene slices proving that different game types can reuse the same editor while owning their own behaviour, semantics, tuning, inspector sections, and save data.
 
 The current focus is no longer “can a scene run?” It is now “can scenes be edited clearly and safely while the runtime remains live?”
 
@@ -186,12 +186,13 @@ The immediate focus is proving that viewport tools can operate safely on scene o
 
 Current priorities:
 
-1. Transform gizmo and selected-object handles (Done)
-2. Collision/debug overlays
-3. Scene-specific creation actions
-4. Better sprite picker
-5. Behaviour and save/load review
-6. Third scene proof candidate
+[x] Transform gizmo and selected-object handles
+[x] Collision/debug overlays
+[x] Scene-specific creation actions
+[x] Better sprite picker
+[x] Behaviour and save/load review
+[x] Third scene proof candidate
+[ ] Prototype release and preparation for editor tooling
 
 The key rule for this phase is that tools should ask the active scene what an object means before acting on it. A selected object is not just a rectangle; it may be authored, runtime-created, selectable, editable, movable, persistent, solid, hazardous, or scene-specific in some other way.
 
