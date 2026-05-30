@@ -17,13 +17,9 @@ namespace prune {
     {
         if (tooling::imgui::layout::collapsing_header("Game")) {
             if (tooling::imgui::property_table::begin("##artillery_game")) {
-                ArtilleryAim& aim = current_aim(state);
-
                 tooling::imgui::property_table::checkbox("Paused", "##artillery_paused", state.options.paused);
                 tooling::imgui::property_table::text("Current Player", turn_label(state.current_turn));
                 tooling::imgui::property_table::text("Projectile Active", state.projectile_active ? "Yes" : "No");
-                tooling::imgui::property_table::slider_float("Angle", "##artillery_angle", aim.angle_degrees, 5.0f, 85.0f, "%.1f");
-                tooling::imgui::property_table::slider_float("Power", "##artillery_power", aim.power, state.options.min_power, state.options.max_power, "%.1f");
                 tooling::imgui::property_table::slider_float("Gravity", "##artillery_gravity", state.options.gravity, 60.0f, 360.0f, "%.1f");
                 tooling::imgui::property_table::end();
             }
