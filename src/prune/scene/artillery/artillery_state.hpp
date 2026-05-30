@@ -9,6 +9,11 @@ namespace prune {
         PlayerTwo = 1
     };
 
+    struct ArtilleryAim {
+        float angle_degrees = 45.0f;
+        float power = 220.0f;
+    };
+
     struct ArtilleryOptions {
         bool paused = false;
         float gravity = 180.0f;
@@ -26,11 +31,32 @@ namespace prune {
         GameObjectId projectile_owner_id = k_invalid_game_object_id;
 
         ArtilleryTurn current_turn = ArtilleryTurn::PlayerOne;
-        float angle_degrees = 45.0f;
-        float power = 220.0f;
+        ArtilleryAim player_one_aim{};
+        ArtilleryAim player_two_aim{};
         bool projectile_active = false;
 
         ArtilleryOptions options{};
     };
+
+    [[nodiscard]] inline ArtilleryAim& current_aim(ArtilleryState& state) noexcept
+    {
+        return state.current_turn == ArtilleryTurn::PlayerOne
+            ? state.player_one_aim
+            : state.player_two_aim;
+    }
+
+    [[nodiscard]] inline const ArtilleryAim& current_aim(const ArtilleryState& state) noexcept
+    {
+        return state.current_turn == ArtilleryTurn::PlayerOne
+            ? state.player_one_aim
+            : state.player_two_aim;
+    }
+
+    [[nodiscard]] inline const ArtilleryAim& aim_for_turn(const ArtilleryState& state, ArtilleryTurn turn) noexcept
+    {
+        return turn == ArtilleryTurn::PlayerOne
+            ? state.player_one_aim
+            : state.player_two_aim;
+    }
 
 }

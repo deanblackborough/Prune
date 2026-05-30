@@ -162,7 +162,8 @@ namespace prune {
         SDL_Texture* texture = sprite_texture(renderer, object.render.sprite.sprite_key);
 
         if (texture) {
-            SDL_RenderCopy(renderer, texture, nullptr, &rect);
+            const SDL_RendererFlip flip = object.render.sprite.flip_x ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+            SDL_RenderCopyEx(renderer, texture, nullptr, &rect, 0.0, nullptr, flip);
         }
         else {
             draw_sprite_fallback(renderer, rect);

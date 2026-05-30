@@ -157,6 +157,7 @@ namespace prune {
             }
             case RenderType::Sprite:
                 node["render"]["sprite"]["sprite_key"] = object.render.sprite.sprite_key;
+                node["render"]["sprite"]["flip_x"] = object.render.sprite.flip_x;
                 break;
             }
 
@@ -259,6 +260,7 @@ namespace prune {
                 }
 
                 object.render.sprite.sprite_key = sprite_key;
+                object.render.sprite.flip_x = sprite["flip_x"] ? sprite["flip_x"].as<bool>() : false;
                 break;
             }
             }

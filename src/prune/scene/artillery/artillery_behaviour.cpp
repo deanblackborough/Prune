@@ -1,5 +1,9 @@
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <random>
+#include <string>
+#include <vector>
 
 #include <SDL2/SDL.h>
 
@@ -14,10 +18,114 @@ namespace prune {
     namespace {
         constexpr float k_degrees_to_radians = 3.1415926535f / 180.0f;
 
+        struct TerrainSegment {
+            float x = 0.0f;
+            float y = 0.0f;
+            int width = 0;
+            int height = 0;
+        };
+
+        struct TerrainLayout {
+            float player_one_x = 0.0f;
+            float player_one_y = 0.0f;
+            float player_two_x = 0.0f;
+            float player_two_y = 0.0f;
+            std::array<TerrainSegment, 5> segments{};
+        };
+
+        constexpr std::array<TerrainLayout, 3> k_terrain_layouts{ {
+            {
+                40.0f, 152.0f,
+                328.0f, 128.0f,
+                { {
+                    { 0.0f, 184.0f, 80, 16 },
+                    { 80.0f, 168.0f, 80, 16 },
+                    { 160.0f, 152.0f, 80, 16 },
+                    { 240.0f, 136.0f, 80, 16 },
+                    { 320.0f, 160.0f, 96, 16 }
+                } }
+            },
+            {
+                40.0f, 136.0f,
+                328.0f, 152.0f,
+                { {
+                    { 0.0f, 168.0f, 96, 16 },
+                    { 96.0f, 152.0f, 64, 16 },
+                    { 160.0f, 176.0f, 96, 16 },
+                    { 256.0f, 160.0f, 64, 16 },
+                    { 320.0f, 184.0f, 96, 16 }
+                } }
+            },
+            {
+                40.0f, 160.0f,
+                328.0f, 144.0f,
+                { {
+                    { 0.0f, 192.0f, 96, 16 },
+                    { 96.0f, 176.0f, 64, 16 },
+                    { 160.0f, 160.0f, 96, 16 },
+                    { 256.0f, 176.0f, 64, 16 },
+                    { 320.0f, 176.0f, 96, 16 }
+                } }
+            }
+        } };
+
         [[nodiscard]] bool is_active_blocking_artillery_object(const GameObject& object) noexcept
         {
             return object.lifecycle.active &&
                 (artillery_concepts::is_tank(object) || artillery_concepts::is_terrain_line(object));
+        }
+
+        [[nodiscard]] const TerrainLayout& random_terrain_layout()
+        {
+            static std::mt19937 rng{ std::random_device{}() };
+            std::uniform_int_distribution<std::size_t> distribution{ 0, k_terrain_layouts.size() - 1 };
+            return k_terrain_layouts[distribution(rng)];
+        }
+
+        void remove_existing_terrain(SceneState& state)
+        {
+            std::vector<GameObjectId> terrain_ids;
+
+            for (const auto& object : state.objects.objects()) {
+                if (artillery_concepts::is_terrain_line(object)) {
+                    terrain_ids.push_back(object.identity.id);
+                }
+            }
+
+            for (const GameObjectId id : terrain_ids) {
+                state.objects.remove_object(id);
+            }
+        }
+
+        void apply_terrain_layout(SceneState& state, ArtilleryState& artillery_state, const TerrainLayout& layout)
+        {
+            remove_existing_terrain(state);
+
+            if (GameObject* player_one = state.objects.get_by_id(artillery_state.player_one_id)) {
+                player_one->lifecycle.active = true;
+                player_one->transform.x = layout.player_one_x;
+                player_one->transform.y = layout.player_one_y;
+                player_one->motion.velocity = {};
+            }
+
+            if (GameObject* player_two = state.objects.get_by_id(artillery_state.player_two_id)) {
+                player_two->lifecycle.active = true;
+                player_two->transform.x = layout.player_two_x;
+                player_two->transform.y = layout.player_two_y;
+                player_two->motion.velocity = {};
+            }
+
+            int index = 1;
+            for (const TerrainSegment& segment : layout.segments) {
+                const std::string name = "Terrain Line " + std::to_string(index++);
+                state.objects.create_object(artillery_factory::create_terrain_line(
+                    segment.x,
+                    segment.y,
+                    segment.width,
+                    segment.height,
+                    name.c_str()
+                ));
+            }
         }
     }
 
@@ -50,24 +158,26 @@ namespace prune {
             return;
         }
 
+        ArtilleryAim& aim = current_aim(artillery_state);
+
         if (input.is_key_down(SDL_SCANCODE_A) || input.is_key_down(SDL_SCANCODE_LEFT)) {
-            artillery_state.angle_degrees += artillery_state.options.angle_step * dt;
+            aim.angle_degrees += artillery_state.options.angle_step * dt;
         }
 
         if (input.is_key_down(SDL_SCANCODE_D) || input.is_key_down(SDL_SCANCODE_RIGHT)) {
-            artillery_state.angle_degrees -= artillery_state.options.angle_step * dt;
+            aim.angle_degrees -= artillery_state.options.angle_step * dt;
         }
 
         if (input.is_key_down(SDL_SCANCODE_W) || input.is_key_down(SDL_SCANCODE_UP)) {
-            artillery_state.power += artillery_state.options.power_step * dt;
+            aim.power += artillery_state.options.power_step * dt;
         }
 
         if (input.is_key_down(SDL_SCANCODE_S) || input.is_key_down(SDL_SCANCODE_DOWN)) {
-            artillery_state.power -= artillery_state.options.power_step * dt;
+            aim.power -= artillery_state.options.power_step * dt;
         }
 
-        artillery_state.angle_degrees = std::clamp(artillery_state.angle_degrees, 5.0f, 85.0f);
-        artillery_state.power = std::clamp(artillery_state.power, artillery_state.options.min_power, artillery_state.options.max_power);
+        aim.angle_degrees = std::clamp(aim.angle_degrees, 5.0f, 85.0f);
+        aim.power = std::clamp(aim.power, artillery_state.options.min_power, artillery_state.options.max_power);
 
         if (input.was_key_pressed(SDL_SCANCODE_SPACE)) {
             fire_projectile(state, artillery_state);
@@ -95,11 +205,12 @@ namespace prune {
 
         projectile.transform.x = muzzle_x;
         projectile.transform.y = muzzle_y;
-        const float radians = artillery_state.angle_degrees * k_degrees_to_radians;
+        const ArtilleryAim& aim = current_aim(artillery_state);
+        const float radians = aim.angle_degrees * k_degrees_to_radians;
         const float direction = firing_right ? 1.0f : -1.0f;
 
-        projectile.motion.velocity.x = std::cos(radians) * artillery_state.power * direction;
-        projectile.motion.velocity.y = -std::sin(radians) * artillery_state.power;
+        projectile.motion.velocity.x = std::cos(radians) * aim.power * direction;
+        projectile.motion.velocity.y = -std::sin(radians) * aim.power;
         projectile.lifecycle.remaining = artillery_state.options.projectile_lifetime;
 
         artillery_state.projectile_id = state.objects.create_object(projectile);
@@ -167,33 +278,19 @@ namespace prune {
             : ArtilleryTurn::PlayerOne;
     }
 
-    void ArtilleryBehaviour::reset_round(SceneState& state, ArtilleryState& artillery_state) const noexcept
+    void ArtilleryBehaviour::reset_round(SceneState& state, ArtilleryState& artillery_state) const
     {
         if (GameObject* projectile = state.objects.get_by_id(artillery_state.projectile_id)) {
             projectile->lifecycle.active = false;
             state.objects.remove_inactive_runtime_objects(artillery_ids::projectile_behaviour);
         }
 
-        if (GameObject* player_one = state.objects.get_by_id(artillery_state.player_one_id)) {
-            player_one->lifecycle.active = true;
-            player_one->transform.x = 40.0f;
-            player_one->transform.y = 152.0f;
-            player_one->motion.velocity = {};
-        }
-
-        if (GameObject* player_two = state.objects.get_by_id(artillery_state.player_two_id)) {
-            player_two->lifecycle.active = true;
-            player_two->transform.x = 328.0f;
-            player_two->transform.y = 128.0f;
-            player_two->motion.velocity = {};
-        }
+        apply_terrain_layout(state, artillery_state, random_terrain_layout());
 
         artillery_state.projectile_id = k_invalid_game_object_id;
         artillery_state.projectile_owner_id = k_invalid_game_object_id;
         artillery_state.projectile_active = false;
         artillery_state.current_turn = ArtilleryTurn::PlayerOne;
-        artillery_state.angle_degrees = 45.0f;
-        artillery_state.power = 220.0f;
     }
 
     GameObject* ArtilleryBehaviour::current_tank(SceneState& state, const ArtilleryState& artillery_state) const noexcept

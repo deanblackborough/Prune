@@ -40,7 +40,6 @@ namespace prune {
     private:
         void reset_runtime_state();
         void restore_defaults();
-        void add_default_terrain();
         [[nodiscard]] GameObjectId add_terrain_line_at_view_center();
         [[nodiscard]] GameObject* current_tank() noexcept;
         [[nodiscard]] const GameObject* current_tank() const noexcept;

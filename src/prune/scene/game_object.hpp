@@ -72,6 +72,7 @@ namespace prune {
 
     struct SpriteVisual {
         std::string sprite_key = std::string(k_default_sprite_key);
+        bool flip_x = false;
     };
 
     struct RenderData {

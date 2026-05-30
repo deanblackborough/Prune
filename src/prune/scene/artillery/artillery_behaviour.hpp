@@ -10,7 +10,7 @@ namespace prune {
     class ArtilleryBehaviour {
     public:
         void update(SceneState& state, SceneCamera&, ArtilleryState& artillery_state, float dt, const Input& input, bool keyboard_input_enabled) const;
-        void reset_round(SceneState& state, ArtilleryState& artillery_state) const noexcept;
+        void reset_round(SceneState& state, ArtilleryState& artillery_state) const;
 
     private:
         void update_controls(SceneState& state, ArtilleryState& artillery_state, float dt, const Input& input, bool keyboard_input_enabled) const;

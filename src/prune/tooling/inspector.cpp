@@ -237,6 +237,11 @@ namespace prune {
                         "##sprite_key",
                         selected->render.sprite.sprite_key
                     );
+                    tooling::imgui::property_table::checkbox(
+                        "Flip X",
+                        "##sprite_flip_x",
+                        selected->render.sprite.flip_x
+                    );
                     break;
                 }
 

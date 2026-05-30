@@ -118,7 +118,11 @@ namespace prune {
             artillery_factory::create_tank(328.0f, 128.0f, "Player Two Tank", "tank-red")
         );
 
-        add_default_terrain();
+        if (GameObject* player_two = m_state.objects.get_by_id(m_artillery_state.player_two_id)) {
+            player_two->render.sprite.flip_x = true;
+        }
+
+        m_artillery.reset_round(m_state, m_artillery_state);
 
         m_state.objects.select(m_artillery_state.player_one_id);
 
@@ -132,15 +136,6 @@ namespace prune {
         m_camera.editor().y = m_camera.game().y;
         m_camera.editor().zoom = m_camera.game().zoom;
         m_camera.activate_game();
-    }
-
-    void ArtilleryScene::add_default_terrain()
-    {
-        m_state.objects.create_object(artillery_factory::create_terrain_line(0.0f, 184.0f, 80, 16, "Terrain Line 1"));
-        m_state.objects.create_object(artillery_factory::create_terrain_line(80.0f, 168.0f, 80, 16, "Terrain Line 2"));
-        m_state.objects.create_object(artillery_factory::create_terrain_line(160.0f, 152.0f, 80, 16, "Terrain Line 3"));
-        m_state.objects.create_object(artillery_factory::create_terrain_line(240.0f, 136.0f, 80, 16, "Terrain Line 4"));
-        m_state.objects.create_object(artillery_factory::create_terrain_line(320.0f, 160.0f, 96, 16, "Terrain Line 5"));
     }
 
     void ArtilleryScene::new_scene()
@@ -202,8 +197,12 @@ namespace prune {
         if (kind == artillery_concepts::ObjectKind::Tank) {
             tooling::imgui::property_table::text("Current Player", bool_label(selected.identity.id == (m_artillery_state.current_turn == ArtilleryTurn::PlayerOne ? m_artillery_state.player_one_id : m_artillery_state.player_two_id)));
             tooling::imgui::property_table::text("Turn", turn_label(m_artillery_state.current_turn));
-            tooling::imgui::property_table::text("Angle", std::to_string(static_cast<int>(m_artillery_state.angle_degrees)).c_str());
-            tooling::imgui::property_table::text("Power", std::to_string(static_cast<int>(m_artillery_state.power)).c_str());
+            const ArtilleryAim& aim = selected.identity.id == m_artillery_state.player_two_id
+                ? m_artillery_state.player_two_aim
+                : m_artillery_state.player_one_aim;
+
+            tooling::imgui::property_table::text("Angle", std::to_string(static_cast<int>(aim.angle_degrees)).c_str());
+            tooling::imgui::property_table::text("Power", std::to_string(static_cast<int>(aim.power)).c_str());
         }
         else if (kind == artillery_concepts::ObjectKind::TerrainLine) {
             tooling::imgui::property_table::text("Generated Terrain", "Yes");
@@ -285,7 +284,8 @@ namespace prune {
         const float zoom = std::max(camera.zoom, 0.01f);
         const bool firing_right = m_artillery_state.current_turn == ArtilleryTurn::PlayerOne;
         const float direction = firing_right ? 1.0f : -1.0f;
-        const float radians = m_artillery_state.angle_degrees * 3.1415926535f / 180.0f;
+        const ArtilleryAim& aim = current_aim(m_artillery_state);
+        const float radians = aim.angle_degrees * 3.1415926535f / 180.0f;
 
         const float start_x = tank->transform.x + (firing_right ? static_cast<float>(tank->size.width) : 0.0f);
         const float start_y = tank->transform.y + 3.0f;
