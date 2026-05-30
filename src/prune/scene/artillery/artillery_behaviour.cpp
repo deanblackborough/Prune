@@ -4,6 +4,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <numbers>
 
 #include <SDL2/SDL.h>
 
@@ -16,7 +17,7 @@
 namespace prune {
 
     namespace {
-        constexpr float k_degrees_to_radians = 3.1415926535f / 180.0f;
+        constexpr float k_degrees_to_radians = std::numbers::pi_v<float> / 180.0f;
 
         struct TerrainSegment {
             float x = 0.0f;
