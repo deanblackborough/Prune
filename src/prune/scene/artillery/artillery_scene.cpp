@@ -1,6 +1,6 @@
 #include <array>
 #include <cmath>
-#include <cstdio>
+#include <numbers>
 #include <string>
 
 #include <SDL2/SDL.h>
@@ -285,7 +285,7 @@ namespace prune {
         const bool firing_right = m_artillery_state.current_turn == ArtilleryTurn::PlayerOne;
         const float direction = firing_right ? 1.0f : -1.0f;
         const ArtilleryAim& aim = current_aim(m_artillery_state);
-        const float radians = aim.angle_degrees * 3.1415926535f / 180.0f;
+        const float radians = aim.angle_degrees * std::numbers::pi_v<float> / 180.0f;
 
         const float start_x = tank->transform.x + (firing_right ? static_cast<float>(tank->size.width) : 0.0f);
         const float start_y = tank->transform.y + 3.0f;
