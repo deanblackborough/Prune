@@ -60,6 +60,10 @@ As the project develops, the game slices will improve and expand. Tools will be 
 
 ![Platformer](assets/repo/platformer.png)
 
+### Artillery editor and runtime
+
+![Artillery](assets/repo/artillery.png)
+
 ### Simple shooter editor and runtime
 
 ![Simple Shooter](assets/repo/simple-shooter.png)
@@ -115,8 +119,9 @@ Prune currently has:
 - Basic sprite resource map
 - Shared scene renderer, interaction, camera, state, collision, and serialization pieces
 - Shared `WorldScene` foundation for scene types
-- Simple Shooter scene slice
 - Platformer scene slice
+- Artillery game slice
+- Simple Shooter scene slice
 
 The first real editor tooling pass has started with the transform gizmo. It is intentionally small: selected authored objects show a visible manipulation affordance, and movement starts from the handle rather than from arbitrary object-body dragging.
 
@@ -137,6 +142,28 @@ The current scenes are proof slices. They are deliberately small, but they exerc
 
 They are not intended to be complete games yet.
 
+### Platformer
+
+The Platformer slice currently proves:
+
+- Gravity
+- Jumping
+- Ground checks
+- Solid platforms
+- Hazards
+- Player reset
+- Scene-specific tuning panel
+- Scene-specific save/load data
+
+### Artillery
+
+- Two player
+- Individual player state
+- Randomised levels (3 defined, random on reset)
+- Game reset on tank collision
+- Scene-specific tuning panel
+- Scene-specific save/load data
+
 ### Simple Shooter
 
 The Simple Shooter slice currently proves:
@@ -148,19 +175,6 @@ The Simple Shooter slice currently proves:
 - Enemy movement
 - Bullet/enemy collision
 - Runtime cleanup
-- Scene-specific tuning panel
-- Scene-specific save/load data
-
-### Platformer
-
-The Platformer slice currently proves:
-
-- Gravity
-- Jumping
-- Ground checks
-- Solid platforms
-- Hazards
-- Player reset
 - Scene-specific tuning panel
 - Scene-specific save/load data
 

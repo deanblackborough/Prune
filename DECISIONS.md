@@ -655,6 +655,27 @@ A card game is more interesting to me but it pulls the project towards UI layout
 
 ---
 
+## Game slices as slices of well known games
+
+### Decision
+
+Initially keep the slices focused on proving the editor/runtime model. However, once we have the relevant tooling support, the slices should evolve to be slices of well-known games.
+
+### Why
+
+The point of the slices is to prove that Prune can handle many different game types and that it is not multiple editors in one. If the slices are recognisable slices of games people know and they feel and play well, it will be much easier for people to understand the point of Prune and more importantly, how capable it is.
+
+### Why not yet
+
+The current slices are enough to prove the concept, they are there to prove everything works and help me build the editor. Trying to make the game slices more complex now would distract from the core goal of Prune, they will be the icing on the cake.
+
+### Revisit when
+
+- The tooling naturally exists (not forced by the slices) to start fleshing out each of the slices.
+- I have time to focus on the slices rather than the editor and engine architecture.
+
+---
+
 # Documentation decisions
 
 ## README should explain the direction, not every class

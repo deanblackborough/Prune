@@ -1,0 +1,95 @@
+#include "prune/scene/artillery/artillery_serializer.hpp"
+
+namespace prune {
+
+    namespace {
+        [[nodiscard]] const char* turn_to_string(ArtilleryTurn turn) noexcept
+        {
+            return turn == ArtilleryTurn::PlayerTwo ? "player_two" : "player_one";
+        }
+
+        [[nodiscard]] ArtilleryTurn turn_from_string(const std::string& value) noexcept
+        {
+            return value == "player_two" ? ArtilleryTurn::PlayerTwo : ArtilleryTurn::PlayerOne;
+        }
+
+        void save_aim(YAML::Node node, const ArtilleryAim& aim)
+        {
+            node["angle_degrees"] = aim.angle_degrees;
+            node["power"] = aim.power;
+        }
+
+        [[nodiscard]] bool load_aim(const YAML::Node& node, ArtilleryAim& aim)
+        {
+            if (!node || !node.IsMap() || !node["angle_degrees"] || !node["power"]) {
+                return false;
+            }
+
+            aim.angle_degrees = node["angle_degrees"].as<float>();
+            aim.power = node["power"].as<float>();
+            return true;
+        }
+    }
+
+    void ArtillerySerializer::save_to_node(const ArtilleryState& state, YAML::Node& root)
+    {
+        YAML::Node artillery = root["artillery"];
+
+        artillery["player_one_id"] = state.player_one_id;
+        artillery["player_two_id"] = state.player_two_id;
+        artillery["current_turn"] = turn_to_string(state.current_turn);
+        save_aim(artillery["player_one_aim"], state.player_one_aim);
+        save_aim(artillery["player_two_aim"], state.player_two_aim);
+        artillery["paused"] = state.options.paused;
+        artillery["gravity"] = state.options.gravity;
+        artillery["projectile_lifetime"] = state.options.projectile_lifetime;
+        artillery["min_power"] = state.options.min_power;
+        artillery["max_power"] = state.options.max_power;
+        artillery["angle_step"] = state.options.angle_step;
+        artillery["power_step"] = state.options.power_step;
+    }
+
+    bool ArtillerySerializer::load_from_node(const YAML::Node& root, ArtilleryState& state, std::string& error)
+    {
+        const YAML::Node artillery = root["artillery"];
+
+        if (!artillery || !artillery.IsMap()) {
+            error = "Save file is missing artillery section.";
+            return false;
+        }
+
+        if (!artillery["player_one_id"] || !artillery["player_two_id"] ||
+            !artillery["current_turn"] || !artillery["player_one_aim"] ||
+            !artillery["player_two_aim"] || !artillery["paused"] ||
+            !artillery["gravity"] || !artillery["projectile_lifetime"] ||
+            !artillery["min_power"] || !artillery["max_power"] ||
+            !artillery["angle_step"] || !artillery["power_step"]) {
+            error = "artillery options are incomplete.";
+            return false;
+        }
+
+        state.player_one_id = artillery["player_one_id"].as<GameObjectId>();
+        state.player_two_id = artillery["player_two_id"].as<GameObjectId>();
+        state.current_turn = turn_from_string(artillery["current_turn"].as<std::string>());
+
+        if (!load_aim(artillery["player_one_aim"], state.player_one_aim) ||
+            !load_aim(artillery["player_two_aim"], state.player_two_aim)) {
+            error = "artillery aim settings are incomplete.";
+            return false;
+        }
+
+        state.options.paused = artillery["paused"].as<bool>();
+        state.options.gravity = artillery["gravity"].as<float>();
+        state.options.projectile_lifetime = artillery["projectile_lifetime"].as<float>();
+        state.options.min_power = artillery["min_power"].as<float>();
+        state.options.max_power = artillery["max_power"].as<float>();
+        state.options.angle_step = artillery["angle_step"].as<float>();
+        state.options.power_step = artillery["power_step"].as<float>();
+        state.projectile_id = k_invalid_game_object_id;
+        state.projectile_owner_id = k_invalid_game_object_id;
+        state.projectile_active = false;
+
+        return true;
+    }
+
+}

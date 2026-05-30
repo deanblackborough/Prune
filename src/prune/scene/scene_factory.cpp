@@ -4,6 +4,7 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "prune/scene/artillery/artillery_scene.hpp"
 #include "prune/scene/platformer/platformer_scene.hpp"
 #include "prune/scene/simple_shooter/simple_shooter_scene.hpp"
 
@@ -38,6 +39,9 @@ namespace prune {
     )
     {
         switch (type) {
+        case SceneType::Artillery:
+            return std::make_unique<ArtilleryScene>(window_width, window_height);
+
         case SceneType::Platformer:
             return std::make_unique<PlatformerScene>(window_width, window_height);
 
