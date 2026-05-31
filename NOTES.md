@@ -53,7 +53,7 @@ Scene-specific code should still own:
 - Do not build a plugin system.
 - Do not build an ECS.
 - Do not rewrite `GameObject` from scratch.
-- Do not add a third scene yet.
+- Do not add a third scene yet. (Added the artillery scene as a third slice later in the phase)
 - Do not build undo/redo yet.
 - Do not create a full public API.
 - Do not make either slice into a complete game.
