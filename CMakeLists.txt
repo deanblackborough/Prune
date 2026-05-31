@@ -20,7 +20,6 @@ add_executable(Prune
 
         src/prune/scene/game_object.cpp
         src/prune/scene/game_object_manager.cpp
-        src/prune/scene/player_controller.cpp
         src/prune/scene/collision.cpp
 
         src/prune/scene/scene_factory.cpp
@@ -33,6 +32,7 @@ add_executable(Prune
         src/prune/scene/simple_shooter/simple_shooter_scene.cpp
         src/prune/scene/simple_shooter/simple_shooter_factory.cpp
         src/prune/scene/simple_shooter/simple_shooter_behaviour.cpp
+        src/prune/scene/simple_shooter/simple_shooter_player_controller.cpp
         src/prune/scene/simple_shooter/simple_shooter_concepts.cpp
         src/prune/scene/simple_shooter/simple_shooter_serializer.cpp
 
