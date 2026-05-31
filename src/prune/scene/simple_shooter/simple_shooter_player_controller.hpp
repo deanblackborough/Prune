@@ -5,7 +5,7 @@ namespace prune {
     class Input;
     struct Velocity;
 
-    class PlayerController {
+    class SimpleShooterPlayerController {
     public:
         [[nodiscard]] Velocity movement_velocity(const Input& input) const;
 

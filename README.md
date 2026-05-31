@@ -77,11 +77,12 @@ Prune is not currently trying to be:
 - An ECS experiment
 - A complete platformer engine
 - A complete shooter engine
+- A complete artillery engine
 - A stable scene file format
 
 The project is still in the phase where concrete slices are being used to discover the right editor/runtime boundaries.
 
-I have a [DECISIONS.md](DECISIONS.md) file which explains some of the choices I have made and why and more importantly why I have rejected to do some things.
+I have a [DECISIONS.md](DECISIONS.md) file which explains some of the choices I have made, and more importantly why I have rejected to do some things.
 
 ## Current architecture direction
 
@@ -99,7 +100,7 @@ The next important step is stronger object semantics: the editor needs to unders
 
 Prune has moved beyond a single-scene prototype. The project now has a shared editor/runtime foundation with three scene slices proving that different game types can reuse the same editor while owning their own behaviour, semantics, tuning, inspector sections, and save data.
 
-The current focus is no longer “can a scene run?” It is now “can scenes be edited clearly and safely while the runtime remains live?”
+The current focus is no longer "can a scene run?" It is now "can scenes be edited clearly and safely while the runtime remains live?"
 
 Prune currently has:
 
@@ -123,9 +124,9 @@ Prune currently has:
 - Artillery game slice
 - Simple Shooter scene slice
 
-The first real editor tooling pass has started with the transform gizmo. It is intentionally small: selected authored objects show a visible manipulation affordance, and movement starts from the handle rather than from arbitrary object-body dragging.
+The first real editor tooling pass was completed when I added the transform gizmo. It was intentionally small: selected authored objects show a visible manipulation affordance, and movement starts from the handle rather than from arbitrary object-body dragging.
 
-This matters because it shifts Prune from “objects can be edited through panels” towards “the viewport itself is becoming an editor surface”.
+This mattered because it shifted Prune from "objects can be edited through panels" towards "the viewport itself is becoming an editor surface" which is what users will expect from a live editor/runtime.
 
 ## Editor model
 
@@ -140,7 +141,7 @@ The generic inspector shows shared object data and scene meaning; the scene-spec
 
 The current scenes are proof slices. They are deliberately small, but they exercise different parts of the editor/runtime boundary.
 
-They are not intended to be complete games yet.
+They are not intended to be complete games yet, maybe one day.
 
 ### Platformer
 
@@ -186,17 +187,14 @@ The immediate focus is proving that viewport tools can operate safely on scene o
 
 Current priorities:
 
-[x] Transform gizmo and selected-object handles
-[x] Collision/debug overlays
-[x] Scene-specific creation actions
-[x] Better sprite picker
-[x] Behaviour and save/load review
-[x] Third scene proof candidate
-[ ] Prototype release and preparation for editor tooling
+[ ] Command model for editor changes
+[ ] Undo/Redo on top of the command model
+[ ] Multi-select
+[ ] Tool mode state
+[ ] Scale tool
+[ ] Basic audio hooks
 
-The key rule for this phase is that tools should ask the active scene what an object means before acting on it. A selected object is not just a rectangle; it may be authored, runtime-created, selectable, editable, movable, persistent, solid, hazardous, or scene-specific in some other way.
-
-The current plan is tracked in [NOTES.md](NOTES.md).
+The current plan is tracked in [NOTES.md](NOTES.md), check the file for more details on what each of these points mean as well as what is included.
 
 ## Documentation stance
 
@@ -204,10 +202,10 @@ It is too early for heavy internal documentation.
 
 Useful documentation now:
 
-- README explaining the project goal and current architecture direction
-- Notes tracking next architecture work
+- [README.md](README.md) explaining the project goal and current architecture direction
+- [NOTES.md](NOTES.md) tracking next architecture work
 - Short comments where C++ intent is not obvious
-- Scene-type checklist once object semantics and scene descriptors settle
+- [Scene-type checklist](docs/SCENE_TYPE_CHECKLIST.md)
 
 Too early:
 
@@ -244,11 +242,13 @@ cmake --build build
 
 ## Acknowledgements
 
-- [SDL2](https://www.libsdl.org/) — windowing, input, and rendering foundation
-- [Dear ImGui](https://github.com/ocornut/imgui) — editor UI
-- [yaml-cpp](https://github.com/jbeder/yaml-cpp) — scene save/load
-- [SDL2_image](https://github.com/libsdl-org/SDL_image) — sprite loading
+- [SDL2](https://www.libsdl.org/) â€” windowing, input, and rendering foundation
+- [Dear ImGui](https://github.com/ocornut/imgui) â€” editor UI
+- [yaml-cpp](https://github.com/jbeder/yaml-cpp) â€” scene save/load
+- [SDL2_image](https://github.com/libsdl-org/SDL_image) â€” sprite loading
+- [The Cherno](https://www.youtube.com/@TheCherno) â€” C++ game engine architecture and editor design inspiration
+- [Kenny](https://kenney.nl/) â€” free game assets for prototyping
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE)
+MIT â€” see [LICENSE](LICENSE)
