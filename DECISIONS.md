@@ -775,3 +775,80 @@ README explains what Prune is.
 NOTES explain what is next.
 
 DECISIONS explain why certain paths are being taken or deliberately avoided.
+
+---
+
+## Scene-owned player controllers
+
+### Decision
+
+Player/controller behaviour belongs to the scene that defines the player rules.
+
+The shared scene layer should not contain a generic `PlayerController` unless multiple scenes genuinely converge on the same control model.
+
+### Why
+
+The current scenes have different control needs:
+
+- Simple Shooter uses top-down movement and firing.
+- Platformer uses gravity, jumping, and grounded state.
+- Artillery uses turn-based aim, power, and firing.
+
+A shared controller at this stage would either be misleading or would grow conditionals for unrelated game types.
+
+### Consequences
+
+- Scene-specific controllers live with the scene-specific behaviour and state.
+- Shared input helpers can still be introduced later if duplication appears.
+- Future scenes should not reach into a generic controller by default.
+
+### Revisit when
+
+- At least two scene types need the same input-to-motion translation.
+- The shared behaviour can be named without hiding scene-specific rules.
+
+---
+
+## Undo/redo through editor commands
+
+### Decision
+
+Undo/redo should be built on an editor command/change model, not as one-off reversal logic inside individual tools.
+
+### Why
+
+Prune is becoming a live editor surface. Movement, creation, deletion, duplication, renaming, sprite changes, and inspector edits all need the same history rules.
+
+If undo/redo is bolted into each feature separately, the project will accumulate inconsistent edge cases quickly.
+
+### Consequences
+
+- The first undo/redo implementation should be editor-only.
+- Runtime/gameplay events should not enter editor history.
+- Commands should be recorded when an edit is committed, not every frame of a drag.
+
+### Revisit when
+
+- Runtime recording, replay, or gameplay rewind becomes a deliberate feature.
+- Multi-scene editing exists.
+- Save/load history restoration becomes important.
+
+---
+
+## Scale before rotate
+
+### Decision
+
+Implement scale before rotate.
+
+### Why
+
+Scale fits the current object model: authored objects already have width, height, bounds, and inspector fields.
+
+Rotation cuts across rendering, picking, collision, bounds, serialization, inspector behaviour, and gizmo math. Prune is still largely rectangle/AABB based, so rotation should wait until those assumptions are explicit.
+
+### Consequences
+
+- The next viewport transform tool after move should be scale.
+- Rotation remains planned but deliberately later.
+- Any future rotation work should start by documenting what rotates visually only and what rotates physically.
