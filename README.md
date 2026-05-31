@@ -189,12 +189,12 @@ The immediate focus is proving that viewport tools can operate safely on scene o
 
 Current priorities:
 
-[ ] Command model for editor changes
-[ ] Undo/Redo on top of the command model
-[ ] Multi-select
-[ ] Tool mode state
-[ ] Scale tool
-[ ] Basic audio hooks
+- [ ] Command model for editor changes
+- [ ] Undo/Redo on top of the command model
+- [ ] Multi-select
+- [ ] Tool mode state
+- [ ] Scale tool
+- [ ] Basic audio hooks
 
 My development plan is tracked in [NOTES.md](NOTES.md), check the file for more details on what each of these points mean as well as what is included - this is what I will be working on in the next development phase.
 
@@ -264,26 +264,23 @@ Dear ImGui is included in the repository under external/, while the remaining th
 
 ### Configure
 
-From the repository root:
+From the repository root (Powershell examples):
 
-```
-cmake -B build -S . ^
-  -DCMAKE_TOOLCHAIN_FILE=[path-to-vcpkg]/scripts/buildsystems/vcpkg.cmake
-```
-
-For example:
-
-```
-cmake -B build -S . ^
+```powershell
+cmake -B build -S . `
   -DCMAKE_TOOLCHAIN_FILE=C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake
-  ```
+ ```
 
 ### Build
-```cmake --build build```
+```powershell
+cmake --build build
+```
 
 For a release build:
 
-```cmake --build build --config Release```
+```powershell
+cmake --build build --config Release
+```
 
 ### Run
 
@@ -291,11 +288,15 @@ The executable is created in the CMake build output directory. The exact path de
 
 For Visual Studio generators, the executable will usually be under:
 
-`build/Release/Prune.exe`
+```powershell
+build/Release/Prune.exe
+```
 
 or:
 
-`build/Debug/Prune.exe`
+```powershell
+build/Debug/Prune.exe
+```
 
 ### Notes
 
