@@ -32,11 +32,14 @@ Initial command candidates:
 - Create object
 - Delete object
 - Rename object
-- Change position
-- Change size
+- Change object position
+- Change object size
+- Change object rendering type (rectangle/color)
+- Change object colour
 - Change sprite
+- Viewport movement/zoom (no zoom yet)
 
-Avoid runtime/gameplay commands for now. A projectile moving, an enemy spawning, or an artillery round ending should not enter editor undo history.
+Avoid runtime/gameplay commands for now. A projectile moving, an enemy spawning, or an artillery round ending should not enter editor undo history, we just care about what the user did in the editor.
 
 ### 2. Undo/redo
 
