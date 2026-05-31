@@ -1,3 +1,5 @@
+[![Build](https://github.com/deanblackborough/Prune/actions/workflows/build.yml/badge.svg)](https://github.com/deanblackborough/Prune/actions/workflows/build.yml)
+
 # Prune
 
 ![Prune](assets/icon.png)
@@ -194,7 +196,24 @@ Current priorities:
 [ ] Scale tool
 [ ] Basic audio hooks
 
-The current plan is tracked in [NOTES.md](NOTES.md), check the file for more details on what each of these points mean as well as what is included.
+My development plan is tracked in [NOTES.md](NOTES.md), check the file for more details on what each of these points mean as well as what is included - this is what I will be working on in the next development phase.
+
+## Ready for users when...
+
+I will consider Prune ready for users when the below is ready, this is the minimum I think users expect from a live editor/runtime prototype:
+
+- Open app.
+- Pick a scene type.
+- Select object in viewport.
+- Move with handle.
+- Resize with scale tool.
+- Duplicate it.
+- Delete it.
+- Undo/redo all of that.
+- Save.
+- Load.
+- Behaviour still works.
+- Runtime objects do not get accidentally edited or saved.
 
 ## Documentation stance
 
@@ -218,27 +237,72 @@ The code is still moving too quickly. Documentation should help decision-making 
 
 ## Build
 
-### Requirements
+Prune currently targets Windows and is built with CMake, vcpkg, and a C++23-capable compiler.
 
-- C++23 compiler
+The project may build on other platforms later, but Windows is the only platform currently verified.
+
+### Confirmed environment
+- Windows
+- Visual Studio 2022/2026 / MSVC
 - CMake
 - vcpkg
+- C++23
+- Ninja or the Visual Studio CMake generator
 
 ### Dependencies
+
+Dependencies are managed through vcpkg.json.
+
+Prune currently uses:
 
 - SDL2
 - SDL2_image
 - Dear ImGui
 - yaml-cpp
 
-Example:
+Dear ImGui is included in the repository under external/, while the remaining third-party libraries are resolved through vcpkg.
 
-```bash
-cmake -B build -S . \
-  -DCMAKE_TOOLCHAIN_FILE=[vcpkg]/scripts/buildsystems/vcpkg.cmake
+### Configure
 
-cmake --build build
+From the repository root:
+
 ```
+cmake -B build -S . ^
+  -DCMAKE_TOOLCHAIN_FILE=[path-to-vcpkg]/scripts/buildsystems/vcpkg.cmake
+```
+
+For example:
+
+```
+cmake -B build -S . ^
+  -DCMAKE_TOOLCHAIN_FILE=C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake
+  ```
+
+### Build
+```cmake --build build```
+
+For a release build:
+
+```cmake --build build --config Release```
+
+### Run
+
+The executable is created in the CMake build output directory. The exact path depends on the generator used.
+
+For Visual Studio generators, the executable will usually be under:
+
+`build/Release/Prune.exe`
+
+or:
+
+`build/Debug/Prune.exe`
+
+### Notes
+
+- The project is currently developed and tested on Windows.
+- The GitHub Actions workflow also builds the project on Windows.
+- Other platforms are not intentionally unsupported, but they are not verified yet.
+- If CMake cannot find SDL2, SDL2_image, or yaml-cpp, check that the vcpkg toolchain file path is correct.
 
 ## Acknowledgements
 
