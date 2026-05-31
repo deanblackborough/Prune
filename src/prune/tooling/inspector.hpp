@@ -25,9 +25,17 @@ namespace prune {
         void draw_flags(Scene& scene, GameObjectManager& objects);
 
         void sync_rename_buffer(const GameObject* selected);
+        void capture_object_edit_start(const GameObject& before);
+        void commit_object_edit(Scene& scene, EditorCommandType type, const GameObject& after);
 
+        [[nodiscard]] static bool command_object_changed(
+            EditorCommandType type,
+            const GameObject& before,
+            const GameObject& after
+        ) noexcept;
 
         std::optional<GameObjectId> m_rename_target_id;
+        std::optional<GameObject> m_pending_object_edit;
 		std::array<char, 128> m_rename_buffer{};
     };
 }

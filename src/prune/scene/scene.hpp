@@ -7,6 +7,7 @@
 #include <SDL2/SDL.h>
 
 #include "prune/core/input.hpp"
+#include "prune/editor/editor_command.hpp"
 #include "prune/scene/game_object_manager.hpp"
 #include "prune/scene/object_concept.hpp"
 #include "prune/scene/scene_camera.hpp"
@@ -111,6 +112,7 @@ namespace prune {
         virtual void draw_viewport_overlays() = 0;
 
         virtual GameObjectManager& get_object_manager() = 0;
+        virtual void record_editor_command(EditorCommand command) = 0;
 
         virtual SceneOptions& get_scene_options() = 0;
 

@@ -32,6 +32,7 @@ namespace prune {
         [[nodiscard]] int get_viewport_height() const noexcept final { return m_state.viewport.height; }
 
         GameObjectManager& get_object_manager() final;
+        void record_editor_command(EditorCommand command) final;
         SceneOptions& get_scene_options() final;
 
         [[nodiscard]] WorldSceneContext world_scene_context() noexcept final;

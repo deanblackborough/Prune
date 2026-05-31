@@ -22,7 +22,7 @@ namespace prune {
         handle_object_drag(scene, state, camera, grid_options, input);
 
         if (!state.drag_state.active) {
-            update_editor_camera(state, camera, dt, input);
+            update_editor_camera(scene, state, camera, dt, input);
             handle_scene_click(scene, state, camera, input);
             handle_keyboard_nudge(scene, state, grid_options, input);
         }
@@ -38,17 +38,38 @@ namespace prune {
         return state.viewport.hovered && state.viewport.has_area();
     }
 
-    void SceneInteraction::update_editor_camera(SceneState& state, SceneCamera& camera, float, const Input& input)
+    void SceneInteraction::update_editor_camera(Scene& scene, SceneState& state, SceneCamera& camera, float, const Input& input)
     {
         if (!scene_mouse_input_enabled(state)) {
+            if (m_viewport_pan_active) {
+                m_viewport_pan_active = false;
+            }
             return;
         }
 
         if (!input.is_mouse_button_down(SDL_BUTTON_MIDDLE)) {
+            if (m_viewport_pan_active) {
+                const Camera after = camera.editor();
+                if (m_viewport_pan_start.x != after.x || m_viewport_pan_start.y != after.y) {
+                    scene.record_editor_command(make_viewport_command(
+                        editor_command_type_label(EditorCommandType::MoveViewport),
+                        m_viewport_pan_start,
+                        after
+                    ));
+                }
+
+                m_viewport_pan_active = false;
+            }
             return;
         }
 
         camera.activate_editor();
+
+        if (!m_viewport_pan_active) {
+            m_viewport_pan_active = true;
+            m_viewport_pan_start = camera.editor();
+        }
+
         camera.pan_editor_by_mouse_delta(input.mouse_delta_x(), input.mouse_delta_y());
     }
 
@@ -80,6 +101,20 @@ namespace prune {
     {
         if (state.drag_state.active) {
             if (!input.is_mouse_button_down(SDL_BUTTON_LEFT) || !state.viewport.has_area()) {
+                if (GameObject* object = state.objects.get_by_id(state.drag_state.object_id)) {
+                    GameObject before = *object;
+                    before.transform = state.drag_state.object_start;
+
+                    if (before.transform.x != object->transform.x || before.transform.y != object->transform.y) {
+                        scene.record_editor_command(make_object_command(
+                            EditorCommandType::MoveObject,
+                            editor_command_type_label(EditorCommandType::MoveObject),
+                            before,
+                            *object
+                        ));
+                    }
+                }
+
                 state.drag_state = {};
                 return;
             }
@@ -184,11 +219,22 @@ namespace prune {
             step *= grid_options.shift_nudge_steps;
         }
 
+        const GameObject before = *selected;
+
         selected->transform.x += static_cast<float>(move_x * step);
         selected->transform.y += static_cast<float>(move_y * step);
 
         if (grid_options.snap_to_grid) {
             snap_object_to_grid(grid_options, *selected);
+        }
+
+        if (before.transform.x != selected->transform.x || before.transform.y != selected->transform.y) {
+            scene.record_editor_command(make_object_command(
+                EditorCommandType::MoveObject,
+                editor_command_type_label(EditorCommandType::MoveObject),
+                before,
+                *selected
+            ));
         }
     }
 

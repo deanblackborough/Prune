@@ -58,10 +58,20 @@ namespace prune {
                     );
 
                     if (ImGui::IsItemDeactivatedAfterEdit()) {
+                        const GameObject before = *selected;
                         selected->identity.name = objects.make_unique_name(
                             m_rename_buffer.data(),
                             selected->identity.id
                         );
+
+                        if (before.identity.name != selected->identity.name) {
+                            scene.record_editor_command(make_object_command(
+                                EditorCommandType::RenameObject,
+                                editor_command_type_label(EditorCommandType::RenameObject),
+                                before,
+                                *selected
+                            ));
+                        }
 
                         std::snprintf(
                             m_rename_buffer.data(),
@@ -79,8 +89,11 @@ namespace prune {
                     tooling::imgui::property_table::begin_row("Actions");
 
                     if (can_delete && tooling::imgui::property_table::button_raw("Delete")) {
+                        const GameObject deleted = *selected;
                         const GameObjectId id_to_remove = selected->identity.id;
-                        objects.remove_object(id_to_remove);
+                        if (objects.remove_object(id_to_remove)) {
+                            scene.record_editor_command(make_delete_object_command(deleted));
+                        }
 
                         tooling::imgui::property_table::end();
                         return;
@@ -106,6 +119,7 @@ namespace prune {
 
                         if (GameObject* created = objects.get_by_id(clone_id)) {
                             created->identity.name = objects.make_unique_name(source_name, clone_id);
+                            scene.record_editor_command(make_create_object_command(*created));
                         }
 
                         objects.select(clone_id);
@@ -187,8 +201,17 @@ namespace prune {
         if (tooling::imgui::layout::collapsing_header("Transform")) {
             if (tooling::imgui::property_table::begin("##transform")) {
                 ImGui::BeginDisabled(!can_move);
+
+                GameObject before = *selected;
                 tooling::imgui::property_table::drag_float("X", "transform_x", selected->transform.x, 1.0f);
+                capture_object_edit_start(before);
+                commit_object_edit(scene, EditorCommandType::ChangeObjectPosition, *selected);
+
+                before = *selected;
                 tooling::imgui::property_table::drag_float("Y", "transform_y", selected->transform.y, 1.0f);
+                capture_object_edit_start(before);
+                commit_object_edit(scene, EditorCommandType::ChangeObjectPosition, *selected);
+
                 ImGui::EndDisabled();
                 tooling::imgui::property_table::end();
             }
@@ -197,8 +220,17 @@ namespace prune {
         if (tooling::imgui::layout::collapsing_header("Size")) {
             if (tooling::imgui::property_table::begin("##size")) {
                 ImGui::BeginDisabled(!can_edit);
+
+                GameObject before = *selected;
                 tooling::imgui::property_table::slider_int("Width", "##width", selected->size.width, k_min_object_size, k_max_object_size);
+                capture_object_edit_start(before);
+                commit_object_edit(scene, EditorCommandType::ChangeObjectSize, *selected);
+
+                before = *selected;
                 tooling::imgui::property_table::slider_int("Height", "##height", selected->size.height, k_min_object_size, k_max_object_size);
+                capture_object_edit_start(before);
+                commit_object_edit(scene, EditorCommandType::ChangeObjectSize, *selected);
+
                 ImGui::EndDisabled();
                 tooling::imgui::property_table::end();
             }
@@ -217,31 +249,64 @@ namespace prune {
                     render_items,
                     IM_ARRAYSIZE(render_items)
                 )) {
+                    const GameObject before = *selected;
                     selected->render.type = (render_type == 0)
                         ? RenderType::Rectangle
                         : RenderType::Sprite;
+
+                    scene.record_editor_command(make_object_command(
+                        EditorCommandType::ChangeObjectRenderType,
+                        editor_command_type_label(EditorCommandType::ChangeObjectRenderType),
+                        before,
+                        *selected
+                    ));
                 }
 
                 switch (selected->render.type) {
                 case RenderType::Rectangle:
-                    tooling::imgui::property_table::color3(
-                        "Colour",
-                        "##colour",
-                        selected->render.rectangle.color
-                    );
+                    {
+                        const GameObject before = *selected;
+                        tooling::imgui::property_table::color3(
+                            "Colour",
+                            "##colour",
+                            selected->render.rectangle.color
+                        );
+                        capture_object_edit_start(before);
+                        commit_object_edit(scene, EditorCommandType::ChangeObjectColour, *selected);
+                    }
                     break;
 
                 case RenderType::Sprite:
-                    tooling::draw_sprite_picker(
-                        "Sprite",
-                        "##sprite_key",
-                        selected->render.sprite.sprite_key
-                    );
-                    tooling::imgui::property_table::checkbox(
-                        "Flip X",
-                        "##sprite_flip_x",
-                        selected->render.sprite.flip_x
-                    );
+                    {
+                        const GameObject before = *selected;
+                        if (tooling::draw_sprite_picker(
+                            "Sprite",
+                            "##sprite_key",
+                            selected->render.sprite.sprite_key
+                        )) {
+                            scene.record_editor_command(make_object_command(
+                                EditorCommandType::ChangeSprite,
+                                editor_command_type_label(EditorCommandType::ChangeSprite),
+                                before,
+                                *selected
+                            ));
+                        }
+                    }
+                    {
+                        const GameObject before = *selected;
+                        if (tooling::imgui::property_table::checkbox(
+                            "Flip X",
+                            "##sprite_flip_x",
+                            selected->render.sprite.flip_x
+                        )) {
+                            scene.record_editor_command(make_object_command(
+                                EditorCommandType::ChangeSprite,
+                                editor_command_type_label(EditorCommandType::ChangeSprite),
+                                before,
+                                *selected
+                            ));
+                        }
+                    }
                     break;
                 }
 
@@ -326,4 +391,74 @@ namespace prune {
             selected->identity.name.c_str()
         );
     }
+
+    void Inspector::capture_object_edit_start(const GameObject& before)
+    {
+        if (ImGui::IsItemActivated()) {
+            m_pending_object_edit = before;
+        }
+    }
+
+    void Inspector::commit_object_edit(Scene& scene, EditorCommandType type, const GameObject& after)
+    {
+        if (!ImGui::IsItemDeactivatedAfterEdit()) {
+            return;
+        }
+
+        if (!m_pending_object_edit.has_value()) {
+            return;
+        }
+
+        const GameObject before = m_pending_object_edit.value();
+        m_pending_object_edit.reset();
+
+        if (before.identity.id != after.identity.id || !command_object_changed(type, before, after)) {
+            return;
+        }
+
+        scene.record_editor_command(make_object_command(
+            type,
+            editor_command_type_label(type),
+            before,
+            after
+        ));
+    }
+
+    bool Inspector::command_object_changed(
+        EditorCommandType type,
+        const GameObject& before,
+        const GameObject& after
+    ) noexcept {
+        switch (type) {
+        case EditorCommandType::MoveObject:
+        case EditorCommandType::ChangeObjectPosition:
+            return before.transform.x != after.transform.x || before.transform.y != after.transform.y;
+
+        case EditorCommandType::ChangeObjectSize:
+            return before.size.width != after.size.width || before.size.height != after.size.height;
+
+        case EditorCommandType::ChangeObjectRenderType:
+            return before.render.type != after.render.type;
+
+        case EditorCommandType::ChangeObjectColour:
+            return before.render.rectangle.color[0] != after.render.rectangle.color[0] ||
+                before.render.rectangle.color[1] != after.render.rectangle.color[1] ||
+                before.render.rectangle.color[2] != after.render.rectangle.color[2];
+
+        case EditorCommandType::ChangeSprite:
+            return before.render.sprite.sprite_key != after.render.sprite.sprite_key ||
+                before.render.sprite.flip_x != after.render.sprite.flip_x;
+
+        case EditorCommandType::RenameObject:
+            return before.identity.name != after.identity.name;
+
+        case EditorCommandType::CreateObject:
+        case EditorCommandType::DeleteObject:
+        case EditorCommandType::MoveViewport:
+            return true;
+        }
+
+        return true;
+    }
+
 }
