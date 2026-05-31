@@ -1,7 +1,7 @@
 #pragma once
 
 #include "prune/scene/game_object.hpp"
-#include "prune/scene/player_controller.hpp"
+#include "prune/scene/simple_shooter/simple_shooter_player_controller.hpp"
 
 namespace prune {
 
@@ -19,7 +19,7 @@ namespace prune {
         GameObjectId enemy_id = k_invalid_game_object_id;
         GameObjectId enemy_spawn_id = k_invalid_game_object_id;
 
-        PlayerController player_controller{};
+        SimpleShooterPlayerController player_controller{};
         SimpleShooterOptions options{};
         float fire_cooldown_remaining = 0.0f;
     };

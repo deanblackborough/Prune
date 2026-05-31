@@ -1,4 +1,4 @@
-#include "prune/scene/player_controller.hpp"
+#include "prune/scene/simple_shooter/simple_shooter_player_controller.hpp"
 
 #include "prune/scene/game_object.hpp"
 #include "prune/core/input.hpp"
@@ -9,7 +9,7 @@
 
 namespace prune {
 
-    Velocity PlayerController::movement_velocity(const Input& input) const
+    Velocity SimpleShooterPlayerController::movement_velocity(const Input& input) const
     {
         float move_x = 0.0f;
         float move_y = 0.0f;
@@ -42,12 +42,12 @@ namespace prune {
         return velocity;
     }
 
-    float PlayerController::speed() const noexcept
+    float SimpleShooterPlayerController::speed() const noexcept
     {
         return m_speed;
     }
 
-    void PlayerController::set_speed(float speed) noexcept
+    void SimpleShooterPlayerController::set_speed(float speed) noexcept
     {
         m_speed = std::max(0.0f, speed);
     }
