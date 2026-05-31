@@ -62,12 +62,12 @@ For each runtime object type, define:
 
 A scene type should be clear about:
 
-- Which input belongs to gameplay.
-- Which input belongs to editor tools.
-- What happens when the UI owns keyboard input.
-- What happens when the UI owns mouse input.
-- What happens when the scene is paused.
-- Whether the editor camera and game camera can both be used safely.
+- Which input belongs to gameplay?
+- Which input belongs to editor tools?
+- What happens when the UI owns keyboard input?
+- What happens when the UI owns mouse input?
+- What happens when the scene is paused?
+- Can the editor camera and game camera both be used safely?
 
 ## Save/load checks
 

@@ -132,7 +132,7 @@ Initial scope:
 
 ## Later
 
-' Rotate tool
+- Rotate tool
 - Grouping
 - Copy/paste
 - Prefabs/templates
@@ -144,4 +144,3 @@ Initial scope:
 - Card scene
 - Puzzle scene
 - More robust collision shapes and collision options
-s
