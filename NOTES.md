@@ -38,6 +38,7 @@ Initial command candidates:
 - Change object colour
 - Change sprite
 - Viewport movement/zoom (no zoom yet)
+- Record state snapshots not delta changes.
 
 Avoid runtime/gameplay commands for now. A projectile moving, an enemy spawning, or an artillery round ending should not enter editor undo history, we just care about what the user did in the editor.
 
@@ -47,6 +48,7 @@ Build undo/redo on top of the command model, not as custom reversal logic scatte
 
 Initial scope:
 
+- Move transform tool from scene/tools to editor/tools
 - Viewport object movement
 - Object creation
 - Object deletion
