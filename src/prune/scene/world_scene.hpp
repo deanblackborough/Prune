@@ -6,6 +6,7 @@
 #include <SDL2/SDL.h>
 #include <yaml-cpp/yaml.h>
 
+#include "prune/editor/editor_command.hpp"
 #include "prune/core/input.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/scene.hpp"

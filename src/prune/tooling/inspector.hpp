@@ -3,6 +3,7 @@
 #include <array>
 #include <optional>
 
+#include "prune/editor/editor_command.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
 #include "prune/scene/scene.hpp"

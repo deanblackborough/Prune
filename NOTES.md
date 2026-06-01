@@ -28,15 +28,14 @@ Create the smallest useful model for editor-authored changes.
 
 Initial command candidates:
 
-- Move object
+- Move object in scene
 - Create object
 - Delete object
 - Rename object
-- Change object position
 - Change object size
-- Change object rendering type (rectangle/color)
+- Change object rendering type (rectangle/colour)
 - Change object colour
-- Change sprite
+- Change object sprite
 - Viewport movement/zoom (no zoom yet)
 - Record state snapshots not delta changes.
 
