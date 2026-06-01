@@ -47,6 +47,7 @@ Build undo/redo on top of the command model, not as custom reversal logic scatte
 
 Initial scope:
 
+- Command history buffer panel with list of past commands
 - Move transform tool from scene/tools to editor/tools
 - Viewport object movement
 - Object creation
