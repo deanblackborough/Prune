@@ -95,7 +95,10 @@ namespace prune {
 
             ImGui::PushID(action.id.data());
             if (ImGui::Button(action.label.data())) {
-                create_scene_object(action.id);
+                const GameObjectId created_id = create_scene_object(action.id);
+                if (const GameObject* created = m_state.objects.get_by_id(created_id)) {
+                    record_editor_command(make_create_object_command(*created));
+                }
             }
             ImGui::PopID();
 
@@ -184,6 +187,7 @@ namespace prune {
 
             m_state = std::move(loaded_state);
             m_state.drag_state = {};
+            m_state.editor_commands.clear();
             m_camera = loaded_camera;
             m_grid_options = loaded_grid_options;
 
@@ -228,6 +232,11 @@ namespace prune {
     GameObjectManager& WorldScene::get_object_manager()
     {
         return m_state.objects;
+    }
+
+    void WorldScene::record_editor_command(EditorCommand command)
+    {
+        m_state.editor_commands.record(std::move(command));
     }
 
     SceneOptions& WorldScene::get_scene_options()

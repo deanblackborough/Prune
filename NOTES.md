@@ -28,15 +28,18 @@ Create the smallest useful model for editor-authored changes.
 
 Initial command candidates:
 
-- Move object
+- Move object in scene
 - Create object
 - Delete object
 - Rename object
-- Change position
-- Change size
-- Change sprite
+- Change object size
+- Change object rendering type (rectangle/colour)
+- Change object colour
+- Change object sprite
+- Viewport movement/zoom (no zoom yet)
+- Record state snapshots not delta changes.
 
-Avoid runtime/gameplay commands for now. A projectile moving, an enemy spawning, or an artillery round ending should not enter editor undo history.
+Avoid runtime/gameplay commands for now. A projectile moving, an enemy spawning, or an artillery round ending should not enter editor undo history, we just care about what the user did in the editor.
 
 ### 2. Undo/redo
 
@@ -44,6 +47,8 @@ Build undo/redo on top of the command model, not as custom reversal logic scatte
 
 Initial scope:
 
+- Command history buffer panel with list of past commands
+- Move transform tool from scene/tools to editor/tools
 - Viewport object movement
 - Object creation
 - Object deletion

@@ -219,6 +219,7 @@ namespace prune {
         m_grid_options = {};
         m_state.scene_options = {};
         m_state.drag_state = {};
+        m_state.editor_commands.clear();
 
         m_simple_shooter_state = {};
     }

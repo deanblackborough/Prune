@@ -104,6 +104,7 @@ namespace prune {
         m_grid_options = {};
         m_state.scene_options = {};
         m_state.drag_state = {};
+        m_state.editor_commands.clear();
     }
 
     void ArtilleryScene::restore_defaults()

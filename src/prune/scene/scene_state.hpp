@@ -1,6 +1,7 @@
 #pragma once
 
 #include "prune/core/defaults.hpp"
+#include "prune/editor/editor_command.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
 
@@ -64,6 +65,7 @@ namespace prune {
         SceneOptions scene_options{};
 
         GameObjectManager objects;
+        EditorCommandHistory editor_commands;
     };
 
 }

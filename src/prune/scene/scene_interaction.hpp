@@ -23,7 +23,7 @@ namespace prune {
         [[nodiscard]] static bool scene_keyboard_input_enabled(const SceneState& state) noexcept;
         [[nodiscard]] static bool scene_mouse_input_enabled(const SceneState& state) noexcept;
 
-        void update_editor_camera(SceneState& state, SceneCamera& camera, float dt, const Input& input);
+        void update_editor_camera(Scene& scene, SceneState& state, SceneCamera& camera, float dt, const Input& input);
         void handle_scene_click(Scene& scene, SceneState& state, const SceneCamera& camera, const Input& input);
         void handle_object_drag(Scene& scene, SceneState& state, SceneCamera& camera, const GridOptions& grid_options, const Input& input);
         void handle_keyboard_nudge(Scene& scene, SceneState& state, const GridOptions& grid_options, const Input& input);
@@ -40,5 +40,8 @@ namespace prune {
             const GridOptions& grid_options,
             GameObject& object
         ) noexcept;
+
+        bool m_viewport_pan_active = false;
+        Camera m_viewport_pan_start{};
     };
 }
