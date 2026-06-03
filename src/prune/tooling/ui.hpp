@@ -56,7 +56,7 @@ namespace prune {
         bool m_show_inspector = true;
         bool m_show_controls = false;
         bool m_show_stats = false;
-        bool m_show_command_history = true;
+        bool m_show_command_history = false;
         bool m_show_scene_tools = true;
         bool m_show_imgui_demo = false;
     };

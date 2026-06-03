@@ -92,10 +92,10 @@ namespace prune::tooling {
 
         void set_window_default(const ImVec2 position, const ImVec2 size)
         {
-            //ImGui::SetNextWindowPos(position, ImGuiCond_FirstUseEver);
-            //ImGui::SetNextWindowSize(size, ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowPos(position, ImGuiCond_Always);
-            ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+            ImGui::SetNextWindowPos(position, ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(size, ImGuiCond_FirstUseEver);
+            //ImGui::SetNextWindowPos(position, ImGuiCond_Always);
+            //ImGui::SetNextWindowSize(size, ImGuiCond_Always);
         }
 
         void set_centered_window_default(const ImVec2 size)
