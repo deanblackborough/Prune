@@ -31,7 +31,7 @@ namespace prune {
         const float list_height = row_height * static_cast<float>(visible_rows)
             + ImGui::GetStyle().FramePadding.y * 2.0f;
 
-        if (ImGui::BeginChild("object_list", ImVec2(0.0f, list_height), true)) {
+        if (ImGui::BeginChild("object_list", ImVec2(0.0f, list_height), ImGuiChildFlags_Borders)) {
             const std::string_view filter = m_object_search.data();
 
             for (const auto& object : objects.objects()) {

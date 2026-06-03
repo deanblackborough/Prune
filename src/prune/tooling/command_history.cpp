@@ -38,7 +38,7 @@ namespace prune {
         const std::size_t applied_count = history.applied_count();
         const auto& commands = history.commands();
 
-        if (ImGui::BeginChild("##command_history_list", ImVec2(0.0f, 0.0f), true)) {
+        if (ImGui::BeginChild("##command_history_list", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders)) {
             for (std::size_t index = commands.size(); index > 0; --index) {
                 const std::size_t command_index = index - 1;
                 const EditorCommand& command = commands[command_index];
