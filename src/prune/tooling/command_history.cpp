@@ -1,9 +1,9 @@
-#include "prune/tooling/command_history.hpp"
 
 #include <cstddef>
 
 #include "imgui.h"
 
+#include "prune/tooling/command_history.hpp"
 #include "prune/editor/editor_command.hpp"
 
 namespace prune {
