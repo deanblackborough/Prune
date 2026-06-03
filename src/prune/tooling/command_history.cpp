@@ -59,7 +59,7 @@ namespace prune {
 
                 if (command.object_id != k_invalid_game_object_id) {
                     ImGui::SameLine();
-                    ImGui::TextDisabled("#%u", command.object_id);
+                    ImGui::TextDisabled("#%u", static_cast<unsigned int>(command.object_id));
                 }
 
                 if (!applied) {
