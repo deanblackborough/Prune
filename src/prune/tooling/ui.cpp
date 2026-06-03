@@ -68,11 +68,26 @@ namespace prune {
                 ImGui::EndMenu();
             }
 
+            if (ImGui::BeginMenu("Edit")) {
+                const EditorCommandHistory& history = scene.editor_command_history();
+
+                if (ImGui::MenuItem("Undo", "Ctrl+Z", false, history.can_undo())) {
+                    scene.undo_editor_command();
+                }
+
+                if (ImGui::MenuItem("Redo", "Ctrl+Y", false, history.can_redo())) {
+                    scene.redo_editor_command();
+                }
+
+                ImGui::EndMenu();
+            }
+
             if (ImGui::BeginMenu("View")) {
                 ImGui::MenuItem("Scene", nullptr, &m_show_scene_viewport);
                 ImGui::MenuItem("Outliner", nullptr, &m_show_outliner);
                 ImGui::MenuItem("Inspector", nullptr, &m_show_inspector);
                 ImGui::MenuItem(scene.scene_tools_label().data(), nullptr, &m_show_scene_tools);
+                ImGui::MenuItem("Command History", nullptr, &m_show_command_history);
                 ImGui::MenuItem("Stats", nullptr, &m_show_stats);
                 ImGui::EndMenu();
             }
@@ -84,6 +99,14 @@ namespace prune {
             }
 
             ImGui::EndMainMenuBar();
+        }
+
+        const ImGuiIO& io = ImGui::GetIO();
+        if (!io.WantTextInput && !io.WantCaptureKeyboard && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
+            scene.undo_editor_command();
+        }
+        if (!io.WantTextInput && !io.WantCaptureKeyboard && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y, false)) {
+            scene.redo_editor_command();
         }
 
         if (m_show_view_grid_options) {
@@ -133,6 +156,15 @@ namespace prune {
 
         if (m_show_scene_tools) {
             scene.draw_scene_tools(m_show_scene_tools);
+        }
+
+        if (m_show_command_history) {
+            tooling::EditorLayout::command_history();
+
+            if (ImGui::Begin("Command History", &m_show_command_history)) {
+                m_command_history.draw(scene);
+            }
+            ImGui::End();
         }
 
         if (m_show_controls) {

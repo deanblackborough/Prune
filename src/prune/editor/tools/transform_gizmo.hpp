@@ -2,7 +2,7 @@
 
 #include <SDL2/SDL.h>
 
-namespace prune::tools::transform_gizmo {
+namespace prune::editor::tools::transform_gizmo {
 
     constexpr int k_outline_padding = 2;
     constexpr int k_move_handle_size = 12;
@@ -20,10 +20,10 @@ namespace prune::tools::transform_gizmo {
     [[nodiscard]] inline SDL_Rect move_handle_rect(const SDL_Rect& selected_outline) noexcept
     {
         return SDL_Rect{
-			selected_outline.x - k_move_handle_size,
-			selected_outline.y + selected_outline.h - k_move_handle_size,
-			k_move_handle_size,
-			k_move_handle_size
+            selected_outline.x - k_move_handle_size,
+            selected_outline.y + selected_outline.h - k_move_handle_size,
+            k_move_handle_size,
+            k_move_handle_size
         };
     }
 

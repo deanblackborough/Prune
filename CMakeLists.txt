@@ -56,6 +56,7 @@ add_executable(Prune
         src/prune/tooling/ui.cpp
         src/prune/tooling/outliner.cpp
         src/prune/tooling/inspector.cpp
+        src/prune/tooling/command_history.cpp
         src/prune/tooling/sprite_picker.cpp
         src/prune/tooling/controls.cpp
         src/prune/tooling/options.cpp

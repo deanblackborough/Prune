@@ -113,6 +113,9 @@ namespace prune {
 
         virtual GameObjectManager& get_object_manager() = 0;
         virtual void record_editor_command(EditorCommand command) = 0;
+        [[nodiscard]] virtual const EditorCommandHistory& editor_command_history() const noexcept = 0;
+        virtual bool undo_editor_command() = 0;
+        virtual bool redo_editor_command() = 0;
 
         virtual SceneOptions& get_scene_options() = 0;
 

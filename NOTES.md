@@ -28,16 +28,16 @@ Create the smallest useful model for editor-authored changes.
 
 Initial command candidates:
 
-- Move object in scene
-- Create object
-- Delete object
-- Rename object
-- Change object size
-- Change object rendering type (rectangle/colour)
-- Change object colour
-- Change object sprite
-- Viewport movement/zoom (no zoom yet)
-- Record state snapshots not delta changes.
+- [x] Move object in scene
+- [x] Create object
+- [x] Delete object
+- [x] Rename object
+- [x] Change object size
+- [x] Change object rendering type (rectangle/colour)
+- [x] Change object colour
+- [x] Change object sprite
+- [x] Viewport movement/zoom (no zoom yet)
+- [x] Record state snapshots not delta changes.
 
 Avoid runtime/gameplay commands for now. A projectile moving, an enemy spawning, or an artillery round ending should not enter editor undo history, we just care about what the user did in the editor.
 
@@ -47,12 +47,12 @@ Build undo/redo on top of the command model, not as custom reversal logic scatte
 
 Initial scope:
 
-- Command history buffer panel with list of past commands
-- Move transform tool from scene/tools to editor/tools
-- Viewport object movement
-- Object creation
-- Object deletion
-- Simple inspector edits
+- [x] Command history buffer panel with list of past commands
+- [x] Move transform tool from scene/tools to editor/tools
+- [x] Viewport object movement
+- [x] Object creation
+- [x] Object deletion
+- [x] Simple inspector edits
 
 Out of scope for the first pass:
 

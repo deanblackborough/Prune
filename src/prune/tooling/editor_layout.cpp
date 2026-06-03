@@ -17,6 +17,9 @@ namespace prune::tooling {
         constexpr float k_stats_width = 300.0f;
         constexpr float k_stats_height = 320.0f;
 
+        constexpr float k_command_history_width = 340.0f;
+        constexpr float k_command_history_height = 320.0f;
+
         constexpr float k_options_width = 306.0f;
         constexpr float k_options_height = 308.0f;
 
@@ -89,10 +92,10 @@ namespace prune::tooling {
 
         void set_window_default(const ImVec2 position, const ImVec2 size)
         {
-            //ImGui::SetNextWindowPos(position, ImGuiCond_FirstUseEver);
-            //ImGui::SetNextWindowSize(size, ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowPos(position, ImGuiCond_Always);
-            ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+            ImGui::SetNextWindowPos(position, ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(size, ImGuiCond_FirstUseEver);
+            //ImGui::SetNextWindowPos(position, ImGuiCond_Always);
+            //ImGui::SetNextWindowSize(size, ImGuiCond_Always);
         }
 
         void set_centered_window_default(const ImVec2 size)
@@ -168,6 +171,16 @@ namespace prune::tooling {
         set_window_default(
             ImVec2(layout.work_pos.x + 10.0f, layout.work_pos.y + 34.0f),
             ImVec2(k_stats_width, k_stats_height)
+        );
+    }
+
+    void EditorLayout::command_history()
+    {
+        const LayoutMetrics layout = metrics();
+
+        set_window_default(
+            ImVec2(layout.work_pos.x + 10.0f, layout.work_pos.y + 360.0f),
+            ImVec2(k_command_history_width, k_command_history_height)
         );
     }
 

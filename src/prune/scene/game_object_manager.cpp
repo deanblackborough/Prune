@@ -61,6 +61,7 @@ namespace prune {
         }
 
         m_objects.push_back(object);
+        m_next_id = std::max(m_next_id, object.identity.id + 1);
         return true;
     }
 

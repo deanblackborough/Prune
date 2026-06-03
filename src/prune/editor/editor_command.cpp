@@ -7,11 +7,17 @@ namespace prune {
     void EditorCommandHistory::clear() noexcept
     {
         m_commands.clear();
+        m_next_command_index = 0;
     }
 
     void EditorCommandHistory::record(EditorCommand command)
     {
+        if (m_next_command_index < m_commands.size()) {
+            m_commands.erase(m_commands.begin() + static_cast<std::ptrdiff_t>(m_next_command_index), m_commands.end());
+        }
+
         m_commands.push_back(std::move(command));
+        m_next_command_index = m_commands.size();
     }
 
     bool EditorCommandHistory::empty() const noexcept
@@ -24,6 +30,21 @@ namespace prune {
         return m_commands.size();
     }
 
+    std::size_t EditorCommandHistory::applied_count() const noexcept
+    {
+        return m_next_command_index;
+    }
+
+    bool EditorCommandHistory::can_undo() const noexcept
+    {
+        return m_next_command_index > 0;
+    }
+
+    bool EditorCommandHistory::can_redo() const noexcept
+    {
+        return m_next_command_index < m_commands.size();
+    }
+
     const std::vector<EditorCommand>& EditorCommandHistory::commands() const noexcept
     {
         return m_commands;
@@ -31,11 +52,30 @@ namespace prune {
 
     const EditorCommand* EditorCommandHistory::last_command() const noexcept
     {
-        if (m_commands.empty()) {
+        if (m_next_command_index == 0 || m_commands.empty()) {
             return nullptr;
         }
 
-        return &m_commands.back();
+        return &m_commands[m_next_command_index - 1];
+    }
+
+    const EditorCommand* EditorCommandHistory::undo_command() noexcept
+    {
+        if (!can_undo()) {
+            return nullptr;
+        }
+
+        --m_next_command_index;
+        return &m_commands[m_next_command_index];
+    }
+
+    const EditorCommand* EditorCommandHistory::redo_command() noexcept
+    {
+        if (!can_redo()) {
+            return nullptr;
+        }
+
+        return &m_commands[m_next_command_index++];
     }
 
     const char* editor_command_type_label(EditorCommandType type) noexcept

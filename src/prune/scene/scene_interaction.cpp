@@ -1,7 +1,7 @@
 #include "prune/scene/scene_interaction.hpp"
 
 #include "prune/scene/scene.hpp"
-#include "prune/scene/tools/transform_gizmo.hpp"
+#include "prune/editor/tools/transform_gizmo.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -279,13 +279,13 @@ namespace prune {
         }
 
         const SDL_Rect object_rect = camera.world_to_screen_rect(*selected);
-        const SDL_Rect selected_outline = tools::transform_gizmo::selected_outline_rect(object_rect);
-        const SDL_Rect move_handle = tools::transform_gizmo::move_handle_rect(selected_outline);
+        const SDL_Rect selected_outline = editor::tools::transform_gizmo::selected_outline_rect(object_rect);
+        const SDL_Rect move_handle = editor::tools::transform_gizmo::move_handle_rect(selected_outline);
 
         const int local_mouse_x = screen_x - state.viewport.screen_x;
         const int local_mouse_y = screen_y - state.viewport.screen_y;
 
-        if (!tools::transform_gizmo::contains_point(move_handle, local_mouse_x, local_mouse_y)) {
+        if (!editor::tools::transform_gizmo::contains_point(move_handle, local_mouse_x, local_mouse_y)) {
             return nullptr;
         }
 

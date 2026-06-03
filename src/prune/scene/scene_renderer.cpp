@@ -6,7 +6,7 @@
 #include "prune/scene/scene_renderer.hpp"
 #include "prune/resources/sprites.hpp"
 #include "prune/scene/scene.hpp"
-#include "prune/scene/tools/transform_gizmo.hpp"
+#include "prune/editor/tools/transform_gizmo.hpp"
 
 namespace prune {
 
@@ -247,7 +247,7 @@ namespace prune {
             return;
         }
 
-        const SDL_Rect move_handle = tools::transform_gizmo::move_handle_rect(selected_outline);
+        const SDL_Rect move_handle = editor::tools::transform_gizmo::move_handle_rect(selected_outline);
 
         SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
         SDL_RenderFillRect(renderer, &move_handle);
@@ -268,7 +268,7 @@ namespace prune {
     void SceneRenderer::capture_selected_outline(const SceneState& state, const GameObject& object, const SDL_Rect& rect, SDL_Rect& selected_outline, bool& has_selected_outline) const noexcept
     {
         if (object.identity.id == state.objects.selected_id()) {
-            selected_outline = tools::transform_gizmo::selected_outline_rect(rect);
+            selected_outline = editor::tools::transform_gizmo::selected_outline_rect(rect);
             has_selected_outline = true;
         }
     }
