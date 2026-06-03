@@ -7,6 +7,7 @@
 #include "prune/tooling/outliner.hpp"
 #include "prune/tooling/inspector.hpp"
 #include "prune/tooling/controls.hpp"
+#include "prune/tooling/command_history.hpp"
 #include "prune/tooling/stats.hpp"
 #include "prune/scene/scene_factory.hpp"
 #include "prune/tooling/options.hpp"
@@ -43,6 +44,7 @@ namespace prune {
         Outliner m_outliner;
         Inspector m_inspector;
         Controls m_controls;
+        CommandHistoryPanel m_command_history;
         Stats m_stats;
         Options m_options;
 
@@ -54,6 +56,7 @@ namespace prune {
         bool m_show_inspector = true;
         bool m_show_controls = false;
         bool m_show_stats = false;
+        bool m_show_command_history = true;
         bool m_show_scene_tools = true;
         bool m_show_imgui_demo = false;
     };

@@ -239,6 +239,33 @@ namespace prune {
         m_state.editor_commands.record(std::move(command));
     }
 
+    const EditorCommandHistory& WorldScene::editor_command_history() const noexcept
+    {
+        return m_state.editor_commands;
+    }
+
+    bool WorldScene::undo_editor_command()
+    {
+        const EditorCommand* command = m_state.editor_commands.undo_command();
+        if (!command) {
+            return false;
+        }
+
+        apply_editor_command(*command, false);
+        return true;
+    }
+
+    bool WorldScene::redo_editor_command()
+    {
+        const EditorCommand* command = m_state.editor_commands.redo_command();
+        if (!command) {
+            return false;
+        }
+
+        apply_editor_command(*command, true);
+        return true;
+    }
+
     SceneOptions& WorldScene::get_scene_options()
     {
         return m_state.scene_options;
@@ -252,6 +279,74 @@ namespace prune {
     ConstWorldSceneContext WorldScene::world_scene_context() const noexcept
     {
         return ConstWorldSceneContext{ &m_grid_options, &m_camera };
+    }
+
+
+    void WorldScene::restore_object_snapshot(const GameObject& object)
+    {
+        if (GameObject* existing = m_state.objects.get_by_id(object.identity.id)) {
+            *existing = object;
+        } else {
+            m_state.objects.add_loaded_object(object);
+            std::ranges::stable_sort(
+                m_state.objects.objects(),
+                {},
+                [](const GameObject& candidate) { return candidate.identity.id; }
+            );
+        }
+
+        m_state.objects.select(object.identity.id);
+    }
+
+    void WorldScene::apply_editor_command(const EditorCommand& command, bool use_after_state)
+    {
+        switch (command.type) {
+        case EditorCommandType::CreateObject:
+            if (use_after_state) {
+                if (command.after_object.has_value()) {
+                    restore_object_snapshot(command.after_object.value());
+                }
+            } else {
+                m_state.objects.remove_object(command.object_id);
+            }
+            break;
+
+        case EditorCommandType::DeleteObject:
+            if (use_after_state) {
+                m_state.objects.remove_object(command.object_id);
+            } else if (command.before_object.has_value()) {
+                restore_object_snapshot(command.before_object.value());
+            }
+            break;
+
+        case EditorCommandType::MoveViewport:
+            if (use_after_state) {
+                if (command.after_camera.has_value()) {
+                    m_camera.editor() = command.after_camera.value();
+                    m_camera.activate_editor();
+                }
+            } else if (command.before_camera.has_value()) {
+                m_camera.editor() = command.before_camera.value();
+                m_camera.activate_editor();
+            }
+            break;
+
+        case EditorCommandType::MoveObject:
+        case EditorCommandType::RenameObject:
+        case EditorCommandType::ChangeObjectPosition:
+        case EditorCommandType::ChangeObjectSize:
+        case EditorCommandType::ChangeObjectRenderType:
+        case EditorCommandType::ChangeObjectColour:
+        case EditorCommandType::ChangeSprite:
+            if (use_after_state) {
+                if (command.after_object.has_value()) {
+                    restore_object_snapshot(command.after_object.value());
+                }
+            } else if (command.before_object.has_value()) {
+                restore_object_snapshot(command.before_object.value());
+            }
+            break;
+        }
     }
 
     bool WorldScene::scene_keyboard_input_enabled() const noexcept

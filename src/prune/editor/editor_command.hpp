@@ -42,11 +42,19 @@ namespace prune {
 
         [[nodiscard]] bool empty() const noexcept;
         [[nodiscard]] std::size_t count() const noexcept;
+        [[nodiscard]] std::size_t applied_count() const noexcept;
+        [[nodiscard]] bool can_undo() const noexcept;
+        [[nodiscard]] bool can_redo() const noexcept;
+
         [[nodiscard]] const std::vector<EditorCommand>& commands() const noexcept;
         [[nodiscard]] const EditorCommand* last_command() const noexcept;
 
+        [[nodiscard]] const EditorCommand* undo_command() noexcept;
+        [[nodiscard]] const EditorCommand* redo_command() noexcept;
+
     private:
         std::vector<EditorCommand> m_commands;
+        std::size_t m_next_command_index = 0;
     };
 
     [[nodiscard]] const char* editor_command_type_label(EditorCommandType type) noexcept;

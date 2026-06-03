@@ -34,6 +34,9 @@ namespace prune {
 
         GameObjectManager& get_object_manager() final;
         void record_editor_command(EditorCommand command) final;
+        [[nodiscard]] const EditorCommandHistory& editor_command_history() const noexcept final;
+        bool undo_editor_command() final;
+        bool redo_editor_command() final;
         SceneOptions& get_scene_options() final;
 
         [[nodiscard]] WorldSceneContext world_scene_context() noexcept final;
@@ -66,6 +69,8 @@ namespace prune {
 
     private:
         void sanitize_loaded_selection() noexcept;
+        void restore_object_snapshot(const GameObject& object);
+        void apply_editor_command(const EditorCommand& command, bool use_after_state);
 
         SceneRenderer m_renderer;
         SceneInteraction m_interaction;
