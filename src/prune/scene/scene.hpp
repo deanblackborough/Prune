@@ -46,12 +46,11 @@ namespace prune {
         Scene& operator=(const Scene&) = delete;
 
         virtual void on_enter() = 0;
+        virtual void new_scene() = 0;
         virtual void on_exit() = 0;
         virtual void update(float dt, const Input& input) = 0;
         virtual void update_editor(float, const Input&) {}
         virtual void render(SDL_Renderer* renderer) = 0;
-
-        virtual void new_scene() = 0;
 
         [[nodiscard]] virtual bool save_to_file(std::string_view path, std::string& error) const = 0;
         [[nodiscard]] virtual bool load_from_file(std::string_view path, std::string& error) = 0;

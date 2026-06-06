@@ -92,12 +92,14 @@ namespace prune {
 
                 if (new_scene_requested) {
                     m_scene->on_exit();
+
                     m_scene = SceneFactory::create(
                         new_scene_type,
                         m_window->width(),
                         m_window->height()
                     );
 
+					m_scene->new_scene();
                     m_scene->on_enter();
                     m_ui->set_file_status("Created new scene", false);
                 }
@@ -116,6 +118,7 @@ namespace prune {
                     if (loaded_scene) {
                         m_scene->on_exit();
                         m_scene = std::move(loaded_scene);
+                        m_scene->on_enter();
                         m_ui->set_file_status("Loaded scene from " + scene_file_path, false);
                     }
                     else {
