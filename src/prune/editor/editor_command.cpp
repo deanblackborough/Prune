@@ -97,6 +97,8 @@ namespace prune {
             return "Change object rendering type";
         case EditorCommandType::ChangeObjectColour:
             return "Change object colour";
+		case EditorCommandType::ChangeObjectFlag:
+			return "Change object flag";
         case EditorCommandType::ChangeSprite:
             return "Change sprite";
         case EditorCommandType::MoveViewport:
