@@ -48,14 +48,26 @@ namespace prune {
                     ImGui::BeginDisabled();
                 }
 
-                ImGui::Text(
-                    "%s%zu. %s",
-                    applied ? "" : "redo: ",
-                    command_index + 1,
-                    command.label.empty()
-                        ? editor_command_type_label(command.type)
-                        : command.label.c_str()
-                );
+                const char* label = command.label.empty()
+                    ? editor_command_type_label(command.type)
+                    : command.label.c_str();
+
+                if (command.detail.empty()) {
+                    ImGui::Text(
+                        "%s%zu. %s",
+                        applied ? "" : "redo: ",
+                        command_index + 1,
+                        label
+                    );
+                } else {
+                    ImGui::Text(
+                        "%s%zu. %s: %s",
+                        applied ? "" : "redo: ",
+                        command_index + 1,
+                        label,
+                        command.detail.c_str()
+                    );
+                }
 
                 if (command.object_id != k_invalid_game_object_id) {
                     ImGui::SameLine();
