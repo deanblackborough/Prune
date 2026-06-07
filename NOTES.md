@@ -1,4 +1,4 @@
-# Next Phase — Editor mechanics
+# Current Phase — Immediate hardening before next tools
 
 ## Goal
 

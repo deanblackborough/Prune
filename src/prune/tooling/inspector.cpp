@@ -358,15 +358,63 @@ namespace prune {
             if (tooling::imgui::property_table::begin("##flags")) {
                 const bool can_edit = scene.object_is_editable(*selected);
                 ImGui::BeginDisabled(!can_edit);
-                tooling::imgui::property_table::checkbox("Lifecycle Active", "##active", selected->lifecycle.active);
-                tooling::imgui::property_table::checkbox("Render Visible", "##visible", selected->render.visible);
-                tooling::imgui::property_table::checkbox("Collision Solid", "##solid", selected->collision.solid);
+
+                {
+                    const GameObject before = *selected;
+                    if (tooling::imgui::property_table::checkbox(
+                        "Lifecycle Active",
+                        "##active",
+                        selected->lifecycle.active
+                    ))
+                    {
+                        scene.record_editor_command(make_object_command(
+                            EditorCommandType::ChangeObjectFlag,
+                            editor_command_type_label(EditorCommandType::ChangeObjectFlag),
+                            before,
+                            *selected
+                        ));
+                    }
+                }
+
+                {
+                    const GameObject before = *selected;
+                    if (tooling::imgui::property_table::checkbox(
+                        "Render Visible",
+                        "##visible",
+                        selected->render.visible
+                    )) {
+                        scene.record_editor_command(make_object_command(
+                            EditorCommandType::ChangeObjectFlag,
+                            editor_command_type_label(EditorCommandType::ChangeObjectFlag),
+                            before,
+                            *selected
+                        ));
+                    }
+                }
+
+                {
+                    const GameObject before = *selected;
+                    if (tooling::imgui::property_table::checkbox(
+                        "Collision Solid",
+                        "##solid",
+                        selected->collision.solid
+                    )) {
+                        scene.record_editor_command(make_object_command(
+                            EditorCommandType::ChangeObjectFlag,
+                            editor_command_type_label(EditorCommandType::ChangeObjectFlag),
+                            before,
+                            *selected
+                        ));
+                    }
+                }
                 ImGui::EndDisabled();
+
                 tooling::imgui::property_table::checkbox_readonly("Editor Selectable", "##editor_selectable", selected->editor.selectable);
                 tooling::imgui::property_table::checkbox_readonly("Editor Renameable", "##editor_renameable", selected->editor.renameable);
                 tooling::imgui::property_table::checkbox_readonly("Editor Cloneable", "##editor_cloneable", selected->editor.cloneable);
                 tooling::imgui::property_table::checkbox_readonly("Runtime Persistent", "##runtime_persistent", selected->runtime.persistent);
-                tooling::imgui::property_table::end();
+                
+            	tooling::imgui::property_table::end();
             }
         }
     }
@@ -444,6 +492,10 @@ namespace prune {
             return before.render.rectangle.color[0] != after.render.rectangle.color[0] ||
                 before.render.rectangle.color[1] != after.render.rectangle.color[1] ||
                 before.render.rectangle.color[2] != after.render.rectangle.color[2];
+
+        case EditorCommandType::ChangeObjectFlag:
+            return before.lifecycle.active != after.lifecycle.active ||
+                before.render.visible != after.render.visible;
 
         case EditorCommandType::ChangeSprite:
             return before.render.sprite.sprite_key != after.render.sprite.sprite_key ||

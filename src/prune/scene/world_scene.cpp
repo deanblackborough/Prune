@@ -337,6 +337,7 @@ namespace prune {
         case EditorCommandType::ChangeObjectSize:
         case EditorCommandType::ChangeObjectRenderType:
         case EditorCommandType::ChangeObjectColour:
+        case EditorCommandType::ChangeObjectFlag:
         case EditorCommandType::ChangeSprite:
             if (use_after_state) {
                 if (command.after_object.has_value()) {
