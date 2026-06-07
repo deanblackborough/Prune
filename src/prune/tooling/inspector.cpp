@@ -392,13 +392,29 @@ namespace prune {
                     }
                 }
 
-                tooling::imgui::property_table::checkbox("Collision Solid", "##solid", selected->collision.solid);
+                {
+                    const GameObject before = *selected;
+                    if (tooling::imgui::property_table::checkbox(
+                        "Collision Solid",
+                        "##solid",
+                        selected->collision.solid
+                    )) {
+                        scene.record_editor_command(make_object_command(
+                            EditorCommandType::ChangeObjectFlag,
+                            editor_command_type_label(EditorCommandType::ChangeObjectFlag),
+                            before,
+                            *selected
+                        ));
+                    }
+                }
                 ImGui::EndDisabled();
+
                 tooling::imgui::property_table::checkbox_readonly("Editor Selectable", "##editor_selectable", selected->editor.selectable);
                 tooling::imgui::property_table::checkbox_readonly("Editor Renameable", "##editor_renameable", selected->editor.renameable);
                 tooling::imgui::property_table::checkbox_readonly("Editor Cloneable", "##editor_cloneable", selected->editor.cloneable);
                 tooling::imgui::property_table::checkbox_readonly("Runtime Persistent", "##runtime_persistent", selected->runtime.persistent);
-                tooling::imgui::property_table::end();
+                
+            	tooling::imgui::property_table::end();
             }
         }
     }
