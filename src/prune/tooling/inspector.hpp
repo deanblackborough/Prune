@@ -7,6 +7,7 @@
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
 #include "prune/scene/scene.hpp"
+#include "prune/tooling/editor/tracked_property_table.hpp"
 
 namespace prune {
 
@@ -26,17 +27,8 @@ namespace prune {
         void draw_flags(Scene& scene, GameObjectManager& objects);
 
         void sync_rename_buffer(const GameObject* selected);
-        void capture_object_edit_start(const GameObject& before);
-        void commit_object_edit(Scene& scene, EditorCommandType type, const GameObject& after);
-
-        [[nodiscard]] static bool command_object_changed(
-            EditorCommandType type,
-            const GameObject& before,
-            const GameObject& after
-        ) noexcept;
-
         std::optional<GameObjectId> m_rename_target_id;
-        std::optional<GameObject> m_pending_object_edit;
+        tooling::editor::tracked_property_table::ObjectEditTracker m_object_edit_tracker;
 		std::array<char, 128> m_rename_buffer{};
     };
 }
