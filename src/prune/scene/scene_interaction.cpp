@@ -54,7 +54,8 @@ namespace prune {
                     scene.record_editor_command(make_viewport_command(
                         editor_command_type_label(EditorCommandType::MoveViewport),
                         m_viewport_pan_start,
-                        after
+                        after,
+                        "Mouse pan"
                     ));
                 }
 
@@ -110,7 +111,8 @@ namespace prune {
                             EditorCommandType::MoveObject,
                             editor_command_type_label(EditorCommandType::MoveObject),
                             before,
-                            *object
+                            *object,
+                            "Mouse drag"
                         ));
                     }
                 }
@@ -233,7 +235,8 @@ namespace prune {
                 EditorCommandType::MoveObject,
                 editor_command_type_label(EditorCommandType::MoveObject),
                 before,
-                *selected
+                *selected,
+                "Keyboard nudge"
             ));
         }
     }

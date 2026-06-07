@@ -110,13 +110,15 @@ namespace prune {
 
     EditorCommand make_object_command(
         EditorCommandType type,
-        std::string label,
+        std::string_view label,
         const GameObject& before,
-        const GameObject& after
+        const GameObject& after,
+        std::string_view detail
     ) {
         EditorCommand command{};
         command.type = type;
-        command.label = std::move(label);
+        command.label = std::string(label);
+        command.detail = std::string(detail);
         command.object_id = after.identity.id;
         command.before_object = before;
         command.after_object = after;
@@ -124,22 +126,28 @@ namespace prune {
         return command;
     }
 
-    EditorCommand make_create_object_command(const GameObject& created)
-    {
+    EditorCommand make_create_object_command(
+        const GameObject& created,
+        std::string_view detail
+    ) {
         EditorCommand command{};
         command.type = EditorCommandType::CreateObject;
         command.label = editor_command_type_label(EditorCommandType::CreateObject);
+        command.detail = std::string(detail);
         command.object_id = created.identity.id;
         command.after_object = created;
 
         return command;
     }
 
-    EditorCommand make_delete_object_command(const GameObject& deleted)
-    {
+    EditorCommand make_delete_object_command(
+        const GameObject& deleted,
+        std::string_view detail
+    ) {
         EditorCommand command{};
         command.type = EditorCommandType::DeleteObject;
         command.label = editor_command_type_label(EditorCommandType::DeleteObject);
+        command.detail = std::string(detail);
         command.object_id = deleted.identity.id;
         command.before_object = deleted;
 
@@ -147,13 +155,15 @@ namespace prune {
     }
 
     EditorCommand make_viewport_command(
-        std::string label,
+        std::string_view label,
         const Camera& before,
-        const Camera& after
+        const Camera& after,
+        std::string_view detail
     ) {
         EditorCommand command{};
         command.type = EditorCommandType::MoveViewport;
-        command.label = std::move(label);
+        command.label = std::string(label);
+        command.detail = std::string(detail);
         command.before_camera = before;
         command.after_camera = after;
 

@@ -97,7 +97,7 @@ namespace prune {
             if (ImGui::Button(action.label.data())) {
                 const GameObjectId created_id = create_scene_object(action.id);
                 if (const GameObject* created = m_state.objects.get_by_id(created_id)) {
-                    record_editor_command(make_create_object_command(*created));
+                    record_editor_command(make_create_object_command(*created, action.label));
                 }
             }
             ImGui::PopID();

@@ -68,7 +68,8 @@ namespace prune {
                                 EditorCommandType::RenameObject,
                                 editor_command_type_label(EditorCommandType::RenameObject),
                                 before,
-                                *selected
+                                *selected,
+                                selected->identity.name
                             ));
                         }
 
@@ -91,7 +92,7 @@ namespace prune {
                         const GameObject deleted = *selected;
                         const GameObjectId id_to_remove = selected->identity.id;
                         if (objects.remove_object(id_to_remove)) {
-                            scene.record_editor_command(make_delete_object_command(deleted));
+                            scene.record_editor_command(make_delete_object_command(deleted, deleted.identity.name));
                         }
 
                         tooling::imgui::property_table::end();
@@ -118,7 +119,7 @@ namespace prune {
 
                         if (GameObject* created = objects.get_by_id(clone_id)) {
                             created->identity.name = objects.make_unique_name(source_name, clone_id);
-                            scene.record_editor_command(make_create_object_command(*created));
+                            scene.record_editor_command(make_create_object_command(*created, created->identity.name));
                         }
 
                         objects.select(clone_id);
@@ -209,7 +210,11 @@ namespace prune {
                     "X",
                     "transform_x",
                     selected->transform.x,
-                    1.0f
+                    1.0f,
+                    0.0f,
+                    0.0f,
+                    "%.3f",
+                    "X"
                 );
 
                 tooling::editor::tracked_property_table::drag_float(
@@ -220,7 +225,11 @@ namespace prune {
                     "Y",
                     "transform_y",
                     selected->transform.y,
-                    1.0f
+                    1.0f,
+                    0.0f,
+                    0.0f,
+                    "%.3f",
+                    "Y"
                 );
 
                 ImGui::EndDisabled();
@@ -241,7 +250,8 @@ namespace prune {
                     "##width",
                     selected->size.width,
                     k_min_object_size,
-                    k_max_object_size
+                    k_max_object_size,
+                    "Width"
                 );
 
                 tooling::editor::tracked_property_table::slider_int(
@@ -253,7 +263,8 @@ namespace prune {
                     "##height",
                     selected->size.height,
                     k_min_object_size,
-                    k_max_object_size
+                    k_max_object_size,
+                    "Height"
                 );
 
                 ImGui::EndDisabled();
@@ -283,7 +294,8 @@ namespace prune {
                         scene,
                         EditorCommandType::ChangeObjectRenderType,
                         before,
-                        *selected
+                        *selected,
+                        (selected->render.type == RenderType::Rectangle) ? "Rectangle" : "Sprite"
                     );
                 }
 
@@ -297,7 +309,8 @@ namespace prune {
                             *selected,
                             "Colour",
                             "##colour",
-                            selected->render.rectangle.color
+                            selected->render.rectangle.color,
+                            "Rectangle colour"
                         );
                     }
                     break;
@@ -310,7 +323,8 @@ namespace prune {
                             *selected,
                             "Sprite",
                             "##sprite_key",
-                            selected->render.sprite.sprite_key
+                            selected->render.sprite.sprite_key,
+                            "Sprite key"
                         );
                     }
                     {
@@ -320,7 +334,8 @@ namespace prune {
                             *selected,
                             "Flip X",
                             "##sprite_flip_x",
-                            selected->render.sprite.flip_x
+                            selected->render.sprite.flip_x,
+                            "Flip X"
                         );
                     }
                     break;
@@ -382,7 +397,8 @@ namespace prune {
                         *selected,
                         "Lifecycle Active",
                         "##active",
-                        selected->lifecycle.active
+                        selected->lifecycle.active,
+                        "Lifecycle Active"
                     );
                 }
 
@@ -393,7 +409,8 @@ namespace prune {
                         *selected,
                         "Render Visible",
                         "##visible",
-                        selected->render.visible
+                        selected->render.visible,
+                        "Render Visible"
                     );
                 }
 
@@ -404,7 +421,8 @@ namespace prune {
                         *selected,
                         "Collision Solid",
                         "##solid",
-                        selected->collision.solid
+                        selected->collision.solid,
+                        "Collision Solid"
                     );
                 }
                 ImGui::EndDisabled();

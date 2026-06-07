@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "prune/scene/game_object.hpp"
@@ -27,6 +28,7 @@ namespace prune {
     struct EditorCommand {
         EditorCommandType type = EditorCommandType::MoveObject;
         std::string label;
+        std::string detail;
         GameObjectId object_id = k_invalid_game_object_id;
 
         std::optional<GameObject> before_object;
@@ -62,18 +64,27 @@ namespace prune {
 
     [[nodiscard]] EditorCommand make_object_command(
         EditorCommandType type,
-        std::string label,
+        std::string_view label,
         const GameObject& before,
-        const GameObject& after
+        const GameObject& after,
+        std::string_view detail = {}
     );
 
-    [[nodiscard]] EditorCommand make_create_object_command(const GameObject& created);
-    [[nodiscard]] EditorCommand make_delete_object_command(const GameObject& deleted);
+    [[nodiscard]] EditorCommand make_create_object_command(
+        const GameObject& created,
+        std::string_view detail = {}
+    );
+
+    [[nodiscard]] EditorCommand make_delete_object_command(
+        const GameObject& deleted,
+        std::string_view detail = {}
+    );
 
     [[nodiscard]] EditorCommand make_viewport_command(
-        std::string label,
+        std::string_view label,
         const Camera& before,
-        const Camera& after
+        const Camera& after,
+        std::string_view detail = {}
     );
 
 }

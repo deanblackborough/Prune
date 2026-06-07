@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 
 #include "prune/editor/editor_command.hpp"
 #include "prune/scene/game_object.hpp"
@@ -15,7 +16,12 @@ namespace prune::tooling::editor::tracked_property_table {
     class ObjectEditTracker {
     public:
         void capture_if_activated(const GameObject& before);
-        void commit_if_deactivated_after_edit(Scene& scene, EditorCommandType type, const GameObject& after);
+        void commit_if_deactivated_after_edit(
+            Scene& scene,
+            EditorCommandType type,
+            const GameObject& after,
+            std::string_view detail = {}
+        );
         void reset() noexcept;
 
     private:
@@ -33,7 +39,8 @@ namespace prune::tooling::editor::tracked_property_table {
         float speed = 1.0f,
         float min = 0.0f,
         float max = 0.0f,
-        const char* format = "%.3f"
+        const char* format = "%.3f",
+        std::string_view detail = {}
     );
 
     bool slider_int(
@@ -45,7 +52,8 @@ namespace prune::tooling::editor::tracked_property_table {
         const char* id,
         int& value,
         int min,
-        int max
+        int max,
+        std::string_view detail = {}
     );
 
     bool color3(
@@ -55,7 +63,8 @@ namespace prune::tooling::editor::tracked_property_table {
         GameObject& object,
         const char* label,
         const char* id,
-        float color[3]
+        float color[3],
+        std::string_view detail = {}
     );
 
     bool checkbox(
@@ -64,7 +73,8 @@ namespace prune::tooling::editor::tracked_property_table {
         GameObject& object,
         const char* label,
         const char* id,
-        bool& value
+        bool& value,
+        std::string_view detail = {}
     );
 
     bool sprite_picker(
@@ -73,14 +83,16 @@ namespace prune::tooling::editor::tracked_property_table {
         GameObject& object,
         const char* label,
         const char* id,
-        std::string& sprite_key
+        std::string& sprite_key,
+        std::string_view detail = {}
     );
 
     bool commit_if_changed(
         Scene& scene,
         EditorCommandType type,
         const GameObject& before,
-        const GameObject& after
+        const GameObject& after,
+        std::string_view detail = {}
     );
 
 }

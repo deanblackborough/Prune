@@ -63,7 +63,8 @@ namespace prune::tooling::editor::tracked_property_table {
     void ObjectEditTracker::commit_if_deactivated_after_edit(
         Scene& scene,
         EditorCommandType type,
-        const GameObject& after
+        const GameObject& after,
+        std::string_view detail
     ) {
         if (!ImGui::IsItemDeactivatedAfterEdit()) {
             return;
@@ -76,7 +77,7 @@ namespace prune::tooling::editor::tracked_property_table {
         const GameObject before = m_before.value();
         m_before.reset();
 
-        commit_if_changed(scene, type, before, after);
+        commit_if_changed(scene, type, before, after, detail);
     }
 
     void ObjectEditTracker::reset() noexcept
@@ -95,13 +96,14 @@ namespace prune::tooling::editor::tracked_property_table {
         float speed,
         float min,
         float max,
-        const char* format
+        const char* format,
+        std::string_view detail
     ) {
         const GameObject before = object;
         const bool changed = ::prune::tooling::imgui::property_table::drag_float(label, id, value, speed, min, max, format);
 
         tracker.capture_if_activated(before);
-        tracker.commit_if_deactivated_after_edit(scene, type, object);
+        tracker.commit_if_deactivated_after_edit(scene, type, object, detail);
 
         return changed;
     }
@@ -115,13 +117,14 @@ namespace prune::tooling::editor::tracked_property_table {
         const char* id,
         int& value,
         int min,
-        int max
+        int max,
+        std::string_view detail
     ) {
         const GameObject before = object;
         const bool changed = ::prune::tooling::imgui::property_table::slider_int(label, id, value, min, max);
 
         tracker.capture_if_activated(before);
-        tracker.commit_if_deactivated_after_edit(scene, type, object);
+        tracker.commit_if_deactivated_after_edit(scene, type, object, detail);
 
         return changed;
     }
@@ -133,13 +136,14 @@ namespace prune::tooling::editor::tracked_property_table {
         GameObject& object,
         const char* label,
         const char* id,
-        float color[3]
+        float color[3],
+        std::string_view detail
     ) {
         const GameObject before = object;
         const bool changed = ::prune::tooling::imgui::property_table::color3(label, id, color);
 
         tracker.capture_if_activated(before);
-        tracker.commit_if_deactivated_after_edit(scene, type, object);
+        tracker.commit_if_deactivated_after_edit(scene, type, object, detail);
 
         return changed;
     }
@@ -150,7 +154,8 @@ namespace prune::tooling::editor::tracked_property_table {
         GameObject& object,
         const char* label,
         const char* id,
-        bool& value
+        bool& value,
+        std::string_view detail
     ) {
         const GameObject before = object;
 
@@ -158,7 +163,7 @@ namespace prune::tooling::editor::tracked_property_table {
             return false;
         }
 
-        commit_if_changed(scene, type, before, object);
+        commit_if_changed(scene, type, before, object, detail);
         return true;
     }
 
@@ -168,7 +173,8 @@ namespace prune::tooling::editor::tracked_property_table {
         GameObject& object,
         const char* label,
         const char* id,
-        std::string& sprite_key
+        std::string& sprite_key,
+        std::string_view detail
     ) {
         const GameObject before = object;
 
@@ -176,7 +182,7 @@ namespace prune::tooling::editor::tracked_property_table {
             return false;
         }
 
-        commit_if_changed(scene, type, before, object);
+        commit_if_changed(scene, type, before, object, detail);
         return true;
     }
 
@@ -184,7 +190,8 @@ namespace prune::tooling::editor::tracked_property_table {
         Scene& scene,
         EditorCommandType type,
         const GameObject& before,
-        const GameObject& after
+        const GameObject& after,
+        std::string_view detail
     ) {
         if (before.identity.id != after.identity.id || !command_object_changed(type, before, after)) {
             return false;
@@ -194,7 +201,8 @@ namespace prune::tooling::editor::tracked_property_table {
             type,
             editor_command_type_label(type),
             before,
-            after
+            after,
+            detail
         ));
 
         return true;
