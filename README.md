@@ -189,8 +189,9 @@ The immediate focus is proving that viewport tools can operate safely on scene o
 
 Current priorities:
 
-- [ ] Command model for editor changes
-- [ ] Undo/Redo on top of the command model
+- [x] Command model for editor changes
+- [x] Undo/Redo on top of the command model
+- [x] Command history panel
 - [ ] Multi-select
 - [ ] Tool mode state
 - [ ] Scale tool

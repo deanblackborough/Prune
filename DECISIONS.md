@@ -495,6 +495,12 @@ Do not initially include:
 - Scene-specific creation actions exist.
 - Authored/runtime object distinction is enforced.
 
+### Status
+
+Superseded by "Undo/redo through editor commands".
+
+This decision was correct before the editor command model existed. Undo/redo has now been introduced on top of editor command snapshots.
+
 ---
 
 # Tooling decisions
