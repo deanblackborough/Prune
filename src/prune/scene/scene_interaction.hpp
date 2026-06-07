@@ -27,6 +27,7 @@ namespace prune {
         void handle_scene_click(Scene& scene, SceneState& state, const SceneCamera& camera, const Input& input);
         void handle_object_drag(Scene& scene, SceneState& state, SceneCamera& camera, const GridOptions& grid_options, const Input& input);
         void handle_keyboard_nudge(Scene& scene, SceneState& state, const GridOptions& grid_options, const Input& input);
+        void handle_delete_duplicate_shortcuts(Scene& scene, SceneState& state, const GridOptions& grid_options, const Input& input);
 
         [[nodiscard]] GameObject* pick_object_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept;
         [[nodiscard]] GameObject* movable_object_from_handle_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept;

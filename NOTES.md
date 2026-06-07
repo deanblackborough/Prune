@@ -67,10 +67,10 @@ Add normal editor actions once command history exists.
 
 Initial scope:
 
-- Delete selected authored object
-- Duplicate selected authored object
-- Select the duplicated object
-- Offset duplicates slightly so the result is visible
+- [x] Delete selected authored object
+- [x] Duplicate selected authored object
+- [x] Select the duplicated object
+- [x] Offset duplicates slightly so the result is visible
 
 This gives undo/redo useful behaviour to prove.
 
@@ -80,10 +80,10 @@ Add multi-select after the single-object command path is stable.
 
 Initial scope:
 
-- Selection set instead of one selected id
-- Shift-click to add/remove from the selection set
-- Clear selection on empty viewport click
-- Outliner multi-select support - only if it stays small
+- [x] Selection set instead of one selected id
+- [x] Shift-click to add/remove from the selection set
+- [x] Clear selection on empty viewport click
+- [x] Outliner multi-select support
 
 The first implementation should not include grouping.
 

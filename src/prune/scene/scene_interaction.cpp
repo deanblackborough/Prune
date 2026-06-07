@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 #include <SDL2/SDL.h>
 
@@ -25,6 +26,7 @@ namespace prune {
             update_editor_camera(scene, state, camera, dt, input);
             handle_scene_click(scene, state, camera, input);
             handle_keyboard_nudge(scene, state, grid_options, input);
+            handle_delete_duplicate_shortcuts(scene, state, grid_options, input);
         }
     }
 
@@ -90,12 +92,20 @@ namespace prune {
 
         GameObject* picked = pick_object_at_screen(scene, state, camera, input.mouse_x(), input.mouse_y());
 
+        const bool shift_down =
+            input.is_key_down(SDL_SCANCODE_LSHIFT) ||
+            input.is_key_down(SDL_SCANCODE_RSHIFT);
+
         if (picked && scene.object_is_selectable(*picked)) {
-            state.objects.select(picked->identity.id);
+            if (shift_down) {
+                state.objects.toggle_selected(picked->identity.id);
+            } else {
+                state.objects.select(picked->identity.id);
+            }
             return;
         }
 
-        state.objects.set_selected_id(k_invalid_game_object_id);
+        state.objects.clear_selection();
     }
 
     void SceneInteraction::handle_object_drag(Scene& scene, SceneState& state, SceneCamera& camera, const GridOptions& grid_options, const Input& input)
@@ -238,6 +248,54 @@ namespace prune {
                 *selected,
                 "Keyboard nudge"
             ));
+        }
+    }
+
+
+    void SceneInteraction::handle_delete_duplicate_shortcuts(Scene& scene, SceneState& state, const GridOptions& grid_options, const Input& input)
+    {
+        if (!scene_keyboard_input_enabled(state)) {
+            return;
+        }
+
+        const bool ctrl_down =
+            input.is_key_down(SDL_SCANCODE_LCTRL) ||
+            input.is_key_down(SDL_SCANCODE_RCTRL);
+
+        GameObject* selected = state.objects.selected_object();
+        if (!selected || !scene.object_is_editable(*selected)) {
+            return;
+        }
+
+        if (selected->editor.deletable &&
+            (input.was_key_pressed(SDL_SCANCODE_DELETE) || input.was_key_pressed(SDL_SCANCODE_BACKSPACE))) {
+            const GameObject deleted = *selected;
+            if (state.objects.remove_object(deleted.identity.id)) {
+                scene.record_editor_command(make_delete_object_command(deleted, deleted.identity.name));
+            }
+            return;
+        }
+
+        if (!selected->editor.cloneable || !ctrl_down || !input.was_key_pressed(SDL_SCANCODE_D)) {
+            return;
+        }
+
+        GameObject duplicate = *selected;
+        duplicate.identity.name = state.objects.make_unique_name(duplicate.identity.name + " Copy", k_invalid_game_object_id);
+
+        const float offset = static_cast<float>(
+            grid_options.snap_to_grid
+                ? std::max(1, grid_options.grid_size)
+                : std::max(1, grid_options.nudge_step)
+        );
+
+        duplicate.transform.x += offset;
+        duplicate.transform.y += offset;
+
+        const GameObjectId duplicate_id = state.objects.create_object(duplicate);
+        if (GameObject* created = state.objects.get_by_id(duplicate_id)) {
+            state.objects.select(duplicate_id);
+            scene.record_editor_command(make_create_object_command(*created, "Duplicate object"));
         }
     }
 

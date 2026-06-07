@@ -44,7 +44,7 @@ namespace prune {
                     continue;
                 }
 
-                const bool is_selected = object.identity.id == objects.selected_id();
+                const bool is_selected = objects.is_selected(object.identity.id);
 
                 if (!object_concept.selectable || !object.editor.selectable) {
                     ImGui::BeginDisabled();
@@ -54,7 +54,14 @@ namespace prune {
                 }
 
                 if (ImGui::Selectable(label.c_str(), is_selected)) {
-                    objects.select(object.identity.id);
+                    const ImGuiIO& io = ImGui::GetIO();
+                    const bool shift_down = io.KeyShift;
+
+                    if (shift_down) {
+                        objects.toggle_selected(object.identity.id);
+                    } else {
+                        objects.select(object.identity.id);
+                    }
                 }
             }
         }

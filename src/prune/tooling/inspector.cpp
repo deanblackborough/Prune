@@ -44,6 +44,10 @@ namespace prune {
 
                 tooling::imgui::property_table::text("Id", std::to_string(selected->identity.id).c_str());
 
+                if (objects.selected_count() > 1) {
+                    tooling::imgui::property_table::text("Selection", (std::to_string(objects.selected_count()) + " objects, editing active").c_str());
+                }
+
                 if (!can_rename) {
                     tooling::imgui::property_table::text("Name", selected->identity.name.c_str());
                 } else {
