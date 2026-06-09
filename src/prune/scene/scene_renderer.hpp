@@ -26,6 +26,7 @@ namespace prune {
 
     private:
         [[nodiscard]] static bool is_rect_visible(const SceneViewport& viewport, const SDL_Rect& rect) noexcept;
+        [[nodiscard]] static SDL_Rect expanded_rect(const SDL_Rect& rect, int amount) noexcept;
 
         void draw_grid(SDL_Renderer* renderer, const SceneViewport& viewport, const SceneCamera& camera, const GridOptions& grid_options) const;
         void draw_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object);
@@ -35,6 +36,8 @@ namespace prune {
         void draw_debug_overlays(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object) const;
         void draw_selected_gizmo(SDL_Renderer* renderer, const SDL_Rect& selected_outline, bool movable, bool active_selection) const;
         void draw_selected_outline(SDL_Renderer* renderer, const Scene& scene, const SceneState& state, const SceneCamera& camera, const GameObject& object) const;
+        void draw_multi_selection_bounds(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera) const;
+        [[nodiscard]] bool selected_screen_bounds(const SceneState& state, const SceneCamera& camera, SDL_Rect& bounds) const;
 
         [[nodiscard]] SDL_Texture* sprite_texture(SDL_Renderer* renderer, const std::string& sprite_key);
 

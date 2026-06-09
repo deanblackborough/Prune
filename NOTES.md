@@ -84,8 +84,12 @@ Initial scope:
 - [x] Shift-click to add/remove from the selection set
 - [x] Clear selection on empty viewport click
 - [x] Outliner multi-select support
+- [x] Visible outline for every selected object
+- [x] Stronger active-object indicator
+- [x] Combined selection bounds in the viewport
+- [x] Selection count in editor UI
 
-The first implementation should not include grouping.
+The first implementation should not include grouped movement or grouped object mutation.
 
 ### 5. Tool mode state
 

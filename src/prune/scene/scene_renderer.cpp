@@ -34,6 +34,16 @@ namespace prune {
             rect.y < viewport.height;
     }
 
+    SDL_Rect SceneRenderer::expanded_rect(const SDL_Rect& rect, int amount) noexcept
+    {
+        return SDL_Rect{
+            rect.x - amount,
+            rect.y - amount,
+            rect.w + amount * 2,
+            rect.h + amount * 2
+        };
+    }
+
     void SceneRenderer::draw_grid(SDL_Renderer* renderer, const SceneViewport& viewport, const SceneCamera& scene_camera, const GridOptions& grid_options) const
     {
         if (!grid_options.show_grid || grid_options.grid_size <= 1) {
@@ -193,6 +203,8 @@ namespace prune {
 
                 draw_selected_outline(renderer, scene, state, camera, object);
             }
+
+            draw_multi_selection_bounds(renderer, state, camera);
         }
     }
 
@@ -237,8 +249,18 @@ namespace prune {
 
     void SceneRenderer::draw_selected_gizmo(SDL_Renderer* renderer, const SDL_Rect& selected_outline, bool movable, bool active_selection) const
     {
-        SDL_SetRenderDrawColor(renderer, 174, 99, 242, active_selection ? 255 : 170);
-        SDL_RenderDrawRect(renderer, &selected_outline);
+        if (active_selection) {
+            SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
+            SDL_RenderDrawRect(renderer, &selected_outline);
+
+            const SDL_Rect active_outer = expanded_rect(selected_outline, 2);
+            SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
+            SDL_RenderDrawRect(renderer, &active_outer);
+        }
+        else {
+            SDL_SetRenderDrawColor(renderer, 174, 99, 242, 170);
+            SDL_RenderDrawRect(renderer, &selected_outline);
+        }
 
         if (!movable || !active_selection) {
             return;
@@ -246,7 +268,7 @@ namespace prune {
 
         const SDL_Rect move_handle = editor::tools::transform_gizmo::move_handle_rect(selected_outline);
 
-        SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
+        SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
         SDL_RenderFillRect(renderer, &move_handle);
     }
 
@@ -272,6 +294,79 @@ namespace prune {
         const SDL_Rect selected_outline = editor::tools::transform_gizmo::selected_outline_rect(object_rect);
         const bool active_selection = object.identity.id == state.objects.selected_id();
         draw_selected_gizmo(renderer, selected_outline, scene.object_is_movable(object), active_selection);
+    }
+
+
+    void SceneRenderer::draw_multi_selection_bounds(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera) const
+    {
+        if (state.objects.selected_count() <= 1) {
+            return;
+        }
+
+        SDL_Rect bounds{};
+        if (!selected_screen_bounds(state, camera, bounds)) {
+            return;
+        }
+
+        const SDL_Rect outline = expanded_rect(bounds, 6);
+
+        SDL_SetRenderDrawColor(renderer, 120, 190, 255, 230);
+        SDL_RenderDrawRect(renderer, &outline);
+
+        const int handle_size = 5;
+        const SDL_Rect top_left{ outline.x, outline.y, handle_size, handle_size };
+        const SDL_Rect top_right{ outline.x + outline.w - handle_size, outline.y, handle_size, handle_size };
+        const SDL_Rect bottom_left{ outline.x, outline.y + outline.h - handle_size, handle_size, handle_size };
+        const SDL_Rect bottom_right{ outline.x + outline.w - handle_size, outline.y + outline.h - handle_size, handle_size, handle_size };
+
+        SDL_RenderFillRect(renderer, &top_left);
+        SDL_RenderFillRect(renderer, &top_right);
+        SDL_RenderFillRect(renderer, &bottom_left);
+        SDL_RenderFillRect(renderer, &bottom_right);
+    }
+
+    bool SceneRenderer::selected_screen_bounds(const SceneState& state, const SceneCamera& camera, SDL_Rect& bounds) const
+    {
+        bool has_bounds = false;
+        int min_x = 0;
+        int min_y = 0;
+        int max_x = 0;
+        int max_y = 0;
+
+        for (const GameObjectId id : state.objects.selected_ids()) {
+            const GameObject* object = state.objects.get_by_id(id);
+            if (!object || !object->lifecycle.active || !object->render.visible) {
+                continue;
+            }
+
+            const SDL_Rect object_rect = camera.world_to_screen_rect(*object);
+            if (!is_rect_visible(state.viewport, object_rect)) {
+                continue;
+            }
+
+            const SDL_Rect selected_outline = editor::tools::transform_gizmo::selected_outline_rect(object_rect);
+
+            if (!has_bounds) {
+                min_x = selected_outline.x;
+                min_y = selected_outline.y;
+                max_x = selected_outline.x + selected_outline.w;
+                max_y = selected_outline.y + selected_outline.h;
+                has_bounds = true;
+                continue;
+            }
+
+            min_x = std::min(min_x, selected_outline.x);
+            min_y = std::min(min_y, selected_outline.y);
+            max_x = std::max(max_x, selected_outline.x + selected_outline.w);
+            max_y = std::max(max_y, selected_outline.y + selected_outline.h);
+        }
+
+        if (!has_bounds) {
+            return false;
+        }
+
+        bounds = SDL_Rect{ min_x, min_y, max_x - min_x, max_y - min_y };
+        return true;
     }
 
     SDL_Texture* SceneRenderer::sprite_texture(SDL_Renderer* renderer, const std::string& sprite_key)
