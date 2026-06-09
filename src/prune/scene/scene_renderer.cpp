@@ -247,22 +247,12 @@ namespace prune {
         }
     }
 
-    void SceneRenderer::draw_selected_gizmo(SDL_Renderer* renderer, const SDL_Rect& selected_outline, bool movable, bool active_selection) const
+    void SceneRenderer::draw_selected_gizmo(SDL_Renderer* renderer, const SDL_Rect& selected_outline, bool movable) const
     {
-        if (active_selection) {
-            SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
-            SDL_RenderDrawRect(renderer, &selected_outline);
+        SDL_SetRenderDrawColor(renderer, 174, 99, 242, 190);
+        SDL_RenderDrawRect(renderer, &selected_outline);
 
-            const SDL_Rect active_outer = expanded_rect(selected_outline, 2);
-            SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
-            SDL_RenderDrawRect(renderer, &active_outer);
-        }
-        else {
-            SDL_SetRenderDrawColor(renderer, 174, 99, 242, 170);
-            SDL_RenderDrawRect(renderer, &selected_outline);
-        }
-
-        if (!movable || !active_selection) {
+        if (!movable) {
             return;
         }
 
@@ -292,8 +282,8 @@ namespace prune {
         }
 
         const SDL_Rect selected_outline = editor::tools::transform_gizmo::selected_outline_rect(object_rect);
-        const bool active_selection = object.identity.id == state.objects.selected_id();
-        draw_selected_gizmo(renderer, selected_outline, scene.object_is_movable(object), active_selection);
+        const bool show_object_handle = state.objects.selected_count() == 1;
+        draw_selected_gizmo(renderer, selected_outline, show_object_handle && scene.object_is_movable(object));
     }
 
 
@@ -313,16 +303,10 @@ namespace prune {
         SDL_SetRenderDrawColor(renderer, 120, 190, 255, 230);
         SDL_RenderDrawRect(renderer, &outline);
 
-        const int handle_size = 5;
-        const SDL_Rect top_left{ outline.x, outline.y, handle_size, handle_size };
-        const SDL_Rect top_right{ outline.x + outline.w - handle_size, outline.y, handle_size, handle_size };
-        const SDL_Rect bottom_left{ outline.x, outline.y + outline.h - handle_size, handle_size, handle_size };
-        const SDL_Rect bottom_right{ outline.x + outline.w - handle_size, outline.y + outline.h - handle_size, handle_size, handle_size };
+        const SDL_Rect move_handle = editor::tools::transform_gizmo::move_handle_rect(outline);
 
-        SDL_RenderFillRect(renderer, &top_left);
-        SDL_RenderFillRect(renderer, &top_right);
-        SDL_RenderFillRect(renderer, &bottom_left);
-        SDL_RenderFillRect(renderer, &bottom_right);
+        SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
+        SDL_RenderFillRect(renderer, &move_handle);
     }
 
     bool SceneRenderer::selected_screen_bounds(const SceneState& state, const SceneCamera& camera, SDL_Rect& bounds) const

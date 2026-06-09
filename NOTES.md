@@ -85,8 +85,8 @@ Initial scope:
 - [x] Clear selection on empty viewport click
 - [x] Outliner multi-select support
 - [x] Visible outline for every selected object
-- [x] Stronger active-object indicator
 - [x] Combined selection bounds in the viewport
+- [x] Multi-selection drag handle on the selection bounds
 - [x] Selection count in editor UI
 
 The first implementation should not include grouped movement or grouped object mutation.
