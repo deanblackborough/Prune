@@ -28,6 +28,7 @@ namespace prune {
         [[nodiscard]] const GameObject* selected_object() const noexcept;
 
         void select(GameObjectId id) noexcept;
+        void select_many(std::span<const GameObjectId> ids);
         void toggle_selected(GameObjectId id) noexcept;
         void clear_selection() noexcept;
         void set_selected_id(GameObjectId id) noexcept;

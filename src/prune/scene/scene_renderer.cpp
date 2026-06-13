@@ -204,7 +204,7 @@ namespace prune {
                 draw_selected_outline(renderer, scene, state, camera, object);
             }
 
-            draw_multi_selection_bounds(renderer, state, camera);
+            draw_multi_selection_bounds(renderer, scene, state, camera);
         }
     }
 
@@ -287,7 +287,7 @@ namespace prune {
     }
 
 
-    void SceneRenderer::draw_multi_selection_bounds(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera) const
+    void SceneRenderer::draw_multi_selection_bounds(SDL_Renderer* renderer, const Scene& scene, const SceneState& state, const SceneCamera& camera) const
     {
         if (state.objects.selected_count() <= 1) {
             return;
@@ -303,10 +303,30 @@ namespace prune {
         SDL_SetRenderDrawColor(renderer, 120, 190, 255, 230);
         SDL_RenderDrawRect(renderer, &outline);
 
+        if (!multi_selection_is_movable(scene, state)) {
+            return;
+        }
+
         const SDL_Rect move_handle = editor::tools::transform_gizmo::move_handle_rect(outline);
 
         SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
         SDL_RenderFillRect(renderer, &move_handle);
+    }
+
+    bool SceneRenderer::multi_selection_is_movable(const Scene& scene, const SceneState& state) const
+    {
+        if (state.objects.selected_count() <= 1) {
+            return false;
+        }
+
+        for (const GameObjectId id : state.objects.selected_ids()) {
+            const GameObject* object = state.objects.get_by_id(id);
+            if (!object || !scene.object_is_movable(*object)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     bool SceneRenderer::selected_screen_bounds(const SceneState& state, const SceneCamera& camera, SDL_Rect& bounds) const

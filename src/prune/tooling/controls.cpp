@@ -23,14 +23,14 @@ namespace prune {
         tooling::imgui::layout::spacing(2);
 
         tooling::imgui::layout::text_wrapped("Objects");
-        tooling::imgui::layout::text_wrapped("CTRL+Arrow keys move the active selected object");
+        tooling::imgui::layout::text_wrapped("CTRL+Arrow keys move the selected object or selected objects");
         tooling::imgui::layout::text_wrapped("Hold Shift for larger movements");
-        tooling::imgui::layout::text_wrapped("Delete or Backspace deletes the active selected object");
+        tooling::imgui::layout::text_wrapped("Delete or Backspace deletes selected deletable objects");
         tooling::imgui::layout::text_wrapped("CTRL+D duplicates the active selected object");
         tooling::imgui::layout::text_wrapped("Left click selects one object");
         tooling::imgui::layout::text_wrapped("Shift+Left click toggles objects in the selection set");
         tooling::imgui::layout::text_wrapped("Empty viewport click clears the selection set");
-        tooling::imgui::layout::text_wrapped("Mouse button left on the active selected handle moves the object");
+        tooling::imgui::layout::text_wrapped("Mouse button left on a selection handle moves the selected object or selected objects");
 
         tooling::imgui::layout::spacing(2);
 

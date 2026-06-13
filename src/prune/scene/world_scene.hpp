@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <SDL2/SDL.h>
 #include <yaml-cpp/yaml.h>
@@ -69,7 +70,8 @@ namespace prune {
 
     private:
         void sanitize_loaded_selection() noexcept;
-        void restore_object_snapshot(const GameObject& object);
+        void restore_object_snapshot(const GameObject& object, bool select_restored = true);
+        void restore_object_snapshots(const std::vector<GameObject>& objects);
         void apply_editor_command(const EditorCommand& command, bool use_after_state);
 
         SceneRenderer m_renderer;

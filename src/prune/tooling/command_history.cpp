@@ -69,7 +69,11 @@ namespace prune {
                     );
                 }
 
-                if (command.object_id != k_invalid_game_object_id) {
+                if (command.object_ids.size() > 1) {
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("%zu objects", command.object_ids.size());
+                }
+                else if (command.object_id != k_invalid_game_object_id) {
                     ImGui::SameLine();
                     ImGui::TextDisabled("#%u", static_cast<unsigned int>(command.object_id));
                 }

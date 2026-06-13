@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -22,7 +23,9 @@ namespace prune {
         ChangeObjectColour,
         ChangeObjectFlag,
         ChangeSprite,
-        MoveViewport
+        MoveViewport,
+        MoveObjects,
+        DeleteObjects
     };
 
     struct EditorCommand {
@@ -33,6 +36,9 @@ namespace prune {
 
         std::optional<GameObject> before_object;
         std::optional<GameObject> after_object;
+        std::vector<GameObject> before_objects;
+        std::vector<GameObject> after_objects;
+        std::vector<GameObjectId> object_ids;
 
         std::optional<Camera> before_camera;
         std::optional<Camera> after_camera;
@@ -77,6 +83,19 @@ namespace prune {
 
     [[nodiscard]] EditorCommand make_delete_object_command(
         const GameObject& deleted,
+        std::string_view detail = {}
+    );
+
+    [[nodiscard]] EditorCommand make_multi_object_command(
+        EditorCommandType type,
+        std::string_view label,
+        std::span<const GameObject> before,
+        std::span<const GameObject> after,
+        std::string_view detail = {}
+    );
+
+    [[nodiscard]] EditorCommand make_multi_delete_object_command(
+        std::span<const GameObject> deleted,
         std::string_view detail = {}
     );
 

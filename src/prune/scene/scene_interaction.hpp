@@ -4,6 +4,8 @@
 #include "prune/scene/scene_camera.hpp"
 #include "prune/scene/scene_state.hpp"
 
+#include <vector>
+
 namespace prune {
 
     class Scene;
@@ -30,7 +32,9 @@ namespace prune {
         void handle_delete_duplicate_shortcuts(Scene& scene, SceneState& state, const GridOptions& grid_options, const Input& input);
 
         [[nodiscard]] GameObject* pick_object_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept;
-        [[nodiscard]] GameObject* movable_object_from_handle_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept;
+        [[nodiscard]] std::vector<GameObjectId> movable_objects_from_handle_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y);
+        [[nodiscard]] static bool selected_screen_bounds(const SceneState& state, const SceneCamera& camera, SDL_Rect& bounds) noexcept;
+        [[nodiscard]] static bool rect_visible(const SceneViewport& viewport, const SDL_Rect& rect) noexcept;
 
         [[nodiscard]] static float snap_value_to_grid(
             const GridOptions& grid_options,

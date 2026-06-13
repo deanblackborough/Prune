@@ -282,7 +282,7 @@ namespace prune {
     }
 
 
-    void WorldScene::restore_object_snapshot(const GameObject& object)
+    void WorldScene::restore_object_snapshot(const GameObject& object, bool select_restored)
     {
         if (GameObject* existing = m_state.objects.get_by_id(object.identity.id)) {
             *existing = object;
@@ -295,7 +295,22 @@ namespace prune {
             );
         }
 
-        m_state.objects.select(object.identity.id);
+        if (select_restored) {
+            m_state.objects.select(object.identity.id);
+        }
+    }
+
+    void WorldScene::restore_object_snapshots(const std::vector<GameObject>& objects)
+    {
+        std::vector<GameObjectId> restored_ids;
+        restored_ids.reserve(objects.size());
+
+        for (const GameObject& object : objects) {
+            restore_object_snapshot(object, false);
+            restored_ids.push_back(object.identity.id);
+        }
+
+        m_state.objects.select_many(restored_ids);
     }
 
     void WorldScene::apply_editor_command(const EditorCommand& command, bool use_after_state)
@@ -316,6 +331,26 @@ namespace prune {
                 m_state.objects.remove_object(command.object_id);
             } else if (command.before_object.has_value()) {
                 restore_object_snapshot(command.before_object.value());
+            }
+            break;
+
+        case EditorCommandType::DeleteObjects:
+            if (use_after_state) {
+                for (const GameObjectId id : command.object_ids) {
+                    m_state.objects.remove_object(id);
+                }
+
+                m_state.objects.clear_selection();
+            } else {
+                restore_object_snapshots(command.before_objects);
+            }
+            break;
+
+        case EditorCommandType::MoveObjects:
+            if (use_after_state) {
+                restore_object_snapshots(command.after_objects);
+            } else {
+                restore_object_snapshots(command.before_objects);
             }
             break;
 

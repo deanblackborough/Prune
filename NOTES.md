@@ -88,8 +88,10 @@ Initial scope:
 - [x] Combined selection bounds in the viewport
 - [x] Multi-selection drag handle on the selection bounds
 - [x] Selection count in editor UI
+- [x] Move selected objects as one editor command
+- [x] Delete selected deletable objects as one editor command
 
-The first implementation should not include grouped movement or grouped object mutation.
+Multi-select now supports grouped viewport move and grouped delete. Grouped inspector/property edits remain deferred because they need more specific UX and command labels.
 
 ### 5. Tool mode state
 

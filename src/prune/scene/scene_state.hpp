@@ -5,6 +5,8 @@
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
 
+#include <vector>
+
 namespace prune {
 
     struct SceneViewport {
@@ -52,10 +54,16 @@ namespace prune {
         int max_nudge_step = 64;
     };
 
+    struct DragObjectStart {
+        GameObjectId object_id = k_invalid_game_object_id;
+        Transform transform{};
+    };
+
     struct DragState {
         bool active = false;
         GameObjectId object_id = k_invalid_game_object_id;
         Transform object_start{};
+        std::vector<DragObjectStart> object_starts;
         Transform mouse_start_world{};
     };
 

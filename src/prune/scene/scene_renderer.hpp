@@ -36,8 +36,9 @@ namespace prune {
         void draw_debug_overlays(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object) const;
         void draw_selected_gizmo(SDL_Renderer* renderer, const SDL_Rect& selected_outline, bool movable) const;
         void draw_selected_outline(SDL_Renderer* renderer, const Scene& scene, const SceneState& state, const SceneCamera& camera, const GameObject& object) const;
-        void draw_multi_selection_bounds(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera) const;
+        void draw_multi_selection_bounds(SDL_Renderer* renderer, const Scene& scene, const SceneState& state, const SceneCamera& camera) const;
         [[nodiscard]] bool selected_screen_bounds(const SceneState& state, const SceneCamera& camera, SDL_Rect& bounds) const;
+        [[nodiscard]] bool multi_selection_is_movable(const Scene& scene, const SceneState& state) const;
 
         [[nodiscard]] SDL_Texture* sprite_texture(SDL_Renderer* renderer, const std::string& sprite_key);
 

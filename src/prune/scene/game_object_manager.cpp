@@ -160,6 +160,19 @@ namespace prune {
         }
     }
 
+    void GameObjectManager::select_many(std::span<const GameObjectId> ids)
+    {
+        m_selected_ids.clear();
+
+        for (const GameObjectId id : ids) {
+            if (id == k_invalid_game_object_id || get_by_id(id) == nullptr || is_selected(id)) {
+                continue;
+            }
+
+            m_selected_ids.push_back(id);
+        }
+    }
+
     void GameObjectManager::toggle_selected(GameObjectId id) noexcept
     {
         if (id == k_invalid_game_object_id || get_by_id(id) == nullptr) {
