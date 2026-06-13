@@ -16,9 +16,10 @@ A selected object is not just a rectangle. It may be authored, runtime-created, 
 
 ## Must do first
 
-- Keep player/controller ownership scene-specific unless a genuinely shared abstraction appears.
-- Introduce an editor command/change model before implementing undo/redo.
-- Keep undo/redo editor-only at first.
+- [x] Keep player/controller ownership scene-specific unless a genuinely shared abstraction appears.
+- [x] Introduce an editor command/change model before implementing undo/redo.
+- [x] Keep undo/redo editor-only at first.
+- [x] Keep scene activation separate from default scene creation so loading cannot be overwritten by `on_enter()`.
 
 ## Phase targets
 

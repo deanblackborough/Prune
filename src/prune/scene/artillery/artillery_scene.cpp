@@ -82,7 +82,7 @@ namespace prune {
 
     void ArtilleryScene::on_enter()
     {
-        new_scene();
+        // Scene activation hook only. Default content is created explicitly via new_scene().
     }
 
     void ArtilleryScene::on_exit()

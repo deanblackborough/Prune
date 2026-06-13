@@ -45,8 +45,12 @@ namespace prune {
         Scene(const Scene&) = delete;
         Scene& operator=(const Scene&) = delete;
 
+        // Called when an already-created scene becomes active. Must not create or restore default content.
         virtual void on_enter() = 0;
+
+        // Creates the default authored content for a new scene. Must not be called after loading a scene from disk.
         virtual void new_scene() = 0;
+
         virtual void on_exit() = 0;
         virtual void update(float dt, const Input& input) = 0;
         virtual void update_editor(float, const Input&) {}

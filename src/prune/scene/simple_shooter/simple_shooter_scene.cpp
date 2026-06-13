@@ -123,7 +123,7 @@ namespace prune {
 
     void SimpleShooterScene::on_enter()
     {
-        new_scene();
+        // Scene activation hook only. Default content is created explicitly via new_scene().
     }
 
     void SimpleShooterScene::on_exit()

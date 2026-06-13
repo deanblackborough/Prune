@@ -72,7 +72,7 @@ namespace prune {
 
     void PlatformerScene::on_enter()
     {
-        new_scene();
+        // Scene activation hook only. Default content is created explicitly via new_scene().
     }
 
     void PlatformerScene::on_exit()

@@ -28,6 +28,7 @@ namespace prune {
         m_input = std::make_unique<Input>();
         m_time = std::make_unique<Time>();
         m_scene = SceneFactory::create(SceneType::Platformer, m_window->width(), m_window->height());
+        m_scene->new_scene();
         m_scene->on_enter();
         m_ui = std::make_unique<Ui>();
 
@@ -99,7 +100,7 @@ namespace prune {
                         m_window->height()
                     );
 
-					m_scene->new_scene();
+                    m_scene->new_scene();
                     m_scene->on_enter();
                     m_ui->set_file_status("Created new scene", false);
                 }
