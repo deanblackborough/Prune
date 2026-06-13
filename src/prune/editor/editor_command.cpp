@@ -103,6 +103,10 @@ namespace prune {
             return "Change sprite";
         case EditorCommandType::MoveViewport:
             return "Move viewport";
+        case EditorCommandType::MoveObjects:
+            return "Move objects";
+        case EditorCommandType::DeleteObjects:
+            return "Delete objects";
         }
 
         return "Unknown editor command";
@@ -120,6 +124,7 @@ namespace prune {
         command.label = std::string(label);
         command.detail = std::string(detail);
         command.object_id = after.identity.id;
+        command.object_ids.push_back(after.identity.id);
         command.before_object = before;
         command.after_object = after;
 
@@ -135,6 +140,7 @@ namespace prune {
         command.label = editor_command_type_label(EditorCommandType::CreateObject);
         command.detail = std::string(detail);
         command.object_id = created.identity.id;
+        command.object_ids.push_back(created.identity.id);
         command.after_object = created;
 
         return command;
@@ -149,7 +155,48 @@ namespace prune {
         command.label = editor_command_type_label(EditorCommandType::DeleteObject);
         command.detail = std::string(detail);
         command.object_id = deleted.identity.id;
+        command.object_ids.push_back(deleted.identity.id);
         command.before_object = deleted;
+
+        return command;
+    }
+
+    EditorCommand make_multi_object_command(
+        EditorCommandType type,
+        std::string_view label,
+        std::span<const GameObject> before,
+        std::span<const GameObject> after,
+        std::string_view detail
+    ) {
+        EditorCommand command{};
+        command.type = type;
+        command.label = std::string(label);
+        command.detail = std::string(detail);
+        command.before_objects.assign(before.begin(), before.end());
+        command.after_objects.assign(after.begin(), after.end());
+
+        command.object_ids.reserve(command.after_objects.size());
+        for (const GameObject& object : command.after_objects) {
+            command.object_ids.push_back(object.identity.id);
+        }
+
+        return command;
+    }
+
+    EditorCommand make_multi_delete_object_command(
+        std::span<const GameObject> deleted,
+        std::string_view detail
+    ) {
+        EditorCommand command{};
+        command.type = EditorCommandType::DeleteObjects;
+        command.label = editor_command_type_label(EditorCommandType::DeleteObjects);
+        command.detail = std::string(detail);
+        command.before_objects.assign(deleted.begin(), deleted.end());
+
+        command.object_ids.reserve(command.before_objects.size());
+        for (const GameObject& object : command.before_objects) {
+            command.object_ids.push_back(object.identity.id);
+        }
 
         return command;
     }

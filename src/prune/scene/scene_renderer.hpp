@@ -26,15 +26,19 @@ namespace prune {
 
     private:
         [[nodiscard]] static bool is_rect_visible(const SceneViewport& viewport, const SDL_Rect& rect) noexcept;
+        [[nodiscard]] static SDL_Rect expanded_rect(const SDL_Rect& rect, int amount) noexcept;
 
         void draw_grid(SDL_Renderer* renderer, const SceneViewport& viewport, const SceneCamera& camera, const GridOptions& grid_options) const;
-        void draw_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline);
-        void draw_rectangle_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline) const;
-        void draw_sprite_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object, SDL_Rect& selected_outline, bool& has_selected_outline);
+        void draw_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object);
+        void draw_rectangle_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object) const;
+        void draw_sprite_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object);
         void draw_sprite_fallback(SDL_Renderer* renderer, const SDL_Rect& rect) const;
         void draw_debug_overlays(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object) const;
         void draw_selected_gizmo(SDL_Renderer* renderer, const SDL_Rect& selected_outline, bool movable) const;
-        void capture_selected_outline(const SceneState& state, const GameObject& object, const SDL_Rect& rect, SDL_Rect& selected_outline, bool& has_selected_outline) const noexcept;
+        void draw_selected_outline(SDL_Renderer* renderer, const Scene& scene, const SceneState& state, const SceneCamera& camera, const GameObject& object) const;
+        void draw_multi_selection_bounds(SDL_Renderer* renderer, const Scene& scene, const SceneState& state, const SceneCamera& camera) const;
+        [[nodiscard]] bool selected_screen_bounds(const SceneState& state, const SceneCamera& camera, SDL_Rect& bounds) const;
+        [[nodiscard]] bool multi_selection_is_movable(const Scene& scene, const SceneState& state) const;
 
         [[nodiscard]] SDL_Texture* sprite_texture(SDL_Renderer* renderer, const std::string& sprite_key);
 

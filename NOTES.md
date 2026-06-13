@@ -67,10 +67,10 @@ Add normal editor actions once command history exists.
 
 Initial scope:
 
-- Delete selected authored object
-- Duplicate selected authored object
-- Select the duplicated object
-- Offset duplicates slightly so the result is visible
+- [x] Delete selected authored object
+- [x] Duplicate selected authored object
+- [x] Select the duplicated object
+- [x] Offset duplicates slightly so the result is visible
 
 This gives undo/redo useful behaviour to prove.
 
@@ -80,12 +80,18 @@ Add multi-select after the single-object command path is stable.
 
 Initial scope:
 
-- Selection set instead of one selected id
-- Shift-click to add/remove from the selection set
-- Clear selection on empty viewport click
-- Outliner multi-select support - only if it stays small
+- [x] Selection set instead of one selected id
+- [x] Shift-click to add/remove from the selection set
+- [x] Clear selection on empty viewport click
+- [x] Outliner multi-select support
+- [x] Visible outline for every selected object
+- [x] Combined selection bounds in the viewport
+- [x] Multi-selection drag handle on the selection bounds
+- [x] Selection count in editor UI
+- [x] Move selected objects as one editor command
+- [x] Delete selected deletable objects as one editor command
 
-The first implementation should not include grouping.
+Multi-select now supports grouped viewport move and grouped delete. Grouped inspector/property edits remain deferred because they need more specific UX and command labels.
 
 ### 5. Tool mode state
 

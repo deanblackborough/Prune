@@ -2,6 +2,8 @@
 
 #include "prune/scene/game_object.hpp"
 
+#include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -26,8 +28,14 @@ namespace prune {
         [[nodiscard]] const GameObject* selected_object() const noexcept;
 
         void select(GameObjectId id) noexcept;
+        void select_many(std::span<const GameObjectId> ids);
+        void toggle_selected(GameObjectId id) noexcept;
+        void clear_selection() noexcept;
         void set_selected_id(GameObjectId id) noexcept;
         [[nodiscard]] GameObjectId selected_id() const noexcept;
+        [[nodiscard]] bool is_selected(GameObjectId id) const noexcept;
+        [[nodiscard]] std::size_t selected_count() const noexcept;
+        [[nodiscard]] std::span<const GameObjectId> selected_ids() const noexcept;
 
         void set_next_id(GameObjectId next_id) noexcept;
         [[nodiscard]] GameObjectId next_id() const noexcept;
@@ -39,9 +47,12 @@ namespace prune {
 
     private:
         [[nodiscard]] std::size_t find_index_by_id(GameObjectId id) const noexcept;
+        [[nodiscard]] std::size_t find_selected_index(GameObjectId id) const noexcept;
+        void remove_from_selection(GameObjectId id) noexcept;
+        void sanitize_selection() noexcept;
 
         std::vector<GameObject> m_objects;
+        std::vector<GameObjectId> m_selected_ids;
         GameObjectId m_next_id = 1;
-        GameObjectId m_selected_id = k_invalid_game_object_id;
     };
 }
