@@ -858,3 +858,28 @@ Rotation cuts across rendering, picking, collision, bounds, serialization, inspe
 - The next viewport transform tool after move should be scale.
 - Rotation remains planned but deliberately later.
 - Any future rotation work should start by documenting what rotates visually only and what rotates physically.
+
+---
+
+## Defer grouped inspector edit actions
+
+### Decision
+
+Implement basic group support for move and delete, but defer grouped inspector/property edits.
+
+### Why
+
+Grouped editor commands are now supported for multi-selection move and delete, because those actions need to undo and redo atomically as a single user action.
+
+Grouped inspector/property edits are intentionally deferred. Changing size, colour, sprite, flags, labels, or scene-specific properties across multiple selected objects introduces additional UI and command-history complexity:
+
+mixed values need clear inspector behaviour
+partial edits need explicit rules
+command history must describe the grouped edit accurately
+undo/redo must restore all affected objects as one atomic command
+
+For now, the inspector continues to edit the active selected object only. Multi-object mutation is limited to viewport movement and deletion.
+
+### Revisit when
+
+Tools are stable enough and we have irnoned out any issues with the multi-selection and the command history model. Then we can start to explore grouped inspector edits with a clear understanding of how the editor behaves and what the user expects.
