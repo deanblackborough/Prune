@@ -192,7 +192,8 @@ Current priorities:
 - [x] Command model for editor changes
 - [x] Undo/Redo on top of the command model
 - [x] Command history panel
-- [ ] Multi-select
+- [x] Multi-select
+- [x] Multi-select move/delete
 - [ ] Tool mode state
 - [ ] Scale tool
 - [ ] Basic audio hooks
