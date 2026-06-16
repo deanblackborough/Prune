@@ -14,7 +14,23 @@ namespace prune {
     namespace {
 
         constexpr float k_tool_palette_margin = 10.0f;
+        constexpr float k_tool_palette_padding = 8.0f;
         constexpr float k_tool_button_width = 74.0f;
+
+        [[nodiscard]] ImVec2 editor_tool_palette_size()
+        {
+            const ImGuiStyle& style = ImGui::GetStyle();
+
+            return ImVec2(
+                (k_tool_palette_padding * 2.0f) + (k_tool_button_width * 2.0f) + style.ItemSpacing.x,
+                (k_tool_palette_padding * 2.0f) + ImGui::GetTextLineHeight() + style.ItemSpacing.y + ImGui::GetFrameHeight()
+            );
+        }
+
+        [[nodiscard]] bool point_in_rect(const ImVec2& point, const ImVec2& min, const ImVec2& max) noexcept
+        {
+            return point.x >= min.x && point.y >= min.y && point.x < max.x && point.y < max.y;
+        }
 
         void draw_editor_tool_button(Scene& scene, EditorTool tool)
         {
@@ -32,6 +48,37 @@ namespace prune {
             if (active) {
                 ImGui::PopStyleColor(2);
             }
+        }
+
+        void draw_editor_tool_palette(Scene& scene, const ImVec2& palette_min, const ImVec2& palette_max)
+        {
+            const ImGuiStyle& style = ImGui::GetStyle();
+            ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+            draw_list->AddRectFilled(
+                palette_min,
+                palette_max,
+                ImGui::GetColorU32(ImGuiCol_WindowBg, 0.94f),
+                style.WindowRounding
+            );
+            draw_list->AddRect(
+                palette_min,
+                palette_max,
+                ImGui::GetColorU32(ImGuiCol_Border),
+                style.WindowRounding
+            );
+
+            ImGui::SetCursorScreenPos(ImVec2(
+                palette_min.x + k_tool_palette_padding,
+                palette_min.y + k_tool_palette_padding
+            ));
+
+            ImGui::BeginGroup();
+            ImGui::TextUnformatted("Tool Palette");
+            draw_editor_tool_button(scene, EditorTool::Select);
+            ImGui::SameLine();
+            draw_editor_tool_button(scene, EditorTool::Move);
+            ImGui::EndGroup();
         }
 
     }
@@ -226,38 +273,6 @@ namespace prune {
             ImGui::ShowDemoWindow(&m_show_imgui_demo);
         }
 
-        draw_editor_tool_palette(scene);
-    }
-
-    void Ui::draw_editor_tool_palette(Scene& scene)
-    {
-        const SceneViewport& viewport = scene.get_viewport();
-        if (!viewport.has_area()) {
-            return;
-        }
-
-        const ImVec2 anchor{
-            static_cast<float>(viewport.screen_x + viewport.width) - k_tool_palette_margin,
-            static_cast<float>(viewport.screen_y) + k_tool_palette_margin
-        };
-
-        ImGui::SetNextWindowPos(anchor, ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-        ImGui::SetNextWindowBgAlpha(0.94f);
-
-        constexpr ImGuiWindowFlags flags =
-            ImGuiWindowFlags_NoDecoration |
-            ImGuiWindowFlags_AlwaysAutoResize |
-            ImGuiWindowFlags_NoSavedSettings |
-            ImGuiWindowFlags_NoMove;
-
-        if (ImGui::Begin("Tool Palette##editor_tool_palette", nullptr, flags)) {
-            ImGui::TextUnformatted("Tools");
-            draw_editor_tool_button(scene, EditorTool::Select);
-            ImGui::SameLine();
-            draw_editor_tool_button(scene, EditorTool::Move);
-        }
-
-        ImGui::End();
     }
 
     void Ui::destroy_scene_render_target()
@@ -339,19 +354,46 @@ namespace prune {
         ensure_scene_render_target(renderer, viewport.width, viewport.height);
 
         if (m_scene_render_target) {
-            ImGui::InvisibleButton("##scene_viewport_input", viewport_size);
+            const ImVec2 viewport_max{
+                viewport_pos.x + viewport_size.x,
+                viewport_pos.y + viewport_size.y
+            };
+            const ImVec2 palette_size = editor_tool_palette_size();
+            const ImVec2 palette_min{
+                viewport_max.x - k_tool_palette_margin - palette_size.x,
+                viewport_pos.y + k_tool_palette_margin
+            };
+            const ImVec2 palette_max{
+                palette_min.x + palette_size.x,
+                palette_min.y + palette_size.y
+            };
+            const bool mouse_over_tool_palette = point_in_rect(io.MousePos, palette_min, palette_max);
 
-            viewport.hovered = ImGui::IsItemHovered();
+            bool viewport_input_hovered = false;
+
+            if (mouse_over_tool_palette) {
+                ImGui::Dummy(viewport_size);
+            }
+            else {
+                ImGui::InvisibleButton("##scene_viewport_input", viewport_size);
+                viewport_input_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+            }
+
+            viewport.hovered =
+                viewport_input_hovered &&
+                ImGui::IsMouseHoveringRect(viewport_pos, viewport_max) &&
+                !mouse_over_tool_palette;
 
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
             draw_list->AddImage(
                 reinterpret_cast<ImTextureID>(m_scene_render_target),
                 viewport_pos,
-                ImVec2(viewport_pos.x + viewport_size.x, viewport_pos.y + viewport_size.y)
+                viewport_max
             );
 
             scene.set_viewport(viewport);
             scene.draw_viewport_overlays();
+            draw_editor_tool_palette(scene, palette_min, palette_max);
         }
         else {
             ImGui::Dummy(viewport_size);
