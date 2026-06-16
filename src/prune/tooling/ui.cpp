@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <string>
 #include <utility>
 
@@ -12,28 +13,25 @@ namespace prune {
 
     namespace {
 
-        [[nodiscard]] const char* toolbar_tool_label(EditorTool active_tool, EditorTool tool) noexcept
-        {
-            return active_tool == tool
-                ? (tool == EditorTool::Select ? "[Select]" : "[Move]")
-                : editor_tool_label(tool);
-        }
+        constexpr float k_tool_palette_margin = 10.0f;
+        constexpr float k_tool_button_width = 74.0f;
 
         void draw_editor_tool_button(Scene& scene, EditorTool tool)
         {
-            if (ImGui::SmallButton(toolbar_tool_label(scene.current_editor_tool(), tool))) {
+            const bool active = scene.current_editor_tool() == tool;
+
+            if (active) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+            }
+
+            if (ImGui::Button(editor_tool_label(tool), ImVec2(k_tool_button_width, 0.0f))) {
                 scene.set_current_editor_tool(tool);
             }
-        }
 
-        void draw_editor_tool_bar(Scene& scene)
-        {
-            ImGui::Separator();
-            ImGui::TextUnformatted("Tool:");
-            ImGui::SameLine();
-            draw_editor_tool_button(scene, EditorTool::Select);
-            ImGui::SameLine();
-            draw_editor_tool_button(scene, EditorTool::Move);
+            if (active) {
+                ImGui::PopStyleColor(2);
+            }
         }
 
     }
@@ -120,8 +118,6 @@ namespace prune {
                 ImGui::MenuItem("Stats", nullptr, &m_show_stats);
                 ImGui::EndMenu();
             }
-
-            draw_editor_tool_bar(scene);
 
             if (ImGui::BeginMenu("Help")) {
                 ImGui::MenuItem("Controls", nullptr, &m_show_controls);
@@ -229,6 +225,39 @@ namespace prune {
         if (m_show_imgui_demo) {
             ImGui::ShowDemoWindow(&m_show_imgui_demo);
         }
+
+        draw_editor_tool_palette(scene);
+    }
+
+    void Ui::draw_editor_tool_palette(Scene& scene)
+    {
+        const SceneViewport& viewport = scene.get_viewport();
+        if (!viewport.has_area()) {
+            return;
+        }
+
+        const ImVec2 anchor{
+            static_cast<float>(viewport.screen_x + viewport.width) - k_tool_palette_margin,
+            static_cast<float>(viewport.screen_y) + k_tool_palette_margin
+        };
+
+        ImGui::SetNextWindowPos(anchor, ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+        ImGui::SetNextWindowBgAlpha(0.94f);
+
+        constexpr ImGuiWindowFlags flags =
+            ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_NoMove;
+
+        if (ImGui::Begin("Tool Palette##editor_tool_palette", nullptr, flags)) {
+            ImGui::TextUnformatted("Tools");
+            draw_editor_tool_button(scene, EditorTool::Select);
+            ImGui::SameLine();
+            draw_editor_tool_button(scene, EditorTool::Move);
+        }
+
+        ImGui::End();
     }
 
     void Ui::destroy_scene_render_target()
