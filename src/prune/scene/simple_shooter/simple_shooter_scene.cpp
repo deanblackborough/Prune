@@ -84,6 +84,8 @@ namespace prune {
                 if (player->runtime.behaviour.empty()) {
                     player->runtime.behaviour = simple_shooter_ids::player_behaviour;
                 }
+
+                player->editor.movable = true;
             }
 
             restore_legacy_wall_concepts(state);
@@ -219,6 +221,7 @@ namespace prune {
         m_grid_options = {};
         m_state.scene_options = {};
         m_state.drag_state = {};
+        m_state.editor_tool = EditorTool::Select;
         m_state.editor_commands.clear();
 
         m_simple_shooter_state = {};

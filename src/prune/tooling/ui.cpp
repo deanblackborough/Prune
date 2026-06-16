@@ -3,11 +3,40 @@
 
 #include "imgui.h"
 
+#include "prune/editor/editor_tool.hpp"
 #include "prune/scene/scene.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/ui.hpp"
 
 namespace prune {
+
+    namespace {
+
+        [[nodiscard]] const char* toolbar_tool_label(EditorTool active_tool, EditorTool tool) noexcept
+        {
+            return active_tool == tool
+                ? (tool == EditorTool::Select ? "[Select]" : "[Move]")
+                : editor_tool_label(tool);
+        }
+
+        void draw_editor_tool_button(Scene& scene, EditorTool tool)
+        {
+            if (ImGui::SmallButton(toolbar_tool_label(scene.current_editor_tool(), tool))) {
+                scene.set_current_editor_tool(tool);
+            }
+        }
+
+        void draw_editor_tool_bar(Scene& scene)
+        {
+            ImGui::Separator();
+            ImGui::TextUnformatted("Tool:");
+            ImGui::SameLine();
+            draw_editor_tool_button(scene, EditorTool::Select);
+            ImGui::SameLine();
+            draw_editor_tool_button(scene, EditorTool::Move);
+        }
+
+    }
 
     Ui::~Ui()
     {
@@ -91,6 +120,8 @@ namespace prune {
                 ImGui::MenuItem("Stats", nullptr, &m_show_stats);
                 ImGui::EndMenu();
             }
+
+            draw_editor_tool_bar(scene);
 
             if (ImGui::BeginMenu("Help")) {
                 ImGui::MenuItem("Controls", nullptr, &m_show_controls);

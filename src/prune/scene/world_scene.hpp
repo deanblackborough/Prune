@@ -39,6 +39,8 @@ namespace prune {
         bool undo_editor_command() final;
         bool redo_editor_command() final;
         SceneOptions& get_scene_options() final;
+        [[nodiscard]] EditorTool current_editor_tool() const noexcept final;
+        void set_current_editor_tool(EditorTool tool) noexcept final;
 
         [[nodiscard]] WorldSceneContext world_scene_context() noexcept final;
         [[nodiscard]] ConstWorldSceneContext world_scene_context() const noexcept final;

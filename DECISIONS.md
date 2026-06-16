@@ -883,3 +883,12 @@ For now, the inspector continues to edit the active selected object only. Multi-
 ### Revisit when
 
 Tools are stable enough and we have irnoned out any issues with the multi-selection and the command history model. Then we can start to explore grouped inspector edits with a clear understanding of how the editor behaves and what the user expects.
+
+## Explicit editor tool mode state
+
+Prune now has an explicit generic editor tool mode rather than inferring editor behaviour entirely from whichever viewport handle was clicked.
+
+Initial tool modes are deliberately limited to Select and Move. Select keeps selection and handle-based movement. Move adds direct object-body dragging for movable authored objects. Scale and rotate should be added only when their own interaction rules and undo labels are implemented.
+
+The active tool is transient editor state. It lives in the generic world scene state so viewport interaction and UI can share it, but it is not saved into scene files.
+

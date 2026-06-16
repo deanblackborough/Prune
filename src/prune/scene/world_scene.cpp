@@ -271,6 +271,16 @@ namespace prune {
         return m_state.scene_options;
     }
 
+    EditorTool WorldScene::current_editor_tool() const noexcept
+    {
+        return m_state.editor_tool;
+    }
+
+    void WorldScene::set_current_editor_tool(EditorTool tool) noexcept
+    {
+        m_state.editor_tool = tool;
+    }
+
     WorldSceneContext WorldScene::world_scene_context() noexcept
     {
         return WorldSceneContext{ &m_grid_options, &m_camera };

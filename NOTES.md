@@ -96,6 +96,8 @@ Multi-select now supports grouped viewport move and grouped delete. Grouped insp
 
 ### 5. Tool mode state
 
+Status: implemented.
+
 Introduce an explicit editor tool mode before adding more viewport tools.
 
 Suggested initial tools:
@@ -110,6 +112,14 @@ enum class EditorTool {
 ```
 
 This avoids hiding editor behaviour inside whichever handle happened to be clicked.
+
+Current implementation:
+
+- [x] Active tool state lives in generic world scene state.
+- [x] The main menu bar exposes Select and Move as text tool buttons.
+- [x] Select keeps the existing selection and move-handle behaviour.
+- [x] Move allows direct body dragging for movable authored objects.
+- [x] Scale and rotate remain unimplemented until their interaction rules are explicit.
 
 ### 6. Scale tool
 
