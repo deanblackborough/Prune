@@ -142,7 +142,6 @@ namespace prune {
         tooling::EditorLayout::scene_panel();
 
         if (ImGui::Begin("Simple Shooter", &open)) {
-            draw_creation_tools();
             draw_debug_tools();
 
             ImGui::Separator();

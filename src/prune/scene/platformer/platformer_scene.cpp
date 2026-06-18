@@ -183,7 +183,6 @@ namespace prune {
         tooling::EditorLayout::scene_panel();
 
         if (ImGui::Begin("Platformer", &open)) {
-            draw_creation_tools();
             draw_debug_tools();
 
             ImGui::Separator();

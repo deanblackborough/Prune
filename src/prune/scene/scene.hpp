@@ -111,6 +111,11 @@ namespace prune {
             return k_invalid_game_object_id;
         }
 
+        virtual bool execute_scene_creation_action(std::string_view)
+        {
+            return false;
+        }
+
         [[nodiscard]] virtual std::string_view scene_tools_label() const noexcept = 0;
         virtual void draw_scene_tools(bool& open) = 0;
         virtual void draw_viewport_overlays() = 0;

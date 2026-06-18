@@ -1,5 +1,8 @@
 #include <algorithm>
+#include <cstddef>
+#include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "imgui.h"
@@ -15,16 +18,81 @@ namespace prune {
 
         constexpr float k_tool_palette_margin = 10.0f;
         constexpr float k_tool_palette_padding = 8.0f;
-        constexpr float k_tool_button_width = 74.0f;
+        constexpr float k_tool_button_min_width = 74.0f;
+        constexpr std::size_t k_scene_creation_action_columns = 2;
 
-        [[nodiscard]] ImVec2 editor_tool_palette_size()
+        struct ToolPaletteLayout {
+            ImVec2 size{};
+            float scene_creation_button_width = 0.0f;
+            std::size_t scene_creation_action_columns = 0;
+            bool has_scene_creation_actions = false;
+        };
+
+        [[nodiscard]] float tool_button_width(std::string_view label)
         {
             const ImGuiStyle& style = ImGui::GetStyle();
+            const ImVec2 label_size = ImGui::CalcTextSize(label.data(), label.data() + label.size());
 
-            return ImVec2(
-                (k_tool_palette_padding * 2.0f) + (k_tool_button_width * 2.0f) + style.ItemSpacing.x,
-                (k_tool_palette_padding * 2.0f) + ImGui::GetTextLineHeight() + style.ItemSpacing.y + ImGui::GetFrameHeight()
+            return std::max(
+                k_tool_button_min_width,
+                label_size.x + (style.FramePadding.x * 2.0f)
             );
+        }
+
+        [[nodiscard]] ToolPaletteLayout editor_tool_palette_layout(const Scene& scene)
+        {
+            const ImGuiStyle& style = ImGui::GetStyle();
+            const std::span<const SceneCreationAction> actions = scene.scene_creation_actions();
+
+            const float editor_tools_width =
+                (k_tool_button_min_width * 2.0f) + style.ItemSpacing.x;
+
+            ToolPaletteLayout layout{};
+            float content_width = editor_tools_width;
+            float content_height =
+                ImGui::GetTextLineHeight() +
+                style.ItemSpacing.y +
+                ImGui::GetFrameHeight();
+
+            if (!actions.empty()) {
+                layout.has_scene_creation_actions = true;
+                layout.scene_creation_action_columns = std::min(
+                    k_scene_creation_action_columns,
+                    actions.size()
+                );
+                layout.scene_creation_button_width = k_tool_button_min_width;
+
+                for (const SceneCreationAction& action : actions) {
+                    layout.scene_creation_button_width = std::max(
+                        layout.scene_creation_button_width,
+                        tool_button_width(action.label)
+                    );
+                }
+
+                const std::size_t rows =
+                    (actions.size() + layout.scene_creation_action_columns - 1) /
+                    layout.scene_creation_action_columns;
+
+                const float scene_creation_width =
+                    (layout.scene_creation_button_width * static_cast<float>(layout.scene_creation_action_columns)) +
+                    (style.ItemSpacing.x * static_cast<float>(layout.scene_creation_action_columns - 1));
+
+                content_width = std::max(content_width, scene_creation_width);
+                content_height +=
+                    (style.ItemSpacing.y * 2.0f) +
+                    1.0f +
+                    ImGui::GetTextLineHeight() +
+                    style.ItemSpacing.y +
+                    (ImGui::GetFrameHeight() * static_cast<float>(rows)) +
+                    (style.ItemSpacing.y * static_cast<float>(rows - 1));
+            }
+
+            layout.size = ImVec2(
+                (k_tool_palette_padding * 2.0f) + content_width,
+                (k_tool_palette_padding * 2.0f) + content_height
+            );
+
+            return layout;
         }
 
         [[nodiscard]] bool point_in_rect(const ImVec2& point, const ImVec2& min, const ImVec2& max) noexcept
@@ -41,7 +109,7 @@ namespace prune {
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
             }
 
-            if (ImGui::Button(editor_tool_label(tool), ImVec2(k_tool_button_width, 0.0f))) {
+            if (ImGui::Button(editor_tool_label(tool), ImVec2(k_tool_button_min_width, 0.0f))) {
                 scene.set_current_editor_tool(tool);
             }
 
@@ -50,7 +118,27 @@ namespace prune {
             }
         }
 
-        void draw_editor_tool_palette(Scene& scene, const ImVec2& palette_min, const ImVec2& palette_max)
+        void draw_scene_creation_action_button(
+            Scene& scene,
+            const SceneCreationAction& action,
+            float button_width
+        )
+        {
+            ImGui::PushID(action.id.data());
+
+            if (ImGui::Button(action.label.data(), ImVec2(button_width, 0.0f))) {
+                scene.execute_scene_creation_action(action.id);
+            }
+
+            ImGui::PopID();
+        }
+
+        void draw_editor_tool_palette(
+            Scene& scene,
+            const ToolPaletteLayout& layout,
+            const ImVec2& palette_min,
+            const ImVec2& palette_max
+        )
         {
             const ImGuiStyle& style = ImGui::GetStyle();
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -74,10 +162,29 @@ namespace prune {
             ));
 
             ImGui::BeginGroup();
-            ImGui::TextUnformatted("Tool Palette");
+            ImGui::TextUnformatted("Tools");
             draw_editor_tool_button(scene, EditorTool::Select);
             ImGui::SameLine();
             draw_editor_tool_button(scene, EditorTool::Move);
+
+            if (layout.has_scene_creation_actions) {
+                ImGui::Separator();
+                ImGui::TextUnformatted("Scene Creation");
+
+                const std::span<const SceneCreationAction> actions = scene.scene_creation_actions();
+                for (std::size_t index = 0; index < actions.size(); ++index) {
+                    if (index > 0 && index % layout.scene_creation_action_columns != 0) {
+                        ImGui::SameLine();
+                    }
+
+                    draw_scene_creation_action_button(
+                        scene,
+                        actions[index],
+                        layout.scene_creation_button_width
+                    );
+                }
+            }
+
             ImGui::EndGroup();
         }
 
@@ -358,14 +465,14 @@ namespace prune {
                 viewport_pos.x + viewport_size.x,
                 viewport_pos.y + viewport_size.y
             };
-            const ImVec2 palette_size = editor_tool_palette_size();
+            const ToolPaletteLayout tool_palette_layout = editor_tool_palette_layout(scene);
             const ImVec2 palette_min{
-                viewport_max.x - k_tool_palette_margin - palette_size.x,
+                viewport_max.x - k_tool_palette_margin - tool_palette_layout.size.x,
                 viewport_pos.y + k_tool_palette_margin
             };
             const ImVec2 palette_max{
-                palette_min.x + palette_size.x,
-                palette_min.y + palette_size.y
+                palette_min.x + tool_palette_layout.size.x,
+                palette_min.y + tool_palette_layout.size.y
             };
             const bool mouse_over_tool_palette = point_in_rect(io.MousePos, palette_min, palette_max);
 
@@ -393,7 +500,7 @@ namespace prune {
 
             scene.set_viewport(viewport);
             scene.draw_viewport_overlays();
-            draw_editor_tool_palette(scene, palette_min, palette_max);
+            draw_editor_tool_palette(scene, tool_palette_layout, palette_min, palette_max);
         }
         else {
             ImGui::Dummy(viewport_size);
