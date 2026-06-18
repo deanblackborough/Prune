@@ -116,7 +116,8 @@ This avoids hiding editor behaviour inside whichever handle happened to be click
 Current implementation:
 
 - [x] Active tool state lives in generic world scene state.
-- [x] The main menu bar exposes Select and Move as text tool buttons.
+- [x] A fixed viewport palette exposes Select and Move as text tool buttons.
+- [x] The viewport palette also exposes scene-owned creation actions such as Wall, Platform, Hazard, and Terrain Line.
 - [x] Select keeps the existing selection and move-handle behaviour.
 - [x] Move allows direct body dragging for movable authored objects.
 - [x] Scale and rotate remain unimplemented until their interaction rules are explicit.
