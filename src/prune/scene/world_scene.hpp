@@ -39,6 +39,9 @@ namespace prune {
         bool undo_editor_command() final;
         bool redo_editor_command() final;
         SceneOptions& get_scene_options() final;
+        [[nodiscard]] EditorTool current_editor_tool() const noexcept final;
+        void set_current_editor_tool(EditorTool tool) noexcept final;
+        bool execute_scene_creation_action(std::string_view action_id) final;
 
         [[nodiscard]] WorldSceneContext world_scene_context() noexcept final;
         [[nodiscard]] ConstWorldSceneContext world_scene_context() const noexcept final;
@@ -53,7 +56,6 @@ namespace prune {
         [[nodiscard]] Transform first_free_view_center_spawn_position(const GameObject& object) const;
         [[nodiscard]] bool is_space_free(const GameObject& candidate) const noexcept;
 
-        void draw_creation_tools();
         void draw_debug_tools();
 
         virtual void update_runtime(float dt, const Input& input, bool keyboard_input_enabled) = 0;

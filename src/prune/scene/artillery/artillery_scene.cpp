@@ -104,6 +104,7 @@ namespace prune {
         m_grid_options = {};
         m_state.scene_options = {};
         m_state.drag_state = {};
+        m_state.editor_tool = EditorTool::Select;
         m_state.editor_commands.clear();
     }
 
@@ -172,7 +173,6 @@ namespace prune {
         tooling::EditorLayout::scene_panel();
 
         if (ImGui::Begin("Artillery", &open)) {
-            draw_creation_tools();
             draw_debug_tools();
 
             ImGui::Separator();

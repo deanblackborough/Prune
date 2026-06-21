@@ -192,7 +192,7 @@ namespace prune {
             return;
         }
 
-        const std::vector<GameObjectId> movable_ids = movable_objects_from_handle_at_screen(scene, state, camera, input.mouse_x(), input.mouse_y());
+        const std::vector<GameObjectId> movable_ids = movable_objects_from_drag_start_at_screen(scene, state, camera, input.mouse_x(), input.mouse_y());
         if (movable_ids.empty()) {
             return;
         }
@@ -432,6 +432,50 @@ namespace prune {
         return nullptr;
     }
 
+
+
+    std::vector<GameObjectId> SceneInteraction::movable_objects_from_drag_start_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y)
+    {
+        if (editor_tool_allows_body_move(state.editor_tool)) {
+            std::vector<GameObjectId> body_move_ids = movable_objects_from_move_tool_at_screen(scene, state, camera, screen_x, screen_y);
+            if (!body_move_ids.empty()) {
+                return body_move_ids;
+            }
+        }
+
+        return movable_objects_from_handle_at_screen(scene, state, camera, screen_x, screen_y);
+    }
+
+    std::vector<GameObjectId> SceneInteraction::movable_objects_from_move_tool_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y)
+    {
+        GameObject* picked = pick_object_at_screen(scene, state, camera, screen_x, screen_y);
+        if (!picked || !scene.object_is_movable(*picked)) {
+            return {};
+        }
+
+        if (!state.objects.is_selected(picked->identity.id)) {
+            state.objects.select(picked->identity.id);
+            return { picked->identity.id };
+        }
+
+        if (state.objects.selected_count() <= 1) {
+            return { picked->identity.id };
+        }
+
+        std::vector<GameObjectId> movable_ids;
+        movable_ids.reserve(state.objects.selected_count());
+
+        for (const GameObjectId id : state.objects.selected_ids()) {
+            const GameObject* object = state.objects.get_by_id(id);
+            if (!object || !scene.object_is_movable(*object)) {
+                return {};
+            }
+
+            movable_ids.push_back(id);
+        }
+
+        return movable_ids;
+    }
 
     std::vector<GameObjectId> SceneInteraction::movable_objects_from_handle_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y)
     {

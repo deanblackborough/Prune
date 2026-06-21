@@ -2,6 +2,7 @@
 
 #include "prune/core/defaults.hpp"
 #include "prune/editor/editor_command.hpp"
+#include "prune/editor/editor_tool.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
 
@@ -71,6 +72,7 @@ namespace prune {
         SceneViewport viewport{};
         DragState drag_state{};
         SceneOptions scene_options{};
+        EditorTool editor_tool = EditorTool::Select;
 
         GameObjectManager objects;
         EditorCommandHistory editor_commands;

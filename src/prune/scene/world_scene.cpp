@@ -73,39 +73,28 @@ namespace prune {
         }
     }
 
-    void WorldScene::draw_creation_tools()
+    bool WorldScene::execute_scene_creation_action(std::string_view action_id)
     {
-        if (!tooling::imgui::layout::collapsing_header("Game Tools", true)) {
-            return;
-        }
-
-        tooling::imgui::layout::spacing(3);
-
-        const std::span<const SceneCreationAction> actions = scene_creation_actions();
-        if (actions.empty()) {
-            ImGui::TextUnformatted("No creation actions for this scene.");
-            return;
-        }
-
-        bool first = true;
-        for (const SceneCreationAction& action : actions) {
-            if (!first) {
-                ImGui::SameLine();
+        for (const SceneCreationAction& action : scene_creation_actions()) {
+            if (action.id != action_id) {
+                continue;
             }
 
-            ImGui::PushID(action.id.data());
-            if (ImGui::Button(action.label.data())) {
-                const GameObjectId created_id = create_scene_object(action.id);
-                if (const GameObject* created = m_state.objects.get_by_id(created_id)) {
-                    record_editor_command(make_create_object_command(*created, action.label));
-                }
+            const GameObjectId created_id = create_scene_object(action.id);
+            if (created_id == k_invalid_game_object_id) {
+                return false;
             }
-            ImGui::PopID();
 
-            first = false;
+            const GameObject* created = m_state.objects.get_by_id(created_id);
+            if (!created) {
+                return false;
+            }
+
+            record_editor_command(make_create_object_command(*created, action.label));
+            return true;
         }
 
-        tooling::imgui::layout::spacing(3);
+        return false;
     }
 
     void WorldScene::draw_debug_tools()
@@ -269,6 +258,16 @@ namespace prune {
     SceneOptions& WorldScene::get_scene_options()
     {
         return m_state.scene_options;
+    }
+
+    EditorTool WorldScene::current_editor_tool() const noexcept
+    {
+        return m_state.editor_tool;
+    }
+
+    void WorldScene::set_current_editor_tool(EditorTool tool) noexcept
+    {
+        m_state.editor_tool = tool;
     }
 
     WorldSceneContext WorldScene::world_scene_context() noexcept

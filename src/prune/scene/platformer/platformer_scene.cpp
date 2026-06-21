@@ -54,6 +54,10 @@ namespace prune {
                 platformer_state.player_id = first_object_id_for_kind(state, platformer_concepts::ObjectKind::Player);
             }
 
+            if (GameObject* player = state.objects.get_by_id(platformer_state.player_id)) {
+                player->editor.movable = true;
+            }
+
             if (!object_has_kind(state, platformer_state.player_start_id, platformer_concepts::ObjectKind::PlayerStart)) {
                 platformer_state.player_start_id = first_object_id_for_kind(state, platformer_concepts::ObjectKind::PlayerStart);
             }
@@ -110,6 +114,7 @@ namespace prune {
         m_grid_options = {};
         m_state.scene_options = {};
         m_state.drag_state = {};
+        m_state.editor_tool = EditorTool::Select;
         m_state.editor_commands.clear();
     }
 
@@ -178,7 +183,6 @@ namespace prune {
         tooling::EditorLayout::scene_panel();
 
         if (ImGui::Begin("Platformer", &open)) {
-            draw_creation_tools();
             draw_debug_tools();
 
             ImGui::Separator();
