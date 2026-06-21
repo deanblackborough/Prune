@@ -124,9 +124,10 @@ namespace prune {
             float button_width
         )
         {
-            ImGui::PushID(action.id.data());
+            const std::string button_text(action.label);
+            ImGui::PushID(action.id.data(), action.id.data() + action.id.size());
 
-            if (ImGui::Button(action.label.data(), ImVec2(button_width, 0.0f))) {
+            if (ImGui::Button(button_text.c_str(), ImVec2(button_width, 0.0f))) {
                 scene.execute_scene_creation_action(action.id);
             }
 
