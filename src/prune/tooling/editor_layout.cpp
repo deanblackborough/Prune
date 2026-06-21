@@ -24,7 +24,7 @@ namespace prune::tooling {
         constexpr float k_options_height = 308.0f;
 
         constexpr float k_controls_width = 377.0f;
-        constexpr float k_controls_height = 165.0f;
+        constexpr float k_controls_height = 215.0f;
 
         constexpr float k_scene_min_width = 320.0f;
         constexpr float k_scene_min_height = 240.0f;

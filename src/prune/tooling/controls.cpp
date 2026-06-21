@@ -30,7 +30,9 @@ namespace prune {
         tooling::imgui::layout::text_wrapped("Left click selects one object");
         tooling::imgui::layout::text_wrapped("Shift+Left click toggles objects in the selection set");
         tooling::imgui::layout::text_wrapped("Empty viewport click clears the selection set");
-        tooling::imgui::layout::text_wrapped("Mouse button left on a selection handle moves the selected object or selected objects");
+        tooling::imgui::layout::text_wrapped("Use the Select/Move tool buttons in the top right of the viewport to change tool state");
+        tooling::imgui::layout::text_wrapped("Select tool: left click selects, Shift+Left click toggles selection, and selection handles move selected objects");
+        tooling::imgui::layout::text_wrapped("Move tool: left drag on an object handle to move the object");
 
         tooling::imgui::layout::spacing(2);
 

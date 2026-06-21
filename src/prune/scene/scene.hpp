@@ -8,6 +8,7 @@
 
 #include "prune/core/input.hpp"
 #include "prune/editor/editor_command.hpp"
+#include "prune/editor/editor_tool.hpp"
 #include "prune/scene/game_object_manager.hpp"
 #include "prune/scene/object_concept.hpp"
 #include "prune/scene/scene_camera.hpp"
@@ -110,6 +111,11 @@ namespace prune {
             return k_invalid_game_object_id;
         }
 
+        virtual bool execute_scene_creation_action(std::string_view)
+        {
+            return false;
+        }
+
         [[nodiscard]] virtual std::string_view scene_tools_label() const noexcept = 0;
         virtual void draw_scene_tools(bool& open) = 0;
         virtual void draw_viewport_overlays() = 0;
@@ -121,6 +127,9 @@ namespace prune {
         virtual bool redo_editor_command() = 0;
 
         virtual SceneOptions& get_scene_options() = 0;
+
+        [[nodiscard]] virtual EditorTool current_editor_tool() const noexcept { return EditorTool::Select; }
+        virtual void set_current_editor_tool(EditorTool) noexcept {}
 
         [[nodiscard]] virtual WorldSceneContext world_scene_context() noexcept { return {}; }
         [[nodiscard]] virtual ConstWorldSceneContext world_scene_context() const noexcept { return {}; }
