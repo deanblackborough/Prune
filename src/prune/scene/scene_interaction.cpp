@@ -1,7 +1,3 @@
-#include "prune/scene/scene_interaction.hpp"
-
-#include "prune/scene/scene.hpp"
-#include "prune/editor/tools/transform_gizmo.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -9,6 +5,11 @@
 #include <vector>
 
 #include <SDL2/SDL.h>
+
+#include "prune/editor/tools/transform_gizmo.hpp"
+#include "prune/scene/scene.hpp"
+#include "prune/scene/scene_interaction.hpp"
+
 
 namespace prune {
 
@@ -113,46 +114,74 @@ namespace prune {
     {
         if (state.drag_state.active) {
             if (!input.is_mouse_button_down(SDL_BUTTON_LEFT) || !state.viewport.has_area()) {
-                std::vector<GameObject> before_objects;
-                std::vector<GameObject> after_objects;
+                switch (state.drag_state.mode) {
+                case DragMode::MoveObjects:
+                    {
+                        std::vector<GameObject> before_objects;
+                        std::vector<GameObject> after_objects;
 
-                before_objects.reserve(state.drag_state.object_starts.size());
-                after_objects.reserve(state.drag_state.object_starts.size());
+                        before_objects.reserve(state.drag_state.object_starts.size());
+                        after_objects.reserve(state.drag_state.object_starts.size());
 
-                for (const DragObjectStart& start : state.drag_state.object_starts) {
-                    GameObject* object = state.objects.get_by_id(start.object_id);
-                    if (!object) {
-                        continue;
+                        for (const DragObjectStart& start : state.drag_state.object_starts) {
+                            GameObject* object = state.objects.get_by_id(start.object_id);
+                            if (!object) {
+                                continue;
+                            }
+
+                            const GameObject& before = start.object;
+                            if (before.transform.x == object->transform.x && before.transform.y == object->transform.y) {
+                                continue;
+                            }
+
+                            before_objects.push_back(before);
+                            after_objects.push_back(*object);
+                        }
+
+                        if (before_objects.size() == 1) {
+                            scene.record_editor_command(make_object_command(
+                                EditorCommandType::MoveObject,
+                                editor_command_type_label(EditorCommandType::MoveObject),
+                                before_objects.front(),
+                                after_objects.front(),
+                                "Mouse drag"
+                            ));
+                        }
+                        else if (!before_objects.empty()) {
+                            scene.record_editor_command(make_multi_object_command(
+                                EditorCommandType::MoveObjects,
+                                editor_command_type_label(EditorCommandType::MoveObjects),
+                                before_objects,
+                                after_objects,
+                                std::to_string(before_objects.size()) + " objects, mouse drag"
+                            ));
+                        }
                     }
+                    break;
 
-                    GameObject before = *object;
-                    before.transform = start.transform;
+                case DragMode::ScaleObject:
+                    if (GameObject* object = state.objects.get_by_id(state.drag_state.object_id)) {
+                        const GameObject& before = state.drag_state.object_start;
+                        const bool changed =
+                            before.transform.x != object->transform.x ||
+                            before.transform.y != object->transform.y ||
+                            before.size.width != object->size.width ||
+                            before.size.height != object->size.height;
 
-                    if (before.transform.x == object->transform.x && before.transform.y == object->transform.y) {
-                        continue;
+                        if (changed) {
+                            scene.record_editor_command(make_object_command(
+                                EditorCommandType::ChangeObjectSize,
+                                "Scale object",
+                                before,
+                                *object,
+                                "Mouse drag"
+                            ));
+                        }
                     }
+                    break;
 
-                    before_objects.push_back(before);
-                    after_objects.push_back(*object);
-                }
-
-                if (before_objects.size() == 1) {
-                    scene.record_editor_command(make_object_command(
-                        EditorCommandType::MoveObject,
-                        editor_command_type_label(EditorCommandType::MoveObject),
-                        before_objects.front(),
-                        after_objects.front(),
-                        "Mouse drag"
-                    ));
-                }
-                else if (!before_objects.empty()) {
-                    scene.record_editor_command(make_multi_object_command(
-                        EditorCommandType::MoveObjects,
-                        editor_command_type_label(EditorCommandType::MoveObjects),
-                        before_objects,
-                        after_objects,
-                        std::to_string(before_objects.size()) + " objects, mouse drag"
-                    ));
+                case DragMode::None:
+                    break;
                 }
 
                 state.drag_state = {};
@@ -163,18 +192,38 @@ namespace prune {
             const float delta_x = mouse_world.x - state.drag_state.mouse_start_world.x;
             const float delta_y = mouse_world.y - state.drag_state.mouse_start_world.y;
 
-            for (const DragObjectStart& start : state.drag_state.object_starts) {
-                GameObject* object = state.objects.get_by_id(start.object_id);
-                if (!object || !scene.object_is_movable(*object)) {
-                    continue;
-                }
+            switch (state.drag_state.mode) {
+            case DragMode::MoveObjects:
+                for (const DragObjectStart& start : state.drag_state.object_starts) {
+                    GameObject* object = state.objects.get_by_id(start.object_id);
+                    if (!object || !scene.object_is_movable(*object)) {
+                        continue;
+                    }
 
-                object->transform.x = start.transform.x + delta_x;
-                object->transform.y = start.transform.y + delta_y;
+                    object->transform.x = start.object.transform.x + delta_x;
+                    object->transform.y = start.object.transform.y + delta_y;
 
-                if (grid_options.snap_to_grid) {
-                    snap_object_to_grid(grid_options, *object);
+                    if (grid_options.snap_to_grid) {
+                        snap_object_to_grid(grid_options, *object);
+                    }
                 }
+                break;
+
+            case DragMode::ScaleObject:
+                if (GameObject* object = state.objects.get_by_id(state.drag_state.object_id);
+                    object && scene.object_is_scalable(*object)) {
+                    apply_scale_drag(
+                        *object,
+                        state.drag_state.object_start,
+                        state.drag_state.scale_handle,
+                        delta_x,
+                        delta_y
+                    );
+                }
+                break;
+
+            case DragMode::None:
+                break;
             }
 
             return;
@@ -192,6 +241,23 @@ namespace prune {
             return;
         }
 
+        const auto scale_handle = scale_handle_from_scale_tool_at_screen(scene, state, camera, input.mouse_x(), input.mouse_y());
+        if (scale_handle != editor::tools::transform_gizmo::ScaleHandle::None) {
+            GameObject* selected = state.objects.selected_object();
+            if (!selected || !scene.object_is_scalable(*selected)) {
+                return;
+            }
+
+            state.drag_state = {};
+            state.drag_state.active = true;
+            state.drag_state.mode = DragMode::ScaleObject;
+            state.drag_state.object_id = selected->identity.id;
+            state.drag_state.object_start = *selected;
+            state.drag_state.mouse_start_world = camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
+            state.drag_state.scale_handle = scale_handle;
+            return;
+        }
+
         const std::vector<GameObjectId> movable_ids = movable_objects_from_drag_start_at_screen(scene, state, camera, input.mouse_x(), input.mouse_y());
         if (movable_ids.empty()) {
             return;
@@ -199,6 +265,7 @@ namespace prune {
 
         state.drag_state = {};
         state.drag_state.active = true;
+        state.drag_state.mode = DragMode::MoveObjects;
         state.drag_state.object_id = movable_ids.front();
         state.drag_state.mouse_start_world = camera.screen_to_world(state.viewport, input.mouse_x(), input.mouse_y());
         state.drag_state.object_starts.reserve(movable_ids.size());
@@ -209,11 +276,11 @@ namespace prune {
                 continue;
             }
 
-            state.drag_state.object_starts.push_back(DragObjectStart{ id, object->transform });
+            state.drag_state.object_starts.push_back(DragObjectStart{ id, *object });
         }
 
         if (const GameObject* object = state.objects.get_by_id(state.drag_state.object_id)) {
-            state.drag_state.object_start = object->transform;
+            state.drag_state.object_start = *object;
         }
     }
 
@@ -432,6 +499,33 @@ namespace prune {
         return nullptr;
     }
 
+    editor::tools::transform_gizmo::ScaleHandle SceneInteraction::scale_handle_from_scale_tool_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept
+    {
+        if (!editor_tool_allows_scale(state.editor_tool)) {
+            return editor::tools::transform_gizmo::ScaleHandle::None;
+        }
+
+        if (!state.scene_options.highlight_selected || state.objects.selected_count() != 1) {
+            return editor::tools::transform_gizmo::ScaleHandle::None;
+        }
+
+        GameObject* selected = state.objects.selected_object();
+        if (!selected || !scene.object_is_scalable(*selected)) {
+            return editor::tools::transform_gizmo::ScaleHandle::None;
+        }
+
+        const SDL_Rect object_rect = camera.world_to_screen_rect(*selected);
+        if (!rect_visible(state.viewport, object_rect)) {
+            return editor::tools::transform_gizmo::ScaleHandle::None;
+        }
+
+        const int local_mouse_x = screen_x - state.viewport.screen_x;
+        const int local_mouse_y = screen_y - state.viewport.screen_y;
+
+        const SDL_Rect selected_outline = editor::tools::transform_gizmo::selected_outline_rect(object_rect);
+        return editor::tools::transform_gizmo::scale_handle_at_point(selected_outline, local_mouse_x, local_mouse_y);
+    }
+
 
 
     std::vector<GameObjectId> SceneInteraction::movable_objects_from_drag_start_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y)
@@ -441,6 +535,10 @@ namespace prune {
             if (!body_move_ids.empty()) {
                 return body_move_ids;
             }
+        }
+
+        if (editor_tool_allows_scale(state.editor_tool)) {
+            return {};
         }
 
         return movable_objects_from_handle_at_screen(scene, state, camera, screen_x, screen_y);
@@ -600,6 +698,66 @@ namespace prune {
     {
         object.transform.x = snap_value_to_grid(grid_options, object.transform.x);
         object.transform.y = snap_value_to_grid(grid_options, object.transform.y);
+    }
+
+    void SceneInteraction::apply_scale_drag(
+        GameObject& object,
+        const GameObject& start,
+        editor::tools::transform_gizmo::ScaleHandle handle,
+        float delta_x,
+        float delta_y
+    ) noexcept
+    {
+        namespace gizmo = editor::tools::transform_gizmo;
+
+        const float start_left = start.transform.x;
+        const float start_top = start.transform.y;
+        const float start_right = start_left + static_cast<float>(start.size.width);
+        const float start_bottom = start_top + static_cast<float>(start.size.height);
+
+        float left = start_left;
+        float top = start_top;
+        float right = start_right;
+        float bottom = start_bottom;
+
+        if (gizmo::scale_handle_resizes_left(handle)) {
+            left += delta_x;
+        }
+
+        if (gizmo::scale_handle_resizes_right(handle)) {
+            right += delta_x;
+        }
+
+        if (gizmo::scale_handle_resizes_top(handle)) {
+            top += delta_y;
+        }
+
+        if (gizmo::scale_handle_resizes_bottom(handle)) {
+            bottom += delta_y;
+        }
+
+        const int width = std::clamp(
+            static_cast<int>(std::round(right - left)),
+            k_min_object_size,
+            k_max_object_size
+        );
+
+        const int height = std::clamp(
+            static_cast<int>(std::round(bottom - top)),
+            k_min_object_size,
+            k_max_object_size
+        );
+
+        object.size.width = width;
+        object.size.height = height;
+
+        object.transform.x = gizmo::scale_handle_resizes_left(handle)
+            ? start_right - static_cast<float>(width)
+            : start_left;
+
+        object.transform.y = gizmo::scale_handle_resizes_top(handle)
+            ? start_bottom - static_cast<float>(height)
+            : start_top;
     }
 
 }

@@ -45,7 +45,7 @@ namespace prune {
             const std::span<const SceneCreationAction> actions = scene.scene_creation_actions();
 
             const float editor_tools_width =
-                (k_tool_button_min_width * 2.0f) + style.ItemSpacing.x;
+                (k_tool_button_min_width * 3.0f) + (style.ItemSpacing.x * 2.0f);
 
             ToolPaletteLayout layout{};
             float content_width = editor_tools_width;
@@ -167,6 +167,8 @@ namespace prune {
             draw_editor_tool_button(scene, EditorTool::Select);
             ImGui::SameLine();
             draw_editor_tool_button(scene, EditorTool::Move);
+            ImGui::SameLine();
+            draw_editor_tool_button(scene, EditorTool::Scale);
 
             if (layout.has_scene_creation_actions) {
                 ImGui::Separator();

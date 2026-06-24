@@ -91,6 +91,11 @@ namespace prune {
                 object.editor.movable;
         }
 
+        [[nodiscard]] virtual bool object_is_scalable(const GameObject& object) const
+        {
+            return object_is_selectable(object) && object_is_editable(object);
+        }
+
         [[nodiscard]] virtual ObjectConcept object_concept_for(const GameObject& object) const
         {
             return object_concepts::fallback_for(object);

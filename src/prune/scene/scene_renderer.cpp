@@ -247,10 +247,30 @@ namespace prune {
         }
     }
 
-    void SceneRenderer::draw_selected_gizmo(SDL_Renderer* renderer, const SDL_Rect& selected_outline, bool movable) const
+    void SceneRenderer::draw_selected_gizmo(
+        SDL_Renderer* renderer,
+        const SDL_Rect& selected_outline,
+        EditorTool current_tool,
+        bool movable,
+        bool scalable
+    ) const
     {
         SDL_SetRenderDrawColor(renderer, 174, 99, 242, 190);
         SDL_RenderDrawRect(renderer, &selected_outline);
+
+        if (current_tool == EditorTool::Scale) {
+            if (!scalable) {
+                return;
+            }
+
+            SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
+            for (const editor::tools::transform_gizmo::ScaleHandle handle : editor::tools::transform_gizmo::k_scale_handles) {
+                const SDL_Rect scale_handle = editor::tools::transform_gizmo::scale_handle_rect(selected_outline, handle);
+                SDL_RenderFillRect(renderer, &scale_handle);
+            }
+
+            return;
+        }
 
         if (!movable) {
             return;
@@ -283,7 +303,13 @@ namespace prune {
 
         const SDL_Rect selected_outline = editor::tools::transform_gizmo::selected_outline_rect(object_rect);
         const bool show_object_handle = state.objects.selected_count() == 1;
-        draw_selected_gizmo(renderer, selected_outline, show_object_handle && scene.object_is_movable(object));
+        draw_selected_gizmo(
+            renderer,
+            selected_outline,
+            state.editor_tool,
+            show_object_handle && scene.object_is_movable(object),
+            show_object_handle && scene.object_is_scalable(object)
+        );
     }
 
 
@@ -302,6 +328,10 @@ namespace prune {
 
         SDL_SetRenderDrawColor(renderer, 120, 190, 255, 230);
         SDL_RenderDrawRect(renderer, &outline);
+
+        if (state.editor_tool == EditorTool::Scale) {
+            return;
+        }
 
         if (!multi_selection_is_movable(scene, state)) {
             return;

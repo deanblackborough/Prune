@@ -845,7 +845,7 @@ If undo/redo is bolted into each feature separately, the project will accumulate
 
 ### Decision
 
-Implement scale before rotate.
+Implement scale before rotate, defer snapping to the grid until we have a better understanding of tools, undo/redo, and inspector behaviour.
 
 ### Why
 

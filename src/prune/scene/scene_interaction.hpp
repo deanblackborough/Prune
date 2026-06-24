@@ -1,10 +1,12 @@
 #pragma once
 
+#include <vector>
+
+#include "prune/editor/tools/transform_gizmo.hpp"
 #include "prune/core/input.hpp"
 #include "prune/scene/scene_camera.hpp"
 #include "prune/scene/scene_state.hpp"
 
-#include <vector>
 
 namespace prune {
 
@@ -32,6 +34,7 @@ namespace prune {
         void handle_delete_duplicate_shortcuts(Scene& scene, SceneState& state, const GridOptions& grid_options, const Input& input);
 
         [[nodiscard]] GameObject* pick_object_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept;
+        [[nodiscard]] editor::tools::transform_gizmo::ScaleHandle scale_handle_from_scale_tool_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y) noexcept;
         [[nodiscard]] std::vector<GameObjectId> movable_objects_from_drag_start_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y);
         [[nodiscard]] std::vector<GameObjectId> movable_objects_from_move_tool_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y);
         [[nodiscard]] std::vector<GameObjectId> movable_objects_from_handle_at_screen(Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x, int screen_y);
@@ -46,6 +49,14 @@ namespace prune {
         static void snap_object_to_grid(
             const GridOptions& grid_options,
             GameObject& object
+        ) noexcept;
+
+        static void apply_scale_drag(
+            GameObject& object,
+            const GameObject& start,
+            editor::tools::transform_gizmo::ScaleHandle handle,
+            float delta_x,
+            float delta_y
         ) noexcept;
 
         bool m_viewport_pan_active = false;
