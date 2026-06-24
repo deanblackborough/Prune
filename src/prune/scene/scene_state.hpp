@@ -2,6 +2,7 @@
 
 #include "prune/core/defaults.hpp"
 #include "prune/editor/editor_command.hpp"
+#include "prune/editor/tools/transform_gizmo.hpp"
 #include "prune/editor/editor_tool.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
@@ -55,17 +56,26 @@ namespace prune {
         int max_nudge_step = 64;
     };
 
+    enum class DragMode {
+        None = 0,
+        MoveObjects,
+        ScaleObject
+    };
+
     struct DragObjectStart {
         GameObjectId object_id = k_invalid_game_object_id;
-        Transform transform{};
+        GameObject object{};
     };
 
     struct DragState {
         bool active = false;
+        DragMode mode = DragMode::None;
         GameObjectId object_id = k_invalid_game_object_id;
-        Transform object_start{};
+        GameObject object_start{};
         std::vector<DragObjectStart> object_starts;
         Transform mouse_start_world{};
+        editor::tools::transform_gizmo::ScaleHandle scale_handle =
+            editor::tools::transform_gizmo::ScaleHandle::None;
     };
 
     struct SceneState {

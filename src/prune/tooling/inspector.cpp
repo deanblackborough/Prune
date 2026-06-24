@@ -197,6 +197,7 @@ namespace prune {
 
         const bool can_edit = scene.object_is_editable(*selected);
         const bool can_move = scene.object_is_movable(*selected);
+        const bool can_scale = scene.object_is_scalable(*selected);
 
         if (!can_edit) {
             ImGui::TextWrapped("This object is protected by the scene and cannot be edited from the generic inspector.");
@@ -243,7 +244,7 @@ namespace prune {
 
         if (tooling::imgui::layout::collapsing_header("Size")) {
             if (tooling::imgui::property_table::begin("##size")) {
-                ImGui::BeginDisabled(!can_edit);
+                ImGui::BeginDisabled(!can_scale);
 
                 tooling::editor::tracked_property_table::slider_int(
                     m_object_edit_tracker,
