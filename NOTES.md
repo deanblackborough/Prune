@@ -168,6 +168,7 @@ Initial scope:
 - Asset browser
 - Animated sprites/facing support
 - Scene file versioning
+- Grid snapping support on all tools and UI option, not in settings
 - Runtime reset and reload, not just pause/resume
 - Object locking and protection
 - More robust collision shapes and collision options
