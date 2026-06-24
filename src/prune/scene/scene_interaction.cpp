@@ -1,7 +1,3 @@
-#include "prune/scene/scene_interaction.hpp"
-
-#include "prune/scene/scene.hpp"
-#include "prune/editor/tools/transform_gizmo.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -9,6 +5,11 @@
 #include <vector>
 
 #include <SDL2/SDL.h>
+
+#include "prune/editor/tools/transform_gizmo.hpp"
+#include "prune/scene/scene.hpp"
+#include "prune/scene/scene_interaction.hpp"
+
 
 namespace prune {
 

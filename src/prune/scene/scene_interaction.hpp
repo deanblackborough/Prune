@@ -1,10 +1,12 @@
 #pragma once
 
+#include <vector>
+
+#include "prune/editor/tools/transform_gizmo.hpp"
 #include "prune/core/input.hpp"
 #include "prune/scene/scene_camera.hpp"
 #include "prune/scene/scene_state.hpp"
 
-#include <vector>
 
 namespace prune {
 

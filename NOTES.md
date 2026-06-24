@@ -130,11 +130,11 @@ Scale fits the current object model because Prune already has width/height and r
 
 Initial scope:
 
-- Single selected authored object
-- Corner or edge handle
-- Minimum size clamp
-- Inspector updates immediately
-- Undo/redo command recorded when the drag completes
+- [x] Single selected authored object
+- [x] Corner or edge handle
+- [x] Minimum size clamp
+- [x] Inspector updates immediately
+- [x] Undo/redo command recorded when the drag completes
 
 ### 7. Basic audio and event hooks
 
@@ -148,22 +148,42 @@ Preferred direction:
 
 Initial scope:
 
-- One or two hard-coded sound resources
-- Fire event
-- Hit/destroy event
-- Global enable/disable toggle
+- [ ] One or two hard-coded sound resources
+- [ ] Fire event
+- [ ] Hit/destroy event
+- [ ] Global enable/disable toggle
 
-## Later
+## Medium term, in no particular order
 
+- Z-Index ordering
 - Rotate tool
-- Grouping
-- Copy/paste
-- Prefabs/templates
+- Delete action and command
+- Background image support
+- Simplified asset management
+- Copy command
+- Text rendering
+- Paste command
+- Behaviour toggles for authored objects
+- Polished sample scenes
 - Asset browser
-- Animation/facing support
+- Animated sprites/facing support
 - Scene file versioning
+- Runtime reset and reload, not just pause/resume
+- Object locking and protection
+- More robust collision shapes and collision options
+
+## Later term, in no particular order
+
+- Scene layering, rendering and collision etc.
+- Grouping
+- Input mapping and rebinding
+- Scene settings panel for background, music, and other scene-wide options
+- Game UI panels 
+- Pathfinding support
 - Full audio mixer
-- Many more tools
+- Prefabs/templates
+- Native playable export
+- WebAssembly playable export
 - Card scene
 - Puzzle scene
-- More robust collision shapes and collision options
+- Many more scene tools
