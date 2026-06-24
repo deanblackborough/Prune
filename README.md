@@ -205,12 +205,12 @@ My development plan is tracked in [NOTES.md](NOTES.md), check the file for more 
 I will consider Prune ready for users when the below is ready, this is the minimum I think users expect from a live editor/runtime prototype:
 
 - [x] Open app.
-- [] Pick a scene type. (Deferred for now, initial scene type is hardcoded to Platformer, others in new dropdown.)
+- [ ] Pick a scene type. (Deferred for now, initial scene type is hardcoded to Platformer, others in new dropdown.)
 - [x] Select object in viewport.
 - [x] Move with handle.
 - [x] Resize with scale tool.
-- [] Duplicate it.
-- [] Delete it.
+- [ ] Duplicate it.
+- [ ] Delete it.
 - [x] Undo/redo all of that.
 - [x] Save.
 - [x] Load.
