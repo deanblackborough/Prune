@@ -153,29 +153,33 @@ Initial scope:
 - [ ] Hit/destroy event
 - [ ] Global enable/disable toggle
 
-## Medium term, in no particular order
+## Short term, in no particular order
 
 - Z-Index ordering
+- Runtime reset and reload, not just pause/resume
+- CTRL-S to save scene
+- Dirty state tracking for scene
+
+## Medium term, in no particular order
+
 - Rotate tool
 - Delete action and command
 - Background image support
 - Simplified asset management
-- Copy command
+- Copy / Paste command
 - Text rendering
-- Paste command
 - Behaviour toggles for authored objects
 - Polished sample scenes
 - Asset browser
 - Animated sprites/facing support
 - Scene file versioning
 - Grid snapping support on all tools and UI option, not in settings
-- Runtime reset and reload, not just pause/resume
 - Object locking and protection
 - More robust collision shapes and collision options
-
-## Later term, in no particular order
-
 - Scene layering, rendering and collision etc.
+
+## Long term, in no particular order
+
 - Grouping
 - Input mapping and rebinding
 - Scene settings panel for background, music, and other scene-wide options
