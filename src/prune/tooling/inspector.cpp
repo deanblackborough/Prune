@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <string_view>
 
 #include "imgui.h"
@@ -11,22 +10,19 @@ namespace prune {
 
     void Inspector::draw(
         Scene& scene,
-        GridOptions& grid_options,
         const Camera& camera
     ) {
         GameObjectManager& objects = scene.get_object_manager();
 
-        draw_selected(scene, grid_options);
+        draw_selected(scene);
         draw_scene_meaning(scene);
         draw_properties(scene, objects);
         draw_computed(objects, camera);
         draw_flags(scene, objects);
     }
 
-    void Inspector::draw_selected(
-        Scene& scene,
-        GridOptions& grid_options
-    ) {
+    void Inspector::draw_selected(Scene& scene)
+    {
         GameObjectManager& objects = scene.get_object_manager();
         GameObject* selected = objects.selected_object();
 
@@ -36,8 +32,6 @@ namespace prune {
 
         const bool can_edit = scene.object_is_editable(*selected);
         const bool can_rename = selected->editor.renameable && can_edit;
-        const bool can_delete = selected->editor.deletable && can_edit;
-        const bool can_clone = selected->editor.cloneable && can_edit;
 
         if (tooling::imgui::layout::collapsing_header("Selected")) {
             if (tooling::imgui::property_table::begin("Selected")) {
@@ -83,53 +77,6 @@ namespace prune {
                             "%s",
                             selected->identity.name.c_str()
                         );
-                    }
-                }
-
-                if (can_delete || can_clone) {
-
-                    tooling::imgui::layout::separator();
-
-                    tooling::imgui::property_table::begin_row("Actions");
-
-                    if (can_delete && tooling::imgui::property_table::button_raw("Delete")) {
-                        const GameObject deleted = *selected;
-                        const GameObjectId id_to_remove = selected->identity.id;
-                        if (objects.remove_object(id_to_remove)) {
-                            scene.record_editor_command(make_delete_object_command(deleted, deleted.identity.name));
-                        }
-
-                        tooling::imgui::property_table::end();
-                        return;
-                    }
-
-                    if (can_delete && can_clone) {
-                        ImGui::SameLine();
-                    }
-
-                    if (can_clone && tooling::imgui::property_table::button_raw("Clone")) {
-                        const std::string source_name = selected->identity.name;
-
-                        GameObject clone = *selected;
-
-                        const float step = grid_options.snap_to_grid
-                            ? static_cast<float>(std::max(1, grid_options.grid_size))
-                            : static_cast<float>(k_default_object_size);
-
-                        clone.transform.x += step;
-                        clone.transform.y += step;
-
-                        const GameObjectId clone_id = objects.create_object(clone);
-
-                        if (GameObject* created = objects.get_by_id(clone_id)) {
-                            created->identity.name = objects.make_unique_name(source_name, clone_id);
-                            scene.record_editor_command(make_create_object_command(*created, created->identity.name));
-                        }
-
-                        objects.select(clone_id);
-
-                        tooling::imgui::property_table::end();
-                        return;
                     }
                 }
 

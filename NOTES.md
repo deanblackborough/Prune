@@ -163,10 +163,8 @@ Initial scope:
 ## Medium term, in no particular order
 
 - Rotate tool
-- Delete action and command
 - Background image support
 - Simplified asset management
-- Copy / Paste command
 - Text rendering
 - Behaviour toggles for authored objects
 - Polished sample scenes

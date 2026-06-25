@@ -19,6 +19,7 @@ add_executable(Prune
         src/prune/core/input.cpp
 
         src/prune/editor/editor_command.cpp
+        src/prune/editor/editor_actions.cpp
 
         src/prune/scene/game_object.cpp
         src/prune/scene/game_object_manager.cpp

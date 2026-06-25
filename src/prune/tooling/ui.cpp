@@ -7,6 +7,7 @@
 
 #include "imgui.h"
 
+#include "prune/editor/editor_actions.hpp"
 #include "prune/editor/editor_tool.hpp"
 #include "prune/scene/scene.hpp"
 #include "prune/tooling/editor_layout.hpp"
@@ -23,6 +24,11 @@ namespace prune {
 
         struct ToolPaletteLayout {
             ImVec2 size{};
+            float selection_action_button_width = 0.0f;
+            std::size_t selection_action_columns = 0;
+            bool has_selection_actions = false;
+            bool show_clone_action = false;
+            bool show_delete_action = false;
             float scene_creation_button_width = 0.0f;
             std::size_t scene_creation_action_columns = 0;
             bool has_scene_creation_actions = false;
@@ -39,7 +45,7 @@ namespace prune {
             );
         }
 
-        [[nodiscard]] ToolPaletteLayout editor_tool_palette_layout(const Scene& scene)
+        [[nodiscard]] ToolPaletteLayout editor_tool_palette_layout(Scene& scene, const GridOptions* grid_options)
         {
             const ImGuiStyle& style = ImGui::GetStyle();
             const std::span<const SceneCreationAction> actions = scene.scene_creation_actions();
@@ -53,6 +59,32 @@ namespace prune {
                 ImGui::GetTextLineHeight() +
                 style.ItemSpacing.y +
                 ImGui::GetFrameHeight();
+
+            const SelectedObjectActionAvailability selection_actions = selected_object_action_availability(scene);
+            layout.show_clone_action = selection_actions.can_clone_active && grid_options != nullptr;
+            layout.show_delete_action = selection_actions.can_delete_selection;
+            layout.has_selection_actions = layout.show_clone_action || layout.show_delete_action;
+
+            if (layout.has_selection_actions) {
+                layout.selection_action_columns =
+                    (layout.show_clone_action && layout.show_delete_action) ? std::size_t{ 2 } : std::size_t{ 1 };
+                layout.selection_action_button_width = std::max(
+                    tool_button_width("Clone"),
+                    tool_button_width("Delete")
+                );
+
+                const float selection_actions_width =
+                    (layout.selection_action_button_width * static_cast<float>(layout.selection_action_columns)) +
+                    (style.ItemSpacing.x * static_cast<float>(layout.selection_action_columns - 1));
+
+                content_width = std::max(content_width, selection_actions_width);
+                content_height +=
+                    (style.ItemSpacing.y * 2.0f) +
+                    1.0f +
+                    ImGui::GetTextLineHeight() +
+                    style.ItemSpacing.y +
+                    ImGui::GetFrameHeight();
+            }
 
             if (!actions.empty()) {
                 layout.has_scene_creation_actions = true;
@@ -137,6 +169,7 @@ namespace prune {
         void draw_editor_tool_palette(
             Scene& scene,
             const ToolPaletteLayout& layout,
+            const GridOptions* grid_options,
             const ImVec2& palette_min,
             const ImVec2& palette_max
         )
@@ -163,16 +196,40 @@ namespace prune {
             ));
 
             ImGui::BeginGroup();
-            ImGui::TextUnformatted("Tools");
+            ImGui::TextUnformatted("Mode");
             draw_editor_tool_button(scene, EditorTool::Select);
             ImGui::SameLine();
             draw_editor_tool_button(scene, EditorTool::Move);
             ImGui::SameLine();
             draw_editor_tool_button(scene, EditorTool::Scale);
 
+            if (layout.has_selection_actions) {
+                ImGui::Separator();
+                ImGui::TextUnformatted("Selected");
+
+                bool rendered_button = false;
+
+                if (layout.show_clone_action && grid_options != nullptr) {
+                    if (ImGui::Button("Clone", ImVec2(layout.selection_action_button_width, 0.0f))) {
+                        clone_active_selected_object(scene, *grid_options);
+                    }
+                    rendered_button = true;
+                }
+
+                if (layout.show_delete_action) {
+                    if (rendered_button) {
+                        ImGui::SameLine();
+                    }
+
+                    if (ImGui::Button("Delete", ImVec2(layout.selection_action_button_width, 0.0f))) {
+                        delete_selected_objects(scene);
+                    }
+                }
+            }
+
             if (layout.has_scene_creation_actions) {
                 ImGui::Separator();
-                ImGui::TextUnformatted("Scene Creation");
+                ImGui::TextUnformatted("Create");
 
                 const std::span<const SceneCreationAction> actions = scene.scene_creation_actions();
                 for (std::size_t index = 0; index < actions.size(); ++index) {
@@ -325,7 +382,6 @@ namespace prune {
                 if (context.available()) {
                     m_inspector.draw(
                         scene,
-                        *context.grid_options,
                         context.camera->active()
                     );
                 }
@@ -468,7 +524,9 @@ namespace prune {
                 viewport_pos.x + viewport_size.x,
                 viewport_pos.y + viewport_size.y
             };
-            const ToolPaletteLayout tool_palette_layout = editor_tool_palette_layout(scene);
+            const WorldSceneContext context = scene.world_scene_context();
+            const GridOptions* grid_options = context.available() ? context.grid_options : nullptr;
+            const ToolPaletteLayout tool_palette_layout = editor_tool_palette_layout(scene, grid_options);
             const ImVec2 palette_min{
                 viewport_max.x - k_tool_palette_margin - tool_palette_layout.size.x,
                 viewport_pos.y + k_tool_palette_margin
@@ -503,7 +561,7 @@ namespace prune {
 
             scene.set_viewport(viewport);
             scene.draw_viewport_overlays();
-            draw_editor_tool_palette(scene, tool_palette_layout, palette_min, palette_max);
+            draw_editor_tool_palette(scene, tool_palette_layout, grid_options, palette_min, palette_max);
         }
         else {
             ImGui::Dummy(viewport_size);

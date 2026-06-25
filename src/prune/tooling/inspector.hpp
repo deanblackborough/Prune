@@ -15,12 +15,11 @@ namespace prune {
     public:
         void draw(
             Scene& scene,
-            GridOptions& grid_options,
             const Camera& camera
         );
 
     private:
-        void draw_selected(Scene& scene, GridOptions& grid_options);
+        void draw_selected(Scene& scene);
         void draw_scene_meaning(Scene& scene);
         void draw_properties(Scene& scene, GameObjectManager& objects);
         void draw_computed(GameObjectManager& objects, const Camera& camera);
