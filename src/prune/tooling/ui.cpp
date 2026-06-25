@@ -196,7 +196,7 @@ namespace prune {
             ));
 
             ImGui::BeginGroup();
-            ImGui::TextUnformatted("Tools");
+            ImGui::TextUnformatted("Mode");
             draw_editor_tool_button(scene, EditorTool::Select);
             ImGui::SameLine();
             draw_editor_tool_button(scene, EditorTool::Move);
@@ -205,7 +205,7 @@ namespace prune {
 
             if (layout.has_selection_actions) {
                 ImGui::Separator();
-                ImGui::TextUnformatted("Selection");
+                ImGui::TextUnformatted("Selected");
 
                 bool rendered_button = false;
 
@@ -229,7 +229,7 @@ namespace prune {
 
             if (layout.has_scene_creation_actions) {
                 ImGui::Separator();
-                ImGui::TextUnformatted("Scene Creation");
+                ImGui::TextUnformatted("Create");
 
                 const std::span<const SceneCreationAction> actions = scene.scene_creation_actions();
                 for (std::size_t index = 0; index < actions.size(); ++index) {
