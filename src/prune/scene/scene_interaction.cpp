@@ -6,6 +6,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "prune/editor/editor_actions.hpp"
 #include "prune/editor/tools/transform_gizmo.hpp"
 #include "prune/scene/scene.hpp"
 #include "prune/scene/scene_interaction.hpp"
@@ -407,67 +408,12 @@ namespace prune {
             input.is_key_down(SDL_SCANCODE_RCTRL);
 
         if (input.was_key_pressed(SDL_SCANCODE_DELETE) || input.was_key_pressed(SDL_SCANCODE_BACKSPACE)) {
-            std::vector<GameObject> deleted_objects;
-            deleted_objects.reserve(state.objects.selected_count());
-
-            for (const GameObjectId id : state.objects.selected_ids()) {
-                const GameObject* object = state.objects.get_by_id(id);
-                if (!object || !scene.object_is_editable(*object) || !object->editor.deletable) {
-                    continue;
-                }
-
-                deleted_objects.push_back(*object);
-            }
-
-            if (deleted_objects.empty()) {
-                return;
-            }
-
-            for (const GameObject& object : deleted_objects) {
-                state.objects.remove_object(object.identity.id);
-            }
-
-            if (deleted_objects.size() > 1) {
-                state.objects.clear_selection();
-            }
-
-            if (deleted_objects.size() == 1) {
-                scene.record_editor_command(make_delete_object_command(deleted_objects.front(), deleted_objects.front().identity.name));
-            }
-            else {
-                scene.record_editor_command(make_multi_delete_object_command(
-                    deleted_objects,
-                    std::to_string(deleted_objects.size()) + " objects"
-                ));
-            }
+            delete_selected_objects(scene);
             return;
         }
 
-        GameObject* selected = state.objects.selected_object();
-        if (!selected || !scene.object_is_editable(*selected)) {
-            return;
-        }
-
-        if (!selected->editor.cloneable || !ctrl_down || !input.was_key_pressed(SDL_SCANCODE_D)) {
-            return;
-        }
-
-        GameObject duplicate = *selected;
-        duplicate.identity.name = state.objects.make_unique_name(duplicate.identity.name + " Copy", k_invalid_game_object_id);
-
-        const float offset = static_cast<float>(
-            grid_options.snap_to_grid
-                ? std::max(1, grid_options.grid_size)
-                : std::max(1, grid_options.nudge_step)
-        );
-
-        duplicate.transform.x += offset;
-        duplicate.transform.y += offset;
-
-        const GameObjectId duplicate_id = state.objects.create_object(duplicate);
-        if (GameObject* created = state.objects.get_by_id(duplicate_id)) {
-            state.objects.select(duplicate_id);
-            scene.record_editor_command(make_create_object_command(*created, "Duplicate object"));
+        if (ctrl_down && input.was_key_pressed(SDL_SCANCODE_D)) {
+            clone_active_selected_object(scene, grid_options);
         }
     }
 
