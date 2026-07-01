@@ -315,6 +315,7 @@ build/Debug/Prune.exe
 - [SDL2_image](https://github.com/libsdl-org/SDL_image) — sprite loading
 - [The Cherno](https://www.youtube.com/@TheCherno) — C++ game engine architecture and editor design inspiration
 - [Kenny](https://kenney.nl/) — free game assets for prototyping
+- [jsfxr](https://sfxr.me/) - free sound effect generator for prototyping
 
 ## Licence
 
