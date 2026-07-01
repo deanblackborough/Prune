@@ -12,6 +12,7 @@
 #include "backends/imgui_impl_sdlrenderer2.h"
 
 #include "prune/app/app.hpp"
+#include "prune/audio/audio_system.hpp"
 #include "prune/core/time.hpp"
 #include "prune/scene/scene_factory.hpp"
 #include "prune/tooling/theme.hpp"
@@ -25,6 +26,8 @@ namespace prune {
         init_sdl();
 
         m_window = std::make_unique<Window>(config.window);
+        init_audio();
+
         m_input = std::make_unique<Input>();
         m_time = std::make_unique<Time>();
         m_scene = SceneFactory::create(SceneType::Platformer, m_window->width(), m_window->height());
@@ -48,6 +51,7 @@ namespace prune {
         m_ui.reset();
         m_input.reset();
         m_time.reset();
+        m_audio.reset();
         m_window.reset();
 
         shutdown_sdl();
@@ -83,13 +87,22 @@ namespace prune {
                 SceneType new_scene_type = SceneType::SimpleShooter;
                 bool load_scene_requested = false;
 
+                bool audio_enabled = m_audio ? m_audio->enabled() : false;
+                const bool audio_available = m_audio ? m_audio->available() : false;
+
                 m_ui->build(
                     *m_scene,
                     m_window->renderer(),
                     new_scene_requested,
                     new_scene_type,
-                    load_scene_requested
+                    load_scene_requested,
+                    audio_enabled,
+                    audio_available
                 );
+
+                if (m_audio) {
+                    m_audio->set_enabled(audio_enabled);
+                }
 
                 if (new_scene_requested) {
                     m_scene->on_exit();
@@ -206,7 +219,47 @@ namespace prune {
     {
         if (m_scene) {
             m_scene->update(dt, *m_input);
+            dispatch_scene_events();
         }
+    }
+
+
+    void App::init_audio()
+    {
+        m_audio = std::make_unique<AudioSystem>();
+
+        std::string error;
+        if (!m_audio->initialise(error)) {
+            m_audio.reset();
+            return;
+        }
+
+        const std::filesystem::path sound_path =
+            std::filesystem::current_path() / "assets" / "sound-effects";
+
+        m_audio->load_sound(sound_ids::shoot, sound_path / "shoot.wav", error);
+        m_audio->load_sound(sound_ids::jump, sound_path / "jump.wav", error);
+        m_audio->load_sound(sound_ids::explosion, sound_path / "explosion.wav", error);
+
+        m_audio->map_event_to_sound(scene_events::player_fired, sound_ids::shoot);
+        m_audio->map_event_to_sound(scene_events::player_jumped, sound_ids::jump);
+        m_audio->map_event_to_sound(scene_events::player_hit, sound_ids::explosion);
+        m_audio->map_event_to_sound(scene_events::enemy_destroyed, sound_ids::explosion);
+
+        m_audio->start();
+    }
+
+    void App::dispatch_scene_events()
+    {
+        if (!m_scene) {
+            return;
+        }
+
+        if (m_audio) {
+            m_audio->handle_events(m_scene->pending_scene_events());
+        }
+
+        m_scene->clear_scene_events();
     }
 
     void App::render()

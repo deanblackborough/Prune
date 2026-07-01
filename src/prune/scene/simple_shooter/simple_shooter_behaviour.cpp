@@ -233,6 +233,7 @@ namespace prune {
             )
         );
 
+        state.events.emit(scene_events::player_fired);
         shooter_state.fire_cooldown_remaining = shooter_state.options.fire_cooldown;
     }
 
@@ -339,6 +340,7 @@ namespace prune {
                 enemy.lifecycle.active = false;
                 enemy.render.visible = false;
                 enemy.motion.velocity = {};
+                state.events.emit(scene_events::enemy_destroyed);
                 break;
             }
         }

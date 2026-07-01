@@ -109,6 +109,7 @@ namespace prune {
             if ((input.was_key_pressed(SDL_SCANCODE_W) || input.was_key_pressed(SDL_SCANCODE_SPACE)) && platformer_state.player_grounded) {
                 player->motion.velocity.y = -platformer_state.options.jump_velocity;
                 platformer_state.player_grounded = false;
+                state.events.emit(scene_events::player_jumped);
             }
         }
 
@@ -130,6 +131,7 @@ namespace prune {
         }
 
         if (touches_hazard(state, *player) || player->transform.y > 512.0f) {
+            state.events.emit(scene_events::player_hit);
             reset_player(state, platformer_state);
         }
 

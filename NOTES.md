@@ -1,192 +1,124 @@
-# Current Phase — Immediate hardening before next tools
+# Current Phase — Short-term editor/runtime hardening
 
 ## Goal
 
-Make Prune feel like a real editor rather than a set of game type scene slices with panels attached.
+Turn the current editor/runtime foundation into something that behaves more like a typical game engine/editor.
 
-All the previous development proved that multiple scene types can share the same editor/runtime while owning their own behaviour, tools, panels, inspectors, object semantics, defaults, and save data.
+The previous phase proved the important foundations: editor commands, undo/redo, multi-select, explicit tool modes, scale, and the first audio/event hook path. The next phase should now harden the everyday editor behaviour around saving, reset/reload, ordering, and scene state tracking.
 
-During the next development phase, we should now prove that the editor can safely manipulate scene-owned objects without bypassing those scene rules.
+This phase is not about adding new systems. It is about removing rough edges that will be awkward to deal with later.
 
-## Guiding rule
+Prune should know when a scene has changed, what can be saved, what can be reset, what order objects render in, and whether runtime state is being viewed or rebuilt. These behaviours should not be inferred accidentally from object shape, current UI selection, or temporary scene runtime state.
 
-Editor tools must act through explicit editor semantics, not through incidental object shape.
+## Targets
 
-A selected object is not just a rectangle. It may be authored, runtime-created, selectable, editable, movable, persistent, solid, hazardous, scene-specific, or protected.
+### 1. Dirty state tracking
 
-## Must do first
-
-- [x] Keep player/controller ownership scene-specific unless a genuinely shared abstraction appears.
-- [x] Introduce an editor command/change model before implementing undo/redo.
-- [x] Keep undo/redo editor-only at first.
-- [x] Keep scene activation separate from default scene creation so loading cannot be overwritten by `on_enter()`.
-
-## Phase targets
-
-### 1. Editor command/change model
-
-Create the smallest useful model for editor-authored changes.
-
-Initial command candidates:
-
-- [x] Move object in scene
-- [x] Create object
-- [x] Delete object
-- [x] Rename object
-- [x] Change object size
-- [x] Change object rendering type (rectangle/colour)
-- [x] Change object colour
-- [x] Change object sprite
-- [x] Viewport movement/zoom (no zoom yet)
-- [x] Record state snapshots not delta changes.
-
-Avoid runtime/gameplay commands for now. A projectile moving, an enemy spawning, or an artillery round ending should not enter editor undo history, we just care about what the user did in the editor.
-
-### 2. Undo/redo
-
-Build undo/redo on top of the command model, not as custom reversal logic scattered through tools and panels.
+Track whether the current scene has unsaved editor-authored changes.
 
 Initial scope:
 
-- [x] Command history buffer panel with list of past commands
-- [x] Move transform tool from scene/tools to editor/tools
-- [x] Viewport object movement
-- [x] Object creation
-- [x] Object deletion
-- [x] Simple inspector edits
+* [ ] Mark scene dirty when editor commands are executed.
+* [ ] Mark scene dirty when inspector edits are committed.
+* [ ] Mark scene dirty when authored objects are created, deleted, duplicated, moved, scaled, or reordered.
+* [ ] Clear dirty state after a successful save.
+* [ ] Keep runtime-only behaviour out of dirty tracking.
+* [ ] Show dirty state somewhere lightweight in the editor UI.
 
 Out of scope for the first pass:
 
-- Runtime object history
-- Gameplay state rewind
-- Save/load history restoration
-- Multi-scene history
+* Save confirmation modal when closing Prune.
+* Save confirmation modal when switching scenes.
+* Per-scene dirty tracking across multiple open scenes.
+* Autosave.
 
-### 3. Delete and duplicate workflow
+### 2. CTRL-S save shortcut
 
-Add normal editor actions once command history exists.
-
-Initial scope:
-
-- [x] Delete selected authored object
-- [x] Duplicate selected authored object
-- [x] Select the duplicated object
-- [x] Offset duplicates slightly so the result is visible
-
-This gives undo/redo useful behaviour to prove.
-
-### 4. Multi-select
-
-Add multi-select after the single-object command path is stable.
+Add a normal editor save shortcut once dirty state exists.
 
 Initial scope:
 
-- [x] Selection set instead of one selected id
-- [x] Shift-click to add/remove from the selection set
-- [x] Clear selection on empty viewport click
-- [x] Outliner multi-select support
-- [x] Visible outline for every selected object
-- [x] Combined selection bounds in the viewport
-- [x] Multi-selection drag handle on the selection bounds
-- [x] Selection count in editor UI
-- [x] Move selected objects as one editor command
-- [x] Delete selected deletable objects as one editor command
+* [ ] CTRL-S saves the current scene when a scene file path is known.
+* [ ] CTRL-S uses the same save path as the existing save workflow.
+* [ ] Successful save clears dirty state.
+* [ ] Failed save leaves dirty state unchanged.
+* [ ] Avoid triggering save repeatedly while the key is held.
 
-Multi-select now supports grouped viewport move and grouped delete. Grouped inspector/property edits remain deferred because they need more specific UX and command labels.
+Out of scope for the first pass:
 
-### 5. Tool mode state
+* Save As shortcut.
+* Recent files.
+* Save failure recovery UI beyond a simple message/log entry.
 
-Status: implemented.
+### 3. Runtime reset and reload
 
-Introduce an explicit editor tool mode before adding more viewport tools.
-
-Suggested initial tools:
-
-```cpp
-enum class EditorTool {
-    Select,
-    Move,
-    Scale,
-    Rotate
-};
-```
-
-This avoids hiding editor behaviour inside whichever handle happened to be clicked.
-
-Current implementation:
-
-- [x] Active tool state lives in generic world scene state.
-- [x] A fixed viewport palette exposes Select and Move as text tool buttons.
-- [x] The viewport palette also exposes scene-owned creation actions such as Wall, Platform, Hazard, and Terrain Line.
-- [x] Select keeps the existing selection and move-handle behaviour.
-- [x] Move allows direct body dragging for movable authored objects.
-- [x] Scale and rotate remain unimplemented until their interaction rules are explicit.
-
-### 6. Scale tool
-
-Implement scale before rotate.
-
-Scale fits the current object model because Prune already has width/height and rectangle bounds.
+Add explicit runtime reset/reload behaviour rather than relying only on pause/resume.
 
 Initial scope:
 
-- [x] Single selected authored object
-- [x] Corner or edge handle
-- [x] Minimum size clamp
-- [x] Inspector updates immediately
-- [x] Undo/redo command recorded when the drag completes
+* [ ] Reset runtime state for the active scene without destroying authored scene data.
+* [ ] Reload the scene from saved data when a backing file exists.
+* [ ] Preserve the distinction between editor-authored objects and runtime-only objects.
+* [ ] Clear runtime-only objects during reset/reload.
+* [ ] Re-enter scene runtime cleanly after reset/reload.
+* [ ] Make behaviour consistent across Simple Shooter, Platformer, and Artillery.
+* [ ] New toolbar in the editor for reset/reload/pause/resume.
 
-### 7. Basic audio and event hooks
+Out of scope for the first pass:
 
-Add audio through events.
+* Save prompts before reload.
+* Runtime state snapshots.
+* Gameplay rewind.
 
-Preferred direction:
+### 4. Z-index ordering
 
-- Scenes emit lightweight event ids such as `player_fired`, `enemy_destroyed`, `player_hit`, `round_reset`.
-- A small audio layer maps event ids to sounds.
-- Scene behaviour does not know how sound is played.
+Add authored object ordering so render order is deliberate and editable.
 
 Initial scope:
 
-- [ ] One or two hard-coded sound resources
-- [ ] Fire event
-- [ ] Hit/destroy event
-- [ ] Global enable/disable toggle
+* [ ] Add an authored z-index/order field to scene objects.
+* [ ] Render authored objects using explicit ordering.
+* [ ] Persist ordering in scene save data.
+* [ ] Restore ordering on load.
+* [ ] Add basic editor actions for moving selected object up/down in order.
+* [ ] Keep runtime-only ordering behaviour simple and deterministic.
 
-## Short term, in no particular order
+Out of scope for the first pass:
 
-- Z-Index ordering
-- Runtime reset and reload, not just pause/resume
-- CTRL-S to save scene
-- Dirty state tracking for scene
+* Full layer system.
+* Separate render/collision layers.
+* Drag-and-drop ordering in the outliner.
 
-## Medium term, in no particular order
+## Follow on development targets
 
-- Rotate tool
-- Background image support
-- Simplified asset management
-- Text rendering
-- Behaviour toggles for authored objects
-- Polished sample scenes
-- Asset browser
-- Animated sprites/facing support
-- Scene file versioning
-- Grid snapping support on all tools and UI option, not in settings
-- Object locking and protection
-- More robust collision shapes and collision options
-- Scene layering, rendering and collision etc.
+### Medium term, in no particular order
 
-## Long term, in no particular order
+* Rotate tool
+* Background image support
+* Simplified asset management
+* Text rendering
+* Behaviour toggles for authored objects
+* Polished sample scenes
+* Event management and event-driven reactions (play audio, spawn objects, play animation, screen effects, etc.)
+* Asset browser
+* Animated sprites/facing support
+* Scene file versioning
+* Grid snapping support on all tools and UI option, not in settings
+* Object locking and protection
+* More robust collision shapes and collision options
+* Scene layering, rendering and collision etc.
 
-- Grouping
-- Input mapping and rebinding
-- Scene settings panel for background, music, and other scene-wide options
-- Game UI panels 
-- Pathfinding support
-- Full audio mixer
-- Prefabs/templates
-- Native playable export
-- WebAssembly playable export
-- Card scene
-- Puzzle scene
-- Many more scene tools
+### Long term, in no particular order
+
+* Grouping
+* Input mapping and rebinding
+* Scene settings panel for background, music, and other scene-wide options
+* Game UI panels
+* Pathfinding support
+* Full audio mixer
+* Prefabs/templates
+* Native playable export
+* WebAssembly playable export
+* Card scene
+* Puzzle scene
+* Many more scene tools

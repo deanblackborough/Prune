@@ -892,3 +892,80 @@ Initial tool modes are deliberately limited to Select and Move. Select keeps sel
 
 The active tool is transient editor state. It lives in the generic world scene state so viewport interaction and UI can share it, but it is not saved into scene files.
 
+
+## Decision — Add basic audio hooks before final event management design
+
+### Context
+
+Prune needs basic sound playback now for clear runtime feedback in the existing sample scenes:
+
+Simple Shooter firing and enemy destruction.
+Platformer jumping and player hit/death feedback.
+Artillery firing and explosion/player hit feedback.
+
+The broader event/reaction system is not designed yet. Long term, events may drive multiple reaction types, including sounds, animations, sprite changes, UI effects, screen shake, object spawning, and scene-specific behaviours.
+
+Adding a full authored event system now would be premature. The editor UI, asset model, serialisation shape, and scene semantics are not ready for that decision.
+
+### Decision
+
+Add a minimal audio hook path now, built on lightweight scene event ids.
+
+Scenes may emit simple event ids such as:
+
+player_fired
+player_jumped
+enemy_destroyed
+player_hit
+round_reset
+
+A small audio layer maps those event ids to hard-coded sound resources and plays them when received.
+
+Scene behaviour must not know:
+
+- Which sound file is used.
+- How sound is loaded.
+- How sound is mixed.
+- Whether audio is enabled.
+- Which future reaction types may also respond to the same event.
+
+The app/runtime layer is responsible for passing emitted scene events to the audio system.
+
+- Initial constraints
+- Use hard-coded event-to-sound mappings only.
+- Keep sound resources small and explicit.
+- Keep the audio enable/disable toggle global.
+- Do not add authored event UI yet.
+- Do not serialise event bindings yet.
+- Do not introduce a full asset browser or asset registry for this pass.
+- Do not make scene behaviour call audio playback directly.
+
+#### Consequences
+
+This gives Prune useful runtime feedback immediately without committing to the final event architecture.
+
+The current audio hook path is intentionally disposable at the mapping level but not at the boundary level. The important boundary is that scenes emit events and another system consumes them.
+
+Later, the hard-coded audio mapping can be replaced by a more general event reaction system, for example:
+
+player_fired
+  - Play sound: shoot.wav
+  - Play animation: muzzle_flash
+  - Spawn object: projectile
+  - Trigger UI effect: screen_shake
+
+### Rejected alternative
+
+Direct sound calls inside scene behaviour
+
+Rejected because it would couple scene behaviour to audio playback and make later event-driven reactions harder.
+
+#### Bad direction:
+
+Platformer jump code -> play jump.wav directly
+
+#### Preferred direction:
+
+Platformer jump code -> emit player_jumped
+Audio system -> maps player_jumped to jump.wav
+Future reaction system -> may also map player_jumped to animation, particles, UI effects, or scene-specific responses

@@ -7,6 +7,7 @@
 
 namespace prune {
 
+    class AudioSystem;
     class Time;
     class Scene;
     class Ui;
@@ -46,6 +47,10 @@ namespace prune {
 
         void render();
 
+        void init_audio();
+
+        void dispatch_scene_events();
+
         void init_imgui();
 
         void shutdown_imgui();
@@ -53,6 +58,7 @@ namespace prune {
         void begin_imgui_frame();
 
         std::unique_ptr<Window> m_window;
+        std::unique_ptr<AudioSystem> m_audio;
         std::unique_ptr<Time> m_time;
         std::unique_ptr<Input> m_input;
         std::unique_ptr<Scene> m_scene;

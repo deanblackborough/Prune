@@ -217,6 +217,7 @@ namespace prune {
         artillery_state.projectile_id = state.objects.create_object(projectile);
         artillery_state.projectile_owner_id = tank->identity.id;
         artillery_state.projectile_active = true;
+        state.events.emit(scene_events::player_fired);
     }
 
     void ArtilleryBehaviour::update_projectile(SceneState& state, ArtilleryState& artillery_state, float dt) const
@@ -241,6 +242,7 @@ namespace prune {
         GameObjectId hit_id = k_invalid_game_object_id;
         if (projectile->lifecycle.remaining <= 0.0f || projectile->transform.y > 360.0f || projectile_hit_solid(state, *projectile, artillery_state.projectile_owner_id, hit_id)) {
             if (GameObject* hit = state.objects.get_by_id(hit_id); hit && artillery_concepts::is_tank(*hit)) {
+                state.events.emit(scene_events::player_hit);
                 reset_round(state, artillery_state);
                 return;
             }
@@ -292,6 +294,7 @@ namespace prune {
         artillery_state.projectile_owner_id = k_invalid_game_object_id;
         artillery_state.projectile_active = false;
         artillery_state.current_turn = ArtilleryTurn::PlayerOne;
+        state.events.emit(scene_events::round_reset);
     }
 
     GameObject* ArtilleryBehaviour::current_tank(SceneState& state, const ArtilleryState& artillery_state) const noexcept

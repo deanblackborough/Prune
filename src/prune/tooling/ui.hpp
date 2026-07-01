@@ -25,7 +25,9 @@ namespace prune {
             SDL_Renderer* renderer,
             bool& new_scene_requested,
             SceneType& new_scene_type,
-            bool& load_scene_requested
+            bool& load_scene_requested,
+            bool& audio_enabled,
+            bool audio_available
         );
         void render_scene_viewport_content(Scene& scene, SDL_Renderer* renderer);
         void set_file_status(std::string status, bool is_error);
