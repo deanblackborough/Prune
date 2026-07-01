@@ -6,6 +6,7 @@
 #include "prune/editor/editor_tool.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
+#include "prune/scene/scene_event.hpp"
 
 #include <vector>
 
@@ -83,6 +84,7 @@ namespace prune {
         DragState drag_state{};
         SceneOptions scene_options{};
         EditorTool editor_tool = EditorTool::Select;
+        SceneEventQueue events;
 
         GameObjectManager objects;
         EditorCommandHistory editor_commands;

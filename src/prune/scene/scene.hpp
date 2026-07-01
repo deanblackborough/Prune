@@ -12,6 +12,7 @@
 #include "prune/scene/game_object_manager.hpp"
 #include "prune/scene/object_concept.hpp"
 #include "prune/scene/scene_camera.hpp"
+#include "prune/scene/scene_event.hpp"
 #include "prune/scene/scene_state.hpp"
 
 namespace prune {
@@ -132,6 +133,9 @@ namespace prune {
         virtual bool redo_editor_command() = 0;
 
         virtual SceneOptions& get_scene_options() = 0;
+
+        [[nodiscard]] virtual std::span<const SceneEvent> pending_scene_events() const noexcept = 0;
+        virtual void clear_scene_events() noexcept = 0;
 
         [[nodiscard]] virtual EditorTool current_editor_tool() const noexcept { return EditorTool::Select; }
         virtual void set_current_editor_tool(EditorTool) noexcept {}

@@ -260,7 +260,9 @@ namespace prune {
         SDL_Renderer* renderer,
         bool& new_scene_requested,
         SceneType& new_scene_type,
-        bool& load_scene_requested
+        bool& load_scene_requested,
+        bool& audio_enabled,
+        bool audio_available
     )
     {
         draw_scene_viewport(scene, renderer);
@@ -318,6 +320,21 @@ namespace prune {
 
                 if (ImGui::MenuItem("Redo", "Ctrl+Y", false, history.can_redo())) {
                     scene.redo_editor_command();
+                }
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Audio")) {
+                if (!audio_available) {
+                    ImGui::BeginDisabled();
+                }
+
+                ImGui::MenuItem("Sound Enabled", nullptr, &audio_enabled);
+
+                if (!audio_available) {
+                    ImGui::EndDisabled();
+                    ImGui::TextDisabled("Audio device unavailable");
                 }
 
                 ImGui::EndMenu();

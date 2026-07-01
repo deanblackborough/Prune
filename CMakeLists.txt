@@ -18,6 +18,8 @@ add_executable(Prune
         src/prune/core/time.cpp
         src/prune/core/input.cpp
 
+        src/prune/audio/audio_system.cpp
+
         src/prune/editor/editor_command.cpp
         src/prune/editor/editor_actions.cpp
 

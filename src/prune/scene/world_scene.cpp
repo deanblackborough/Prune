@@ -159,6 +159,8 @@ namespace prune {
             }
 
             SceneState loaded_state = m_state;
+            loaded_state.events.clear();
+
             SceneCamera loaded_camera = m_camera;
             GridOptions loaded_grid_options = m_grid_options;
 
@@ -175,6 +177,7 @@ namespace prune {
             }
 
             m_state = std::move(loaded_state);
+            m_state.events.clear();
             m_state.drag_state = {};
             m_state.editor_commands.clear();
             m_camera = loaded_camera;
@@ -258,6 +261,16 @@ namespace prune {
     SceneOptions& WorldScene::get_scene_options()
     {
         return m_state.scene_options;
+    }
+
+    std::span<const SceneEvent> WorldScene::pending_scene_events() const noexcept
+    {
+        return m_state.events.pending();
+    }
+
+    void WorldScene::clear_scene_events() noexcept
+    {
+        m_state.events.clear();
     }
 
     EditorTool WorldScene::current_editor_tool() const noexcept

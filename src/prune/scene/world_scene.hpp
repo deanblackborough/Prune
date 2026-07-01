@@ -39,6 +39,8 @@ namespace prune {
         bool undo_editor_command() final;
         bool redo_editor_command() final;
         SceneOptions& get_scene_options() final;
+        [[nodiscard]] std::span<const SceneEvent> pending_scene_events() const noexcept final;
+        void clear_scene_events() noexcept final;
         [[nodiscard]] EditorTool current_editor_tool() const noexcept final;
         void set_current_editor_tool(EditorTool tool) noexcept final;
         bool execute_scene_creation_action(std::string_view action_id) final;
