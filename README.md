@@ -196,7 +196,7 @@ Current priorities:
 - [x] Multi-select move/delete
 - [x] Tool mode state
 - [x] Scale tool
-- [ ] Basic audio hooks
+- [x] Basic audio hooks
 
 My development plan is tracked in [NOTES.md](NOTES.md), check the file for more details on what each of these points mean as well as what is included - this is what I will be working on in the next development phase.
 
@@ -209,13 +209,14 @@ I will consider Prune ready for users when the below is ready, this is the minim
 - [x] Select object in viewport.
 - [x] Move with handle.
 - [x] Resize with scale tool.
-- [ ] Duplicate it.
-- [ ] Delete it.
+- [x] Duplicate it.
+- [x] Delete it.
 - [x] Undo/redo all of that.
 - [x] Save.
 - [x] Load.
 - [x] Behaviour still works.
 - [x] Runtime objects do not get accidentally edited or saved.
+- [x] Basic audio hooks
 
 ## Documentation stance
 

@@ -148,10 +148,10 @@ Preferred direction:
 
 Initial scope:
 
-- [ ] One or two hard-coded sound resources
-- [ ] Fire event
-- [ ] Hit/destroy event
-- [ ] Global enable/disable toggle
+- [x] One or two hard-coded sound resources
+- [x] Fire event
+- [x] Hit/destroy event
+- [x] Global enable/disable toggle
 
 ## Short term, in no particular order
 
@@ -168,6 +168,7 @@ Initial scope:
 - Text rendering
 - Behaviour toggles for authored objects
 - Polished sample scenes
+- Event management and event-driven audio - Event (player_fires), Play sound, Play Animation, Trigger UI effect (screen shake) Visual (play animation),  etc.)
 - Asset browser
 - Animated sprites/facing support
 - Scene file versioning
