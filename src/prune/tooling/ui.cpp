@@ -268,6 +268,9 @@ namespace prune {
         draw_scene_viewport(scene, renderer);
 
         if (ImGui::BeginMainMenuBar()) {
+            ImGui::Text("%.*s%s", static_cast<int>(scene.scene_name().size()), scene.scene_name().data(), scene.is_dirty() ? " *" : "");
+            ImGui::Separator();
+
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::BeginMenu("New Scene")) {
                     for (const SceneDescriptor& descriptor : k_scene_descriptors) {

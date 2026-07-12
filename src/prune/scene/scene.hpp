@@ -58,8 +58,9 @@ namespace prune {
         virtual void update_editor(float, const Input&) {}
         virtual void render(SDL_Renderer* renderer) = 0;
 
-        [[nodiscard]] virtual bool save_to_file(std::string_view path, std::string& error) const = 0;
+        [[nodiscard]] virtual bool save_to_file(std::string_view path, std::string& error) = 0;
         [[nodiscard]] virtual bool load_from_file(std::string_view path, std::string& error) = 0;
+        [[nodiscard]] virtual bool is_dirty() const noexcept = 0;
         [[nodiscard]] virtual std::string_view default_file_path() const noexcept = 0;
         [[nodiscard]] virtual std::string_view scene_type_id() const noexcept = 0;
 
