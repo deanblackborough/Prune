@@ -30,7 +30,7 @@ namespace prune {
 
     struct EditorCommand {
         EditorCommandType type = EditorCommandType::MoveObject;
-        bool modifies_scene = true;
+        bool makes_dirty = true;
         std::string label;
         std::string detail;
         GameObjectId object_id = k_invalid_game_object_id;

@@ -230,7 +230,7 @@ namespace prune {
 
     void WorldScene::record_editor_command(EditorCommand command)
     {
-        if (command.modifies_scene) {
+        if (command.makes_dirty) {
             m_state.dirty = true;
         }
 
@@ -250,7 +250,7 @@ namespace prune {
         }
 
         apply_editor_command(*command, false);
-        if (command->modifies_scene) {
+        if (command->makes_dirty) {
             m_state.dirty = true;
         }
         return true;
@@ -264,7 +264,7 @@ namespace prune {
         }
 
         apply_editor_command(*command, true);
-        if (command->modifies_scene) {
+        if (command->makes_dirty) {
             m_state.dirty = true;
         }
         return true;
