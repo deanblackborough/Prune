@@ -237,9 +237,9 @@ namespace prune {
         const std::filesystem::path sound_path =
             std::filesystem::current_path() / "assets" / "sound-effects";
 
-        m_audio->load_sound(sound_ids::shoot, sound_path / "shoot.wav", error);
-        m_audio->load_sound(sound_ids::jump, sound_path / "jump.wav", error);
-        m_audio->load_sound(sound_ids::explosion, sound_path / "explosion.wav", error);
+        static_cast<void>(m_audio->load_sound(sound_ids::shoot, sound_path / "shoot.wav", error));
+        static_cast<void>(m_audio->load_sound(sound_ids::jump, sound_path / "jump.wav", error));
+        static_cast<void>(m_audio->load_sound(sound_ids::explosion, sound_path / "explosion.wav", error));
 
         m_audio->map_event_to_sound(scene_events::player_fired, sound_ids::shoot);
         m_audio->map_event_to_sound(scene_events::player_jumped, sound_ids::jump);
