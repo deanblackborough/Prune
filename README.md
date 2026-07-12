@@ -194,34 +194,69 @@ The immediate focus is proving that viewport tools can operate safely on scene o
 
 Current priorities:
 
-- [x] Command model for editor changes
-- [x] Undo/Redo on top of the command model
-- [x] Command history panel
-- [x] Multi-select
-- [x] Multi-select move/delete
-- [x] Tool mode state
-- [x] Scale tool
-- [x] Basic audio hooks
+- [x] Initial implementation of dirty-state tracking for persistent editor-authored changes.
+- [ ] Ensure dirty state remains accurate through execution, undo, redo, save, and load.
+- [ ] Add a Ctrl+S shortcut using the existing scene save workflow.
+- [ ] Add explicit runtime reset and saved-scene reload behaviour.
+- [ ] Add consistent reset, reload, pause, and resume controls to the editor.
+- [ ] Add authored object z-index ordering.
+- [ ] Persist and restore object ordering through scene save files.
+- [ ] Add basic editor actions for moving selected objects forward or backward in render order.
 
-My development plan is tracked in [NOTES.md](NOTES.md), check the file for more details on what each of these points mean as well as what is included - this is what I will be working on in the next development phase.
+My development plan is tracked in [NOTES.md](NOTES.md), check the file for more details on what each of these points mean as well as what is included - this is what I will be working on in my next development phase.
 
 ## Ready for users when...
 
-I will consider Prune ready for users when the below is ready, this is the minimum I think users expect from a live editor/runtime prototype:
+The core editor/runtime loop is now working, but that does mean Prune is ready for you to invest any meaninful time in it just yet.
 
-- [x] Open app.
-- [ ] Pick a scene type. (Deferred for now, initial scene type is hardcoded to Platformer, others in new dropdown.)
-- [x] Select object in viewport.
-- [x] Move with handle.
-- [x] Resize with scale tool.
-- [x] Duplicate it.
-- [x] Delete it.
-- [x] Undo/redo all of that.
-- [x] Save.
-- [x] Load.
-- [x] Behaviour still works.
-- [x] Runtime objects do not get accidentally edited or saved.
-- [x] Basic audio hooks
+I will consider Prune ready for early external users when someone unfamiliar with the codebase can create, edit, run, save, reload, and understand a small scene without modifying C++ or relying on undocumented project knowledge.
+
+### Core editor/runtime
+
+- [x] Open the application.
+- [x] Select objects in the viewport.
+- [x] Move authored objects using the move tool.
+- [x] Resize authored objects using the scale tool.
+- [x] Duplicate authored objects.
+- [x] Delete authored objects.
+- [x] Undo and redo editor changes.
+- [x] Save and load scenes.
+- [x] Preserve scene behaviour after loading.
+- [x] Protect runtime-only objects from accidental editing and persistence.
+- [x] Provide basic code-driven audio playback and scene audio hooks.
+
+### Editor workflow
+
+- [ ] Select a scene type when creating a new scene.
+- [ ] Provide reliable new, open, save, save-as, reload, and reset workflows.
+- [ ] Track unsaved authored changes accurately, including through undo and redo (undo/redo missing right now).
+- [x] Show the current dirty state clearly in the editor.
+- [ ] Support Ctrl+S for normal scene saving.
+- [ ] Warn before closing, reloading, or replacing a scene with unsaved changes.
+- [ ] Provide consistent pause, resume, runtime reset, and scene reload controls.
+- [ ] Add explicit authored-object render ordering.
+- [ ] Apply grid snapping consistently across applicable editor tools.
+- [ ] Provide object locking or protection for authored objects that should not be changed accidentally.
+
+### Scene editing
+
+- [ ] Provide a usable asset workflow that does not require editing source code.
+- [ ] Allow sprites and audio resources to be selected and configured through the editor.
+- [ ] Expose useful authored-object behaviour through editor controls.
+- [ ] Provide editor-facing event and reaction configuration, including audio playback.
+- [ ] Support basic scene-wide configuration such as background and music.
+- [ ] Add sufficient text rendering support for practical scenes.
+- [ ] Introduce scene file versioning before external users create files that need long-term compatibility.
+
+### Proof Prune works and is usable
+
+- [ ] Provide at least one polished example for each supported scene type.
+- [ ] Ensure errors such as missing assets and invalid scene files are reported clearly.
+- [ ] Document how to build, launch, create, edit, run, save, and reload a scene.
+- [ ] Ensure a new user can complete the basic workflow without reading the engine source.
+- [ ] Provide at least one practical way to package or share a playable scene. (This may be a simple zip of the scene file and assets, or a small standalone executable.)
+
+*Until all or the majority of the above is checked, please consider Prune an active 2D game engine and editor prototype rather than something you can depend.
 
 ## Documentation stance
 
