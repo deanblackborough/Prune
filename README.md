@@ -15,6 +15,8 @@ Different scene types can share the same editor shell while defining their own b
 > Prune is still pre-release. Existing `.yml` scene files may break while the object model, scene descriptors, behaviour ids, concept metadata, and scene-specific save data are being shaped.
 >
 > Save compatibility will matter later. For now, the priority is getting the scene model and editor/runtime architecture right.
+>
+> Camera movements do not mark the scene as dirty but they are saved to the scene file. If you are testing save/load, be aware that camera movements will be persisted.
 
 ## Why this exists
 
@@ -110,17 +112,20 @@ Prune currently has:
 - Shared editor camera and game camera foundations
 - Grid rendering and snapping
 - Live object selection
-- Selected-object outline and first transform handle
-- Handle-based object movement for authored movable objects
+- Selected-object outlines and transform handles
+- Handle-based movement for authored movable objects
+- Handle-based scaling for single authored objects, with minimum-size constraints
 - Runtime object protection by default
 - Outliner and generic inspector panels
 - Scene-specific inspector sections
 - Scene-aware object concepts (scene roles) for selection, editability, movement, runtime-only objects, and collision meaning
 - YAML scene save/load
+- Dirty state tracking for authored scene data
 - Scene factory creation and scene-type loading from save files
 - Rectangle and sprite rendering
 - Basic sprite resource map
-- Shared scene renderer, interaction, camera, state, collision, and serialization pieces
+- Basic audio playback and scene audio hooks, currently configured in code with no dedicated editor UI
+- Shared scene renderer, interaction, camera, state, collision, serialization, and audio foundations
 - Shared `WorldScene` foundation for scene types
 - Platformer scene slice
 - Artillery game slice
