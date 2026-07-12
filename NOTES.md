@@ -18,12 +18,12 @@ Track whether the current scene has unsaved editor-authored changes.
 
 Initial scope:
 
-* [ ] Mark scene dirty when editor commands are executed.
-* [ ] Mark scene dirty when inspector edits are committed.
-* [ ] Mark scene dirty when authored objects are created, deleted, duplicated, moved, scaled, or reordered.
-* [ ] Clear dirty state after a successful save.
-* [ ] Keep runtime-only behaviour out of dirty tracking.
-* [ ] Show dirty state somewhere lightweight in the editor UI.
+* [x] Mark the scene dirty when a command modifies persistent, editor-authored scene data.
+* [x] Mark scene dirty when inspector edits are committed.
+* [x] Mark scene dirty when authored objects are created, deleted, duplicated, moved, scaled, or reordered.
+* [x] Clear dirty state after a successful save.
+* [x] Keep runtime-only behaviour out of dirty tracking.
+* [x] Show dirty state somewhere lightweight in the editor UI.
 
 Out of scope for the first pass:
 

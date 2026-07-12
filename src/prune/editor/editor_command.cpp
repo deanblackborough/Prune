@@ -209,6 +209,7 @@ namespace prune {
     ) {
         EditorCommand command{};
         command.type = EditorCommandType::MoveViewport;
+        command.makes_dirty = false;
         command.label = std::string(label);
         command.detail = std::string(detail);
         command.before_camera = before;

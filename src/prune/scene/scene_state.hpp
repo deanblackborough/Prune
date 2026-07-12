@@ -80,6 +80,7 @@ namespace prune {
     };
 
     struct SceneState {
+        bool dirty = false;
         SceneViewport viewport{};
         DragState drag_state{};
         SceneOptions scene_options{};

@@ -113,7 +113,7 @@ namespace prune {
         }
     }
 
-    bool WorldScene::save_to_file(std::string_view path, std::string& error) const
+    bool WorldScene::save_to_file(std::string_view path, std::string& error)
     {
         try {
             YAML::Node root;
@@ -136,6 +136,7 @@ namespace prune {
                 return false;
             }
 
+            m_state.dirty = false;
             return true;
         }
         catch (const YAML::Exception& ex) {
@@ -180,6 +181,7 @@ namespace prune {
             m_state.events.clear();
             m_state.drag_state = {};
             m_state.editor_commands.clear();
+            m_state.dirty = false;
             m_camera = loaded_camera;
             m_grid_options = loaded_grid_options;
 
@@ -228,6 +230,10 @@ namespace prune {
 
     void WorldScene::record_editor_command(EditorCommand command)
     {
+        if (command.makes_dirty) {
+            m_state.dirty = true;
+        }
+
         m_state.editor_commands.record(std::move(command));
     }
 
@@ -244,6 +250,9 @@ namespace prune {
         }
 
         apply_editor_command(*command, false);
+        if (command->makes_dirty) {
+            m_state.dirty = true;
+        }
         return true;
     }
 
@@ -255,6 +264,9 @@ namespace prune {
         }
 
         apply_editor_command(*command, true);
+        if (command->makes_dirty) {
+            m_state.dirty = true;
+        }
         return true;
     }
 

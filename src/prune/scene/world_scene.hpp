@@ -25,8 +25,9 @@ namespace prune {
         void render(SDL_Renderer* renderer) final;
         void draw_viewport_overlays() final;
 
-        [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) const final;
+        [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) final;
         [[nodiscard]] bool load_from_file(std::string_view path, std::string& error) final;
+        [[nodiscard]] bool is_dirty() const noexcept final { return m_state.dirty; }
 
         void set_viewport(const SceneViewport& viewport) noexcept final;
         [[nodiscard]] const SceneViewport& get_viewport() const noexcept final { return m_state.viewport; }
