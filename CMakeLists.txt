@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(Prune)
 
+include(CTest)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -105,4 +107,8 @@ if(MSVC)
     target_compile_options(Prune PRIVATE /W4 /permissive-)
 else()
     target_compile_options(Prune PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
 endif()

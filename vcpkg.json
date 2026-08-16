@@ -2,6 +2,7 @@
   "name": "prune",
   "version": "0.1.0",
   "dependencies": [
+    "catch2",
     "sdl2",
     "sdl2-image",
     "yaml-cpp"

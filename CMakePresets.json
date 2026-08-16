@@ -53,5 +53,23 @@
       "displayName": "x64 Release Build",
       "configurePreset": "x64-release"
     }
+  ],
+  "testPresets": [
+    {
+      "name": "x64-debug-test",
+      "displayName": "x64 Debug Tests",
+      "configurePreset": "x64-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "x64-release-test",
+      "displayName": "x64 Release Tests",
+      "configurePreset": "x64-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
   ]
 }
