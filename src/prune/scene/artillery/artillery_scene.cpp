@@ -54,16 +54,16 @@ namespace prune {
                 artillery_state.player_one_id = first_object_id_for_kind(state, artillery_concepts::ObjectKind::Tank);
             }
 
-            if (!object_has_kind(state, artillery_state.player_two_id, artillery_concepts::ObjectKind::Tank)) {
-                bool skipped_first_tank = false;
+            if (!object_has_kind(state, artillery_state.player_two_id, artillery_concepts::ObjectKind::Tank) ||
+                artillery_state.player_two_id == artillery_state.player_one_id) {
+                artillery_state.player_two_id = k_invalid_game_object_id;
 
                 for (const auto& object : state.objects.objects()) {
                     if (!artillery_concepts::is_tank(object)) {
                         continue;
                     }
 
-                    if (!skipped_first_tank && object.identity.id == artillery_state.player_one_id) {
-                        skipped_first_tank = true;
+                    if (object.identity.id == artillery_state.player_one_id) {
                         continue;
                     }
 
@@ -261,8 +261,8 @@ namespace prune {
     {
         restore_loaded_artillery_concepts(state, m_artillery_state);
 
-        if (m_artillery_state.player_one_id == k_invalid_game_object_id ||
-            m_artillery_state.player_two_id == k_invalid_game_object_id ||
+        if (!object_has_kind(state, m_artillery_state.player_one_id, artillery_concepts::ObjectKind::Tank) ||
+            !object_has_kind(state, m_artillery_state.player_two_id, artillery_concepts::ObjectKind::Tank) ||
             m_artillery_state.player_one_id == m_artillery_state.player_two_id) {
             error = "Artillery scene requires two tank objects.";
             return false;

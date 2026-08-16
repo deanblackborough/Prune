@@ -22,10 +22,13 @@ jobs:
           vcpkgGitCommitId: "cb2981c4e03d421fa03b9bb5044cd1986180e7e4"
 
       - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+        run: cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: Build
         run: cmake --build build --config Release
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure --no-tests=error
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
