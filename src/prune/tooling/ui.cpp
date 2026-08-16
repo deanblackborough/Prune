@@ -255,6 +255,27 @@ namespace prune {
         destroy_scene_render_target();
     }
 
+    void Ui::save_scene(Scene& scene)
+    {
+        const std::string scene_file_path{ scene.default_file_path() };
+
+        if (scene_file_path.empty()) {
+            m_file_status = "Save failed: no scene file path is available.";
+            m_file_status_is_error = true;
+            return;
+        }
+
+        std::string error;
+        if (scene.save_to_file(scene_file_path, error)) {
+            m_file_status = "Saved scene to " + scene_file_path;
+            m_file_status_is_error = false;
+        }
+        else {
+            m_file_status = "Save failed: " + error;
+            m_file_status_is_error = true;
+        }
+    }
+
     void Ui::build(
         Scene& scene,
         SDL_Renderer* renderer,
@@ -285,18 +306,8 @@ namespace prune {
 
                 ImGui::Separator();
 
-                if (ImGui::MenuItem("Save Scene")) {
-                    std::string error;
-                    const std::string scene_file_path{ scene.default_file_path() };
-
-                    if (scene.save_to_file(scene_file_path, error)) {
-                        m_file_status = "Saved scene to " + scene_file_path;
-                        m_file_status_is_error = false;
-                    }
-                    else {
-                        m_file_status = "Save failed: " + error;
-                        m_file_status_is_error = true;
-                    }
+                if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
+                    save_scene(scene);
                 }
 
                 if (ImGui::MenuItem("Load Scene")) {
@@ -363,6 +374,9 @@ namespace prune {
         }
 
         const ImGuiIO& io = ImGui::GetIO();
+        if (!io.WantTextInput && !io.WantCaptureKeyboard && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
+            save_scene(scene);
+        }
         if (!io.WantTextInput && !io.WantCaptureKeyboard && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
             scene.undo_editor_command();
         }
