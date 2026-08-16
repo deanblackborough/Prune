@@ -4,6 +4,13 @@
 
 namespace prune {
 
+    namespace {
+        [[nodiscard]] bool can_select_automatically(const GameObject& object) noexcept
+        {
+            return object.identity.type != GameObjectType::Runtime && object.editor.selectable;
+        }
+    }
+
     void GameObjectManager::clear() noexcept
     {
         m_objects.clear();
@@ -18,7 +25,7 @@ namespace prune {
 
         m_objects.push_back(copy);
 
-        if (m_selected_ids.empty()) {
+        if (m_selected_ids.empty() && can_select_automatically(copy)) {
             m_selected_ids.push_back(copy.identity.id);
         }
 
@@ -91,15 +98,25 @@ namespace prune {
         remove_from_selection(id);
 
         if (was_active_selection && m_selected_ids.empty()) {
-            if (m_objects.empty()) {
-                return true;
-            }
+            const auto next = std::find_if(
+                m_objects.begin() + static_cast<std::ptrdiff_t>(std::min(index, m_objects.size())),
+                m_objects.end(),
+                can_select_automatically
+            );
 
-            if (index < m_objects.size()) {
-                m_selected_ids.push_back(m_objects[index].identity.id);
+            if (next != m_objects.end()) {
+                m_selected_ids.push_back(next->identity.id);
             }
             else {
-                m_selected_ids.push_back(m_objects.back().identity.id);
+                const auto previous = std::find_if(
+                    m_objects.rbegin(),
+                    m_objects.rend(),
+                    can_select_automatically
+                );
+
+                if (previous != m_objects.rend()) {
+                    m_selected_ids.push_back(previous->identity.id);
+                }
             }
         }
 
