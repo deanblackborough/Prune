@@ -72,6 +72,7 @@ add_executable(Prune
 
         src/prune/tooling/imgui/property_table.cpp
         src/prune/tooling/imgui/layout.cpp
+        src/prune/tooling/imgui/shortcut.cpp
 
         external/imgui/imgui.cpp
         external/imgui/imgui_draw.cpp

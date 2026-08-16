@@ -11,6 +11,7 @@
 #include "prune/editor/editor_tool.hpp"
 #include "prune/scene/scene.hpp"
 #include "prune/tooling/editor_layout.hpp"
+#include "prune/tooling/imgui/shortcut.hpp"
 #include "prune/tooling/ui.hpp"
 
 namespace prune {
@@ -373,14 +374,13 @@ namespace prune {
             ImGui::EndMainMenuBar();
         }
 
-        const ImGuiIO& io = ImGui::GetIO();
-        if (!io.WantTextInput && !io.WantCaptureKeyboard && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
+        if (tooling::imgui::shortcut::pressed(ImGuiMod_Ctrl | ImGuiKey_S)) {
             save_scene(scene);
         }
-        if (!io.WantTextInput && !io.WantCaptureKeyboard && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
+        if (tooling::imgui::shortcut::pressed(ImGuiMod_Ctrl | ImGuiKey_Z)) {
             scene.undo_editor_command();
         }
-        if (!io.WantTextInput && !io.WantCaptureKeyboard && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y, false)) {
+        if (tooling::imgui::shortcut::pressed(ImGuiMod_Ctrl | ImGuiKey_Y)) {
             scene.redo_editor_command();
         }
 
