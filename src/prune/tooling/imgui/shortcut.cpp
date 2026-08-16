@@ -8,7 +8,7 @@ namespace prune::tooling::imgui::shortcut {
 
         return !io.WantTextInput &&
             !io.WantCaptureKeyboard &&
-            ImGui::IsKeyChordPressed(chord);
+            ImGui::Shortcut(chord, ImGuiInputFlags_RouteGlobal);
     }
 
 }
