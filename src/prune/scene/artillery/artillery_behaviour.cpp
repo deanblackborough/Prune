@@ -196,6 +196,7 @@ namespace prune {
             return;
         }
 
+        const GameObjectId tank_id = tank->identity.id;
         const bool firing_right = artillery_state.current_turn == ArtilleryTurn::PlayerOne;
         GameObject projectile = artillery_factory::create_projectile(0.0f, 0.0f);
         const float projectile_width = static_cast<float>(projectile.size.width);
@@ -215,7 +216,7 @@ namespace prune {
         projectile.lifecycle.remaining = artillery_state.options.projectile_lifetime;
 
         artillery_state.projectile_id = state.objects.create_object(projectile);
-        artillery_state.projectile_owner_id = tank->identity.id;
+        artillery_state.projectile_owner_id = tank_id;
         artillery_state.projectile_active = true;
         state.events.emit(scene_events::player_fired);
     }
