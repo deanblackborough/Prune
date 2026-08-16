@@ -38,11 +38,11 @@ Add a normal editor save shortcut once dirty state exists.
 
 Initial scope:
 
-* [ ] CTRL-S saves the current scene when a scene file path is known.
-* [ ] CTRL-S uses the same save path as the existing save workflow.
-* [ ] Successful save clears dirty state.
-* [ ] Failed save leaves dirty state unchanged.
-* [ ] Avoid triggering save repeatedly while the key is held.
+* [x] CTRL-S saves the current scene when a scene file path is known.
+* [x] CTRL-S uses the same save path as the existing save workflow.
+* [x] Successful save clears dirty state.
+* [x] Failed save leaves dirty state unchanged.
+* [x] Avoid triggering save repeatedly while the key is held.
 
 Out of scope for the first pass:
 
