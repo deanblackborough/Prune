@@ -5,6 +5,11 @@ namespace prune {
     void Controls::draw()
     {
         tooling::imgui::layout::header_text("Controls");
+        tooling::imgui::layout::text_wrapped("Editor");
+        tooling::imgui::layout::text_wrapped("CTRL+S saves the current scene to its existing scene file path");
+
+        tooling::imgui::layout::spacing(2);
+
         tooling::imgui::layout::text_wrapped("Simple Shooter");
         tooling::imgui::layout::text_wrapped("WASD keys move the player");
         tooling::imgui::layout::text_wrapped("Space fires one projectile in the current facing direction");

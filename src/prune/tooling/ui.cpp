@@ -11,6 +11,7 @@
 #include "prune/editor/editor_tool.hpp"
 #include "prune/scene/scene.hpp"
 #include "prune/tooling/editor_layout.hpp"
+#include "prune/tooling/imgui/shortcut.hpp"
 #include "prune/tooling/ui.hpp"
 
 namespace prune {
@@ -255,6 +256,27 @@ namespace prune {
         destroy_scene_render_target();
     }
 
+    void Ui::save_scene(Scene& scene)
+    {
+        const std::string scene_file_path{ scene.default_file_path() };
+
+        if (scene_file_path.empty()) {
+            m_file_status = "Save failed: no scene file path is available.";
+            m_file_status_is_error = true;
+            return;
+        }
+
+        std::string error;
+        if (scene.save_to_file(scene_file_path, error)) {
+            m_file_status = "Saved scene to " + scene_file_path;
+            m_file_status_is_error = false;
+        }
+        else {
+            m_file_status = "Save failed: " + error;
+            m_file_status_is_error = true;
+        }
+    }
+
     void Ui::build(
         Scene& scene,
         SDL_Renderer* renderer,
@@ -285,18 +307,8 @@ namespace prune {
 
                 ImGui::Separator();
 
-                if (ImGui::MenuItem("Save Scene")) {
-                    std::string error;
-                    const std::string scene_file_path{ scene.default_file_path() };
-
-                    if (scene.save_to_file(scene_file_path, error)) {
-                        m_file_status = "Saved scene to " + scene_file_path;
-                        m_file_status_is_error = false;
-                    }
-                    else {
-                        m_file_status = "Save failed: " + error;
-                        m_file_status_is_error = true;
-                    }
+                if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
+                    save_scene(scene);
                 }
 
                 if (ImGui::MenuItem("Load Scene")) {
@@ -362,11 +374,13 @@ namespace prune {
             ImGui::EndMainMenuBar();
         }
 
-        const ImGuiIO& io = ImGui::GetIO();
-        if (!io.WantTextInput && !io.WantCaptureKeyboard && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
+        if (tooling::imgui::shortcut::pressed(ImGuiMod_Ctrl | ImGuiKey_S)) {
+            save_scene(scene);
+        }
+        if (tooling::imgui::shortcut::pressed(ImGuiMod_Ctrl | ImGuiKey_Z)) {
             scene.undo_editor_command();
         }
-        if (!io.WantTextInput && !io.WantCaptureKeyboard && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y, false)) {
+        if (tooling::imgui::shortcut::pressed(ImGuiMod_Ctrl | ImGuiKey_Y)) {
             scene.redo_editor_command();
         }
 

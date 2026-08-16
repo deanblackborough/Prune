@@ -196,7 +196,7 @@ Current priorities:
 
 - [x] Initial implementation of dirty-state tracking for persistent editor-authored changes.
 - [ ] Ensure dirty state remains accurate through execution, undo, redo, save, and load.
-- [ ] Add a Ctrl+S shortcut using the existing scene save workflow.
+- [x] Add a Ctrl+S shortcut using the existing scene save workflow.
 - [ ] Add explicit runtime reset and saved-scene reload behaviour.
 - [ ] Add consistent reset, reload, pause, and resume controls to the editor.
 - [ ] Add authored object z-index ordering.
@@ -231,7 +231,7 @@ I will consider Prune ready for early external users when someone unfamiliar wit
 - [ ] Provide reliable new, open, save, save-as, reload, and reset workflows.
 - [ ] Track unsaved authored changes accurately, including through undo and redo (undo/redo missing right now).
 - [x] Show the current dirty state clearly in the editor.
-- [ ] Support Ctrl+S for normal scene saving.
+- [x] Support Ctrl+S for normal scene saving.
 - [ ] Warn before closing, reloading, or replacing a scene with unsaved changes.
 - [ ] Provide consistent pause, resume, runtime reset, and scene reload controls.
 - [ ] Add explicit authored-object render ordering.

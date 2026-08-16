@@ -33,6 +33,7 @@ namespace prune {
         void set_file_status(std::string status, bool is_error);
 
     private:
+        void save_scene(Scene& scene);
         void draw_scene_viewport(Scene& scene, SDL_Renderer* renderer);
         void ensure_scene_render_target(SDL_Renderer* renderer, int width, int height);
         void destroy_scene_render_target();
