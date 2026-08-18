@@ -74,11 +74,6 @@ namespace prune {
         m_state.viewport.height = window_height;
     }
 
-    void PlatformerScene::on_enter()
-    {
-        begin_runtime();
-    }
-
     void PlatformerScene::on_exit()
     {
         m_state.objects.clear();

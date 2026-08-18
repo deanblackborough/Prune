@@ -19,7 +19,6 @@ namespace prune {
         SimpleShooterScene(int window_width, int window_height);
         SimpleShooterScene(const SimpleShooterScene&) = delete;
         SimpleShooterScene& operator=(const SimpleShooterScene&) = delete;
-        void on_enter() override;
         void on_exit() override;
 
         void new_scene() override;

@@ -20,6 +20,8 @@ namespace prune {
 
     class WorldScene : public Scene {
     public:
+        void on_enter() final;
+
         void update(float dt, const Input& input) final;
         void update_editor(float dt, const Input& input) final;
         void render(SDL_Renderer* renderer) final;
@@ -66,8 +68,7 @@ namespace prune {
 
         void draw_debug_tools();
 
-        void begin_runtime();
-
+        virtual void on_scene_enter() {}
         virtual void update_runtime(float dt, const Input& input, bool keyboard_input_enabled) = 0;
         virtual void restart_runtime() = 0;
         virtual void set_runtime_paused(bool paused) noexcept = 0;

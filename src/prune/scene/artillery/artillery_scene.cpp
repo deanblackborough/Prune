@@ -80,9 +80,8 @@ namespace prune {
         m_state.viewport.height = window_height;
     }
 
-    void ArtilleryScene::on_enter()
+    void ArtilleryScene::on_scene_enter()
     {
-        begin_runtime();
         m_authored_turn = m_artillery_state.current_turn;
         m_authored_player_one_aim = m_artillery_state.player_one_aim;
         m_authored_player_two_aim = m_artillery_state.player_two_aim;

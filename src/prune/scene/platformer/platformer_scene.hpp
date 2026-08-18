@@ -17,7 +17,6 @@ namespace prune {
     public:
         PlatformerScene(int window_width, int window_height);
 
-        void on_enter() override;
         void on_exit() override;
 
         void new_scene() override;

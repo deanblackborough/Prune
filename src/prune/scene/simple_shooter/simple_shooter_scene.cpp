@@ -123,11 +123,6 @@ namespace prune {
     }
 
 
-    void SimpleShooterScene::on_enter()
-    {
-        begin_runtime();
-    }
-
     void SimpleShooterScene::on_exit()
     {
         m_state.objects.clear();

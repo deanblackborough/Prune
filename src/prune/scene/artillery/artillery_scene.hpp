@@ -16,7 +16,6 @@ namespace prune {
     public:
         ArtilleryScene(int window_width, int window_height);
 
-        void on_enter() override;
         void on_exit() override;
         void new_scene() override;
 
@@ -31,6 +30,7 @@ namespace prune {
         void draw_scene_inspector(GameObject& selected) override;
 
     protected:
+        void on_scene_enter() override;
         void update_runtime(float dt, const Input& input, bool keyboard_input_enabled) override;
         void restart_runtime() override;
         void set_runtime_paused(bool paused) noexcept override;

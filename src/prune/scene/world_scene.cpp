@@ -99,9 +99,10 @@ namespace prune {
         render_overlay(renderer);
     }
 
-    void WorldScene::begin_runtime()
+    void WorldScene::on_enter()
     {
         capture_authored_objects();
+        on_scene_enter();
     }
 
     void WorldScene::reset_runtime()
