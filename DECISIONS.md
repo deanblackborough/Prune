@@ -652,9 +652,15 @@ This distinction is essential for save/load, undo/redo, selection, inspector beh
 
 ---
 
-## Basic audio hooks before final event management
+## Audio remains a code baseline until effects UI is designed
+
+### Status
+
+Implemented baseline; further audio code and UI are deferred.
 
 ### Decision
+
+Treat the existing audio implementation as the complete audio baseline for the current phase. Do not add further audio-specific code or authored audio UI until the broader effects and reaction system is being designed.
 
 Use lightweight scene event ids to provide basic audio feedback without committing to a complete authored event/reaction system.
 
@@ -668,7 +674,9 @@ The current samples need clear runtime feedback:
 - Platformer needs jumping and player-hit feedback.
 - Artillery needs firing, explosion, player-hit, and round-reset feedback.
 
-The broader event/reaction model is not designed yet. Eventually an event may trigger sound, animation, sprite changes, UI effects, screen shake, object spawning, or scene-specific behaviour. Adding authored bindings, editor UI, and a full asset model now would prematurely fix that design.
+The existing implementation establishes the required code boundary: scene behaviour emits events, the app/runtime layer chooses sound resources, and the audio system handles playback. That is sufficient as a baseline.
+
+The broader event/reaction model is not designed yet. Eventually an event may trigger sound, animation, sprite changes, UI effects, screen shake, object spawning, or scene-specific behaviour. Audio authoring will need many of the same concepts as those other reactions, including event bindings, resource selection, configuration, and validation. Designing an audio-only UI now could establish the wrong abstraction and require it to be replaced when effects support is added.
 
 ### Consequences
 
@@ -676,8 +684,10 @@ The broader event/reaction model is not designed yet. Eventually an event may tr
 - Scene behaviour does not know which sound file is used, how it is loaded or mixed, or whether audio is enabled.
 - Event-to-sound mappings remain hard-coded for now.
 - Sound resources and the global audio toggle remain small and explicit.
+- No further audio-specific code is required for the current phase.
 - Event bindings are not authored or serialized yet.
-- No asset browser or complete event-management UI is introduced by this decision.
+- No audio authoring panel, resource picker, asset browser, or complete event-management UI is introduced by this decision.
+- Audio UI will be considered as part of the broader effects/reaction authoring design rather than as an isolated feature.
 
 The mapping is intentionally replaceable; the boundary between event producers and consumers is the part intended to remain.
 
@@ -687,6 +697,7 @@ Direct sound calls inside scene behaviour were rejected because they would coupl
 
 ### Revisit when
 
+- Work begins on authored effects or reactions.
 - One event needs to trigger multiple reaction types.
 - Event bindings need to be authored or serialized.
 - The editor has an asset model capable of selecting and validating reaction resources.
