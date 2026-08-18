@@ -57,12 +57,13 @@ Add explicit runtime reset/reload behaviour rather than relying only on pause/re
 Initial scope:
 
 * [ ] Reset runtime state for the active scene without destroying authored scene data.
-* [ ] Reload the scene from saved data when a backing file exists.
 * [ ] Preserve the distinction between editor-authored objects and runtime-only objects.
-* [ ] Clear runtime-only objects during reset/reload.
-* [ ] Re-enter scene runtime cleanly after reset/reload.
+* [ ] Clear runtime-only objects during reset
+* [ ] Re-enter scene runtime cleanly after reset.
 * [ ] Make behaviour consistent across Simple Shooter, Platformer, and Artillery.
-* [ ] New toolbar in the editor for reset/reload/pause/resume.
+* [ ] New toolbar in the editor for reset/pause/resume.
+* [ ] Remove any existing pause controls from the UI
+* [ ] For now this can appear at the top of the existing mode toolbar as words, not icons, until we have a better idea of what the final UI should look like.
 
 Out of scope for the first pass:
 
