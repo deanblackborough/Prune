@@ -4,7 +4,7 @@
 
 Turn the current editor/runtime foundation into something that behaves more like a typical game engine/editor.
 
-The previous phase proved the important foundations: editor commands, undo/redo, multi-select, explicit tool modes, scale, and the first audio/event hook path. The next phase should now harden the everyday editor behaviour around saving, reset/reload, ordering, and scene state tracking.
+The previous phase proved the important foundations: editor commands, undo/redo, multi-select, explicit tool modes, scale, and the first audio/event hook path. This phase has now added dirty-state tracking, Ctrl+S, and shared runtime Reset/Pause/Play controls. Authored-object ordering is the remaining target.
 
 This phase is not about adding new systems. It is about removing rough edges that will be awkward to deal with later.
 
@@ -50,24 +50,25 @@ Out of scope for the first pass:
 * Recent files.
 * Save failure recovery UI beyond a simple message/log entry.
 
-### 3. Runtime reset and reload
+### 3. Runtime reset, pause, and play
 
-Add explicit runtime reset/reload behaviour rather than relying only on pause/resume.
+Add explicit runtime reset behaviour and shared Pause/Play controls.
 
 Initial scope:
 
-* [ ] Reset runtime state for the active scene without destroying authored scene data.
-* [ ] Preserve the distinction between editor-authored objects and runtime-only objects.
-* [ ] Clear runtime-only objects during reset
-* [ ] Re-enter scene runtime cleanly after reset.
-* [ ] Make behaviour consistent across Simple Shooter, Platformer, and Artillery.
-* [ ] New toolbar in the editor for reset/pause/resume.
-* [ ] Remove any existing pause controls from the UI
-* [ ] For now this can appear at the top of the existing mode toolbar as words, not icons, until we have a better idea of what the final UI should look like.
+* [x] Reset runtime state for the active scene without destroying authored scene data.
+* [x] Use the current in-memory authored state as the reset baseline, including edits made while the runtime is live.
+* [x] Preserve the distinction between editor-authored objects and runtime-only objects.
+* [x] Clear runtime-only objects during reset.
+* [x] Re-enter scene runtime cleanly and continue playing after reset.
+* [x] Make behaviour consistent across Simple Shooter, Platformer, and Artillery.
+* [x] Add Reset and the currently relevant Pause or Play action to the shared editor toolbar.
+* [x] Remove the previous scene-specific pause controls from the UI.
+* [x] Keep Reset, Pause, and Play as non-dirty editor actions.
+* [x] Use word buttons at the top of the existing mode toolbar until the final icon treatment is designed.
 
 Out of scope for the first pass:
 
-* Save prompts before reload.
 * Runtime state snapshots.
 * Gameplay rewind.
 
@@ -100,7 +101,7 @@ Out of scope for the first pass:
 * Text rendering
 * Behaviour toggles for authored objects
 * Polished sample scenes
-* Event management and event-driven reactions (play audio, spawn objects, play animation, screen effects, etc.)
+* Authored event management and event-driven reactions (configure the existing audio path, spawn objects, play animation, screen effects, etc.)
 * Asset browser
 * Animated sprites/facing support
 * Scene file versioning

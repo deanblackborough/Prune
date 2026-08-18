@@ -98,7 +98,7 @@ That means a scene type should not need to reimplement generic viewport access, 
 
 The current architecture is intentionally not a plugin system, not an ECS, and not a general-purpose engine API. The code is still being shaped around concrete scene slices first.
 
-The next important step is stronger object semantics: the editor needs to understand what an object means in the active scene, not just that it has a rectangle, colour, transform, and runtime behaviour string.
+The next important step is explicit authored-object ordering so render order can be edited deliberately and persisted with the scene.
 
 ## Where we are now
 
@@ -121,10 +121,12 @@ Prune currently has:
 - Scene-aware object concepts (scene roles) for selection, editability, movement, runtime-only objects, and collision meaning
 - YAML scene save/load
 - Dirty state tracking for authored scene data
+- An in-memory authored-object baseline used by save and runtime reset, preserving live editor changes while excluding runtime-only objects
 - Scene factory creation and scene-type loading from save files
 - Rectangle and sprite rendering
 - Basic sprite resource map
-- Basic audio playback and scene audio hooks, currently configured in code with no dedicated editor UI
+- Shared Reset and Pause/Play runtime controls across all three scene slices
+- Basic code-driven audio playback and scene event hooks; authored audio UI is deferred until the broader effects/reaction workflow is designed
 - Shared scene renderer, interaction, camera, state, collision, serialization, and audio foundations
 - Shared `WorldScene` foundation for scene types
 - Platformer scene slice
@@ -188,17 +190,15 @@ The Simple Shooter slice currently proves:
 
 ## Near-term focus
 
-The scene-type model is now strong enough to begin the first real editor tooling pass.
-
-The immediate focus is proving that viewport tools can operate safely on scene objects without bypassing scene ownership rules.
+Dirty-state tracking, Ctrl+S, and shared Reset/Pause/Play controls are now implemented. The remaining target in the current hardening phase is explicit authored-object render ordering.
 
 Current priorities:
 
 - [x] Initial implementation of dirty-state tracking for persistent editor-authored changes.
-- [ ] Ensure dirty state remains accurate through execution, undo, redo, save, and load.
+- [x] Keep editor command changes synchronised with the current authored state through execution, undo, redo, save, and runtime reset.
 - [x] Add a Ctrl+S shortcut using the existing scene save workflow.
-- [ ] Add explicit runtime reset and saved-scene reload behaviour.
-- [ ] Add consistent reset, reload, pause, and resume controls to the editor.
+- [x] Add an explicit runtime reset that restores the current in-memory authored state and removes runtime-only objects.
+- [x] Add consistent Reset and Pause/Play controls to the editor without marking the scene dirty.
 - [ ] Add authored object z-index ordering.
 - [ ] Persist and restore object ordering through scene save files.
 - [ ] Add basic editor actions for moving selected objects forward or backward in render order.
@@ -207,7 +207,7 @@ My development plan is tracked in [NOTES.md](NOTES.md), check the file for more 
 
 ## Ready for users when...
 
-The core editor/runtime loop is now working, but that does mean Prune is ready for you to invest any meaninful time in it just yet.
+The core editor/runtime loop is now working, but that does not mean Prune is ready for you to invest any meaningful time in it just yet.
 
 I will consider Prune ready for early external users when someone unfamiliar with the codebase can create, edit, run, save, reload, and understand a small scene without modifying C++ or relying on undocumented project knowledge.
 
@@ -221,6 +221,8 @@ I will consider Prune ready for early external users when someone unfamiliar wit
 - [x] Delete authored objects.
 - [x] Undo and redo editor changes.
 - [x] Save and load scenes.
+- [x] Reset runtime state without discarding current authored changes.
+- [x] Pause and play scene runtime from the shared editor toolbar.
 - [x] Preserve scene behaviour after loading.
 - [x] Protect runtime-only objects from accidental editing and persistence.
 - [x] Provide basic code-driven audio playback and scene audio hooks.
@@ -228,12 +230,13 @@ I will consider Prune ready for early external users when someone unfamiliar wit
 ### Editor workflow
 
 - [ ] Select a scene type when creating a new scene.
-- [ ] Provide reliable new, open, save, save-as, reload, and reset workflows.
-- [ ] Track unsaved authored changes accurately, including through undo and redo (undo/redo missing right now).
+- [ ] Provide reliable new, open, save, save-as, and saved-scene reload workflows.
+- [x] Track unsaved authored changes through editor commands, undo, redo, save, and load.
 - [x] Show the current dirty state clearly in the editor.
 - [x] Support Ctrl+S for normal scene saving.
 - [ ] Warn before closing, reloading, or replacing a scene with unsaved changes.
-- [ ] Provide consistent pause, resume, runtime reset, and scene reload controls.
+- [x] Provide consistent Reset and Pause/Play runtime controls.
+- [ ] Provide an explicit saved-scene reload workflow.
 - [ ] Add explicit authored-object render ordering.
 - [ ] Apply grid snapping consistently across applicable editor tools.
 - [ ] Provide object locking or protection for authored objects that should not be changed accidentally.
