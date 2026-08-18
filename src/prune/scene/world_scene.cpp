@@ -79,6 +79,21 @@ namespace prune {
                 break;
             }
         }
+
+        void restore_object_in_id_order(GameObjectManager& objects, const GameObject& object)
+        {
+            if (GameObject* existing = objects.get_by_id(object.identity.id)) {
+                *existing = object;
+                return;
+            }
+
+            objects.add_loaded_object(object);
+            std::ranges::stable_sort(
+                objects.objects(),
+                {},
+                [](const GameObject& candidate) { return candidate.identity.id; }
+            );
+        }
     }
 
     void WorldScene::update(float dt, const Input& input)
@@ -497,19 +512,14 @@ namespace prune {
         const EditorCommand& command,
         bool use_after_state
     ) {
-        const auto restore = [this](const GameObject& object) {
-            if (GameObject* existing = m_authored_objects.get_by_id(object.identity.id)) {
-                *existing = object;
-            }
-            else {
-                m_authored_objects.add_loaded_object(object);
-            }
+        const auto restore_authored = [this](const GameObject& object) {
+            restore_object_in_id_order(m_authored_objects, object);
         };
 
         switch (command.type) {
         case EditorCommandType::CreateObject:
             if (use_after_state && command.after_object.has_value()) {
-                restore(command.after_object.value());
+                restore_authored(command.after_object.value());
             }
             else if (!use_after_state) {
                 m_authored_objects.remove_object(command.object_id);
@@ -521,7 +531,7 @@ namespace prune {
                 m_authored_objects.remove_object(command.object_id);
             }
             else if (command.before_object.has_value()) {
-                restore(command.before_object.value());
+                restore_authored(command.before_object.value());
             }
             break;
 
@@ -533,14 +543,14 @@ namespace prune {
             }
             else {
                 for (const GameObject& object : command.before_objects) {
-                    restore(object);
+                    restore_authored(object);
                 }
             }
             break;
 
         case EditorCommandType::MoveObjects:
             for (const GameObject& object : use_after_state ? command.after_objects : command.before_objects) {
-                restore(object);
+                restore_authored(object);
             }
             break;
 
@@ -556,10 +566,10 @@ namespace prune {
         case EditorCommandType::ChangeObjectFlag:
         case EditorCommandType::ChangeSprite:
             if (use_after_state && command.after_object.has_value()) {
-                restore(command.after_object.value());
+                restore_authored(command.after_object.value());
             }
             else if (!use_after_state && command.before_object.has_value()) {
-                restore(command.before_object.value());
+                restore_authored(command.before_object.value());
             }
             break;
         }
@@ -568,16 +578,7 @@ namespace prune {
 
     void WorldScene::restore_object_snapshot(const GameObject& object, bool select_restored)
     {
-        if (GameObject* existing = m_state.objects.get_by_id(object.identity.id)) {
-            *existing = object;
-        } else {
-            m_state.objects.add_loaded_object(object);
-            std::ranges::stable_sort(
-                m_state.objects.objects(),
-                {},
-                [](const GameObject& candidate) { return candidate.identity.id; }
-            );
-        }
+        restore_object_in_id_order(m_state.objects, object);
 
         if (select_restored) {
             m_state.objects.select(object.identity.id);
