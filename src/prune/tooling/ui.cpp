@@ -53,10 +53,17 @@ namespace prune {
 
             const float editor_tools_width =
                 (k_tool_button_min_width * 3.0f) + (style.ItemSpacing.x * 2.0f);
+            const float runtime_tools_width =
+                (k_tool_button_min_width * 2.0f) + style.ItemSpacing.x;
 
             ToolPaletteLayout layout{};
-            float content_width = editor_tools_width;
+            float content_width = std::max(editor_tools_width, runtime_tools_width);
             float content_height =
+                ImGui::GetTextLineHeight() +
+                style.ItemSpacing.y +
+                ImGui::GetFrameHeight() +
+                (style.ItemSpacing.y * 2.0f) +
+                1.0f +
                 ImGui::GetTextLineHeight() +
                 style.ItemSpacing.y +
                 ImGui::GetFrameHeight();
@@ -197,6 +204,22 @@ namespace prune {
             ));
 
             ImGui::BeginGroup();
+            ImGui::TextUnformatted("Runtime");
+            if (ImGui::Button("Reset", ImVec2(k_tool_button_min_width, 0.0f))) {
+                scene.reset_runtime();
+            }
+
+            ImGui::SameLine();
+            if (scene.runtime_paused()) {
+                if (ImGui::Button("Play", ImVec2(k_tool_button_min_width, 0.0f))) {
+                    scene.play_runtime();
+                }
+            }
+            else if (ImGui::Button("Pause", ImVec2(k_tool_button_min_width, 0.0f))) {
+                scene.pause_runtime();
+            }
+
+            ImGui::Separator();
             ImGui::TextUnformatted("Mode");
             draw_editor_tool_button(scene, EditorTool::Select);
             ImGui::SameLine();

@@ -20,10 +20,17 @@ namespace prune {
 
     class WorldScene : public Scene {
     public:
+        void on_enter() final;
+
         void update(float dt, const Input& input) final;
         void update_editor(float dt, const Input& input) final;
         void render(SDL_Renderer* renderer) final;
         void draw_viewport_overlays() final;
+
+        void reset_runtime() final;
+        void pause_runtime() noexcept final;
+        void play_runtime() noexcept final;
+        [[nodiscard]] bool runtime_paused() const noexcept final;
 
         [[nodiscard]] bool save_to_file(std::string_view path, std::string& error) final;
         [[nodiscard]] bool load_from_file(std::string_view path, std::string& error) final;
@@ -61,7 +68,11 @@ namespace prune {
 
         void draw_debug_tools();
 
+        virtual void on_scene_enter() {}
         virtual void update_runtime(float dt, const Input& input, bool keyboard_input_enabled) = 0;
+        virtual void restart_runtime() = 0;
+        virtual void set_runtime_paused(bool paused) noexcept = 0;
+        [[nodiscard]] virtual bool is_runtime_paused() const noexcept = 0;
         virtual void save_scene_data(YAML::Node& root) const = 0;
         [[nodiscard]] virtual bool load_scene_data(const YAML::Node& root, std::string& error) = 0;
         [[nodiscard]] virtual bool restore_loaded_scene(SceneState& state, std::string& error) = 0;
@@ -75,11 +86,15 @@ namespace prune {
 
     private:
         void sanitize_loaded_selection() noexcept;
+        void capture_authored_objects();
+        void normalize_editor_command(EditorCommand& command) const;
+        void apply_editor_command_to_authored_objects(const EditorCommand& command, bool use_after_state);
         void restore_object_snapshot(const GameObject& object, bool select_restored = true);
         void restore_object_snapshots(const std::vector<GameObject>& objects);
         void apply_editor_command(const EditorCommand& command, bool use_after_state);
 
         SceneRenderer m_renderer;
         SceneInteraction m_interaction;
+        GameObjectManager m_authored_objects;
     };
 }

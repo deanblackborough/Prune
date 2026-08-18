@@ -123,11 +123,6 @@ namespace prune {
     }
 
 
-    void SimpleShooterScene::on_enter()
-    {
-        // Scene activation hook only. Default content is created explicitly via new_scene().
-    }
-
     void SimpleShooterScene::on_exit()
     {
         m_state.objects.clear();
@@ -186,6 +181,21 @@ namespace prune {
             input,
             keyboard_input_enabled
         );
+    }
+
+    void SimpleShooterScene::restart_runtime()
+    {
+        m_simple_shooter_state.fire_cooldown_remaining = 0.0f;
+    }
+
+    void SimpleShooterScene::set_runtime_paused(bool paused) noexcept
+    {
+        m_simple_shooter_state.options.paused = paused;
+    }
+
+    bool SimpleShooterScene::is_runtime_paused() const noexcept
+    {
+        return m_simple_shooter_state.options.paused;
     }
 
     GameObject* SimpleShooterScene::game_camera_target() noexcept

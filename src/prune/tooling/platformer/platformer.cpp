@@ -10,7 +10,6 @@ namespace prune {
     {
         if (tooling::imgui::layout::collapsing_header("Game")) {
             if (tooling::imgui::property_table::begin("##platformer_game")) {
-                tooling::imgui::property_table::checkbox("Paused", "##platformer_paused", state.options.paused);
                 tooling::imgui::property_table::text("Grounded", state.player_grounded ? "Yes" : "No");
                 tooling::imgui::property_table::slider_float("Move Speed", "##platformer_move_speed", state.options.move_speed, 40.0f, 220.0f, "%.2f");
                 tooling::imgui::property_table::slider_float("Jump Velocity", "##platformer_jump_velocity", state.options.jump_velocity, 120.0f, 420.0f, "%.2f");

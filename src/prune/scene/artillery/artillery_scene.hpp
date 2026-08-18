@@ -16,7 +16,6 @@ namespace prune {
     public:
         ArtilleryScene(int window_width, int window_height);
 
-        void on_enter() override;
         void on_exit() override;
         void new_scene() override;
 
@@ -31,7 +30,11 @@ namespace prune {
         void draw_scene_inspector(GameObject& selected) override;
 
     protected:
+        void on_scene_enter() override;
         void update_runtime(float dt, const Input& input, bool keyboard_input_enabled) override;
+        void restart_runtime() override;
+        void set_runtime_paused(bool paused) noexcept override;
+        [[nodiscard]] bool is_runtime_paused() const noexcept override;
         void save_scene_data(YAML::Node& root) const override;
         [[nodiscard]] bool load_scene_data(const YAML::Node& root, std::string& error) override;
         [[nodiscard]] bool restore_loaded_scene(SceneState& state, std::string& error) override;
@@ -45,6 +48,9 @@ namespace prune {
         [[nodiscard]] const GameObject* current_tank() const noexcept;
 
         ArtilleryState m_artillery_state;
+        ArtilleryTurn m_authored_turn = ArtilleryTurn::PlayerOne;
+        ArtilleryAim m_authored_player_one_aim{};
+        ArtilleryAim m_authored_player_two_aim{};
         ArtilleryBehaviour m_artillery;
         Artillery m_artillery_tools;
     };

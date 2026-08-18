@@ -80,9 +80,11 @@ namespace prune {
         m_state.viewport.height = window_height;
     }
 
-    void ArtilleryScene::on_enter()
+    void ArtilleryScene::on_scene_enter()
     {
-        // Scene activation hook only. Default content is created explicitly via new_scene().
+        m_authored_turn = m_artillery_state.current_turn;
+        m_authored_player_one_aim = m_artillery_state.player_one_aim;
+        m_authored_player_two_aim = m_artillery_state.player_two_aim;
     }
 
     void ArtilleryScene::on_exit()
@@ -94,6 +96,26 @@ namespace prune {
     void ArtilleryScene::update_runtime(float dt, const Input& input, bool keyboard_input_enabled)
     {
         m_artillery.update(m_state, m_camera, m_artillery_state, dt, input, keyboard_input_enabled);
+    }
+
+    void ArtilleryScene::restart_runtime()
+    {
+        m_artillery_state.projectile_id = k_invalid_game_object_id;
+        m_artillery_state.projectile_owner_id = k_invalid_game_object_id;
+        m_artillery_state.projectile_active = false;
+        m_artillery_state.current_turn = m_authored_turn;
+        m_artillery_state.player_one_aim = m_authored_player_one_aim;
+        m_artillery_state.player_two_aim = m_authored_player_two_aim;
+    }
+
+    void ArtilleryScene::set_runtime_paused(bool paused) noexcept
+    {
+        m_artillery_state.options.paused = paused;
+    }
+
+    bool ArtilleryScene::is_runtime_paused() const noexcept
+    {
+        return m_artillery_state.options.paused;
     }
 
     void ArtilleryScene::reset_runtime_state()
@@ -177,7 +199,10 @@ namespace prune {
 
             ImGui::Separator();
 
-            m_artillery_tools.draw(m_artillery_state);
+            if (m_artillery_tools.draw(m_artillery_state)) {
+                m_authored_player_one_aim = m_artillery_state.player_one_aim;
+                m_authored_player_two_aim = m_artillery_state.player_two_aim;
+            }
         }
 
         ImGui::End();
@@ -242,7 +267,14 @@ namespace prune {
 
     void ArtilleryScene::save_scene_data(YAML::Node& root) const
     {
-        ArtillerySerializer::save_to_node(m_artillery_state, root);
+        ArtilleryState authored_state = m_artillery_state;
+        authored_state.projectile_id = k_invalid_game_object_id;
+        authored_state.projectile_owner_id = k_invalid_game_object_id;
+        authored_state.projectile_active = false;
+        authored_state.current_turn = m_authored_turn;
+        authored_state.player_one_aim = m_authored_player_one_aim;
+        authored_state.player_two_aim = m_authored_player_two_aim;
+        ArtillerySerializer::save_to_node(authored_state, root);
     }
 
     bool ArtilleryScene::load_scene_data(const YAML::Node& root, std::string& error)

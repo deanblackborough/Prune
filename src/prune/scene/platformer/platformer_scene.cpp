@@ -74,11 +74,6 @@ namespace prune {
         m_state.viewport.height = window_height;
     }
 
-    void PlatformerScene::on_enter()
-    {
-        // Scene activation hook only. Default content is created explicitly via new_scene().
-    }
-
     void PlatformerScene::on_exit()
     {
         m_state.objects.clear();
@@ -99,6 +94,21 @@ namespace prune {
             input,
             keyboard_input_enabled
         );
+    }
+
+    void PlatformerScene::restart_runtime()
+    {
+        m_platformer_state.player_grounded = false;
+    }
+
+    void PlatformerScene::set_runtime_paused(bool paused) noexcept
+    {
+        m_platformer_state.options.paused = paused;
+    }
+
+    bool PlatformerScene::is_runtime_paused() const noexcept
+    {
+        return m_platformer_state.options.paused;
     }
 
     GameObject* PlatformerScene::game_camera_target() noexcept

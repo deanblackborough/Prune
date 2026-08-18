@@ -19,7 +19,6 @@ namespace prune {
         SimpleShooterScene(int window_width, int window_height);
         SimpleShooterScene(const SimpleShooterScene&) = delete;
         SimpleShooterScene& operator=(const SimpleShooterScene&) = delete;
-        void on_enter() override;
         void on_exit() override;
 
         void new_scene() override;
@@ -37,6 +36,9 @@ namespace prune {
 
     protected:
         void update_runtime(float dt, const Input& input, bool keyboard_input_enabled) override;
+        void restart_runtime() override;
+        void set_runtime_paused(bool paused) noexcept override;
+        [[nodiscard]] bool is_runtime_paused() const noexcept override;
         void save_scene_data(YAML::Node& root) const override;
         [[nodiscard]] bool load_scene_data(const YAML::Node& root, std::string& error) override;
         [[nodiscard]] bool restore_loaded_scene(SceneState& state, std::string& error) override;

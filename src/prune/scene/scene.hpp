@@ -58,6 +58,12 @@ namespace prune {
         virtual void update_editor(float, const Input&) {}
         virtual void render(SDL_Renderer* renderer) = 0;
 
+        // Restores runtime state and leaves execution playing, including when reset while paused.
+        virtual void reset_runtime() = 0;
+        virtual void pause_runtime() noexcept = 0;
+        virtual void play_runtime() noexcept = 0;
+        [[nodiscard]] virtual bool runtime_paused() const noexcept = 0;
+
         [[nodiscard]] virtual bool save_to_file(std::string_view path, std::string& error) = 0;
         [[nodiscard]] virtual bool load_from_file(std::string_view path, std::string& error) = 0;
         [[nodiscard]] virtual bool is_dirty() const noexcept = 0;

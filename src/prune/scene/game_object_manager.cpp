@@ -32,6 +32,25 @@ namespace prune {
         return copy.identity.id;
     }
 
+    std::size_t GameObjectManager::remove_runtime_objects()
+    {
+        const std::size_t before = m_objects.size();
+
+        m_objects.erase(
+            std::remove_if(
+                m_objects.begin(),
+                m_objects.end(),
+                [](const GameObject& object) {
+                    return object.identity.type == GameObjectType::Runtime;
+                }
+            ),
+            m_objects.end()
+        );
+
+        sanitize_selection();
+        return before - m_objects.size();
+    }
+
     std::size_t GameObjectManager::remove_inactive_runtime_objects(std::string_view behaviour)
     {
         const std::size_t before = m_objects.size();
