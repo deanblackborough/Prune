@@ -841,6 +841,36 @@ If undo/redo is bolted into each feature separately, the project will accumulate
 
 ---
 
+## Keep editor command history unbounded for now
+
+### Decision
+
+Do not add a command-count or memory limit to editor undo/redo history yet. Treat a bounded history policy as known future work rather than clearing history during normal saves.
+
+### Why
+
+Editor commands retain before/after object snapshots so undo and redo can restore committed authored changes. This means command history can grow throughout a long editing session, especially when commands affect multiple objects.
+
+Current scenes and editing sessions are small enough that there is no measured memory problem. Choosing an arbitrary limit now would add policy and UI behaviour without evidence for the right boundary. Clearing history on save would also make saving unexpectedly remove useful undo state.
+
+The separate authored runtime-reset baseline is not an accumulating history: it keeps one current copy of each authored object. The unbounded growth risk belongs to editor command history.
+
+### Consequences
+
+- Saving a scene does not clear undo/redo history.
+- Command history may consume increasing memory during a very long editing session.
+- No command-count or memory-budget setting is exposed yet.
+- A future limit should preserve predictable undo behaviour and should not be tied implicitly to Save.
+
+### Revisit when
+
+- Memory growth becomes measurable during realistic editing sessions.
+- Scenes or command snapshots become substantially larger.
+- Long-running editor sessions become a normal workflow.
+- A clear command-count limit, memory budget, or history-compaction policy can be chosen from evidence.
+
+---
+
 ## Scale before rotate
 
 ### Decision
