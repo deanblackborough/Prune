@@ -1,6 +1,8 @@
 # Prune decisions
 
-This file records decisions that I have made for Prune. When building something it is easy to get swept up in the latest and greatest, this document is to ground me and remind why I made certain choices early on.
+This file records decisions (ADR) that I have made for Prune. 
+
+When creating something it is easy to get swept up in the latest and greatest and/or try to do it all. This document is to ground me and remind why I made certain choices early on.
 
 The aim is to explain:
 
@@ -8,6 +10,10 @@ The aim is to explain:
 - what Prune is deliberately not doing
 - what has been considered and deferred
 - what would need to change before revisiting a decision
+
+Active decisions are grouped by area. Decisions that have been completed or replaced are retained at the bottom under "Resolved and superseded decisions" so their original rationale is not lost.
+
+# Project lifecycle decisions
 
 ## Save compatibility decision
 
@@ -17,7 +23,7 @@ Existing `.yml` scene files are allowed to break during this phase.
 
 ### Why
 
-The object model, scene descriptors, behaviour ids, concept metadata, and scene-specific save data are still very much being designed and shaped.
+The object model, scene descriptors, behaviour ids, concept metadata, and scene-specific save data are still very much being designed and shaped, I don't know what I want the final save form to look like yet, it is not worth the effort to maintain compatibility with a save format that is still being designed.
 
 Whilst I am still very obviously in alpha and soon 0.x.x territory I don't want to feel locked into a save format designed when one scene existed and all you could do was move a box around.
 
@@ -31,7 +37,7 @@ Whilst I am still very obviously in alpha and soon 0.x.x territory I don't want 
 - The scene-type model has settled.
 - The core idea has been proven by multiple scenes.
 - The core idea has been proven with multiple editor tools.
-- There is a following
+- The project has users who need save compatibility.
 - I release a beta or stable version.
 
 ---
@@ -46,7 +52,7 @@ Use C++23.
 
 ### Why
 
-Prune is partly a C++ learning and portfolio project. C++23 is the latest standard when I started the project.
+Prune is partly a C++ learning and portfolio project. C++23 was the latest published standard when I started the project.
 
 ---
 
@@ -64,7 +70,7 @@ It gives Prune a practical base without becoming the product itself.
 
 ### Why not SDL3 yet
 
-SDL3 may be the future direction, but SDL2 is currently sufficient for what Prune will be doing and proven.
+SDL3 may be the future direction, but SDL2 is currently sufficient for what Prune is doing and has already proven itself in the project.
 
 I will think about migrating to SDL3 when there is something which is not possible with SDL2.
 
@@ -124,7 +130,7 @@ Prune needs to evolve UI quickly while the architecture is still moving. Immedia
 
 ### Why not Qt
 
-Qt is powerful, but it would make Prune feel more like a desktop application framework project  rather than a live game editor/runtime prototype.
+Qt is powerful, but it would make Prune feel more like a desktop application framework project rather than a live game editor/runtime prototype.
 
 ### Why not a web UI
 
@@ -136,7 +142,7 @@ Prune's value is in the live editor/runtime boundary, not in proving browser-bas
 
 That would be a separate project.
 
-Prune needs editor tooling, not a UI framework, I want to focus on the game tools and how the editor works, not building a UI library when ImGui already exists and is already used in so many tools in the gaming industry.
+Prune needs editor tooling, not a UI framework. I want to focus on the game tools and how the editor works rather than building a UI library when ImGui already exists and is widely used for game tooling.
 
 ### Revisit when
 
@@ -163,7 +169,7 @@ Binary saves would be premature at this stage and make debugging everything that
 
 ### Why not JSON
 
-JSON would work, nearly always the choice in the Web world but this for Prune, YAML is a much better fit, all audiences can understand and parse YAML.
+JSON would work and is often the default choice in web development. For Prune, YAML is a better fit because the scene files remain approachable and easy to inspect.
 
 ### Revisit when
 
@@ -190,7 +196,7 @@ Visual Studio project files would make the project less portable and less credib
 
 ### Revisit when
 
-- Never
+- CMake no longer supports the required toolchains or dependency workflow effectively.
 
 ---
 
@@ -230,7 +236,7 @@ Do not use an ECS yet. Do not add EnTT yet.
 
 ### Why
 
-EnTT is a strong C++ ECS library, I used it in an earlier version of Prune, but, Prune does not need an ECS.
+EnTT is a strong C++ ECS library, and I used it in an earlier version of Prune. However, Prune does not currently need an ECS.
 
 The current problem is not high-volume entity processing. The current problem is editor/runtime semantics:
 
@@ -319,28 +325,34 @@ The shared editor shell should provide enough infrastructure that new scene type
 
 ---
 
-## Object semantics before more scene types
+## Scene-owned player controllers
 
 ### Decision
 
-Do not add a third scene until object semantics are stronger.
+Player/controller behaviour belongs to the scene that defines the player rules.
+
+The shared scene layer should not contain a generic `PlayerController` unless multiple scenes genuinely converge on the same control model.
 
 ### Why
 
-The current two scenes have already exposed the key architectural issue: objects rely too much on string behaviours, flags, colour, and scene-local interpretation.
+The current scenes have different control needs:
 
-Adding another scene now would multiply that weakness.
+- Simple Shooter uses top-down movement and firing.
+- Platformer uses gravity, jumping, and grounded state.
+- Artillery uses turn-based aim, power, and firing.
+
+A shared controller at this stage would either be misleading or would grow conditionals for unrelated game types.
+
+### Consequences
+
+- Scene-specific controllers live with the scene-specific behaviour and state.
+- Shared input helpers can still be introduced later if duplication appears.
+- Future scenes should not reach into a generic controller by default.
 
 ### Revisit when
 
-- Objects clearly expose scene meaning.
-- Runtime/authored object separation is visible.
-- Inspector/outliner/tooling can reuse scene concept metadata.
-- Scene-specific creation is cleaner.
-
-### Status
-
-Artillery was added as a third scene type after the current object semantics were already in place.
+- At least two scene types need the same input-to-motion translation.
+- The shared behaviour can be named without hiding scene-specific rules.
 
 ---
 
@@ -372,7 +384,7 @@ A small concept description gives the inspector, outliner, overlays, and future 
 
 ### Why not a plugin API now
 
-A plugin API would freeze too much too early, we are not anywhere near there.
+A plugin API would freeze too much too early. Prune is not ready to define that public extension boundary.
 
 ### Revisit when
 
@@ -437,118 +449,29 @@ A fully generic serializer would either miss scene meaning or become filled with
 
 ---
 
-## Runtime objects are not authored objects
-
-### Decision
-
-Runtime-created objects should be treated differently from authored scene objects.
-
-### Why
-
-Bullets, generated enemies, temporary effects, and similar runtime objects should not become normal editor-authored content by accident.
-
-This distinction is essential for save/load, undo/redo, selection, inspector behaviour, and future editor tools.
-
-### Consequences
-
-- Runtime objects should not be persisted by default.
-- Runtime objects should not be renameable or cloneable by default.
-- Runtime objects may be visible through debug overlays.
-- Runtime objects may be selectable only if an explicit debug mode allows it.
-
----
-
-## Undo/redo is deferred, not ignored
-
-### Decision
-
-Do not build undo/redo yet.
-
-### Why
-
-Undo/redo needs a clearer edit model.
-
-The project first needs to define authored vs runtime objects, editable rules, creation actions, and object semantics.
-
-### First undo/redo target
-
-When added, start small:
-
-- move authored object
-- rename authored object
-- resize authored object
-- create authored object
-- delete authored object
-
-Do not initially include:
-
-- runtime simulation
-- bullets/projectiles
-- enemy spawning
-- camera movement
-- save/load
-- full scene reset
-
-### Revisit when
-
-- Transform gizmo exists.
-- Scene-specific creation actions exist.
-- Authored/runtime object distinction is enforced.
-
-### Status
-
-Superseded by "Undo/redo through editor commands".
-
-This decision was correct before the editor command model existed. Undo/redo has now been introduced on top of editor command snapshots.
-
----
-
 # Tooling decisions
 
 ## Editor tooling before more complete games
 
 ### Decision
 
-After object semantics and duplication cleanup, focus on editor tooling before making the scene slices larger games.
+Prioritise everyday editor tooling before expanding the sample scenes into larger games.
 
 ### Why
 
-Prune's value is the editor/runtime model, not the complexity of the sample games, they are just proof of concept slices, a real game with Prune is quite a way off from now.
+Prune's value is the editor/runtime model, not the complexity of the sample games. The samples are proof slices; building a complete game with Prune is a much later goal.
 
-More gameplay or better games do not prove the core idea of Prune is worthwhile, if I want to build the game I have planned I will use Godot or Unreal.
+More gameplay does not by itself prove Prune's core idea. Until the editor is ready, a separate game project is better served by an established engine such as Godot or Unreal.
 
-### First tooling targets
+### Consequences
 
-- selected object handles / transform gizmo
-- collision/debug overlays
-- scene role labels
-- scene-specific creation actions
-- better sprite picker
+- Prioritise workflows that make authored scenes easier to create, understand, and maintain.
+- Expand sample gameplay when it demonstrates existing tooling or creates justified pressure for a shared editor feature.
+- Do not treat sample-game content as a substitute for strengthening the editor/runtime boundary.
 
 ### Revisit when
 
 The editor has enough tooling to make the slices feel buildable rather than merely inspectable.
-
----
-
-## Simple transform gizmo first
-
-### Decision
-
-Start with move handles only.
-
-### Why
-
-Movement is the most common edit operation and the simplest useful proof of viewport tooling.
-
-Rotation and scaling can wait.
-
-### Consequences
-
-- Must respect viewport focus.
-- Must respect object editability.
-- Must ignore protected runtime objects.
-- Should integrate with undo/redo later.
 
 ---
 
@@ -572,246 +495,6 @@ They also make screenshots and demos easier to understand.
 ### Revisit when
 
 The project needs presentation polish for a release/demo video.
-
----
-
-# Scene slice decisions
-
-## Keep Simple Shooter small
-
-### Decision
-
-Simple Shooter should stay a proof slice, not become a full game.
-
-### Why
-
-Its purpose is to prove:
-
-- top-down movement
-- facing direction
-- shooting
-- runtime bullets
-- enemy movement
-- collision cleanup
-- scene-specific tuning
-- scene-specific save data
-
-Adding waves, scoring, powerups, menus, and extensive enemy types would distract from the editor/runtime architecture.
-
-It does however need to be a bit of fun for my kids so I might add some of this stuff, it will just never be the core focus of Prune, my work with them in Godot will cover the majority of the gaming fix.
-
-### Revisit when
-
-The editor tooling is strong enough and the slice needs more demo value.
-
----
-
-## Keep Platformer small
-
-### Decision
-
-Platformer should stay a proof slice, not become a full platform game.
-
-### Why
-
-Its purpose is to prove:
-
-- gravity
-- jumping
-- ground checks
-- platforms
-- hazards
-- player reset
-- different camera expectations
-- different object semantics from Simple Shooter
-
-Adding scrolling levels, enemies, collectibles, slopes, ladders, and animation would be premature.
-
-The same caveat applies as with Simple Shooter, I want to have fun with my kids and they love platformers, so I might add some of this stuff, but it will never be the core focus of Prune.
-
-### Revisit when
-
-The editor tooling needs more platformer-specific pressure.
-
----
-
-## Third scene should be artillery/tank, not card game
-
-### Decision
-
-The recommended third scene is artillery/tank.
-
-### Why
-
-It tests a meaningfully different scene shape:
-
-- turn-based flow
-- generated terrain
-- two player-controlled actors
-- projectile arcs
-- collision with terrain/tanks
-- scene-specific panel that is not just movement tuning
-
-### Why not card game yet
-
-A card game is more interesting to me but it pulls the project towards UI layout, hands, decks, zones, drag/drop rules, and data modelling well before we have had a chance to prove the goal.
-
-### Revisit when
-
-- World-scene tooling is stronger.
-- The editor/runtime model can handle non-world or UI-heavy scene types.
-- Drag/drop and zone-based interactions become a deliberate focus.
-- My Wife pushes for the card game slice, she loves card games and I have some ideas.
-
-### Status
-
-The artillery slice was added as the third scene type.
-
----
-
-## Do not add a fourth scene yet
-
-### Decision
-
-Do not add a fourth scene type until the three current scene types have exposed and resolved the next shared boundaries.
-
-### Why
-
-Simple Shooter, Platformer, and Artillery now prove enough variety:
-
-- free movement and projectile combat
-- platform collision and grounded movement
-- turn-based artillery with generated authored terrain
-
-The third scene has done its job. It exposed the next architectural pressure points:
-
-- editor input vs runtime input ownership
-- scene-specific load transaction safety
-- scene-specific generated authored data
-- clearer authored/runtime object rules
-- stronger documentation around what belongs in `WorldScene`
-
-Adding another scene now would mostly multiply unresolved design pressure.
-
-### Consequences
-
-- Improve the shared editor/runtime foundation before increasing scene count.
-- Use the existing three scenes as regression coverage for architecture changes.
-- Treat new scene ideas as design notes, not implementation targets.
-
-### Revisit when
-
-- Editor/runtime input ownership is explicit.
-- Save/load is transaction-safe for scene-specific state.
-- Generated authored objects are documented and handled consistently.
-- Runtime-only objects are consistently excluded from normal editing and persistence.
-- The current three scenes remain coherent after another tooling pass.
-- The current three scenes have been iterated on enough to feel like they are showing off the potential of Prune rather than just being basic proof of concept slices.
-- Tooling exists and is stable enough to make a new scene type feel unique rather than more of the same.
-
----
-
-## Game slices as slices of well known games
-
-### Decision
-
-Initially keep the slices focused on proving the editor/runtime model. However, once we have the relevant tooling support, the slices should evolve to be slices of well-known games.
-
-### Why
-
-The point of the slices is to prove that Prune can handle many different game types and that it is not multiple editors in one. If the slices are recognisable slices of games people know and they feel and play well, it will be much easier for people to understand the point of Prune and more importantly, how capable it is.
-
-### Why not yet
-
-The current slices are enough to prove the concept, they are there to prove everything works and help me build the editor. Trying to make the game slices more complex now would distract from the core goal of Prune, they will be the icing on the cake.
-
-### Revisit when
-
-- The tooling naturally exists (not forced by the slices) to start fleshing out each of the slices.
-- I have time to focus on the slices rather than the editor and engine architecture.
-
----
-
-# Documentation decisions
-
-## README should explain the direction, not every class
-
-### Decision
-
-Keep README focused on project intent, current state, architecture direction, screenshots, and build instructions.
-
-### Why
-
-The code is still moving too quickly for heavy API documentation.
-
-### Revisit when
-
-The architecture stabilises enough for a scene-type authoring guide.
-
----
-
-## Notes.md is the active development plan
-
-### Decision
-
-Use `Notes.md` for the current phase plan, it is what I plan to be working on over the next period.
-
-### Why
-
-It is the working map for what to build next.
-
-### Consequences
-
-- Notes can be blunt.
-- Notes can contain temporary decisions.
-- Notes can change as the code proves or disproves assumptions.
-
----
-
-## DECISIONS.md records why, not how
-
-### Decision
-
-Use this file to record decision rationale.
-
-### Why
-
-README explains what Prune is.
-
-NOTES explain what is next.
-
-DECISIONS explain why certain paths are being taken or deliberately avoided.
-
----
-
-## Scene-owned player controllers
-
-### Decision
-
-Player/controller behaviour belongs to the scene that defines the player rules.
-
-The shared scene layer should not contain a generic `PlayerController` unless multiple scenes genuinely converge on the same control model.
-
-### Why
-
-The current scenes have different control needs:
-
-- Simple Shooter uses top-down movement and firing.
-- Platformer uses gravity, jumping, and grounded state.
-- Artillery uses turn-based aim, power, and firing.
-
-A shared controller at this stage would either be misleading or would grow conditionals for unrelated game types.
-
-### Consequences
-
-- Scene-specific controllers live with the scene-specific behaviour and state.
-- Shared input helpers can still be introduced later if duplication appears.
-- Future scenes should not reach into a generic controller by default.
-
-### Revisit when
-
-- At least two scene types need the same input-to-motion translation.
-- The shared behaviour can be named without hiding scene-specific rules.
 
 ---
 
@@ -875,7 +558,7 @@ The separate authored runtime-reset baseline is not an accumulating history: it 
 
 ### Decision
 
-Implement scale before rotate, defer snapping to the grid until we have a better understanding of tools, undo/redo, and inspector behaviour.
+Keep Scale as the current final transform tool and defer Rotate until Prune's rendering, collision, persistence, and editor rules can support it coherently.
 
 ### Why
 
@@ -885,9 +568,15 @@ Rotation cuts across rendering, picking, collision, bounds, serialization, inspe
 
 ### Consequences
 
-- The next viewport transform tool after move should be scale.
+- Select, Move, and Scale are the current generic editor tool modes.
 - Rotation remains planned but deliberately later.
-- Any future rotation work should start by documenting what rotates visually only and what rotates physically.
+- Future rotation work should start by documenting what rotates visually and what rotates physically.
+
+### Revisit when
+
+- The object model can represent rotation explicitly.
+- Rendering, picking, and collision rules for rotated objects are agreed.
+- Rotation can participate in inspector editing and undo/redo consistently.
 
 ---
 
@@ -901,101 +590,315 @@ Implement basic group support for move and delete, but defer grouped inspector/p
 
 Grouped editor commands are now supported for multi-selection move and delete, because those actions need to undo and redo atomically as a single user action.
 
-Grouped inspector/property edits are intentionally deferred. Changing size, colour, sprite, flags, labels, or scene-specific properties across multiple selected objects introduces additional UI and command-history complexity:
+Grouped inspector/property edits introduce additional UI and command-history complexity:
 
-mixed values need clear inspector behaviour
-partial edits need explicit rules
-command history must describe the grouped edit accurately
-undo/redo must restore all affected objects as one atomic command
+- Mixed values need clear inspector behaviour.
+- Partial edits need explicit rules.
+- Command history must describe grouped edits accurately.
+- Undo/redo must restore all affected objects as one atomic command.
 
 For now, the inspector continues to edit the active selected object only. Multi-object mutation is limited to viewport movement and deletion.
 
 ### Revisit when
 
-Tools are stable enough and we have irnoned out any issues with the multi-selection and the command history model. Then we can start to explore grouped inspector edits with a clear understanding of how the editor behaves and what the user expects.
+The tools and command-history model have been stable through normal multi-selection use, and the expected behaviour for mixed values and partial edits is clear.
+
+---
 
 ## Explicit editor tool mode state
 
-Prune now has an explicit generic editor tool mode rather than inferring editor behaviour entirely from whichever viewport handle was clicked.
+### Decision
 
-Initial tool modes are deliberately limited to Select and Move. Select keeps selection and handle-based movement. Move adds direct object-body dragging for movable authored objects. Scale and rotate should be added only when their own interaction rules and undo labels are implemented.
+Use explicit generic editor tool modes rather than inferring editor behaviour from whichever viewport handle was clicked.
 
-The active tool is transient editor state. It lives in the generic world scene state so viewport interaction and UI can share it, but it is not saved into scene files.
+### Why
 
+Selection, movement, and scaling have different interaction rules. Explicit modes make the active behaviour visible to the user and give viewport input, tooling UI, and command history one shared source of truth.
 
-## Decision — Add basic audio hooks before final event management design
+### Consequences
 
-### Context
+- Select, Move, and Scale are explicit modes.
+- The active tool is transient editor state and is not saved into scene files.
+- New tools need their own interaction rules and undo labels before being added.
 
-Prune needs basic sound playback now for clear runtime feedback in the existing sample scenes:
+### Revisit when
 
-Simple Shooter firing and enemy destruction.
-Platformer jumping and player hit/death feedback.
-Artillery firing and explosion/player hit feedback.
+- A scene-specific tool needs to coexist with the generic modes.
+- Tool shortcuts or temporary tool overrides are introduced.
+- Rotate is ready to become a supported editor mode.
 
-The broader event/reaction system is not designed yet. Long term, events may drive multiple reaction types, including sounds, animations, sprite changes, UI effects, screen shake, object spawning, and scene-specific behaviours.
+---
 
-Adding a full authored event system now would be premature. The editor UI, asset model, serialisation shape, and scene semantics are not ready for that decision.
+# Runtime decisions
+
+## Runtime objects are not authored objects
 
 ### Decision
 
-Add a minimal audio hook path now, built on lightweight scene event ids.
+Runtime-created objects should be treated differently from authored scene objects.
 
-Scenes may emit simple event ids such as:
+### Why
 
-player_fired
-player_jumped
-enemy_destroyed
-player_hit
-round_reset
+Bullets, generated enemies, temporary effects, and similar runtime objects should not become normal editor-authored content by accident.
 
-A small audio layer maps those event ids to hard-coded sound resources and plays them when received.
+This distinction is essential for save/load, undo/redo, selection, inspector behaviour, and future editor tools.
 
-Scene behaviour must not know:
+### Consequences
 
-- Which sound file is used.
-- How sound is loaded.
-- How sound is mixed.
-- Whether audio is enabled.
-- Which future reaction types may also respond to the same event.
+- Runtime objects should not be persisted by default.
+- Runtime objects should not be renameable or cloneable by default.
+- Runtime objects may be visible through debug overlays.
+- Runtime objects may be selectable only if an explicit debug mode allows it.
 
-The app/runtime layer is responsible for passing emitted scene events to the audio system.
+---
 
-- Initial constraints
-- Use hard-coded event-to-sound mappings only.
-- Keep sound resources small and explicit.
-- Keep the audio enable/disable toggle global.
-- Do not add authored event UI yet.
-- Do not serialise event bindings yet.
-- Do not introduce a full asset browser or asset registry for this pass.
-- Do not make scene behaviour call audio playback directly.
+## Basic audio hooks before final event management
 
-#### Consequences
+### Decision
 
-This gives Prune useful runtime feedback immediately without committing to the final event architecture.
+Use lightweight scene event ids to provide basic audio feedback without committing to a complete authored event/reaction system.
 
-The current audio hook path is intentionally disposable at the mapping level but not at the boundary level. The important boundary is that scenes emit events and another system consumes them.
+Scenes may emit ids such as `player_fired`, `player_jumped`, `enemy_destroyed`, `player_hit`, and `round_reset`. The app/runtime layer maps those ids to hard-coded sound resources and passes them to the audio system.
 
-Later, the hard-coded audio mapping can be replaced by a more general event reaction system, for example:
+### Why
 
-player_fired
-  - Play sound: shoot.wav
-  - Play animation: muzzle_flash
-  - Spawn object: projectile
-  - Trigger UI effect: screen_shake
+The current samples need clear runtime feedback:
+
+- Simple Shooter needs firing and enemy-destruction feedback.
+- Platformer needs jumping and player-hit feedback.
+- Artillery needs firing, explosion, player-hit, and round-reset feedback.
+
+The broader event/reaction model is not designed yet. Eventually an event may trigger sound, animation, sprite changes, UI effects, screen shake, object spawning, or scene-specific behaviour. Adding authored bindings, editor UI, and a full asset model now would prematurely fix that design.
+
+### Consequences
+
+- Scene behaviour emits event ids and does not call audio playback directly.
+- Scene behaviour does not know which sound file is used, how it is loaded or mixed, or whether audio is enabled.
+- Event-to-sound mappings remain hard-coded for now.
+- Sound resources and the global audio toggle remain small and explicit.
+- Event bindings are not authored or serialized yet.
+- No asset browser or complete event-management UI is introduced by this decision.
+
+The mapping is intentionally replaceable; the boundary between event producers and consumers is the part intended to remain.
 
 ### Rejected alternative
 
-Direct sound calls inside scene behaviour
+Direct sound calls inside scene behaviour were rejected because they would couple gameplay rules to audio playback and make broader event-driven reactions harder later.
 
-Rejected because it would couple scene behaviour to audio playback and make later event-driven reactions harder.
+### Revisit when
 
-#### Bad direction:
+- One event needs to trigger multiple reaction types.
+- Event bindings need to be authored or serialized.
+- The editor has an asset model capable of selecting and validating reaction resources.
+- Hard-coded mappings become difficult to maintain across the sample scenes.
 
-Platformer jump code -> play jump.wav directly
+---
 
-#### Preferred direction:
+# Scene slice decisions
 
-Platformer jump code -> emit player_jumped
-Audio system -> maps player_jumped to jump.wav
-Future reaction system -> may also map player_jumped to animation, particles, UI effects, or scene-specific responses
+## Keep sample scenes focused and recognisable
+
+### Decision
+
+Keep Simple Shooter, Platformer, and Artillery as focused proof slices rather than full games.
+
+Once the editor naturally supports the required features, each sample may grow into a small, recognisable slice of a well-known game style. That growth should demonstrate Prune's capabilities rather than drive unrelated editor architecture prematurely.
+
+### Why
+
+The samples exist to prove that one editor/runtime model can support meaningfully different game types:
+
+- Simple Shooter proves top-down movement, shooting, runtime projectiles, enemies, and authored collision.
+- Platformer proves gravity, jumping, grounded movement, platforms, hazards, reset points, and different camera expectations.
+- Artillery proves turn-based control, generated terrain, two controlled actors, projectile arcs, and a different scene-specific tool surface.
+
+Recognisable, enjoyable slices make Prune easier to understand and demonstrate. Full-game scope such as extensive progression, content, menus, enemy varieties, or level systems would distract from the editor/runtime architecture.
+
+Small additions that improve family play or demo value are welcome, but they should not become the core focus of Prune or force tooling that the editor does not otherwise need.
+
+### Consequences
+
+- Sample features should prove editor/runtime behaviour or materially improve demo value.
+- New gameplay should use tooling that already exists or is justified independently.
+- The samples may become richer, but they should remain bounded slices rather than complete games.
+
+### Revisit when
+
+- The relevant tooling exists naturally rather than being forced by a sample.
+- A sample needs more depth to demonstrate a completed editor feature.
+- There is dedicated time for sample polish rather than editor and runtime architecture.
+
+---
+
+## Do not add a fourth scene yet
+
+### Decision
+
+Do not add a fourth scene type until the three current scene types have exposed and resolved the next shared boundaries.
+
+### Why
+
+Simple Shooter, Platformer, and Artillery now prove enough variety:
+
+- free movement and projectile combat
+- platform collision and grounded movement
+- turn-based artillery with generated authored terrain
+
+The third scene has done its job. It exposed the next architectural pressure points:
+
+- editor input vs runtime input ownership
+- scene-specific load transaction safety
+- scene-specific generated authored data
+- clearer authored/runtime object rules
+- stronger documentation around what belongs in `WorldScene`
+
+Adding another scene now would mostly multiply unresolved design pressure.
+
+### Consequences
+
+- Improve the shared editor/runtime foundation before increasing scene count.
+- Use the existing three scenes as regression coverage for architecture changes.
+- Treat new scene ideas as design notes, not implementation targets.
+
+### Revisit when
+
+- Editor/runtime input ownership is explicit.
+- Save/load is transaction-safe for scene-specific state.
+- Generated authored objects are documented and handled consistently.
+- Runtime-only objects are consistently excluded from normal editing and persistence.
+- The current three scenes remain coherent after another tooling pass.
+- The current three scenes have been iterated on enough to feel like they are showing off the potential of Prune rather than just being basic proof of concept slices.
+- Tooling exists and is stable enough to make a new scene type feel unique rather than more of the same.
+
+---
+
+# Documentation decisions
+
+## README should explain the direction, not every class
+
+### Decision
+
+Keep README focused on project intent, current state, architecture direction, screenshots, and build instructions.
+
+### Why
+
+The code is still moving too quickly for heavy API documentation.
+
+### Revisit when
+
+The architecture stabilises enough for a scene-type authoring guide.
+
+---
+
+## NOTES.md is the active development plan
+
+### Decision
+
+Use `NOTES.md` for the current phase plan. It records what I intend to work on over the next period.
+
+### Why
+
+It is the working map for what to build next.
+
+### Consequences
+
+- Notes can be blunt.
+- Notes can contain temporary decisions.
+- Notes can change as the code proves or disproves assumptions.
+
+---
+
+## DECISIONS.md records why, not how
+
+### Decision
+
+Use this file to record decision rationale.
+
+### Why
+
+README explains what Prune is.
+
+NOTES explain what is next.
+
+DECISIONS explain why certain paths are being taken or deliberately avoided.
+
+---
+
+# Resolved and superseded decisions
+
+These decisions are retained for their historical rationale but no longer describe current work.
+
+## Object semantics before more scene types
+
+### Decision
+
+Do not add a third scene until object semantics are stronger.
+
+### Why
+
+The first two scenes exposed that objects relied too heavily on string behaviours, flags, colour, and scene-local interpretation. Adding another scene at that point would have multiplied that weakness.
+
+### Revisit when
+
+- Objects clearly expose scene meaning.
+- Runtime/authored object separation is visible.
+- Inspector, outliner, and tooling can reuse scene concept metadata.
+- Scene-specific creation is cleaner.
+
+### Status
+
+Resolved. Artillery was added as the third scene after the current object semantics and concept metadata were in place.
+
+---
+
+## Undo/redo is deferred, not ignored
+
+### Decision
+
+Do not build undo/redo until the edit model, authored/runtime distinction, creation actions, and object semantics are clear.
+
+### Why
+
+Undo/redo needed a clearer edit model before individual tools started accumulating incompatible reversal logic.
+
+### First undo/redo target
+
+The first implementation should cover authored object movement, renaming, resizing, creation, and deletion. It should not initially include runtime simulation, projectiles, enemy spawning, camera movement, save/load, or full scene reset.
+
+### Status
+
+Superseded by "Undo/redo through editor commands". Undo/redo is now implemented using editor command snapshots.
+
+---
+
+## Simple transform gizmo first
+
+### Decision
+
+Start viewport transform tooling with move handles. Rotation and scaling can wait until movement respects viewport focus, object editability, protected runtime objects, and undo/redo.
+
+### Why
+
+Movement is the most common edit operation and the simplest useful proof of viewport tooling.
+
+### Status
+
+Resolved. Move handles were introduced first; explicit Move and Scale modes and undo/redo integration were added afterwards.
+
+---
+
+## Third scene should be artillery/tank, not card game
+
+### Decision
+
+Use an artillery/tank slice as the third scene rather than a card game.
+
+### Why
+
+Artillery tests turn-based flow, generated terrain, two player-controlled actors, projectile arcs, collision with terrain and tanks, and a scene-specific panel that is not just movement tuning.
+
+A card game remained personally interesting, but it would pull Prune toward UI layout, hands, decks, zones, drag/drop rules, and data modelling before the world-scene editor/runtime foundation was ready.
+
+### Status
+
+Resolved. Artillery was added as the third scene type. A card-game slice remains a possible future direction when non-world and UI-heavy scene types become a deliberate focus.
