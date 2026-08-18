@@ -9,8 +9,6 @@ namespace prune {
     {
         if (tooling::imgui::layout::collapsing_header("Game")) {
             if (tooling::imgui::property_table::begin("##simple_shooter_game")) {
-                tooling::imgui::property_table::checkbox("Paused", "##paused", state.options.paused);
-
                 float player_speed = state.player_controller.speed();
 
                 if (tooling::imgui::property_table::slider_float(

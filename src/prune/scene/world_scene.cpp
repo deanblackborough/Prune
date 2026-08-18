@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <iterator>
 #include <string>
 #include <utility>
 
@@ -14,6 +15,71 @@
 #include "prune/scene/scene_serializer.hpp"
 
 namespace prune {
+
+    namespace {
+        void apply_authored_delta(
+            EditorCommandType type,
+            const GameObject& before,
+            const GameObject& after,
+            GameObject& authored
+        ) {
+            switch (type) {
+            case EditorCommandType::MoveObject:
+            case EditorCommandType::ChangeObjectPosition:
+                authored.transform = after.transform;
+                break;
+
+            case EditorCommandType::ChangeObjectSize:
+                authored.transform = after.transform;
+                authored.size = after.size;
+                break;
+
+            case EditorCommandType::RenameObject:
+                authored.identity.name = after.identity.name;
+                break;
+
+            case EditorCommandType::ChangeObjectRenderType:
+                authored.render.type = after.render.type;
+                break;
+
+            case EditorCommandType::ChangeObjectColour:
+                std::copy(
+                    std::begin(after.render.rectangle.color),
+                    std::end(after.render.rectangle.color),
+                    std::begin(authored.render.rectangle.color)
+                );
+                break;
+
+            case EditorCommandType::ChangeObjectFlag:
+                if (before.lifecycle.active != after.lifecycle.active) {
+                    authored.lifecycle.active = after.lifecycle.active;
+                }
+                if (before.render.visible != after.render.visible) {
+                    authored.render.visible = after.render.visible;
+                }
+                if (before.collision.solid != after.collision.solid) {
+                    authored.collision.solid = after.collision.solid;
+                }
+                break;
+
+            case EditorCommandType::ChangeSprite:
+                if (before.render.sprite.sprite_key != after.render.sprite.sprite_key) {
+                    authored.render.sprite.sprite_key = after.render.sprite.sprite_key;
+                }
+                if (before.render.sprite.flip_x != after.render.sprite.flip_x) {
+                    authored.render.sprite.flip_x = after.render.sprite.flip_x;
+                }
+                break;
+
+            case EditorCommandType::CreateObject:
+            case EditorCommandType::DeleteObject:
+            case EditorCommandType::MoveViewport:
+            case EditorCommandType::MoveObjects:
+            case EditorCommandType::DeleteObjects:
+                break;
+            }
+        }
+    }
 
     void WorldScene::update(float dt, const Input& input)
     {
@@ -31,6 +97,43 @@ namespace prune {
     {
         m_renderer.render(renderer, *this, m_state, m_camera, m_grid_options);
         render_overlay(renderer);
+    }
+
+    void WorldScene::begin_runtime()
+    {
+        capture_authored_objects();
+    }
+
+    void WorldScene::reset_runtime()
+    {
+        const std::vector<GameObjectId> selected_ids(
+            m_state.objects.selected_ids().begin(),
+            m_state.objects.selected_ids().end()
+        );
+
+        m_state.objects = m_authored_objects;
+        m_state.objects.select_many(selected_ids);
+        m_state.events.clear();
+        m_state.drag_state = {};
+
+        restart_runtime();
+        play_runtime();
+        m_camera.update_game_camera(m_state.viewport, game_camera_target());
+    }
+
+    void WorldScene::pause_runtime() noexcept
+    {
+        set_runtime_paused(true);
+    }
+
+    void WorldScene::play_runtime() noexcept
+    {
+        set_runtime_paused(false);
+    }
+
+    bool WorldScene::runtime_paused() const noexcept
+    {
+        return is_runtime_paused();
     }
 
     void WorldScene::draw_viewport_overlays()
@@ -119,7 +222,9 @@ namespace prune {
             YAML::Node root;
             root["scene_type"] = std::string(scene_type_id());
 
-            SceneSerializer::save_to_node(m_state, m_camera, m_grid_options, root);
+            SceneState authored_state = m_state;
+            authored_state.objects = m_authored_objects;
+            SceneSerializer::save_to_node(authored_state, m_camera, m_grid_options, root);
             save_scene_data(root);
 
             std::ofstream output{ std::string(path) };
@@ -187,6 +292,7 @@ namespace prune {
 
             sanitize_loaded_selection();
             m_camera.update_game_camera(m_state.viewport, game_camera_target());
+            capture_authored_objects();
 
             return true;
         }
@@ -230,6 +336,9 @@ namespace prune {
 
     void WorldScene::record_editor_command(EditorCommand command)
     {
+        normalize_editor_command(command);
+        apply_editor_command_to_authored_objects(command, true);
+
         if (command.makes_dirty) {
             m_state.dirty = true;
         }
@@ -250,6 +359,7 @@ namespace prune {
         }
 
         apply_editor_command(*command, false);
+        apply_editor_command_to_authored_objects(*command, false);
         if (command->makes_dirty) {
             m_state.dirty = true;
         }
@@ -264,6 +374,7 @@ namespace prune {
         }
 
         apply_editor_command(*command, true);
+        apply_editor_command_to_authored_objects(*command, true);
         if (command->makes_dirty) {
             m_state.dirty = true;
         }
@@ -303,6 +414,154 @@ namespace prune {
     ConstWorldSceneContext WorldScene::world_scene_context() const noexcept
     {
         return ConstWorldSceneContext{ &m_grid_options, &m_camera };
+    }
+
+    void WorldScene::capture_authored_objects()
+    {
+        m_authored_objects = m_state.objects;
+        m_authored_objects.remove_runtime_objects();
+    }
+
+    void WorldScene::normalize_editor_command(EditorCommand& command) const
+    {
+        if (command.type == EditorCommandType::MoveViewport ||
+            command.type == EditorCommandType::CreateObject) {
+            return;
+        }
+
+        if (command.type == EditorCommandType::DeleteObject) {
+            if (const GameObject* authored = m_authored_objects.get_by_id(command.object_id)) {
+                command.before_object = *authored;
+            }
+            return;
+        }
+
+        if (command.type == EditorCommandType::DeleteObjects) {
+            for (GameObject& object : command.before_objects) {
+                if (const GameObject* authored = m_authored_objects.get_by_id(object.identity.id)) {
+                    object = *authored;
+                }
+            }
+            return;
+        }
+
+        if (command.type == EditorCommandType::MoveObjects) {
+            const std::size_t object_count = std::min(
+                command.before_objects.size(),
+                command.after_objects.size()
+            );
+
+            for (std::size_t index = 0; index < object_count; ++index) {
+                const GameObject incoming_before = command.before_objects[index];
+                const GameObject incoming_after = command.after_objects[index];
+                const GameObject* current_authored = m_authored_objects.get_by_id(incoming_after.identity.id);
+                if (!current_authored) {
+                    continue;
+                }
+
+                command.before_objects[index] = *current_authored;
+                command.after_objects[index] = *current_authored;
+                apply_authored_delta(
+                    EditorCommandType::MoveObject,
+                    incoming_before,
+                    incoming_after,
+                    command.after_objects[index]
+                );
+            }
+            return;
+        }
+
+        if (!command.before_object.has_value() || !command.after_object.has_value()) {
+            return;
+        }
+
+        const GameObject incoming_before = command.before_object.value();
+        const GameObject incoming_after = command.after_object.value();
+        const GameObject* current_authored = m_authored_objects.get_by_id(command.object_id);
+        if (!current_authored) {
+            return;
+        }
+
+        command.before_object = *current_authored;
+        command.after_object = *current_authored;
+        apply_authored_delta(
+            command.type,
+            incoming_before,
+            incoming_after,
+            command.after_object.value()
+        );
+    }
+
+    void WorldScene::apply_editor_command_to_authored_objects(
+        const EditorCommand& command,
+        bool use_after_state
+    ) {
+        const auto restore = [this](const GameObject& object) {
+            if (GameObject* existing = m_authored_objects.get_by_id(object.identity.id)) {
+                *existing = object;
+            }
+            else {
+                m_authored_objects.add_loaded_object(object);
+            }
+        };
+
+        switch (command.type) {
+        case EditorCommandType::CreateObject:
+            if (use_after_state && command.after_object.has_value()) {
+                restore(command.after_object.value());
+            }
+            else if (!use_after_state) {
+                m_authored_objects.remove_object(command.object_id);
+            }
+            break;
+
+        case EditorCommandType::DeleteObject:
+            if (use_after_state) {
+                m_authored_objects.remove_object(command.object_id);
+            }
+            else if (command.before_object.has_value()) {
+                restore(command.before_object.value());
+            }
+            break;
+
+        case EditorCommandType::DeleteObjects:
+            if (use_after_state) {
+                for (const GameObjectId id : command.object_ids) {
+                    m_authored_objects.remove_object(id);
+                }
+            }
+            else {
+                for (const GameObject& object : command.before_objects) {
+                    restore(object);
+                }
+            }
+            break;
+
+        case EditorCommandType::MoveObjects:
+            for (const GameObject& object : use_after_state ? command.after_objects : command.before_objects) {
+                restore(object);
+            }
+            break;
+
+        case EditorCommandType::MoveViewport:
+            break;
+
+        case EditorCommandType::MoveObject:
+        case EditorCommandType::RenameObject:
+        case EditorCommandType::ChangeObjectPosition:
+        case EditorCommandType::ChangeObjectSize:
+        case EditorCommandType::ChangeObjectRenderType:
+        case EditorCommandType::ChangeObjectColour:
+        case EditorCommandType::ChangeObjectFlag:
+        case EditorCommandType::ChangeSprite:
+            if (use_after_state && command.after_object.has_value()) {
+                restore(command.after_object.value());
+            }
+            else if (!use_after_state && command.before_object.has_value()) {
+                restore(command.before_object.value());
+            }
+            break;
+        }
     }
 
 

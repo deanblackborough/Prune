@@ -16,6 +16,7 @@ namespace prune {
         GameObjectId create_object(const GameObject& object);
         bool add_loaded_object(const GameObject& object);
         bool remove_object(GameObjectId id) noexcept;
+        std::size_t remove_runtime_objects();
         std::size_t remove_inactive_runtime_objects(std::string_view behaviour);
 
         [[nodiscard]] std::size_t count() const noexcept;
