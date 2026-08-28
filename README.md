@@ -260,6 +260,13 @@ I will consider Prune ready for early external users when someone unfamiliar wit
 - [ ] Ensure a new user can complete the basic workflow without reading the engine source.
 - [ ] Provide at least one practical way to package or share a playable scene. (This may be a simple zip of the scene file and assets, or a small standalone executable.)
 
+### Build and portability
+
+- [ ] Build and run on Linux with GCC and Clang, not just Windows/MSVC.
+- [ ] Run CI across a GCC, Clang, and MSVC compiler matrix.
+- [ ] Run the test suite and a scripted headless session under AddressSanitizer and UndefinedBehaviorSanitizer in CI.
+- [ ] Add a `.clang-format` config enforced in CI and a `clang-tidy` pass.
+
 *Until all or the majority of the above is checked, please consider Prune an active 2D game engine and editor prototype rather than something you can depend.
 
 ## Documentation stance

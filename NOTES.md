@@ -93,6 +93,18 @@ Out of scope for the first pass:
 
 ## Follow on development targets
 
+### Build, portability, and CI
+
+Prune currently only builds and is verified on Windows/MSVC. Portable, sanitizer-clean C++ is a credibility signal worth having, and Linux-first contributors cannot try Prune at all today.
+
+* Build and run on Linux with both GCC and Clang, alongside the existing Windows/MSVC build.
+* Extend CI to a compiler matrix (GCC, Clang, MSVC).
+* Add an AddressSanitizer + UndefinedBehaviorSanitizer build and run the test suite under it in CI.
+* Add a scripted headless run of the app under sanitizers (needs a smoke/headless mode or a dummy SDL video driver).
+* Add a `.clang-format` config enforced in CI, and a `clang-tidy` pass.
+* Work through the portability issues the Linux port surfaces (`std::filesystem` path handling, SDL include paths, any MSVC-isms).
+* Document object lifetime and pointer-validity discipline (ids as the durable handle, pointers as frame-local) as an ADR.
+
 ### Medium term, in no particular order
 
 * Rotate tool
