@@ -126,7 +126,7 @@ Prune currently has:
 - Rectangle and sprite rendering
 - Basic sprite resource map
 - Shared Reset and Pause/Play runtime controls across all three scene slices
-- Explicit authored-object render ordering (z-index) with Raise/Lower editor actions, persisted per scene; runtime-only objects always draw on top
+- Explicit authored-object render ordering (z-index) with a Z Index field and +1/-1 step buttons, persisted per scene; runtime-only objects always draw on top in spawn order
 - Basic code-driven audio playback and scene event hooks; authored audio UI is deferred until the broader effects/reaction workflow is designed
 - Shared scene renderer, interaction, camera, state, collision, serialization, and audio foundations
 - Shared `WorldScene` foundation for scene types
