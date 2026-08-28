@@ -209,6 +209,10 @@ namespace prune {
                     return !lhs_runtime;
                 }
 
+                if (lhs_runtime) {
+                    return false;
+                }
+
                 return lhs->render.z_index < rhs->render.z_index;
             }
         );

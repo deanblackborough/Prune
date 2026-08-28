@@ -312,13 +312,13 @@ namespace prune {
                     const bool can_reorder = can_edit && objects.selected_count() == 1;
                     ImGui::BeginDisabled(!can_reorder);
 
-                    tooling::imgui::property_table::begin_row("Render Order");
-                    if (ImGui::SmallButton("Raise")) {
-                        raise_selected_object(scene);
+                    tooling::imgui::property_table::begin_row("");
+                    if (ImGui::SmallButton("-1")) {
+                        nudge_selected_object_render_order(scene, -1);
                     }
                     ImGui::SameLine();
-                    if (ImGui::SmallButton("Lower")) {
-                        lower_selected_object(scene);
+                    if (ImGui::SmallButton("+1")) {
+                        nudge_selected_object_render_order(scene, 1);
                     }
 
                     ImGui::EndDisabled();

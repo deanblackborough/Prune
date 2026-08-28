@@ -17,7 +17,5 @@ namespace prune {
     bool delete_selected_objects(Scene& scene);
 
     bool nudge_selected_object_render_order(Scene& scene, int delta);
-    inline bool raise_selected_object(Scene& scene) { return nudge_selected_object_render_order(scene, 1); }
-    inline bool lower_selected_object(Scene& scene) { return nudge_selected_object_render_order(scene, -1); }
 
 }

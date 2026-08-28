@@ -1,6 +1,7 @@
 #include "prune/editor/editor_actions.hpp"
 
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -125,22 +126,25 @@ namespace prune {
             return false;
         }
 
-        constexpr int k_z_index_limit = 1024;
-        const int next = std::clamp(selected->render.z_index + delta, -k_z_index_limit, k_z_index_limit);
+        const int current = selected->render.z_index;
 
-        if (next == selected->render.z_index) {
+        if (delta > 0 && current > std::numeric_limits<int>::max() - delta) {
+            return false;
+        }
+
+        if (delta < 0 && current < std::numeric_limits<int>::min() - delta) {
             return false;
         }
 
         const GameObject before = *selected;
-        selected->render.z_index = next;
+        selected->render.z_index = current + delta;
 
         scene.record_editor_command(make_object_command(
             EditorCommandType::ChangeObjectZIndex,
             editor_command_type_label(EditorCommandType::ChangeObjectZIndex),
             before,
             *selected,
-            std::to_string(next)
+            std::to_string(selected->render.z_index)
         ));
 
         return true;
