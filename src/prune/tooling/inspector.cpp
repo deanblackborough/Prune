@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 
+#include "prune/editor/editor_actions.hpp"
 #include "prune/tooling/inspector.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
@@ -291,6 +292,36 @@ namespace prune {
                         );
                     }
                     break;
+                }
+
+                tooling::editor::tracked_property_table::drag_int(
+                    m_object_edit_tracker,
+                    scene,
+                    EditorCommandType::ChangeObjectZIndex,
+                    *selected,
+                    "Z Index",
+                    "##z_index",
+                    selected->render.z_index,
+                    1.0f,
+                    0,
+                    0,
+                    "Z Index"
+                );
+
+                {
+                    const bool can_reorder = can_edit && objects.selected_count() == 1;
+                    ImGui::BeginDisabled(!can_reorder);
+
+                    tooling::imgui::property_table::begin_row("Render Order");
+                    if (ImGui::SmallButton("Raise")) {
+                        raise_selected_object(scene);
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::SmallButton("Lower")) {
+                        lower_selected_object(scene);
+                    }
+
+                    ImGui::EndDisabled();
                 }
 
                 ImGui::EndDisabled();

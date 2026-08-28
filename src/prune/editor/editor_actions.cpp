@@ -112,4 +112,38 @@ namespace prune {
         return true;
     }
 
+    bool nudge_selected_object_render_order(Scene& scene, int delta)
+    {
+        if (delta == 0) {
+            return false;
+        }
+
+        GameObjectManager& objects = scene.get_object_manager();
+        GameObject* selected = objects.selected_object();
+
+        if (!selected || !scene.object_is_editable(*selected)) {
+            return false;
+        }
+
+        constexpr int k_z_index_limit = 1024;
+        const int next = std::clamp(selected->render.z_index + delta, -k_z_index_limit, k_z_index_limit);
+
+        if (next == selected->render.z_index) {
+            return false;
+        }
+
+        const GameObject before = *selected;
+        selected->render.z_index = next;
+
+        scene.record_editor_command(make_object_command(
+            EditorCommandType::ChangeObjectZIndex,
+            editor_command_type_label(EditorCommandType::ChangeObjectZIndex),
+            before,
+            *selected,
+            std::to_string(next)
+        ));
+
+        return true;
+    }
+
 }

@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 #include <SDL_image.h>
 
@@ -186,13 +187,35 @@ namespace prune {
 
         draw_grid(renderer, state.viewport, camera, grid_options);
 
+        std::vector<const GameObject*> draw_order;
+        draw_order.reserve(state.objects.objects().size());
+
         for (const auto& object : state.objects.objects()) {
             if (!object.lifecycle.active || !object.render.visible) {
                 continue;
             }
 
-            draw_object(renderer, state, camera, object);
-            draw_debug_overlays(renderer, state, camera, object);
+            draw_order.push_back(&object);
+        }
+
+        std::stable_sort(
+            draw_order.begin(),
+            draw_order.end(),
+            [](const GameObject* lhs, const GameObject* rhs) {
+                const bool lhs_runtime = lhs->identity.type == GameObjectType::Runtime;
+                const bool rhs_runtime = rhs->identity.type == GameObjectType::Runtime;
+
+                if (lhs_runtime != rhs_runtime) {
+                    return !lhs_runtime;
+                }
+
+                return lhs->render.z_index < rhs->render.z_index;
+            }
+        );
+
+        for (const GameObject* object : draw_order) {
+            draw_object(renderer, state, camera, *object);
+            draw_debug_overlays(renderer, state, camera, *object);
         }
 
         if (state.scene_options.highlight_selected) {

@@ -21,6 +21,7 @@ namespace prune {
         ChangeObjectSize,
         ChangeObjectRenderType,
         ChangeObjectColour,
+        ChangeObjectZIndex,
         ChangeObjectFlag,
         ChangeSprite,
         MoveViewport,

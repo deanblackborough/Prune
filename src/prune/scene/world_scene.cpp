@@ -50,6 +50,10 @@ namespace prune {
                 );
                 break;
 
+            case EditorCommandType::ChangeObjectZIndex:
+                authored.render.z_index = after.render.z_index;
+                break;
+
             case EditorCommandType::ChangeObjectFlag:
                 if (before.lifecycle.active != after.lifecycle.active) {
                     authored.lifecycle.active = after.lifecycle.active;
@@ -563,6 +567,7 @@ namespace prune {
         case EditorCommandType::ChangeObjectSize:
         case EditorCommandType::ChangeObjectRenderType:
         case EditorCommandType::ChangeObjectColour:
+        case EditorCommandType::ChangeObjectZIndex:
         case EditorCommandType::ChangeObjectFlag:
         case EditorCommandType::ChangeSprite:
             if (use_after_state && command.after_object.has_value()) {
@@ -657,6 +662,7 @@ namespace prune {
         case EditorCommandType::ChangeObjectSize:
         case EditorCommandType::ChangeObjectRenderType:
         case EditorCommandType::ChangeObjectColour:
+        case EditorCommandType::ChangeObjectZIndex:
         case EditorCommandType::ChangeObjectFlag:
         case EditorCommandType::ChangeSprite:
             if (use_after_state) {
