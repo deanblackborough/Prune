@@ -5,33 +5,41 @@
 
 namespace prune::tooling::imgui::property_table {
 
-    struct ButtonStyle {
-        std::optional<ImVec4> normal;
-        std::optional<ImVec4> hovered;
-        std::optional<ImVec4> active;
-    };
+  struct ButtonStyle {
+    std::optional<ImVec4> normal;
+    std::optional<ImVec4> hovered;
+    std::optional<ImVec4> active;
+  };
 
-    void begin_row(const char* label);
+  void begin_row(const char* label);
 
-    bool begin(const char* id);
-    void end();
+  bool begin(const char* id);
+  void end();
 
-    bool combo(const char* label, const char* id, int& current_item, const char* const items[], int items_count);
+  bool combo(const char* label, const char* id, int& current_item,
+             const char* const items[], int items_count);
 
-    void label(const char* text);
-	bool text(const char* label, const char* value);
-	bool text_wrapped(const char* label, const char* value);
-	bool input_text(const char* label, const char* id, char* buffer, size_t buffer_size);
-	bool slider_float(const char* label, const char* id, float& value, float min, float max, const char* format = "%.2f");
-    bool slider_int(const char* label, const char* id, int& value, int min, int max);
-    bool drag_float(const char* label, const char* id, float& value, float speed = 1.0f, float min = 0.0f, float max = 0.0f, const char* format = "%.3f");
-    bool drag_int(const char* label, const char* id, int& value, float speed = 1.0f, int min = 0, int max = 0);
-    bool checkbox(const char* label, const char* id, bool& value);
-    bool checkbox_readonly(const char* label, const char* id, bool& value);
-    bool color3(const char* label, const char* id, float color[3]);
-    bool button(const char* label, const char* text, const ButtonStyle* style = nullptr);
-	
-    bool text_wrapped_raw(const char* text);
-    bool button_raw(const char* text, const ButtonStyle* style = nullptr);
+  void label(const char* text);
+  bool text(const char* label, const char* value);
+  bool text_wrapped(const char* label, const char* value);
+  bool input_text(const char* label, const char* id, char* buffer,
+                  size_t buffer_size);
+  bool slider_float(const char* label, const char* id, float& value, float min,
+                    float max, const char* format = "%.2f");
+  bool slider_int(const char* label, const char* id, int& value, int min,
+                  int max);
+  bool drag_float(const char* label, const char* id, float& value,
+                  float speed = 1.0f, float min = 0.0f, float max = 0.0f,
+                  const char* format = "%.3f");
+  bool drag_int(const char* label, const char* id, int& value,
+                float speed = 1.0f, int min = 0, int max = 0);
+  bool checkbox(const char* label, const char* id, bool& value);
+  bool checkbox_readonly(const char* label, const char* id, bool& value);
+  bool color3(const char* label, const char* id, float color[3]);
+  bool button(const char* label, const char* text,
+              const ButtonStyle* style = nullptr);
 
-}
+  bool text_wrapped_raw(const char* text);
+  bool button_raw(const char* text, const ButtonStyle* style = nullptr);
+
+} // namespace prune::tooling::imgui::property_table

@@ -4,6 +4,6 @@
 
 namespace prune::tooling::imgui::shortcut {
 
-    [[nodiscard]] bool pressed(ImGuiKeyChord chord);
+  [[nodiscard]] bool pressed(ImGuiKeyChord chord);
 
 }

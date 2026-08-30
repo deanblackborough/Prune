@@ -8,10 +8,12 @@
 
 namespace prune {
 
-    class PlatformerSerializer {
-    public:
-        static void save_to_node(const PlatformerState& state, YAML::Node& root);
-        [[nodiscard]] static bool load_from_node(const YAML::Node& root, PlatformerState& state, std::string& error);
-    };
+  class PlatformerSerializer {
+  public:
+    static void save_to_node(const PlatformerState& state, YAML::Node& root);
+    [[nodiscard]] static bool load_from_node(const YAML::Node& root,
+                                             PlatformerState& state,
+                                             std::string& error);
+  };
 
-}
+} // namespace prune

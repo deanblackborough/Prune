@@ -81,9 +81,9 @@ mid-refactor mixes formatting churn into structural changes.
 
 ### Checklist
 
-- [ ] Add a `.clang-format` matching the current house style as closely as possible.
+- [x] Add a `.clang-format` matching the current house style as closely as possible.
 - [ ] Apply it to the whole tree in a single isolated commit.
-- [ ] Enforce it in CI (fail on unformatted diff).
+- [x] Enforce it in CI (fail on unformatted diff).
 
 ## P0.2. Sanitizer build + tests under it in CI
 

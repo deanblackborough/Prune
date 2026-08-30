@@ -3,442 +3,348 @@
 #include "imgui.h"
 
 #include "prune/editor/editor_actions.hpp"
-#include "prune/tooling/inspector.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
+#include "prune/tooling/inspector.hpp"
 
 namespace prune {
 
-    void Inspector::draw(
-        Scene& scene,
-        const Camera& camera
-    ) {
-        GameObjectManager& objects = scene.get_object_manager();
+  void Inspector::draw(Scene& scene, const Camera& camera) {
+    GameObjectManager& objects = scene.get_object_manager();
 
-        draw_selected(scene);
-        draw_scene_meaning(scene);
-        draw_properties(scene, objects);
-        draw_computed(objects, camera);
-        draw_flags(scene, objects);
+    draw_selected(scene);
+    draw_scene_meaning(scene);
+    draw_properties(scene, objects);
+    draw_computed(objects, camera);
+    draw_flags(scene, objects);
+  }
+
+  void Inspector::draw_selected(Scene& scene) {
+    GameObjectManager& objects = scene.get_object_manager();
+    GameObject* selected = objects.selected_object();
+
+    if (!selected) {
+      return;
     }
 
-    void Inspector::draw_selected(Scene& scene)
-    {
-        GameObjectManager& objects = scene.get_object_manager();
-        GameObject* selected = objects.selected_object();
+    const bool can_edit = scene.object_is_editable(*selected);
+    const bool can_rename = selected->editor.renameable && can_edit;
 
-        if (!selected) {
-            return;
+    if (tooling::imgui::layout::collapsing_header("Selected")) {
+      if (tooling::imgui::property_table::begin("Selected")) {
+
+        tooling::imgui::property_table::text(
+            "Id", std::to_string(selected->identity.id).c_str());
+
+        if (objects.selected_count() > 1) {
+          tooling::imgui::property_table::text(
+              "Selection", (std::to_string(objects.selected_count()) +
+                            " objects, editing active")
+                               .c_str());
         }
 
+        if (!can_rename) {
+          tooling::imgui::property_table::text("Name",
+                                               selected->identity.name.c_str());
+        } else {
+          sync_rename_buffer(selected);
+
+          tooling::imgui::property_table::input_text(
+              "Name", "##name", m_rename_buffer.data(), m_rename_buffer.size());
+
+          if (ImGui::IsItemDeactivatedAfterEdit()) {
+            const GameObject before = *selected;
+            selected->identity.name = objects.make_unique_name(
+                m_rename_buffer.data(), selected->identity.id);
+
+            if (before.identity.name != selected->identity.name) {
+              scene.record_editor_command(make_object_command(
+                  EditorCommandType::RenameObject,
+                  editor_command_type_label(EditorCommandType::RenameObject),
+                  before, *selected, selected->identity.name));
+            }
+
+            std::snprintf(m_rename_buffer.data(), m_rename_buffer.size(), "%s",
+                          selected->identity.name.c_str());
+          }
+        }
+
+        tooling::imgui::property_table::end();
+      }
+    }
+  }
+
+  void Inspector::draw_scene_meaning(Scene& scene) {
+    GameObject* selected = scene.get_object_manager().selected_object();
+    if (!selected) {
+      return;
+    }
+
+    if (tooling::imgui::layout::collapsing_header("Scene Meaning")) {
+      if (tooling::imgui::property_table::begin("##scene_meaning")) {
+        const ObjectConcept object_concept =
+            scene.object_concept_for(*selected);
+
+        tooling::imgui::property_table::text("Concept",
+                                             object_concept.label.data());
+        tooling::imgui::property_table::text(
+            "Runtime Created", object_concept.runtime_only ? "Yes" : "No");
+        tooling::imgui::property_table::text(
+            "Selectable", object_concept.selectable ? "Yes" : "No");
+        tooling::imgui::property_table::text(
+            "Editable", object_concept.editable ? "Yes" : "No");
+        tooling::imgui::property_table::text_wrapped(
+            "Purpose", object_concept.purpose.data());
+        tooling::imgui::property_table::text_wrapped(
+            "Collision Rule", object_concept.collision_rule.data());
+
+        tooling::imgui::property_table::end();
+      }
+    }
+  }
+
+  void Inspector::draw_properties(Scene& scene, GameObjectManager& objects) {
+    GameObject* selected = objects.selected_object();
+    if (!selected) {
+
+      const char* title = "No object selected";
+      const char* hint1 = "Click an object in the scene";
+      const char* hint2 = "or select one from the Outliner";
+
+      const float window_width = ImGui::GetContentRegionAvail().x;
+
+      auto center_text = [&](const char* text) {
+        const float text_width = ImGui::CalcTextSize(text).x;
+        ImGui::SetCursorPosX((window_width - text_width) * 0.5f);
+        ImGui::TextUnformatted(text);
+      };
+
+      center_text(title);
+
+      ImGui::Spacing();
+      ImGui::Spacing();
+
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+
+      center_text(hint1);
+      center_text(hint2);
+
+      ImGui::PopStyleColor();
+
+      ImGui::Spacing();
+      ImGui::Separator();
+
+      return;
+    }
+
+    const bool can_edit = scene.object_is_editable(*selected);
+    const bool can_move = scene.object_is_movable(*selected);
+    const bool can_scale = scene.object_is_scalable(*selected);
+
+    if (!can_edit) {
+      ImGui::TextWrapped("This object is protected by the scene and cannot be "
+                         "edited from the generic inspector.");
+    }
+
+    if (tooling::imgui::layout::collapsing_header("Transform")) {
+      if (tooling::imgui::property_table::begin("##transform")) {
+        ImGui::BeginDisabled(!can_move);
+
+        tooling::editor::tracked_property_table::drag_float(
+            m_object_edit_tracker, scene,
+            EditorCommandType::ChangeObjectPosition, *selected, "X",
+            "transform_x", selected->transform.x, 1.0f, 0.0f, 0.0f, "%.3f",
+            "X");
+
+        tooling::editor::tracked_property_table::drag_float(
+            m_object_edit_tracker, scene,
+            EditorCommandType::ChangeObjectPosition, *selected, "Y",
+            "transform_y", selected->transform.y, 1.0f, 0.0f, 0.0f, "%.3f",
+            "Y");
+
+        ImGui::EndDisabled();
+        tooling::imgui::property_table::end();
+      }
+    }
+
+    if (tooling::imgui::layout::collapsing_header("Size")) {
+      if (tooling::imgui::property_table::begin("##size")) {
+        ImGui::BeginDisabled(!can_scale);
+
+        tooling::editor::tracked_property_table::slider_int(
+            m_object_edit_tracker, scene, EditorCommandType::ChangeObjectSize,
+            *selected, "Width", "##width", selected->size.width,
+            k_min_object_size, k_max_object_size, "Width");
+
+        tooling::editor::tracked_property_table::slider_int(
+            m_object_edit_tracker, scene, EditorCommandType::ChangeObjectSize,
+            *selected, "Height", "##height", selected->size.height,
+            k_min_object_size, k_max_object_size, "Height");
+
+        ImGui::EndDisabled();
+        tooling::imgui::property_table::end();
+      }
+    }
+
+    if (tooling::imgui::layout::collapsing_header("Render")) {
+      if (tooling::imgui::property_table::begin("##rendering")) {
+        ImGui::BeginDisabled(!can_edit);
+        int render_type =
+            (selected->render.type == RenderType::Rectangle) ? 0 : 1;
+        const char* render_items[] = {"Rectangle", "Sprite"};
+
+        if (tooling::imgui::property_table::combo("Type", "##render_type",
+                                                  render_type, render_items,
+                                                  IM_ARRAYSIZE(render_items))) {
+          const GameObject before = *selected;
+          selected->render.type =
+              (render_type == 0) ? RenderType::Rectangle : RenderType::Sprite;
+
+          tooling::editor::tracked_property_table::commit_if_changed(
+              scene, EditorCommandType::ChangeObjectRenderType, before,
+              *selected,
+              (selected->render.type == RenderType::Rectangle) ? "Rectangle"
+                                                               : "Sprite");
+        }
+
+        switch (selected->render.type) {
+        case RenderType::Rectangle: {
+          tooling::editor::tracked_property_table::color3(
+              m_object_edit_tracker, scene,
+              EditorCommandType::ChangeObjectColour, *selected, "Colour",
+              "##colour", selected->render.rectangle.color, "Rectangle colour");
+        } break;
+
+        case RenderType::Sprite: {
+          tooling::editor::tracked_property_table::sprite_picker(
+              scene, EditorCommandType::ChangeSprite, *selected, "Sprite",
+              "##sprite_key", selected->render.sprite.sprite_key, "Sprite key");
+        }
+          {
+            tooling::editor::tracked_property_table::checkbox(
+                scene, EditorCommandType::ChangeSprite, *selected, "Flip X",
+                "##sprite_flip_x", selected->render.sprite.flip_x, "Flip X");
+          }
+          break;
+        }
+
+        tooling::editor::tracked_property_table::drag_int(
+            m_object_edit_tracker, scene, EditorCommandType::ChangeObjectZIndex,
+            *selected, "Z Index", "##z_index", selected->render.z_index, 1.0f,
+            0, 0, "Z Index");
+
+        {
+          const bool can_reorder = can_edit && objects.selected_count() == 1;
+          ImGui::BeginDisabled(!can_reorder);
+
+          tooling::imgui::property_table::begin_row("");
+          if (ImGui::SmallButton("-1")) {
+            nudge_selected_object_render_order(scene, -1);
+          }
+          ImGui::SameLine();
+          if (ImGui::SmallButton("+1")) {
+            nudge_selected_object_render_order(scene, 1);
+          }
+
+          ImGui::EndDisabled();
+        }
+
+        ImGui::EndDisabled();
+        tooling::imgui::property_table::end();
+      }
+    }
+  }
+
+  void Inspector::draw_computed(GameObjectManager& objects,
+                                const Camera& camera) {
+    GameObject* selected = objects.selected_object();
+    if (!selected) {
+      return;
+    }
+
+    if (tooling::imgui::layout::collapsing_header("Computed", false)) {
+      if (tooling::imgui::property_table::begin("##computed")) {
+        const Transform screen_pos = {selected->transform.x - camera.x,
+                                      selected->transform.y - camera.y};
+
+        char screen_pos_buffer[64];
+        std::snprintf(screen_pos_buffer, sizeof(screen_pos_buffer),
+                      "x %.1f, y %.1f", screen_pos.x, screen_pos.y);
+
+        tooling::imgui::property_table::text("Screen Position",
+                                             screen_pos_buffer);
+        tooling::imgui::property_table::end();
+      }
+    }
+  }
+
+  void Inspector::draw_flags(Scene& scene, GameObjectManager& objects) {
+    GameObject* selected = objects.selected_object();
+    if (!selected) {
+      return;
+    }
+
+    if (tooling::imgui::layout::collapsing_header(
+            "Collision / Editor / Lifecycle", false)) {
+      if (tooling::imgui::property_table::begin("##flags")) {
         const bool can_edit = scene.object_is_editable(*selected);
-        const bool can_rename = selected->editor.renameable && can_edit;
+        ImGui::BeginDisabled(!can_edit);
 
-        if (tooling::imgui::layout::collapsing_header("Selected")) {
-            if (tooling::imgui::property_table::begin("Selected")) {
-
-                tooling::imgui::property_table::text("Id", std::to_string(selected->identity.id).c_str());
-
-                if (objects.selected_count() > 1) {
-                    tooling::imgui::property_table::text("Selection", (std::to_string(objects.selected_count()) + " objects, editing active").c_str());
-                }
-
-                if (!can_rename) {
-                    tooling::imgui::property_table::text("Name", selected->identity.name.c_str());
-                } else {
-                    sync_rename_buffer(selected);
-
-                    tooling::imgui::property_table::input_text(
-                        "Name",
-                        "##name",
-                        m_rename_buffer.data(),
-                        m_rename_buffer.size()
-                    );
-
-                    if (ImGui::IsItemDeactivatedAfterEdit()) {
-                        const GameObject before = *selected;
-                        selected->identity.name = objects.make_unique_name(
-                            m_rename_buffer.data(),
-                            selected->identity.id
-                        );
-
-                        if (before.identity.name != selected->identity.name) {
-                            scene.record_editor_command(make_object_command(
-                                EditorCommandType::RenameObject,
-                                editor_command_type_label(EditorCommandType::RenameObject),
-                                before,
-                                *selected,
-                                selected->identity.name
-                            ));
-                        }
-
-                        std::snprintf(
-                            m_rename_buffer.data(),
-                            m_rename_buffer.size(),
-                            "%s",
-                            selected->identity.name.c_str()
-                        );
-                    }
-                }
-
-                tooling::imgui::property_table::end();
-            }
+        {
+          tooling::editor::tracked_property_table::checkbox(
+              scene, EditorCommandType::ChangeObjectFlag, *selected,
+              "Lifecycle Active", "##active", selected->lifecycle.active,
+              "Lifecycle Active");
         }
+
+        {
+          tooling::editor::tracked_property_table::checkbox(
+              scene, EditorCommandType::ChangeObjectFlag, *selected,
+              "Render Visible", "##visible", selected->render.visible,
+              "Render Visible");
+        }
+
+        {
+          tooling::editor::tracked_property_table::checkbox(
+              scene, EditorCommandType::ChangeObjectFlag, *selected,
+              "Collision Solid", "##solid", selected->collision.solid,
+              "Collision Solid");
+        }
+        ImGui::EndDisabled();
+
+        tooling::imgui::property_table::checkbox_readonly(
+            "Editor Selectable", "##editor_selectable",
+            selected->editor.selectable);
+        tooling::imgui::property_table::checkbox_readonly(
+            "Editor Renameable", "##editor_renameable",
+            selected->editor.renameable);
+        tooling::imgui::property_table::checkbox_readonly(
+            "Editor Cloneable", "##editor_cloneable",
+            selected->editor.cloneable);
+        tooling::imgui::property_table::checkbox_readonly(
+            "Runtime Persistent", "##runtime_persistent",
+            selected->runtime.persistent);
+
+        tooling::imgui::property_table::end();
+      }
+    }
+  }
+
+  void Inspector::sync_rename_buffer(const GameObject* selected) {
+    if (!selected) {
+      m_rename_target_id.reset();
+      m_rename_buffer[0] = '\0';
+      return;
     }
 
-    void Inspector::draw_scene_meaning(Scene& scene)
-    {
-        GameObject* selected = scene.get_object_manager().selected_object();
-        if (!selected) {
-            return;
-        }
-
-        if (tooling::imgui::layout::collapsing_header("Scene Meaning")) {
-            if (tooling::imgui::property_table::begin("##scene_meaning")) {
-                const ObjectConcept object_concept = scene.object_concept_for(*selected);
-
-                tooling::imgui::property_table::text("Concept", object_concept.label.data());
-                tooling::imgui::property_table::text("Runtime Created", object_concept.runtime_only ? "Yes" : "No");
-                tooling::imgui::property_table::text("Selectable", object_concept.selectable ? "Yes" : "No");
-                tooling::imgui::property_table::text("Editable", object_concept.editable ? "Yes" : "No");
-                tooling::imgui::property_table::text_wrapped("Purpose", object_concept.purpose.data());
-                tooling::imgui::property_table::text_wrapped("Collision Rule", object_concept.collision_rule.data());
-
-                tooling::imgui::property_table::end();
-            }
-        }
+    if (m_rename_target_id.has_value() &&
+        m_rename_target_id.value() == selected->identity.id) {
+      return;
     }
 
-    void Inspector::draw_properties(Scene& scene, GameObjectManager& objects) {
-        GameObject* selected = objects.selected_object();
-        if (!selected) {
+    m_rename_target_id = selected->identity.id;
+    std::snprintf(m_rename_buffer.data(), m_rename_buffer.size(), "%s",
+                  selected->identity.name.c_str());
+  }
 
-            const char* title = "No object selected";
-            const char* hint1 = "Click an object in the scene";
-            const char* hint2 = "or select one from the Outliner";
-
-            const float window_width = ImGui::GetContentRegionAvail().x;
-
-            auto center_text = [&](const char* text) {
-                const float text_width = ImGui::CalcTextSize(text).x;
-                ImGui::SetCursorPosX((window_width - text_width) * 0.5f);
-                ImGui::TextUnformatted(text);
-            };
-
-            center_text(title);
-
-            ImGui::Spacing();
-            ImGui::Spacing();
-
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-
-            center_text(hint1);
-            center_text(hint2);
-
-            ImGui::PopStyleColor();
-
-            ImGui::Spacing();
-            ImGui::Separator();
-
-            return;
-        }
-
-        const bool can_edit = scene.object_is_editable(*selected);
-        const bool can_move = scene.object_is_movable(*selected);
-        const bool can_scale = scene.object_is_scalable(*selected);
-
-        if (!can_edit) {
-            ImGui::TextWrapped("This object is protected by the scene and cannot be edited from the generic inspector.");
-        }
-
-        if (tooling::imgui::layout::collapsing_header("Transform")) {
-            if (tooling::imgui::property_table::begin("##transform")) {
-                ImGui::BeginDisabled(!can_move);
-
-                tooling::editor::tracked_property_table::drag_float(
-                    m_object_edit_tracker,
-                    scene,
-                    EditorCommandType::ChangeObjectPosition,
-                    *selected,
-                    "X",
-                    "transform_x",
-                    selected->transform.x,
-                    1.0f,
-                    0.0f,
-                    0.0f,
-                    "%.3f",
-                    "X"
-                );
-
-                tooling::editor::tracked_property_table::drag_float(
-                    m_object_edit_tracker,
-                    scene,
-                    EditorCommandType::ChangeObjectPosition,
-                    *selected,
-                    "Y",
-                    "transform_y",
-                    selected->transform.y,
-                    1.0f,
-                    0.0f,
-                    0.0f,
-                    "%.3f",
-                    "Y"
-                );
-
-                ImGui::EndDisabled();
-                tooling::imgui::property_table::end();
-            }
-        }
-
-        if (tooling::imgui::layout::collapsing_header("Size")) {
-            if (tooling::imgui::property_table::begin("##size")) {
-                ImGui::BeginDisabled(!can_scale);
-
-                tooling::editor::tracked_property_table::slider_int(
-                    m_object_edit_tracker,
-                    scene,
-                    EditorCommandType::ChangeObjectSize,
-                    *selected,
-                    "Width",
-                    "##width",
-                    selected->size.width,
-                    k_min_object_size,
-                    k_max_object_size,
-                    "Width"
-                );
-
-                tooling::editor::tracked_property_table::slider_int(
-                    m_object_edit_tracker,
-                    scene,
-                    EditorCommandType::ChangeObjectSize,
-                    *selected,
-                    "Height",
-                    "##height",
-                    selected->size.height,
-                    k_min_object_size,
-                    k_max_object_size,
-                    "Height"
-                );
-
-                ImGui::EndDisabled();
-                tooling::imgui::property_table::end();
-            }
-        }
-
-        if (tooling::imgui::layout::collapsing_header("Render")) {
-            if (tooling::imgui::property_table::begin("##rendering")) {
-                ImGui::BeginDisabled(!can_edit);
-                int render_type = (selected->render.type == RenderType::Rectangle) ? 0 : 1;
-                const char* render_items[] = { "Rectangle", "Sprite" };
-
-                if (tooling::imgui::property_table::combo(
-                    "Type",
-                    "##render_type",
-                    render_type,
-                    render_items,
-                    IM_ARRAYSIZE(render_items)
-                )) {
-                    const GameObject before = *selected;
-                    selected->render.type = (render_type == 0)
-                        ? RenderType::Rectangle
-                        : RenderType::Sprite;
-
-                    tooling::editor::tracked_property_table::commit_if_changed(
-                        scene,
-                        EditorCommandType::ChangeObjectRenderType,
-                        before,
-                        *selected,
-                        (selected->render.type == RenderType::Rectangle) ? "Rectangle" : "Sprite"
-                    );
-                }
-
-                switch (selected->render.type) {
-                case RenderType::Rectangle:
-                    {
-                        tooling::editor::tracked_property_table::color3(
-                            m_object_edit_tracker,
-                            scene,
-                            EditorCommandType::ChangeObjectColour,
-                            *selected,
-                            "Colour",
-                            "##colour",
-                            selected->render.rectangle.color,
-                            "Rectangle colour"
-                        );
-                    }
-                    break;
-
-                case RenderType::Sprite:
-                    {
-                        tooling::editor::tracked_property_table::sprite_picker(
-                            scene,
-                            EditorCommandType::ChangeSprite,
-                            *selected,
-                            "Sprite",
-                            "##sprite_key",
-                            selected->render.sprite.sprite_key,
-                            "Sprite key"
-                        );
-                    }
-                    {
-                        tooling::editor::tracked_property_table::checkbox(
-                            scene,
-                            EditorCommandType::ChangeSprite,
-                            *selected,
-                            "Flip X",
-                            "##sprite_flip_x",
-                            selected->render.sprite.flip_x,
-                            "Flip X"
-                        );
-                    }
-                    break;
-                }
-
-                tooling::editor::tracked_property_table::drag_int(
-                    m_object_edit_tracker,
-                    scene,
-                    EditorCommandType::ChangeObjectZIndex,
-                    *selected,
-                    "Z Index",
-                    "##z_index",
-                    selected->render.z_index,
-                    1.0f,
-                    0,
-                    0,
-                    "Z Index"
-                );
-
-                {
-                    const bool can_reorder = can_edit && objects.selected_count() == 1;
-                    ImGui::BeginDisabled(!can_reorder);
-
-                    tooling::imgui::property_table::begin_row("");
-                    if (ImGui::SmallButton("-1")) {
-                        nudge_selected_object_render_order(scene, -1);
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::SmallButton("+1")) {
-                        nudge_selected_object_render_order(scene, 1);
-                    }
-
-                    ImGui::EndDisabled();
-                }
-
-                ImGui::EndDisabled();
-                tooling::imgui::property_table::end();
-            }
-        }
-    }
-
-    void Inspector::draw_computed(
-        GameObjectManager& objects,
-        const Camera& camera
-    ) {
-        GameObject* selected = objects.selected_object();
-        if (!selected) {
-            return;
-        }
-
-        if (tooling::imgui::layout::collapsing_header("Computed", false)) {
-            if (tooling::imgui::property_table::begin("##computed")) {
-                const Transform screen_pos = {
-                    selected->transform.x - camera.x,
-                    selected->transform.y - camera.y
-                };
-
-                char screen_pos_buffer[64];
-                std::snprintf(
-                    screen_pos_buffer,
-                    sizeof(screen_pos_buffer),
-                    "x %.1f, y %.1f",
-                    screen_pos.x,
-                    screen_pos.y
-                );
-
-                tooling::imgui::property_table::text("Screen Position", screen_pos_buffer);
-                tooling::imgui::property_table::end();
-            }
-        }
-    }
-
-    void Inspector::draw_flags(Scene& scene, GameObjectManager& objects)
-    {
-        GameObject* selected = objects.selected_object();
-        if (!selected) {
-            return;
-        }
-
-        if (tooling::imgui::layout::collapsing_header("Collision / Editor / Lifecycle", false)) {
-            if (tooling::imgui::property_table::begin("##flags")) {
-                const bool can_edit = scene.object_is_editable(*selected);
-                ImGui::BeginDisabled(!can_edit);
-
-                {
-                    tooling::editor::tracked_property_table::checkbox(
-                        scene,
-                        EditorCommandType::ChangeObjectFlag,
-                        *selected,
-                        "Lifecycle Active",
-                        "##active",
-                        selected->lifecycle.active,
-                        "Lifecycle Active"
-                    );
-                }
-
-                {
-                    tooling::editor::tracked_property_table::checkbox(
-                        scene,
-                        EditorCommandType::ChangeObjectFlag,
-                        *selected,
-                        "Render Visible",
-                        "##visible",
-                        selected->render.visible,
-                        "Render Visible"
-                    );
-                }
-
-                {
-                    tooling::editor::tracked_property_table::checkbox(
-                        scene,
-                        EditorCommandType::ChangeObjectFlag,
-                        *selected,
-                        "Collision Solid",
-                        "##solid",
-                        selected->collision.solid,
-                        "Collision Solid"
-                    );
-                }
-                ImGui::EndDisabled();
-
-                tooling::imgui::property_table::checkbox_readonly("Editor Selectable", "##editor_selectable", selected->editor.selectable);
-                tooling::imgui::property_table::checkbox_readonly("Editor Renameable", "##editor_renameable", selected->editor.renameable);
-                tooling::imgui::property_table::checkbox_readonly("Editor Cloneable", "##editor_cloneable", selected->editor.cloneable);
-                tooling::imgui::property_table::checkbox_readonly("Runtime Persistent", "##runtime_persistent", selected->runtime.persistent);
-                
-            	tooling::imgui::property_table::end();
-            }
-        }
-    }
-
-    void Inspector::sync_rename_buffer(const GameObject* selected)
-    {
-        if (!selected) {
-            m_rename_target_id.reset();
-            m_rename_buffer[0] = '\0';
-            return;
-        }
-
-        if (m_rename_target_id.has_value() && m_rename_target_id.value() == selected->identity.id) {
-            return;
-        }
-
-        m_rename_target_id = selected->identity.id;
-        std::snprintf(
-            m_rename_buffer.data(),
-            m_rename_buffer.size(),
-            "%s",
-            selected->identity.name.c_str()
-        );
-    }
-
-}
+} // namespace prune

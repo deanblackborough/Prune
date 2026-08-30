@@ -4,9 +4,9 @@
 
 namespace prune {
 
-    class Platformer {
-    public:
-        void draw(PlatformerState& state);
-    };
+  class Platformer {
+  public:
+    void draw(PlatformerState& state);
+  };
 
-}
+} // namespace prune

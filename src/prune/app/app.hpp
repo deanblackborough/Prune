@@ -7,66 +7,64 @@
 
 namespace prune {
 
-    class AudioSystem;
-    class Time;
-    class Scene;
-    class Ui;
+  class AudioSystem;
+  class Time;
+  class Scene;
+  class Ui;
 
-    struct AppConfig {
-        WindowConfig window{};
-        float fixed_timestep = 1.0f / 60.0f;
-    };
+  struct AppConfig {
+    WindowConfig window{};
+    float fixed_timestep = 1.0f / 60.0f;
+  };
 
-    class App {
-    public:
+  class App {
+  public:
+    explicit App(const AppConfig& config);
 
-        explicit App(const AppConfig& config);
+    ~App();
 
-        ~App();
+    App(const App&) = delete;
+    App& operator=(const App&) = delete;
 
-        App(const App&) = delete;
-        App& operator=(const App&) = delete;
+    void run();
 
-        void run();
+    [[nodiscard]] Input& input() noexcept { return *m_input; }
 
-        [[nodiscard]] Input& input() noexcept { return *m_input; }
+    [[nodiscard]] const Input& input() const noexcept { return *m_input; }
 
-        [[nodiscard]] const Input& input() const noexcept { return *m_input; }
+  private:
+    static void init_sdl();
 
-    private:
+    static void shutdown_sdl();
 
-        static void init_sdl();
+    void process_events();
 
-        static void shutdown_sdl();
+    void handle_event(const SDL_Event& event);
 
-        void process_events();
+    void update(float dt);
 
-        void handle_event(const SDL_Event& event);
+    void render();
 
-        void update(float dt);
+    void init_audio();
 
-        void render();
+    void dispatch_scene_events();
 
-        void init_audio();
+    void init_imgui();
 
-        void dispatch_scene_events();
+    void shutdown_imgui();
 
-        void init_imgui();
+    void begin_imgui_frame();
 
-        void shutdown_imgui();
+    std::unique_ptr<Window> m_window;
+    std::unique_ptr<AudioSystem> m_audio;
+    std::unique_ptr<Time> m_time;
+    std::unique_ptr<Input> m_input;
+    std::unique_ptr<Scene> m_scene;
+    std::unique_ptr<Ui> m_ui;
 
-        void begin_imgui_frame();
+    float m_fixed_timestep = 1.0f / 60.0f;
+    float m_accumulator = 0.0f;
+    bool m_running = false;
+  };
 
-        std::unique_ptr<Window> m_window;
-        std::unique_ptr<AudioSystem> m_audio;
-        std::unique_ptr<Time> m_time;
-        std::unique_ptr<Input> m_input;
-        std::unique_ptr<Scene> m_scene;
-        std::unique_ptr<Ui> m_ui;
-
-        float m_fixed_timestep = 1.0f / 60.0f;
-        float m_accumulator = 0.0f;
-        bool m_running = false;
-    };
-
-}
+} // namespace prune

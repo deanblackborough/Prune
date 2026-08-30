@@ -12,47 +12,56 @@
 
 namespace prune {
 
-    class ArtilleryScene : public WorldScene {
-    public:
-        ArtilleryScene(int window_width, int window_height);
+  class ArtilleryScene : public WorldScene {
+  public:
+    ArtilleryScene(int window_width, int window_height);
 
-        void on_exit() override;
-        void new_scene() override;
+    void on_exit() override;
+    void new_scene() override;
 
-        [[nodiscard]] std::string_view default_file_path() const noexcept override;
-        [[nodiscard]] std::string_view scene_type_id() const noexcept override;
-        [[nodiscard]] std::string_view scene_name() const noexcept override { return "Artillery"; }
-        [[nodiscard]] std::string_view scene_tools_label() const noexcept override { return "Artillery"; }
-        [[nodiscard]] ObjectConcept object_concept_for(const GameObject& object) const override;
-        [[nodiscard]] std::span<const SceneCreationAction> scene_creation_actions() const noexcept override;
-        GameObjectId create_scene_object(std::string_view action_id) override;
-        void draw_scene_tools(bool& open) override;
-        void draw_scene_inspector(GameObject& selected) override;
+    [[nodiscard]] std::string_view default_file_path() const noexcept override;
+    [[nodiscard]] std::string_view scene_type_id() const noexcept override;
+    [[nodiscard]] std::string_view scene_name() const noexcept override {
+      return "Artillery";
+    }
+    [[nodiscard]] std::string_view scene_tools_label() const noexcept override {
+      return "Artillery";
+    }
+    [[nodiscard]] ObjectConcept
+    object_concept_for(const GameObject& object) const override;
+    [[nodiscard]] std::span<const SceneCreationAction>
+    scene_creation_actions() const noexcept override;
+    GameObjectId create_scene_object(std::string_view action_id) override;
+    void draw_scene_tools(bool& open) override;
+    void draw_scene_inspector(GameObject& selected) override;
 
-    protected:
-        void on_scene_enter() override;
-        void update_runtime(float dt, const Input& input, bool keyboard_input_enabled) override;
-        void restart_runtime() override;
-        void set_runtime_paused(bool paused) noexcept override;
-        [[nodiscard]] bool is_runtime_paused() const noexcept override;
-        void save_scene_data(YAML::Node& root) const override;
-        [[nodiscard]] bool load_scene_data(const YAML::Node& root, std::string& error) override;
-        [[nodiscard]] bool restore_loaded_scene(SceneState& state, std::string& error) override;
-        void render_overlay(SDL_Renderer* renderer) override;
+  protected:
+    void on_scene_enter() override;
+    void update_runtime(float dt, const Input& input,
+                        bool keyboard_input_enabled) override;
+    void restart_runtime() override;
+    void set_runtime_paused(bool paused) noexcept override;
+    [[nodiscard]] bool is_runtime_paused() const noexcept override;
+    void save_scene_data(YAML::Node& root) const override;
+    [[nodiscard]] bool load_scene_data(const YAML::Node& root,
+                                       std::string& error) override;
+    [[nodiscard]] bool restore_loaded_scene(SceneState& state,
+                                            std::string& error) override;
+    void render_overlay(SDL_Renderer* renderer) override;
 
-    private:
-        void reset_runtime_state();
-        void restore_defaults();
-        [[nodiscard]] GameObjectId add_terrain_line_at_view_center();
-        [[nodiscard]] GameObject* current_tank() noexcept;
-        [[nodiscard]] const GameObject* current_tank() const noexcept;
+  private:
+    void reset_runtime_state();
+    void restore_defaults();
+    [[nodiscard]] GameObjectId add_terrain_line_at_view_center();
+    [[nodiscard]] GameObject* current_tank() noexcept;
+    [[nodiscard]] const GameObject* current_tank() const noexcept;
 
-        ArtilleryState m_artillery_state;
-        ArtilleryTurn m_authored_turn = ArtilleryTurn::PlayerOne;
-        ArtilleryAim m_authored_player_one_aim{};
-        ArtilleryAim m_authored_player_two_aim{};
-        ArtilleryBehaviour m_artillery;
-        Artillery m_artillery_tools;
-    };
+    ArtilleryState m_artillery_state;
+    ArtilleryTurn m_authored_turn = ArtilleryTurn::PlayerOne;
+    ArtilleryAim m_authored_player_one_aim{};
+    ArtilleryAim m_authored_player_two_aim{};
+    ArtilleryBehaviour m_artillery;
+    Artillery m_artillery_tools;
+  };
 
-}
+} // namespace prune

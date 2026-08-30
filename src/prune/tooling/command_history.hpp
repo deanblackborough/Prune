@@ -4,9 +4,9 @@
 
 namespace prune {
 
-    class CommandHistoryPanel {
-    public:
-        void draw(Scene& scene);
-    };
+  class CommandHistoryPanel {
+  public:
+    void draw(Scene& scene);
+  };
 
-}
+} // namespace prune

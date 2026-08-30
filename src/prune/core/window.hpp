@@ -5,38 +5,37 @@
 
 namespace prune {
 
-    struct WindowConfig {
-        std::string title = "Prune";
-        int width = 1600;
-        int height = 900;
-        bool fullscreen = false;
-        bool resizable = true;
-        bool vsync = true;
-    };
+  struct WindowConfig {
+    std::string title = "Prune";
+    int width = 1600;
+    int height = 900;
+    bool fullscreen = false;
+    bool resizable = true;
+    bool vsync = true;
+  };
 
-    class Window {
-    public:
+  class Window {
+  public:
+    explicit Window(const WindowConfig& config);
+    ~Window();
 
-        explicit Window(const WindowConfig& config);
-        ~Window();
+    Window(const Window&) = delete;
+    Window& operator=(const Window&) = delete;
 
-        Window(const Window&) = delete;
-        Window& operator=(const Window&) = delete;
+    [[nodiscard]] SDL_Window* sdl_window() const { return m_window; }
 
-        [[nodiscard]] SDL_Window* sdl_window() const { return m_window; }
+    [[nodiscard]] SDL_Renderer* renderer() const { return m_renderer; }
 
-        [[nodiscard]] SDL_Renderer* renderer() const { return m_renderer; }
+    [[nodiscard]] int width() const { return m_width; }
+    [[nodiscard]] int height() const { return m_height; }
 
-        [[nodiscard]] int width() const { return m_width; }
-        [[nodiscard]] int height() const { return m_height; }
+    void refresh_size();
 
-        void refresh_size();
+  private:
+    SDL_Window* m_window = nullptr;
+    SDL_Renderer* m_renderer = nullptr;
+    int m_width = 0;
+    int m_height = 0;
+  };
 
-    private:
-        SDL_Window* m_window = nullptr;
-        SDL_Renderer* m_renderer = nullptr;
-        int m_width = 0;
-        int m_height = 0;
-    };
-
-}
+} // namespace prune

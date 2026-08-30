@@ -8,14 +8,12 @@
 
 namespace prune {
 
-    class SimpleShooterSerializer {
-    public:
-        static void save_to_node(const SimpleShooterState& state, YAML::Node& root);
+  class SimpleShooterSerializer {
+  public:
+    static void save_to_node(const SimpleShooterState& state, YAML::Node& root);
 
-        [[nodiscard]] static bool load_from_node(
-            const YAML::Node& root,
-            SimpleShooterState& state,
-            std::string& error
-        );
-    };
-}
+    [[nodiscard]] static bool load_from_node(const YAML::Node& root,
+                                             SimpleShooterState& state,
+                                             std::string& error);
+  };
+} // namespace prune

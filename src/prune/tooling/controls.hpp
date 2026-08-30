@@ -2,10 +2,10 @@
 
 namespace prune {
 
-    class Controls {
-    public:
-        void draw();
-    private:
+  class Controls {
+  public:
+    void draw();
 
-    };
-}
+  private:
+  };
+} // namespace prune
