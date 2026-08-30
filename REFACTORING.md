@@ -94,8 +94,8 @@ the class of bug ASan/UBSan catch. This must be running before that code moves, 
 
 ### Checklist
 
-- [ ] Add an ASan + UBSan build configuration.
-- [ ] Run the existing test suite under it in CI.
+- [x] Add an ASan + UBSan build configuration.
+- [x] Run the existing test suite under it in CI.
 - [ ] Fix anything it flags in the current code before starting A1.
 
 ## P0.3. Second compiler / Linux build
