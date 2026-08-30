@@ -643,7 +643,7 @@ Give authored objects a single `int z_index` render-order field, modelled on God
 - There is no clamp or range limit; the stored value is whatever the user set.
 - Runtime-only objects ignore `z_index` entirely and always render above all authored objects, in spawn order.
 
-Editing is a plain integer field plus `+1` / `-1` step buttons in the inspector Render section, recorded as a `ChangeObjectZIndex` editor command that participates in dirty state, undo/redo, and the authored baseline like any other single-object property edit. The step buttons only add or subtract one; they do not reorder relative to other objects.
+Editing is a plain integer field plus `+1` / `-1` step buttons in the inspector Render section, recorded as a `ChangeObjectZIndex` editor command that participates in dirty state, undo/redo, and the authored baseline like any other single-object property edit. The `+1` / `-1` buttons adjust the raw `z_index` value by one and nothing else. They do not inspect other objects or swap with the nearest one in render order, so a single press changes visible ordering only when the new value crosses another object's `z_index`.
 
 ### Why
 
