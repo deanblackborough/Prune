@@ -4,7 +4,7 @@
 
 Turn the current editor/runtime foundation into something that behaves more like a typical game engine/editor.
 
-The previous phase proved the important foundations: editor commands, undo/redo, multi-select, explicit tool modes, scale, and the first audio/event hook path. This phase has now added dirty-state tracking, Ctrl+S, and shared runtime Reset/Pause/Play controls. Authored-object ordering is the remaining target.
+The previous phase proved the important foundations: editor commands, undo/redo, multi-select, explicit tool modes, scale, and the first audio/event hook path. This phase has now added dirty-state tracking, Ctrl+S, shared runtime Reset/Pause/Play controls, and authored-object render ordering (z-index). The short-term hardening targets are complete.
 
 This phase is not about adding new systems. It is about removing rough edges that will be awkward to deal with later.
 
@@ -78,12 +78,12 @@ Add authored object ordering so render order is deliberate and editable.
 
 Initial scope:
 
-* [ ] Add an authored z-index/order field to scene objects.
-* [ ] Render authored objects using explicit ordering.
-* [ ] Persist ordering in scene save data.
-* [ ] Restore ordering on load.
-* [ ] Add basic editor actions for moving selected object up/down in order.
-* [ ] Keep runtime-only ordering behaviour simple and deterministic.
+* [x] Add an authored z-index/order field to scene objects.
+* [x] Render authored objects using explicit ordering.
+* [x] Persist ordering in scene save data.
+* [x] Restore ordering on load.
+* [x] Add basic editor actions for moving selected object up/down in order.
+* [x] Keep runtime-only ordering behaviour simple and deterministic.
 
 Out of scope for the first pass:
 
@@ -92,6 +92,18 @@ Out of scope for the first pass:
 * Drag-and-drop ordering in the outliner.
 
 ## Follow on development targets
+
+### Build, portability, and CI
+
+Prune currently only builds and is verified on Windows/MSVC. Portable, sanitizer-clean C++ is a credibility signal worth having, and Linux-first contributors cannot try Prune at all today.
+
+* Build and run on Linux with both GCC and Clang, alongside the existing Windows/MSVC build.
+* Extend CI to a compiler matrix (GCC, Clang, MSVC).
+* Add an AddressSanitizer + UndefinedBehaviorSanitizer build and run the test suite under it in CI.
+* Add a scripted headless run of the app under sanitizers (needs a smoke/headless mode or a dummy SDL video driver).
+* Add a `.clang-format` config enforced in CI, and a `clang-tidy` pass.
+* Work through the portability issues the Linux port surfaces (`std::filesystem` path handling, SDL include paths, any MSVC-isms).
+* Document object lifetime and pointer-validity discipline (ids as the durable handle, pointers as frame-local) as an ADR.
 
 ### Medium term, in no particular order
 

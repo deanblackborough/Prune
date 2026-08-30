@@ -145,6 +145,7 @@ namespace prune {
 
             node["render"]["type"] = to_string(object.render.type);
             node["render"]["visible"] = object.render.visible;
+            node["render"]["z_index"] = object.render.z_index;
 
             switch (object.render.type) {
             case RenderType::Rectangle: {
@@ -223,6 +224,8 @@ namespace prune {
                 error = "Object render.visible is missing.";
                 return false;
             }
+
+            object.render.z_index = render["z_index"] ? render["z_index"].as<int>() : 0;
 
             switch (object.render.type) {
             case RenderType::Rectangle: {

@@ -20,6 +20,7 @@ namespace prune::platformer_factory {
         player.size.height = k_default_object_size;
         player.render.type = RenderType::Sprite;
         player.render.sprite.sprite_key = std::string(k_default_player_platformer_sprite_key);
+        player.render.z_index = 10;
         player.transform.x = 32.0f;
         player.transform.y = 112.0f;
         player.lifecycle.active = true;

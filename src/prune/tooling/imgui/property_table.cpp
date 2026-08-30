@@ -108,6 +108,12 @@ namespace prune::tooling::imgui::property_table
         return ImGui::DragFloat(id, &value, speed, min, max, format);
     }
 
+    bool drag_int(const char* label, const char* id, int& value, float speed, int min, int max)
+    {
+        begin_row(label);
+        return ImGui::DragInt(id, &value, speed, min, max);
+    }
+
     bool checkbox(const char* label, const char* id, bool& value)
     {
         begin_row(label);

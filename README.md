@@ -98,7 +98,7 @@ That means a scene type should not need to reimplement generic viewport access, 
 
 The current architecture is intentionally not a plugin system, not an ECS, and not a general-purpose engine API. The code is still being shaped around concrete scene slices first.
 
-The next important step is explicit authored-object ordering so render order can be edited deliberately and persisted with the scene.
+Authored objects now carry an explicit z-index so render order can be edited deliberately and persisted with the scene. With that in place the short-term editor/runtime hardening phase is complete; the next focus is picked up in [NOTES.md](NOTES.md).
 
 ## Where we are now
 
@@ -126,6 +126,7 @@ Prune currently has:
 - Rectangle and sprite rendering
 - Basic sprite resource map
 - Shared Reset and Pause/Play runtime controls across all three scene slices
+- Explicit authored-object render ordering (z-index) with a Z Index field and +1/-1 step buttons, persisted per scene; runtime-only objects always draw on top in spawn order
 - Basic code-driven audio playback and scene event hooks; authored audio UI is deferred until the broader effects/reaction workflow is designed
 - Shared scene renderer, interaction, camera, state, collision, serialization, and audio foundations
 - Shared `WorldScene` foundation for scene types
@@ -190,7 +191,7 @@ The Simple Shooter slice currently proves:
 
 ## Near-term focus
 
-Dirty-state tracking, Ctrl+S, and shared Reset/Pause/Play controls are now implemented. The remaining target in the current hardening phase is explicit authored-object render ordering.
+Dirty-state tracking, Ctrl+S, shared Reset/Pause/Play controls, and authored-object render ordering are now implemented. The short-term hardening phase is complete.
 
 Current priorities:
 
@@ -199,9 +200,9 @@ Current priorities:
 - [x] Add a Ctrl+S shortcut using the existing scene save workflow.
 - [x] Add an explicit runtime reset that restores the current in-memory authored state and removes runtime-only objects.
 - [x] Add consistent Reset and Pause/Play controls to the editor without marking the scene dirty.
-- [ ] Add authored object z-index ordering.
-- [ ] Persist and restore object ordering through scene save files.
-- [ ] Add basic editor actions for moving selected objects forward or backward in render order.
+- [x] Add authored object z-index ordering.
+- [x] Persist and restore object ordering through scene save files.
+- [x] Add basic editor actions for moving selected objects forward or backward in render order.
 
 My development plan is tracked in [NOTES.md](NOTES.md), check the file for more details on what each of these points mean as well as what is included - this is what I will be working on in my next development phase.
 
@@ -237,7 +238,7 @@ I will consider Prune ready for early external users when someone unfamiliar wit
 - [ ] Warn before closing, reloading, or replacing a scene with unsaved changes.
 - [x] Provide consistent Reset and Pause/Play runtime controls.
 - [ ] Provide an explicit saved-scene reload workflow.
-- [ ] Add explicit authored-object render ordering.
+- [x] Add explicit authored-object render ordering.
 - [ ] Apply grid snapping consistently across applicable editor tools.
 - [ ] Provide object locking or protection for authored objects that should not be changed accidentally.
 
@@ -258,6 +259,13 @@ I will consider Prune ready for early external users when someone unfamiliar wit
 - [ ] Document how to build, launch, create, edit, run, save, and reload a scene.
 - [ ] Ensure a new user can complete the basic workflow without reading the engine source.
 - [ ] Provide at least one practical way to package or share a playable scene. (This may be a simple zip of the scene file and assets, or a small standalone executable.)
+
+### Build and portability
+
+- [ ] Build and run on Linux with GCC and Clang, not just Windows/MSVC.
+- [ ] Run CI across a GCC, Clang, and MSVC compiler matrix.
+- [ ] Run the test suite and a scripted headless session under AddressSanitizer and UndefinedBehaviorSanitizer in CI.
+- [ ] Add a `.clang-format` config enforced in CI and a `clang-tidy` pass.
 
 *Until all or the majority of the above is checked, please consider Prune an active 2D game engine and editor prototype rather than something you can depend.
 

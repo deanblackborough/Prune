@@ -23,6 +23,7 @@ namespace prune::simple_shooter_factory {
         player.render.rectangle.color[0] = 0.3f;
         player.render.rectangle.color[1] = 0.8f;
         player.render.rectangle.color[2] = 0.5f;
+        player.render.z_index = 10;
         player.transform.x = 128.0f;
         player.transform.y = 128.0f;
         player.lifecycle.active = true;
@@ -73,6 +74,8 @@ namespace prune::simple_shooter_factory {
         enemy.render.rectangle.color[0] = 0.9f;
         enemy.render.rectangle.color[1] = 0.2f;
         enemy.render.rectangle.color[2] = 0.2f;
+        enemy.render.z_index = 5;
+
         enemy.lifecycle.active = true;
         enemy.render.visible = true;
         enemy.collision.solid = false;

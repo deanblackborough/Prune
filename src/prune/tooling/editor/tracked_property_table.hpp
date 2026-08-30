@@ -56,6 +56,20 @@ namespace prune::tooling::editor::tracked_property_table {
         std::string_view detail = {}
     );
 
+    bool drag_int(
+        ObjectEditTracker& tracker,
+        Scene& scene,
+        EditorCommandType type,
+        GameObject& object,
+        const char* label,
+        const char* id,
+        int& value,
+        float speed = 1.0f,
+        int min = 0,
+        int max = 0,
+        std::string_view detail = {}
+    );
+
     bool color3(
         ObjectEditTracker& tracker,
         Scene& scene,

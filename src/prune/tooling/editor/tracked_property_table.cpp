@@ -30,6 +30,9 @@ namespace prune::tooling::editor::tracked_property_table {
                     before.render.rectangle.color[1] != after.render.rectangle.color[1] ||
                     before.render.rectangle.color[2] != after.render.rectangle.color[2];
 
+            case EditorCommandType::ChangeObjectZIndex:
+                return before.render.z_index != after.render.z_index;
+
             case EditorCommandType::ChangeObjectFlag:
                 return before.lifecycle.active != after.lifecycle.active ||
                     before.render.visible != after.render.visible ||
@@ -122,6 +125,28 @@ namespace prune::tooling::editor::tracked_property_table {
     ) {
         const GameObject before = object;
         const bool changed = ::prune::tooling::imgui::property_table::slider_int(label, id, value, min, max);
+
+        tracker.capture_if_activated(before);
+        tracker.commit_if_deactivated_after_edit(scene, type, object, detail);
+
+        return changed;
+    }
+
+    bool drag_int(
+        ObjectEditTracker& tracker,
+        Scene& scene,
+        EditorCommandType type,
+        GameObject& object,
+        const char* label,
+        const char* id,
+        int& value,
+        float speed,
+        int min,
+        int max,
+        std::string_view detail
+    ) {
+        const GameObject before = object;
+        const bool changed = ::prune::tooling::imgui::property_table::drag_int(label, id, value, speed, min, max);
 
         tracker.capture_if_activated(before);
         tracker.commit_if_deactivated_after_edit(scene, type, object, detail);

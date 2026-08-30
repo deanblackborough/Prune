@@ -16,4 +16,6 @@ namespace prune {
     bool clone_active_selected_object(Scene& scene, const GridOptions& grid_options);
     bool delete_selected_objects(Scene& scene);
 
+    bool nudge_selected_object_render_order(Scene& scene, int delta);
+
 }

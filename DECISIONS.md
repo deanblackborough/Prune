@@ -629,6 +629,48 @@ Selection, movement, and scaling have different interaction rules. Explicit mode
 
 ---
 
+## Godot-style sparse z-index for authored render order
+
+### Decision
+
+Give authored objects a single `int z_index` render-order field, modelled on Godot:
+
+- Default `0`. Most objects are never touched.
+- Higher `z_index` renders later, so it draws on top.
+- Equal `z_index` falls back to existing insertion/authoring order (`stable_sort`).
+- No compaction, no normalisation, no gap management. The value is whatever the user set.
+- It is a render concern only. It does not affect collision, picking, or bounds.
+- There is no clamp or range limit; the stored value is whatever the user set.
+- Runtime-only objects ignore `z_index` entirely and always render above all authored objects, in spawn order.
+
+Editing is a plain integer field plus `+1` / `-1` step buttons in the inspector Render section, recorded as a `ChangeObjectZIndex` editor command that participates in dirty state, undo/redo, and the authored baseline like any other single-object property edit. The `+1` / `-1` buttons adjust the raw `z_index` value by one and nothing else. They do not inspect other objects or swap with the nearest one in render order, so a single press changes visible ordering only when the new value crosses another object's `z_index`.
+
+### Why
+
+The common need is small: usually just "the player draws in front of that platform". A sparse integer that stays at `0` for almost everything matches how people already think about Godot's `z_index`, and keeps the mental model tiny.
+
+A dense compacted order-key (0..N-1 rewritten on every reorder) was rejected: it makes every reorder touch many objects, complicates undo, and buys nothing when the real use is nudging one or two objects.
+
+A full layer system (named layers, separate render/collision layers) was rejected as out of scope for this phase. `z_index` is deliberately the smallest thing that makes render order authorable.
+
+Keeping runtime objects always-on-top preserves the authored/runtime split (see "Runtime objects are not authored objects") and stays deterministic without extra bookkeeping during play.
+
+### Consequences
+
+- `RenderData` carries `z_index`; it serialises under `render.z_index` and is read as optional (missing means `0`), so older scene files load unchanged.
+- Scene factories set `z_index` only where layering matters (player/tanks above terrain and platforms); everything else stays `0`.
+- The scene renderer builds a per-frame sorted draw list: authored objects by `z_index` (stable, so equal values keep authoring order), then runtime objects in spawn order. Object counts are small; a cached list is a later optimisation if it is ever needed.
+- Multi-selection reorder, To-Front/To-Back, and neighbour-relative ordering are not implemented yet.
+
+### Revisit when
+
+- Scenes need grouped layers, or separate render and collision layers.
+- Reordering many objects at once becomes a common workflow.
+- Per-frame draw-list sorting shows up in profiling.
+- Outliner drag-and-drop ordering is added.
+
+---
+
 # Runtime decisions
 
 ## Runtime objects are not authored objects

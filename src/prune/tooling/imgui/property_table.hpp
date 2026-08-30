@@ -25,6 +25,7 @@ namespace prune::tooling::imgui::property_table {
 	bool slider_float(const char* label, const char* id, float& value, float min, float max, const char* format = "%.2f");
     bool slider_int(const char* label, const char* id, int& value, int min, int max);
     bool drag_float(const char* label, const char* id, float& value, float speed = 1.0f, float min = 0.0f, float max = 0.0f, const char* format = "%.3f");
+    bool drag_int(const char* label, const char* id, int& value, float speed = 1.0f, int min = 0, int max = 0);
     bool checkbox(const char* label, const char* id, bool& value);
     bool checkbox_readonly(const char* label, const char* id, bool& value);
     bool color3(const char* label, const char* id, float color[3]);

@@ -78,6 +78,7 @@ namespace prune {
     struct RenderData {
         RenderType type = RenderType::Rectangle;
         bool visible = true;
+        int z_index = 0;
 
         RectangleVisual rectangle{};
         SpriteVisual sprite{};

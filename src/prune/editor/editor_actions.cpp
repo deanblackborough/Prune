@@ -1,6 +1,7 @@
 #include "prune/editor/editor_actions.hpp"
 
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -108,6 +109,43 @@ namespace prune {
                 std::to_string(deleted_objects.size()) + " objects"
             ));
         }
+
+        return true;
+    }
+
+    bool nudge_selected_object_render_order(Scene& scene, int delta)
+    {
+        if (delta == 0) {
+            return false;
+        }
+
+        GameObjectManager& objects = scene.get_object_manager();
+        GameObject* selected = objects.selected_object();
+
+        if (!selected || !scene.object_is_editable(*selected)) {
+            return false;
+        }
+
+        const int current = selected->render.z_index;
+
+        if (delta > 0 && current > std::numeric_limits<int>::max() - delta) {
+            return false;
+        }
+
+        if (delta < 0 && current < std::numeric_limits<int>::min() - delta) {
+            return false;
+        }
+
+        const GameObject before = *selected;
+        selected->render.z_index = current + delta;
+
+        scene.record_editor_command(make_object_command(
+            EditorCommandType::ChangeObjectZIndex,
+            editor_command_type_label(EditorCommandType::ChangeObjectZIndex),
+            before,
+            *selected,
+            std::to_string(selected->render.z_index)
+        ));
 
         return true;
     }

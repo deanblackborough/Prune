@@ -19,6 +19,7 @@ namespace prune::artillery_factory {
         tank.size.height = k_default_object_size;
         tank.render.type = RenderType::Sprite;
         tank.render.sprite.sprite_key = std::string(sprite_key);
+        tank.render.z_index = 10;
         tank.transform.x = x;
         tank.transform.y = y;
         tank.lifecycle.active = true;
