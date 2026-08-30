@@ -266,7 +266,7 @@ I will consider Prune ready for early external users when someone unfamiliar wit
 
 - [ ] Build and run on Linux with GCC and Clang, not just Windows/MSVC.
 - [ ] Run CI across a GCC, Clang, and MSVC compiler matrix.
-- [x] Run the test suite under AddressSanitizer and UndefinedBehaviorSanitizer in CI.
+- [x] Run the test suite under AddressSanitizer (Windows and Linux) and UndefinedBehaviorSanitizer (Linux) in CI.
 - [ ] Run a scripted headless session under the sanitizers (needs the runtime/editor split).
 - [x] Add a `.clang-format` config enforced in CI.
 - [ ] Add a `clang-tidy` pass.
@@ -359,7 +359,7 @@ build/Debug/Prune.exe
 ### Notes
 
 - The project is currently developed and tested on Windows.
-- GitHub Actions builds and tests the project on Windows, runs the test suite under AddressSanitizer and UndefinedBehaviorSanitizer on Windows and Linux, and checks formatting.
+- GitHub Actions builds and tests the project on Windows, runs the test suite under sanitizers (AddressSanitizer on Windows, AddressSanitizer and UndefinedBehaviorSanitizer on Linux), and checks formatting.
 - Other platforms are not intentionally unsupported, but they are not verified yet.
 - If CMake cannot find SDL2, SDL2_image, or yaml-cpp, check that the vcpkg toolchain file path is correct.
 
