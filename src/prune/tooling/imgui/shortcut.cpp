@@ -2,13 +2,11 @@
 
 namespace prune::tooling::imgui::shortcut {
 
-    bool pressed(ImGuiKeyChord chord)
-    {
-        const ImGuiIO& io = ImGui::GetIO();
+  bool pressed(ImGuiKeyChord chord) {
+    const ImGuiIO& io = ImGui::GetIO();
 
-        return !io.WantTextInput &&
-            !io.WantCaptureKeyboard &&
-            ImGui::Shortcut(chord, ImGuiInputFlags_RouteGlobal);
-    }
+    return !io.WantTextInput && !io.WantCaptureKeyboard &&
+           ImGui::Shortcut(chord, ImGuiInputFlags_RouteGlobal);
+  }
 
-}
+} // namespace prune::tooling::imgui::shortcut

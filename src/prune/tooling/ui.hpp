@@ -4,63 +4,58 @@
 
 #include <SDL2/SDL.h>
 
-#include "prune/tooling/outliner.hpp"
-#include "prune/tooling/inspector.hpp"
-#include "prune/tooling/controls.hpp"
-#include "prune/tooling/command_history.hpp"
-#include "prune/tooling/stats.hpp"
 #include "prune/scene/scene_factory.hpp"
+#include "prune/tooling/command_history.hpp"
+#include "prune/tooling/controls.hpp"
+#include "prune/tooling/inspector.hpp"
 #include "prune/tooling/options.hpp"
+#include "prune/tooling/outliner.hpp"
+#include "prune/tooling/stats.hpp"
 
 namespace prune {
 
-    class Scene;
+  class Scene;
 
-    class Ui {
-    public:
-        ~Ui();
+  class Ui {
+  public:
+    ~Ui();
 
-        void build(
-            Scene& scene,
-            SDL_Renderer* renderer,
-            bool& new_scene_requested,
-            SceneType& new_scene_type,
-            bool& load_scene_requested,
-            bool& audio_enabled,
-            bool audio_available
-        );
-        void render_scene_viewport_content(Scene& scene, SDL_Renderer* renderer);
-        void set_file_status(std::string status, bool is_error);
+    void build(Scene& scene, SDL_Renderer* renderer, bool& new_scene_requested,
+               SceneType& new_scene_type, bool& load_scene_requested,
+               bool& audio_enabled, bool audio_available);
+    void render_scene_viewport_content(Scene& scene, SDL_Renderer* renderer);
+    void set_file_status(std::string status, bool is_error);
 
-    private:
-        void save_scene(Scene& scene);
-        void draw_scene_viewport(Scene& scene, SDL_Renderer* renderer);
-        void ensure_scene_render_target(SDL_Renderer* renderer, int width, int height);
-        void destroy_scene_render_target();
+  private:
+    void save_scene(Scene& scene);
+    void draw_scene_viewport(Scene& scene, SDL_Renderer* renderer);
+    void ensure_scene_render_target(SDL_Renderer* renderer, int width,
+                                    int height);
+    void destroy_scene_render_target();
 
-        SDL_Texture* m_scene_render_target = nullptr;
-        int m_scene_render_target_width = 0;
-        int m_scene_render_target_height = 0;
+    SDL_Texture* m_scene_render_target = nullptr;
+    int m_scene_render_target_width = 0;
+    int m_scene_render_target_height = 0;
 
-        bool m_show_scene_viewport = true;
+    bool m_show_scene_viewport = true;
 
-        Outliner m_outliner;
-        Inspector m_inspector;
-        Controls m_controls;
-        CommandHistoryPanel m_command_history;
-        Stats m_stats;
-        Options m_options;
+    Outliner m_outliner;
+    Inspector m_inspector;
+    Controls m_controls;
+    CommandHistoryPanel m_command_history;
+    Stats m_stats;
+    Options m_options;
 
-        std::string m_file_status;
-        bool m_file_status_is_error = false;
+    std::string m_file_status;
+    bool m_file_status_is_error = false;
 
-        bool m_show_view_grid_options = false;
-        bool m_show_outliner = true;
-        bool m_show_inspector = true;
-        bool m_show_controls = false;
-        bool m_show_stats = false;
-        bool m_show_command_history = false;
-        bool m_show_scene_tools = true;
-        bool m_show_imgui_demo = false;
-    };
-}
+    bool m_show_view_grid_options = false;
+    bool m_show_outliner = true;
+    bool m_show_inspector = true;
+    bool m_show_controls = false;
+    bool m_show_stats = false;
+    bool m_show_command_history = false;
+    bool m_show_scene_tools = true;
+    bool m_show_imgui_demo = false;
+  };
+} // namespace prune

@@ -20,5 +20,7 @@ else()
     target_compile_options(PruneTests PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+prune_enable_sanitizers(PruneTests)
+
 include(Catch)
 catch_discover_tests(PruneTests)

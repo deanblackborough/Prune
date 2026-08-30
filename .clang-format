@@ -1,0 +1,12 @@
+# Style for Prune.
+# Stock LLVM style, with two deviations that match existing code/conventions:
+# pointers/references bind left, and namespace bodies are indented.
+# Formatter: clang-format 22.1.x (pinned in CI, matched by the bundled VS toolset).
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: Latest
+LineEnding: LF
+InsertNewlineAtEOF: true
+
+PointerAlignment: Left
+NamespaceIndentation: All

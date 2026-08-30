@@ -4,453 +4,466 @@
 
 #include <SDL_image.h>
 
-#include "prune/scene/scene_renderer.hpp"
+#include "prune/editor/tools/transform_gizmo.hpp"
 #include "prune/resources/sprites.hpp"
 #include "prune/scene/scene.hpp"
-#include "prune/editor/tools/transform_gizmo.hpp"
+#include "prune/scene/scene_renderer.hpp"
 
 namespace prune {
 
-    SceneRenderer::~SceneRenderer()
-    {
-        clear_cached_textures();
+  SceneRenderer::~SceneRenderer() { clear_cached_textures(); }
+
+  void SceneRenderer::clear_cached_textures() noexcept {
+    for (auto& [key, texture] : m_sprite_textures) {
+      if (texture) {
+        SDL_DestroyTexture(texture);
+      }
     }
 
-    void SceneRenderer::clear_cached_textures() noexcept
-    {
-        for (auto& [key, texture] : m_sprite_textures) {
-            if (texture) {
-                SDL_DestroyTexture(texture);
-            }
-        }
+    m_sprite_textures.clear();
+  }
 
-        m_sprite_textures.clear();
+  bool SceneRenderer::is_rect_visible(const SceneViewport& viewport,
+                                      const SDL_Rect& rect) noexcept {
+    return rect.x + rect.w >= 0 && rect.y + rect.h >= 0 &&
+           rect.x < viewport.width && rect.y < viewport.height;
+  }
+
+  SDL_Rect SceneRenderer::expanded_rect(const SDL_Rect& rect,
+                                        int amount) noexcept {
+    return SDL_Rect{rect.x - amount, rect.y - amount, rect.w + amount * 2,
+                    rect.h + amount * 2};
+  }
+
+  void SceneRenderer::draw_grid(SDL_Renderer* renderer,
+                                const SceneViewport& viewport,
+                                const SceneCamera& scene_camera,
+                                const GridOptions& grid_options) const {
+    if (!grid_options.show_grid || grid_options.grid_size <= 1) {
+      return;
     }
 
-    bool SceneRenderer::is_rect_visible(const SceneViewport& viewport, const SDL_Rect& rect) noexcept
-    {
-        return rect.x + rect.w >= 0 &&
-            rect.y + rect.h >= 0 &&
-            rect.x < viewport.width &&
-            rect.y < viewport.height;
+    const int grid_size = std::max(1, grid_options.grid_size);
+    const int major_every = 4; // 16px * 4 = 64px
+
+    const Camera& camera = scene_camera.active();
+
+    const float zoom = std::max(camera.zoom, 0.01f);
+
+    const float left_world = camera.x;
+    const float right_world =
+        camera.x + (static_cast<float>(viewport.width) / zoom);
+    const float top_world = camera.y;
+    const float bottom_world =
+        camera.y + (static_cast<float>(viewport.height) / zoom);
+
+    const float first_vertical_world =
+        std::floor(left_world / static_cast<float>(grid_size)) *
+        static_cast<float>(grid_size);
+
+    const float first_horizontal_world =
+        std::floor(top_world / static_cast<float>(grid_size)) *
+        static_cast<float>(grid_size);
+
+    const int vertical_line_count =
+        static_cast<int>(std::ceil((right_world - first_vertical_world) /
+                                   static_cast<float>(grid_size))) +
+        1;
+
+    for (int i = 0; i < vertical_line_count; ++i) {
+      const float world_x =
+          first_vertical_world + static_cast<float>(i * grid_size);
+
+      if (world_x > right_world) {
+        break;
+      }
+
+      const int grid_index =
+          static_cast<int>(std::round(world_x / static_cast<float>(grid_size)));
+      const bool is_origin = grid_index == 0;
+      const bool is_major = grid_index % major_every == 0;
+
+      if (is_origin) {
+        SDL_SetRenderDrawColor(renderer, 130, 90, 160, 110);
+      } else if (is_major) {
+        SDL_SetRenderDrawColor(renderer, 74, 52, 96, 70);
+      } else {
+        SDL_SetRenderDrawColor(renderer, 48, 34, 64, 55);
+      }
+
+      const int screen_x =
+          static_cast<int>(std::round((world_x - camera.x) * zoom));
+      SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, viewport.height);
     }
 
-    SDL_Rect SceneRenderer::expanded_rect(const SDL_Rect& rect, int amount) noexcept
-    {
-        return SDL_Rect{
-            rect.x - amount,
-            rect.y - amount,
-            rect.w + amount * 2,
-            rect.h + amount * 2
-        };
+    const int horizontal_line_count =
+        static_cast<int>(std::ceil((bottom_world - first_horizontal_world) /
+                                   static_cast<float>(grid_size))) +
+        1;
+
+    for (int i = 0; i < horizontal_line_count; ++i) {
+      const float world_y =
+          first_horizontal_world + static_cast<float>(i * grid_size);
+
+      if (world_y > bottom_world) {
+        break;
+      }
+
+      const int grid_index =
+          static_cast<int>(std::round(world_y / static_cast<float>(grid_size)));
+      const bool is_origin = grid_index == 0;
+      const bool is_major = grid_index % major_every == 0;
+
+      if (is_origin) {
+        SDL_SetRenderDrawColor(renderer, 130, 90, 160, 110);
+      } else if (is_major) {
+        SDL_SetRenderDrawColor(renderer, 74, 52, 96, 90);
+      } else {
+        SDL_SetRenderDrawColor(renderer, 48, 34, 64, 55);
+      }
+
+      const int screen_y =
+          static_cast<int>(std::round((world_y - camera.y) * zoom));
+      SDL_RenderDrawLine(renderer, 0, screen_y, viewport.width, screen_y);
+    }
+  }
+
+  void SceneRenderer::draw_object(SDL_Renderer* renderer,
+                                  const SceneState& state,
+                                  const SceneCamera& camera,
+                                  const GameObject& object) {
+    switch (object.render.type) {
+    case RenderType::Rectangle:
+      draw_rectangle_object(renderer, state, camera, object);
+      break;
+
+    case RenderType::Sprite:
+      draw_sprite_object(renderer, state, camera, object);
+      break;
+
+    default:
+      break;
+    }
+  }
+
+  void SceneRenderer::draw_rectangle_object(SDL_Renderer* renderer,
+                                            const SceneState& state,
+                                            const SceneCamera& camera,
+                                            const GameObject& object) const {
+    SDL_Rect rect = camera.world_to_screen_rect(object);
+
+    if (!is_rect_visible(state.viewport, rect)) {
+      return;
     }
 
-    void SceneRenderer::draw_grid(SDL_Renderer* renderer, const SceneViewport& viewport, const SceneCamera& scene_camera, const GridOptions& grid_options) const
-    {
-        if (!grid_options.show_grid || grid_options.grid_size <= 1) {
-            return;
-        }
+    SDL_SetRenderDrawColor(
+        renderer, static_cast<Uint8>(object.render.rectangle.color[0] * 255.0f),
+        static_cast<Uint8>(object.render.rectangle.color[1] * 255.0f),
+        static_cast<Uint8>(object.render.rectangle.color[2] * 255.0f), 255);
 
-        const int grid_size = std::max(1, grid_options.grid_size);
-        const int major_every = 4; // 16px * 4 = 64px
+    SDL_RenderFillRect(renderer, &rect);
+  }
 
-        const Camera& camera = scene_camera.active();
+  void SceneRenderer::draw_sprite_object(SDL_Renderer* renderer,
+                                         const SceneState& state,
+                                         const SceneCamera& camera,
+                                         const GameObject& object) {
+    SDL_Rect rect = camera.world_to_screen_rect(object);
 
-        const float zoom = std::max(camera.zoom, 0.01f);
-
-        const float left_world = camera.x;
-        const float right_world = camera.x + (static_cast<float>(viewport.width) / zoom);
-        const float top_world = camera.y;
-        const float bottom_world = camera.y + (static_cast<float>(viewport.height) / zoom);
-
-        const float first_vertical_world =
-            std::floor(left_world / static_cast<float>(grid_size)) * static_cast<float>(grid_size);
-
-        const float first_horizontal_world =
-            std::floor(top_world / static_cast<float>(grid_size)) * static_cast<float>(grid_size);
-
-        const int vertical_line_count =
-            static_cast<int>(std::ceil((right_world - first_vertical_world) / static_cast<float>(grid_size))) + 1;
-
-        for (int i = 0; i < vertical_line_count; ++i) {
-            const float world_x = first_vertical_world + static_cast<float>(i * grid_size);
-
-            if (world_x > right_world) {
-                break;
-            }
-
-            const int grid_index = static_cast<int>(std::round(world_x / static_cast<float>(grid_size)));
-            const bool is_origin = grid_index == 0;
-            const bool is_major = grid_index % major_every == 0;
-
-            if (is_origin) {
-                SDL_SetRenderDrawColor(renderer, 130, 90, 160, 110);
-            }
-            else if (is_major) {
-                SDL_SetRenderDrawColor(renderer, 74, 52, 96, 70);
-            }
-            else {
-                SDL_SetRenderDrawColor(renderer, 48, 34, 64, 55);
-            }
-
-            const int screen_x = static_cast<int>(std::round((world_x - camera.x) * zoom));
-            SDL_RenderDrawLine(renderer, screen_x, 0, screen_x, viewport.height);
-        }
-
-        const int horizontal_line_count =
-            static_cast<int>(std::ceil((bottom_world - first_horizontal_world) / static_cast<float>(grid_size))) + 1;
-
-        for (int i = 0; i < horizontal_line_count; ++i) {
-            const float world_y = first_horizontal_world + static_cast<float>(i * grid_size);
-
-            if (world_y > bottom_world) {
-                break;
-            }
-
-            const int grid_index = static_cast<int>(std::round(world_y / static_cast<float>(grid_size)));
-            const bool is_origin = grid_index == 0;
-            const bool is_major = grid_index % major_every == 0;
-
-            if (is_origin) {
-                SDL_SetRenderDrawColor(renderer, 130, 90, 160, 110);
-            }
-            else if (is_major) {
-                SDL_SetRenderDrawColor(renderer, 74, 52, 96, 90);
-            }
-            else {
-                SDL_SetRenderDrawColor(renderer, 48, 34, 64, 55);
-            }
-
-            const int screen_y = static_cast<int>(std::round((world_y - camera.y) * zoom));
-            SDL_RenderDrawLine(renderer, 0, screen_y, viewport.width, screen_y);
-        }
+    if (!is_rect_visible(state.viewport, rect)) {
+      return;
     }
 
-    void SceneRenderer::draw_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object)
-    {
-        switch (object.render.type) {
-        case RenderType::Rectangle:
-            draw_rectangle_object(renderer, state, camera, object);
-            break;
+    SDL_Texture* texture =
+        sprite_texture(renderer, object.render.sprite.sprite_key);
 
-        case RenderType::Sprite:
-            draw_sprite_object(renderer, state, camera, object);
-            break;
+    if (texture) {
+      const SDL_RendererFlip flip =
+          object.render.sprite.flip_x ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+      SDL_RenderCopyEx(renderer, texture, nullptr, &rect, 0.0, nullptr, flip);
+    } else {
+      draw_sprite_fallback(renderer, rect);
+    }
+  }
 
-        default:
-            break;
-        }
+  void SceneRenderer::render(SDL_Renderer* renderer, const Scene& scene,
+                             const SceneState& state, const SceneCamera& camera,
+                             const GridOptions& grid_options) {
+    if (!state.viewport.has_area()) {
+      return;
     }
 
-    void SceneRenderer::draw_rectangle_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object) const
-    {
-        SDL_Rect rect = camera.world_to_screen_rect(object);
+    draw_grid(renderer, state.viewport, camera, grid_options);
 
-        if (!is_rect_visible(state.viewport, rect)) {
-            return;
-        }
+    std::vector<const GameObject*> draw_order;
+    draw_order.reserve(state.objects.objects().size());
 
-        SDL_SetRenderDrawColor(renderer,
-            static_cast<Uint8>(object.render.rectangle.color[0] * 255.0f),
-            static_cast<Uint8>(object.render.rectangle.color[1] * 255.0f),
-            static_cast<Uint8>(object.render.rectangle.color[2] * 255.0f),
-            255
-        );
+    for (const auto& object : state.objects.objects()) {
+      if (!object.lifecycle.active || !object.render.visible) {
+        continue;
+      }
 
-        SDL_RenderFillRect(renderer, &rect);
+      draw_order.push_back(&object);
     }
 
-    void SceneRenderer::draw_sprite_object(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object)
-    {
-        SDL_Rect rect = camera.world_to_screen_rect(object);
+    std::stable_sort(draw_order.begin(), draw_order.end(),
+                     [](const GameObject* lhs, const GameObject* rhs) {
+                       const bool lhs_runtime =
+                           lhs->identity.type == GameObjectType::Runtime;
+                       const bool rhs_runtime =
+                           rhs->identity.type == GameObjectType::Runtime;
 
-        if (!is_rect_visible(state.viewport, rect)) {
-            return;
-        }
+                       if (lhs_runtime != rhs_runtime) {
+                         return !lhs_runtime;
+                       }
 
-        SDL_Texture* texture = sprite_texture(renderer, object.render.sprite.sprite_key);
+                       if (lhs_runtime) {
+                         return false;
+                       }
 
-        if (texture) {
-            const SDL_RendererFlip flip = object.render.sprite.flip_x ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-            SDL_RenderCopyEx(renderer, texture, nullptr, &rect, 0.0, nullptr, flip);
-        }
-        else {
-            draw_sprite_fallback(renderer, rect);
-        }
+                       return lhs->render.z_index < rhs->render.z_index;
+                     });
+
+    for (const GameObject* object : draw_order) {
+      draw_object(renderer, state, camera, *object);
+      draw_debug_overlays(renderer, state, camera, *object);
     }
 
-    void SceneRenderer::render(SDL_Renderer* renderer, const Scene& scene, const SceneState& state, const SceneCamera& camera, const GridOptions& grid_options)
-    {
-        if (!state.viewport.has_area()) {
-            return;
+    if (state.scene_options.highlight_selected) {
+      for (const auto& object : state.objects.objects()) {
+        if (!object.lifecycle.active || !object.render.visible ||
+            !state.objects.is_selected(object.identity.id)) {
+          continue;
         }
 
-        draw_grid(renderer, state.viewport, camera, grid_options);
+        draw_selected_outline(renderer, scene, state, camera, object);
+      }
 
-        std::vector<const GameObject*> draw_order;
-        draw_order.reserve(state.objects.objects().size());
+      draw_multi_selection_bounds(renderer, scene, state, camera);
+    }
+  }
 
-        for (const auto& object : state.objects.objects()) {
-            if (!object.lifecycle.active || !object.render.visible) {
-                continue;
-            }
+  void SceneRenderer::draw_debug_overlays(SDL_Renderer* renderer,
+                                          const SceneState& state,
+                                          const SceneCamera& camera,
+                                          const GameObject& object) const {
+    const DebugOverlayOptions& overlays = state.scene_options.debug_overlays;
 
-            draw_order.push_back(&object);
-        }
-
-        std::stable_sort(
-            draw_order.begin(),
-            draw_order.end(),
-            [](const GameObject* lhs, const GameObject* rhs) {
-                const bool lhs_runtime = lhs->identity.type == GameObjectType::Runtime;
-                const bool rhs_runtime = rhs->identity.type == GameObjectType::Runtime;
-
-                if (lhs_runtime != rhs_runtime) {
-                    return !lhs_runtime;
-                }
-
-                if (lhs_runtime) {
-                    return false;
-                }
-
-                return lhs->render.z_index < rhs->render.z_index;
-            }
-        );
-
-        for (const GameObject* object : draw_order) {
-            draw_object(renderer, state, camera, *object);
-            draw_debug_overlays(renderer, state, camera, *object);
-        }
-
-        if (state.scene_options.highlight_selected) {
-            for (const auto& object : state.objects.objects()) {
-                if (!object.lifecycle.active || !object.render.visible || !state.objects.is_selected(object.identity.id)) {
-                    continue;
-                }
-
-                draw_selected_outline(renderer, scene, state, camera, object);
-            }
-
-            draw_multi_selection_bounds(renderer, scene, state, camera);
-        }
+    if (!overlays.show_collision_bounds && !overlays.show_runtime_markers) {
+      return;
     }
 
-    void SceneRenderer::draw_debug_overlays(SDL_Renderer* renderer, const SceneState& state, const SceneCamera& camera, const GameObject& object) const
-    {
-        const DebugOverlayOptions& overlays = state.scene_options.debug_overlays;
+    const SDL_Rect rect = camera.world_to_screen_rect(object);
 
-        if (!overlays.show_collision_bounds && !overlays.show_runtime_markers) {
-            return;
-        }
-
-        const SDL_Rect rect = camera.world_to_screen_rect(object);
-
-        if (!is_rect_visible(state.viewport, rect)) {
-            return;
-        }
-
-        if (overlays.show_collision_bounds) {
-            if (object.collision.solid) {
-                SDL_SetRenderDrawColor(renderer, 255, 215, 90, 210);
-            }
-            else {
-                SDL_SetRenderDrawColor(renderer, 110, 180, 255, 170);
-            }
-
-            SDL_RenderDrawRect(renderer, &rect);
-        }
-
-        if (overlays.show_runtime_markers && object.identity.type == GameObjectType::Runtime) {
-            const int marker_size = 5;
-            const SDL_Rect marker{
-                rect.x + std::max(0, rect.w - marker_size),
-                rect.y,
-                marker_size,
-                marker_size
-            };
-
-            SDL_SetRenderDrawColor(renderer, 255, 90, 140, 230);
-            SDL_RenderFillRect(renderer, &marker);
-        }
+    if (!is_rect_visible(state.viewport, rect)) {
+      return;
     }
 
-    void SceneRenderer::draw_selected_gizmo(
-        SDL_Renderer* renderer,
-        const SDL_Rect& selected_outline,
-        EditorTool current_tool,
-        bool movable,
-        bool scalable
-    ) const
-    {
-        SDL_SetRenderDrawColor(renderer, 174, 99, 242, 190);
-        SDL_RenderDrawRect(renderer, &selected_outline);
+    if (overlays.show_collision_bounds) {
+      if (object.collision.solid) {
+        SDL_SetRenderDrawColor(renderer, 255, 215, 90, 210);
+      } else {
+        SDL_SetRenderDrawColor(renderer, 110, 180, 255, 170);
+      }
 
-        if (current_tool == EditorTool::Scale) {
-            if (!scalable) {
-                return;
-            }
-
-            SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
-            for (const editor::tools::transform_gizmo::ScaleHandle handle : editor::tools::transform_gizmo::k_scale_handles) {
-                const SDL_Rect scale_handle = editor::tools::transform_gizmo::scale_handle_rect(selected_outline, handle);
-                SDL_RenderFillRect(renderer, &scale_handle);
-            }
-
-            return;
-        }
-
-        if (!movable) {
-            return;
-        }
-
-        const SDL_Rect move_handle = editor::tools::transform_gizmo::move_handle_rect(selected_outline);
-
-        SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
-        SDL_RenderFillRect(renderer, &move_handle);
+      SDL_RenderDrawRect(renderer, &rect);
     }
 
-    void SceneRenderer::draw_sprite_fallback(SDL_Renderer* renderer, const SDL_Rect& rect) const
-    {
-        SDL_SetRenderDrawColor(renderer, 38, 28, 48, 255);
-        SDL_RenderFillRect(renderer, &rect);
+    if (overlays.show_runtime_markers &&
+        object.identity.type == GameObjectType::Runtime) {
+      const int marker_size = 5;
+      const SDL_Rect marker{rect.x + std::max(0, rect.w - marker_size), rect.y,
+                            marker_size, marker_size};
 
-        SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
-        SDL_RenderDrawRect(renderer, &rect);
+      SDL_SetRenderDrawColor(renderer, 255, 90, 140, 230);
+      SDL_RenderFillRect(renderer, &marker);
+    }
+  }
 
-        SDL_RenderDrawLine(renderer, rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
-        SDL_RenderDrawLine(renderer, rect.x + rect.w, rect.y, rect.x, rect.y + rect.h);
+  void SceneRenderer::draw_selected_gizmo(SDL_Renderer* renderer,
+                                          const SDL_Rect& selected_outline,
+                                          EditorTool current_tool, bool movable,
+                                          bool scalable) const {
+    SDL_SetRenderDrawColor(renderer, 174, 99, 242, 190);
+    SDL_RenderDrawRect(renderer, &selected_outline);
+
+    if (current_tool == EditorTool::Scale) {
+      if (!scalable) {
+        return;
+      }
+
+      SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
+      for (const editor::tools::transform_gizmo::ScaleHandle handle :
+           editor::tools::transform_gizmo::k_scale_handles) {
+        const SDL_Rect scale_handle =
+            editor::tools::transform_gizmo::scale_handle_rect(selected_outline,
+                                                              handle);
+        SDL_RenderFillRect(renderer, &scale_handle);
+      }
+
+      return;
     }
 
-    void SceneRenderer::draw_selected_outline(SDL_Renderer* renderer, const Scene& scene, const SceneState& state, const SceneCamera& camera, const GameObject& object) const
-    {
-        const SDL_Rect object_rect = camera.world_to_screen_rect(object);
-        if (!is_rect_visible(state.viewport, object_rect)) {
-            return;
-        }
-
-        const SDL_Rect selected_outline = editor::tools::transform_gizmo::selected_outline_rect(object_rect);
-        const bool show_object_handle = state.objects.selected_count() == 1;
-        draw_selected_gizmo(
-            renderer,
-            selected_outline,
-            state.editor_tool,
-            show_object_handle && scene.object_is_movable(object),
-            show_object_handle && scene.object_is_scalable(object)
-        );
+    if (!movable) {
+      return;
     }
 
+    const SDL_Rect move_handle =
+        editor::tools::transform_gizmo::move_handle_rect(selected_outline);
 
-    void SceneRenderer::draw_multi_selection_bounds(SDL_Renderer* renderer, const Scene& scene, const SceneState& state, const SceneCamera& camera) const
-    {
-        if (state.objects.selected_count() <= 1) {
-            return;
-        }
+    SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
+    SDL_RenderFillRect(renderer, &move_handle);
+  }
 
-        SDL_Rect bounds{};
-        if (!selected_screen_bounds(state, camera, bounds)) {
-            return;
-        }
+  void SceneRenderer::draw_sprite_fallback(SDL_Renderer* renderer,
+                                           const SDL_Rect& rect) const {
+    SDL_SetRenderDrawColor(renderer, 38, 28, 48, 255);
+    SDL_RenderFillRect(renderer, &rect);
 
-        const SDL_Rect outline = expanded_rect(bounds, 6);
+    SDL_SetRenderDrawColor(renderer, 174, 99, 242, 255);
+    SDL_RenderDrawRect(renderer, &rect);
 
-        SDL_SetRenderDrawColor(renderer, 120, 190, 255, 230);
-        SDL_RenderDrawRect(renderer, &outline);
+    SDL_RenderDrawLine(renderer, rect.x, rect.y, rect.x + rect.w,
+                       rect.y + rect.h);
+    SDL_RenderDrawLine(renderer, rect.x + rect.w, rect.y, rect.x,
+                       rect.y + rect.h);
+  }
 
-        if (state.editor_tool == EditorTool::Scale) {
-            return;
-        }
-
-        if (!multi_selection_is_movable(scene, state)) {
-            return;
-        }
-
-        const SDL_Rect move_handle = editor::tools::transform_gizmo::move_handle_rect(outline);
-
-        SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
-        SDL_RenderFillRect(renderer, &move_handle);
+  void SceneRenderer::draw_selected_outline(SDL_Renderer* renderer,
+                                            const Scene& scene,
+                                            const SceneState& state,
+                                            const SceneCamera& camera,
+                                            const GameObject& object) const {
+    const SDL_Rect object_rect = camera.world_to_screen_rect(object);
+    if (!is_rect_visible(state.viewport, object_rect)) {
+      return;
     }
 
-    bool SceneRenderer::multi_selection_is_movable(const Scene& scene, const SceneState& state) const
-    {
-        if (state.objects.selected_count() <= 1) {
-            return false;
-        }
+    const SDL_Rect selected_outline =
+        editor::tools::transform_gizmo::selected_outline_rect(object_rect);
+    const bool show_object_handle = state.objects.selected_count() == 1;
+    draw_selected_gizmo(renderer, selected_outline, state.editor_tool,
+                        show_object_handle && scene.object_is_movable(object),
+                        show_object_handle && scene.object_is_scalable(object));
+  }
 
-        for (const GameObjectId id : state.objects.selected_ids()) {
-            const GameObject* object = state.objects.get_by_id(id);
-            if (!object || !scene.object_is_movable(*object)) {
-                return false;
-            }
-        }
-
-        return true;
+  void SceneRenderer::draw_multi_selection_bounds(
+      SDL_Renderer* renderer, const Scene& scene, const SceneState& state,
+      const SceneCamera& camera) const {
+    if (state.objects.selected_count() <= 1) {
+      return;
     }
 
-    bool SceneRenderer::selected_screen_bounds(const SceneState& state, const SceneCamera& camera, SDL_Rect& bounds) const
-    {
-        bool has_bounds = false;
-        int min_x = 0;
-        int min_y = 0;
-        int max_x = 0;
-        int max_y = 0;
-
-        for (const GameObjectId id : state.objects.selected_ids()) {
-            const GameObject* object = state.objects.get_by_id(id);
-            if (!object || !object->lifecycle.active || !object->render.visible) {
-                continue;
-            }
-
-            const SDL_Rect object_rect = camera.world_to_screen_rect(*object);
-            if (!is_rect_visible(state.viewport, object_rect)) {
-                continue;
-            }
-
-            const SDL_Rect selected_outline = editor::tools::transform_gizmo::selected_outline_rect(object_rect);
-
-            if (!has_bounds) {
-                min_x = selected_outline.x;
-                min_y = selected_outline.y;
-                max_x = selected_outline.x + selected_outline.w;
-                max_y = selected_outline.y + selected_outline.h;
-                has_bounds = true;
-                continue;
-            }
-
-            min_x = std::min(min_x, selected_outline.x);
-            min_y = std::min(min_y, selected_outline.y);
-            max_x = std::max(max_x, selected_outline.x + selected_outline.w);
-            max_y = std::max(max_y, selected_outline.y + selected_outline.h);
-        }
-
-        if (!has_bounds) {
-            return false;
-        }
-
-        bounds = SDL_Rect{ min_x, min_y, max_x - min_x, max_y - min_y };
-        return true;
+    SDL_Rect bounds{};
+    if (!selected_screen_bounds(state, camera, bounds)) {
+      return;
     }
 
-    SDL_Texture* SceneRenderer::sprite_texture(SDL_Renderer* renderer, const std::string& sprite_key)
-    {
-        if (sprite_key.empty()) {
-            return nullptr;
-        }
+    const SDL_Rect outline = expanded_rect(bounds, 6);
 
-        if (const auto existing = m_sprite_textures.find(sprite_key); existing != m_sprite_textures.end()) {
-            return existing->second;
-        }
+    SDL_SetRenderDrawColor(renderer, 120, 190, 255, 230);
+    SDL_RenderDrawRect(renderer, &outline);
 
-        const Sprites* resource = find_sprite_resource(sprite_key);
-        if (!resource) {
-            m_sprite_textures.emplace(sprite_key, nullptr);
-            return nullptr;
-        }
-
-        SDL_Texture* texture = IMG_LoadTexture(renderer, resource->path.data());
-
-        m_sprite_textures.emplace(sprite_key, texture);
-
-        return texture;
+    if (state.editor_tool == EditorTool::Scale) {
+      return;
     }
 
-}
+    if (!multi_selection_is_movable(scene, state)) {
+      return;
+    }
+
+    const SDL_Rect move_handle =
+        editor::tools::transform_gizmo::move_handle_rect(outline);
+
+    SDL_SetRenderDrawColor(renderer, 236, 205, 255, 255);
+    SDL_RenderFillRect(renderer, &move_handle);
+  }
+
+  bool
+  SceneRenderer::multi_selection_is_movable(const Scene& scene,
+                                            const SceneState& state) const {
+    if (state.objects.selected_count() <= 1) {
+      return false;
+    }
+
+    for (const GameObjectId id : state.objects.selected_ids()) {
+      const GameObject* object = state.objects.get_by_id(id);
+      if (!object || !scene.object_is_movable(*object)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool SceneRenderer::selected_screen_bounds(const SceneState& state,
+                                             const SceneCamera& camera,
+                                             SDL_Rect& bounds) const {
+    bool has_bounds = false;
+    int min_x = 0;
+    int min_y = 0;
+    int max_x = 0;
+    int max_y = 0;
+
+    for (const GameObjectId id : state.objects.selected_ids()) {
+      const GameObject* object = state.objects.get_by_id(id);
+      if (!object || !object->lifecycle.active || !object->render.visible) {
+        continue;
+      }
+
+      const SDL_Rect object_rect = camera.world_to_screen_rect(*object);
+      if (!is_rect_visible(state.viewport, object_rect)) {
+        continue;
+      }
+
+      const SDL_Rect selected_outline =
+          editor::tools::transform_gizmo::selected_outline_rect(object_rect);
+
+      if (!has_bounds) {
+        min_x = selected_outline.x;
+        min_y = selected_outline.y;
+        max_x = selected_outline.x + selected_outline.w;
+        max_y = selected_outline.y + selected_outline.h;
+        has_bounds = true;
+        continue;
+      }
+
+      min_x = std::min(min_x, selected_outline.x);
+      min_y = std::min(min_y, selected_outline.y);
+      max_x = std::max(max_x, selected_outline.x + selected_outline.w);
+      max_y = std::max(max_y, selected_outline.y + selected_outline.h);
+    }
+
+    if (!has_bounds) {
+      return false;
+    }
+
+    bounds = SDL_Rect{min_x, min_y, max_x - min_x, max_y - min_y};
+    return true;
+  }
+
+  SDL_Texture* SceneRenderer::sprite_texture(SDL_Renderer* renderer,
+                                             const std::string& sprite_key) {
+    if (sprite_key.empty()) {
+      return nullptr;
+    }
+
+    if (const auto existing = m_sprite_textures.find(sprite_key);
+        existing != m_sprite_textures.end()) {
+      return existing->second;
+    }
+
+    const Sprites* resource = find_sprite_resource(sprite_key);
+    if (!resource) {
+      m_sprite_textures.emplace(sprite_key, nullptr);
+      return nullptr;
+    }
+
+    SDL_Texture* texture = IMG_LoadTexture(renderer, resource->path.data());
+
+    m_sprite_textures.emplace(sprite_key, texture);
+
+    return texture;
+  }
+
+} // namespace prune

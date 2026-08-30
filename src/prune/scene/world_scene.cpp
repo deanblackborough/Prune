@@ -10,750 +10,703 @@
 #include "imgui.h"
 
 #include "prune/scene/collision.hpp"
+#include "prune/scene/scene_serializer.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
-#include "prune/scene/scene_serializer.hpp"
 
 namespace prune {
 
-    namespace {
-        void apply_authored_delta(
-            EditorCommandType type,
-            const GameObject& before,
-            const GameObject& after,
-            GameObject& authored
-        ) {
-            switch (type) {
-            case EditorCommandType::MoveObject:
-            case EditorCommandType::ChangeObjectPosition:
-                authored.transform = after.transform;
-                break;
+  namespace {
+    void apply_authored_delta(EditorCommandType type, const GameObject& before,
+                              const GameObject& after, GameObject& authored) {
+      switch (type) {
+      case EditorCommandType::MoveObject:
+      case EditorCommandType::ChangeObjectPosition:
+        authored.transform = after.transform;
+        break;
 
-            case EditorCommandType::ChangeObjectSize:
-                authored.transform = after.transform;
-                authored.size = after.size;
-                break;
+      case EditorCommandType::ChangeObjectSize:
+        authored.transform = after.transform;
+        authored.size = after.size;
+        break;
 
-            case EditorCommandType::RenameObject:
-                authored.identity.name = after.identity.name;
-                break;
+      case EditorCommandType::RenameObject:
+        authored.identity.name = after.identity.name;
+        break;
 
-            case EditorCommandType::ChangeObjectRenderType:
-                authored.render.type = after.render.type;
-                break;
+      case EditorCommandType::ChangeObjectRenderType:
+        authored.render.type = after.render.type;
+        break;
 
-            case EditorCommandType::ChangeObjectColour:
-                std::copy(
-                    std::begin(after.render.rectangle.color),
-                    std::end(after.render.rectangle.color),
-                    std::begin(authored.render.rectangle.color)
-                );
-                break;
+      case EditorCommandType::ChangeObjectColour:
+        std::copy(std::begin(after.render.rectangle.color),
+                  std::end(after.render.rectangle.color),
+                  std::begin(authored.render.rectangle.color));
+        break;
 
-            case EditorCommandType::ChangeObjectZIndex:
-                authored.render.z_index = after.render.z_index;
-                break;
+      case EditorCommandType::ChangeObjectZIndex:
+        authored.render.z_index = after.render.z_index;
+        break;
 
-            case EditorCommandType::ChangeObjectFlag:
-                if (before.lifecycle.active != after.lifecycle.active) {
-                    authored.lifecycle.active = after.lifecycle.active;
-                }
-                if (before.render.visible != after.render.visible) {
-                    authored.render.visible = after.render.visible;
-                }
-                if (before.collision.solid != after.collision.solid) {
-                    authored.collision.solid = after.collision.solid;
-                }
-                break;
-
-            case EditorCommandType::ChangeSprite:
-                if (before.render.sprite.sprite_key != after.render.sprite.sprite_key) {
-                    authored.render.sprite.sprite_key = after.render.sprite.sprite_key;
-                }
-                if (before.render.sprite.flip_x != after.render.sprite.flip_x) {
-                    authored.render.sprite.flip_x = after.render.sprite.flip_x;
-                }
-                break;
-
-            case EditorCommandType::CreateObject:
-            case EditorCommandType::DeleteObject:
-            case EditorCommandType::MoveViewport:
-            case EditorCommandType::MoveObjects:
-            case EditorCommandType::DeleteObjects:
-                break;
-            }
+      case EditorCommandType::ChangeObjectFlag:
+        if (before.lifecycle.active != after.lifecycle.active) {
+          authored.lifecycle.active = after.lifecycle.active;
         }
-
-        void restore_object_in_id_order(GameObjectManager& objects, const GameObject& object)
-        {
-            if (GameObject* existing = objects.get_by_id(object.identity.id)) {
-                *existing = object;
-                return;
-            }
-
-            objects.add_loaded_object(object);
-            std::ranges::stable_sort(
-                objects.objects(),
-                {},
-                [](const GameObject& candidate) { return candidate.identity.id; }
-            );
+        if (before.render.visible != after.render.visible) {
+          authored.render.visible = after.render.visible;
         }
-    }
-
-    void WorldScene::update(float dt, const Input& input)
-    {
-        update_runtime(dt, input, scene_keyboard_input_enabled());
-        m_camera.update_game_camera(m_state.viewport, game_camera_target());
-    }
-
-    void WorldScene::update_editor(float dt, const Input& input)
-    {
-        m_interaction.update(*this, m_state, m_camera, m_grid_options, dt, input);
-        m_camera.update_game_camera(m_state.viewport, game_camera_target());
-    }
-
-    void WorldScene::render(SDL_Renderer* renderer)
-    {
-        m_renderer.render(renderer, *this, m_state, m_camera, m_grid_options);
-        render_overlay(renderer);
-    }
-
-    void WorldScene::on_enter()
-    {
-        capture_authored_objects();
-        on_scene_enter();
-    }
-
-    void WorldScene::reset_runtime()
-    {
-        const std::vector<GameObjectId> selected_ids(
-            m_state.objects.selected_ids().begin(),
-            m_state.objects.selected_ids().end()
-        );
-
-        m_state.objects = m_authored_objects;
-        m_state.objects.select_many(selected_ids);
-        m_state.events.clear();
-        m_state.drag_state = {};
-
-        restart_runtime();
-        play_runtime();
-        m_camera.update_game_camera(m_state.viewport, game_camera_target());
-    }
-
-    void WorldScene::pause_runtime() noexcept
-    {
-        set_runtime_paused(true);
-    }
-
-    void WorldScene::play_runtime() noexcept
-    {
-        set_runtime_paused(false);
-    }
-
-    bool WorldScene::runtime_paused() const noexcept
-    {
-        return is_runtime_paused();
-    }
-
-    void WorldScene::draw_viewport_overlays()
-    {
-        if (!m_state.viewport.has_area()) {
-            return;
+        if (before.collision.solid != after.collision.solid) {
+          authored.collision.solid = after.collision.solid;
         }
+        break;
 
-        if (!m_state.scene_options.debug_overlays.show_role_labels) {
-            return;
+      case EditorCommandType::ChangeSprite:
+        if (before.render.sprite.sprite_key != after.render.sprite.sprite_key) {
+          authored.render.sprite.sprite_key = after.render.sprite.sprite_key;
         }
-
-        ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        const Camera& camera = m_camera.active();
-        const float zoom = std::max(camera.zoom, 0.01f);
-        const ImU32 label_colour = IM_COL32(230, 220, 245, 230);
-        const ImU32 label_shadow_colour = IM_COL32(18, 14, 24, 220);
-
-        for (const auto& object : m_state.objects.objects()) {
-            if (!object.lifecycle.active || !object.render.visible) {
-                continue;
-            }
-
-            const std::string label = object_role_label(object);
-            if (label.empty()) {
-                continue;
-            }
-
-            const float screen_x =
-                static_cast<float>(m_state.viewport.screen_x) +
-                ((object.transform.x - camera.x) * zoom);
-
-            const float screen_y =
-                static_cast<float>(m_state.viewport.screen_y) +
-                ((object.transform.y - camera.y) * zoom) - 18.0f;
-
-            const ImVec2 pos{ screen_x, screen_y };
-            draw_list->AddText(ImVec2(pos.x + 1.0f, pos.y + 1.0f), label_shadow_colour, label.c_str());
-            draw_list->AddText(pos, label_colour, label.c_str());
+        if (before.render.sprite.flip_x != after.render.sprite.flip_x) {
+          authored.render.sprite.flip_x = after.render.sprite.flip_x;
         }
+        break;
+
+      case EditorCommandType::CreateObject:
+      case EditorCommandType::DeleteObject:
+      case EditorCommandType::MoveViewport:
+      case EditorCommandType::MoveObjects:
+      case EditorCommandType::DeleteObjects:
+        break;
+      }
     }
 
-    bool WorldScene::execute_scene_creation_action(std::string_view action_id)
-    {
-        for (const SceneCreationAction& action : scene_creation_actions()) {
-            if (action.id != action_id) {
-                continue;
-            }
+    void restore_object_in_id_order(GameObjectManager& objects,
+                                    const GameObject& object) {
+      if (GameObject* existing = objects.get_by_id(object.identity.id)) {
+        *existing = object;
+        return;
+      }
 
-            const GameObjectId created_id = create_scene_object(action.id);
-            if (created_id == k_invalid_game_object_id) {
-                return false;
-            }
+      objects.add_loaded_object(object);
+      std::ranges::stable_sort(
+          objects.objects(), {},
+          [](const GameObject& candidate) { return candidate.identity.id; });
+    }
+  } // namespace
 
-            const GameObject* created = m_state.objects.get_by_id(created_id);
-            if (!created) {
-                return false;
-            }
+  void WorldScene::update(float dt, const Input& input) {
+    update_runtime(dt, input, scene_keyboard_input_enabled());
+    m_camera.update_game_camera(m_state.viewport, game_camera_target());
+  }
 
-            record_editor_command(make_create_object_command(*created, action.label));
-            return true;
-        }
+  void WorldScene::update_editor(float dt, const Input& input) {
+    m_interaction.update(*this, m_state, m_camera, m_grid_options, dt, input);
+    m_camera.update_game_camera(m_state.viewport, game_camera_target());
+  }
 
+  void WorldScene::render(SDL_Renderer* renderer) {
+    m_renderer.render(renderer, *this, m_state, m_camera, m_grid_options);
+    render_overlay(renderer);
+  }
+
+  void WorldScene::on_enter() {
+    capture_authored_objects();
+    on_scene_enter();
+  }
+
+  void WorldScene::reset_runtime() {
+    const std::vector<GameObjectId> selected_ids(
+        m_state.objects.selected_ids().begin(),
+        m_state.objects.selected_ids().end());
+
+    m_state.objects = m_authored_objects;
+    m_state.objects.select_many(selected_ids);
+    m_state.events.clear();
+    m_state.drag_state = {};
+
+    restart_runtime();
+    play_runtime();
+    m_camera.update_game_camera(m_state.viewport, game_camera_target());
+  }
+
+  void WorldScene::pause_runtime() noexcept { set_runtime_paused(true); }
+
+  void WorldScene::play_runtime() noexcept { set_runtime_paused(false); }
+
+  bool WorldScene::runtime_paused() const noexcept {
+    return is_runtime_paused();
+  }
+
+  void WorldScene::draw_viewport_overlays() {
+    if (!m_state.viewport.has_area()) {
+      return;
+    }
+
+    if (!m_state.scene_options.debug_overlays.show_role_labels) {
+      return;
+    }
+
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    const Camera& camera = m_camera.active();
+    const float zoom = std::max(camera.zoom, 0.01f);
+    const ImU32 label_colour = IM_COL32(230, 220, 245, 230);
+    const ImU32 label_shadow_colour = IM_COL32(18, 14, 24, 220);
+
+    for (const auto& object : m_state.objects.objects()) {
+      if (!object.lifecycle.active || !object.render.visible) {
+        continue;
+      }
+
+      const std::string label = object_role_label(object);
+      if (label.empty()) {
+        continue;
+      }
+
+      const float screen_x = static_cast<float>(m_state.viewport.screen_x) +
+                             ((object.transform.x - camera.x) * zoom);
+
+      const float screen_y = static_cast<float>(m_state.viewport.screen_y) +
+                             ((object.transform.y - camera.y) * zoom) - 18.0f;
+
+      const ImVec2 pos{screen_x, screen_y};
+      draw_list->AddText(ImVec2(pos.x + 1.0f, pos.y + 1.0f),
+                         label_shadow_colour, label.c_str());
+      draw_list->AddText(pos, label_colour, label.c_str());
+    }
+  }
+
+  bool WorldScene::execute_scene_creation_action(std::string_view action_id) {
+    for (const SceneCreationAction& action : scene_creation_actions()) {
+      if (action.id != action_id) {
+        continue;
+      }
+
+      const GameObjectId created_id = create_scene_object(action.id);
+      if (created_id == k_invalid_game_object_id) {
         return false;
+      }
+
+      const GameObject* created = m_state.objects.get_by_id(created_id);
+      if (!created) {
+        return false;
+      }
+
+      record_editor_command(make_create_object_command(*created, action.label));
+      return true;
     }
 
-    void WorldScene::draw_debug_tools()
-    {
-        if (!tooling::imgui::layout::collapsing_header("Debug")) {
-            return;
-        }
+    return false;
+  }
 
-        DebugOverlayOptions& overlays = m_state.scene_options.debug_overlays;
-
-        if (tooling::imgui::property_table::begin("Debug")) {
-            tooling::imgui::property_table::checkbox("Collision bounds", "###collision_bounds", overlays.show_collision_bounds);
-            tooling::imgui::property_table::checkbox("Runtime object markers", "###runtime_markers", overlays.show_runtime_markers);
-            tooling::imgui::property_table::checkbox("Scene role labels", "###scene_role_labels", overlays.show_role_labels);
-            tooling::imgui::property_table::end();
-        }
+  void WorldScene::draw_debug_tools() {
+    if (!tooling::imgui::layout::collapsing_header("Debug")) {
+      return;
     }
 
-    bool WorldScene::save_to_file(std::string_view path, std::string& error)
-    {
-        try {
-            YAML::Node root;
-            root["scene_type"] = std::string(scene_type_id());
+    DebugOverlayOptions& overlays = m_state.scene_options.debug_overlays;
 
-            SceneState authored_state = m_state;
-            authored_state.objects = m_authored_objects;
-            SceneSerializer::save_to_node(authored_state, m_camera, m_grid_options, root);
-            save_scene_data(root);
+    if (tooling::imgui::property_table::begin("Debug")) {
+      tooling::imgui::property_table::checkbox("Collision bounds",
+                                               "###collision_bounds",
+                                               overlays.show_collision_bounds);
+      tooling::imgui::property_table::checkbox("Runtime object markers",
+                                               "###runtime_markers",
+                                               overlays.show_runtime_markers);
+      tooling::imgui::property_table::checkbox("Scene role labels",
+                                               "###scene_role_labels",
+                                               overlays.show_role_labels);
+      tooling::imgui::property_table::end();
+    }
+  }
 
-            std::ofstream output{ std::string(path) };
+  bool WorldScene::save_to_file(std::string_view path, std::string& error) {
+    try {
+      YAML::Node root;
+      root["scene_type"] = std::string(scene_type_id());
 
-            if (!output.is_open()) {
-                error = "Could not open save file for writing.";
-                return false;
-            }
+      SceneState authored_state = m_state;
+      authored_state.objects = m_authored_objects;
+      SceneSerializer::save_to_node(authored_state, m_camera, m_grid_options,
+                                    root);
+      save_scene_data(root);
 
-            output << root;
+      std::ofstream output{std::string(path)};
 
-            if (!output) {
-                error = "Failed to write scene data to file.";
-                return false;
-            }
+      if (!output.is_open()) {
+        error = "Could not open save file for writing.";
+        return false;
+      }
 
-            m_state.dirty = false;
-            return true;
-        }
-        catch (const YAML::Exception& ex) {
-            error = ex.what();
-            return false;
-        }
-        catch (const std::exception& ex) {
-            error = ex.what();
-            return false;
-        }
+      output << root;
+
+      if (!output) {
+        error = "Failed to write scene data to file.";
+        return false;
+      }
+
+      m_state.dirty = false;
+      return true;
+    } catch (const YAML::Exception& ex) {
+      error = ex.what();
+      return false;
+    } catch (const std::exception& ex) {
+      error = ex.what();
+      return false;
+    }
+  }
+
+  bool WorldScene::load_from_file(std::string_view path, std::string& error) {
+    try {
+      const YAML::Node root = YAML::LoadFile(std::string(path));
+
+      if (!root["scene_type"] ||
+          root["scene_type"].as<std::string>() != scene_type_id()) {
+        error = "Save file is not a " + std::string(scene_name()) + " scene.";
+        return false;
+      }
+
+      SceneState loaded_state = m_state;
+      loaded_state.events.clear();
+
+      SceneCamera loaded_camera = m_camera;
+      GridOptions loaded_grid_options = m_grid_options;
+
+      if (!SceneSerializer::load_from_node(loaded_state, loaded_camera,
+                                           loaded_grid_options, root, error)) {
+        return false;
+      }
+
+      if (!load_scene_data(root, error)) {
+        return false;
+      }
+
+      if (!restore_loaded_scene(loaded_state, error)) {
+        return false;
+      }
+
+      m_state = std::move(loaded_state);
+      m_state.events.clear();
+      m_state.drag_state = {};
+      m_state.editor_commands.clear();
+      m_state.dirty = false;
+      m_camera = loaded_camera;
+      m_grid_options = loaded_grid_options;
+
+      sanitize_loaded_selection();
+      m_camera.update_game_camera(m_state.viewport, game_camera_target());
+      capture_authored_objects();
+
+      return true;
+    } catch (const YAML::Exception& ex) {
+      error = ex.what();
+      return false;
+    } catch (const std::exception& ex) {
+      error = ex.what();
+      return false;
+    }
+  }
+
+  void WorldScene::sanitize_loaded_selection() noexcept {
+    if (GameObject* selected = m_state.objects.selected_object();
+        selected != nullptr && object_is_selectable(*selected)) {
+      return;
     }
 
-    bool WorldScene::load_from_file(std::string_view path, std::string& error)
-    {
-        try {
-            const YAML::Node root = YAML::LoadFile(std::string(path));
+    for (const auto& object : m_state.objects.objects()) {
+      if (object_is_selectable(object)) {
+        m_state.objects.set_selected_id(object.identity.id);
+        return;
+      }
+    }
 
-            if (!root["scene_type"] || root["scene_type"].as<std::string>() != scene_type_id()) {
-                error = "Save file is not a " + std::string(scene_name()) + " scene.";
-                return false;
-            }
+    m_state.objects.set_selected_id(k_invalid_game_object_id);
+  }
 
-            SceneState loaded_state = m_state;
-            loaded_state.events.clear();
+  void WorldScene::set_viewport(const SceneViewport& viewport) noexcept {
+    m_state.viewport = viewport;
+  }
 
-            SceneCamera loaded_camera = m_camera;
-            GridOptions loaded_grid_options = m_grid_options;
+  GameObjectManager& WorldScene::get_object_manager() {
+    return m_state.objects;
+  }
 
-            if (!SceneSerializer::load_from_node(loaded_state, loaded_camera, loaded_grid_options, root, error)) {
-                return false;
-            }
+  void WorldScene::record_editor_command(EditorCommand command) {
+    normalize_editor_command(command);
+    apply_editor_command_to_authored_objects(command, true);
 
-            if (!load_scene_data(root, error)) {
-                return false;
-            }
+    if (command.makes_dirty) {
+      m_state.dirty = true;
+    }
 
-            if (!restore_loaded_scene(loaded_state, error)) {
-                return false;
-            }
+    m_state.editor_commands.record(std::move(command));
+  }
 
-            m_state = std::move(loaded_state);
-            m_state.events.clear();
-            m_state.drag_state = {};
-            m_state.editor_commands.clear();
-            m_state.dirty = false;
-            m_camera = loaded_camera;
-            m_grid_options = loaded_grid_options;
+  const EditorCommandHistory&
+  WorldScene::editor_command_history() const noexcept {
+    return m_state.editor_commands;
+  }
 
-            sanitize_loaded_selection();
-            m_camera.update_game_camera(m_state.viewport, game_camera_target());
-            capture_authored_objects();
+  bool WorldScene::undo_editor_command() {
+    const EditorCommand* command = m_state.editor_commands.undo_command();
+    if (!command) {
+      return false;
+    }
 
-            return true;
+    apply_editor_command(*command, false);
+    apply_editor_command_to_authored_objects(*command, false);
+    if (command->makes_dirty) {
+      m_state.dirty = true;
+    }
+    return true;
+  }
+
+  bool WorldScene::redo_editor_command() {
+    const EditorCommand* command = m_state.editor_commands.redo_command();
+    if (!command) {
+      return false;
+    }
+
+    apply_editor_command(*command, true);
+    apply_editor_command_to_authored_objects(*command, true);
+    if (command->makes_dirty) {
+      m_state.dirty = true;
+    }
+    return true;
+  }
+
+  SceneOptions& WorldScene::get_scene_options() {
+    return m_state.scene_options;
+  }
+
+  std::span<const SceneEvent>
+  WorldScene::pending_scene_events() const noexcept {
+    return m_state.events.pending();
+  }
+
+  void WorldScene::clear_scene_events() noexcept { m_state.events.clear(); }
+
+  EditorTool WorldScene::current_editor_tool() const noexcept {
+    return m_state.editor_tool;
+  }
+
+  void WorldScene::set_current_editor_tool(EditorTool tool) noexcept {
+    m_state.editor_tool = tool;
+  }
+
+  WorldSceneContext WorldScene::world_scene_context() noexcept {
+    return WorldSceneContext{&m_grid_options, &m_camera};
+  }
+
+  ConstWorldSceneContext WorldScene::world_scene_context() const noexcept {
+    return ConstWorldSceneContext{&m_grid_options, &m_camera};
+  }
+
+  void WorldScene::capture_authored_objects() {
+    m_authored_objects = m_state.objects;
+    m_authored_objects.remove_runtime_objects();
+  }
+
+  void WorldScene::normalize_editor_command(EditorCommand& command) const {
+    if (command.type == EditorCommandType::MoveViewport ||
+        command.type == EditorCommandType::CreateObject) {
+      return;
+    }
+
+    if (command.type == EditorCommandType::DeleteObject) {
+      if (const GameObject* authored =
+              m_authored_objects.get_by_id(command.object_id)) {
+        command.before_object = *authored;
+      }
+      return;
+    }
+
+    if (command.type == EditorCommandType::DeleteObjects) {
+      for (GameObject& object : command.before_objects) {
+        if (const GameObject* authored =
+                m_authored_objects.get_by_id(object.identity.id)) {
+          object = *authored;
         }
-        catch (const YAML::Exception& ex) {
-            error = ex.what();
-            return false;
-        }
-        catch (const std::exception& ex) {
-            error = ex.what();
-            return false;
-        }
+      }
+      return;
     }
 
+    if (command.type == EditorCommandType::MoveObjects) {
+      const std::size_t object_count =
+          std::min(command.before_objects.size(), command.after_objects.size());
 
-    void WorldScene::sanitize_loaded_selection() noexcept
-    {
-        if (GameObject* selected = m_state.objects.selected_object();
-            selected != nullptr && object_is_selectable(*selected)) {
-            return;
-        }
-
-        for (const auto& object : m_state.objects.objects()) {
-            if (object_is_selectable(object)) {
-                m_state.objects.set_selected_id(object.identity.id);
-                return;
-            }
-        }
-
-        m_state.objects.set_selected_id(k_invalid_game_object_id);
-    }
-
-    void WorldScene::set_viewport(const SceneViewport& viewport) noexcept
-    {
-        m_state.viewport = viewport;
-    }
-
-    GameObjectManager& WorldScene::get_object_manager()
-    {
-        return m_state.objects;
-    }
-
-    void WorldScene::record_editor_command(EditorCommand command)
-    {
-        normalize_editor_command(command);
-        apply_editor_command_to_authored_objects(command, true);
-
-        if (command.makes_dirty) {
-            m_state.dirty = true;
-        }
-
-        m_state.editor_commands.record(std::move(command));
-    }
-
-    const EditorCommandHistory& WorldScene::editor_command_history() const noexcept
-    {
-        return m_state.editor_commands;
-    }
-
-    bool WorldScene::undo_editor_command()
-    {
-        const EditorCommand* command = m_state.editor_commands.undo_command();
-        if (!command) {
-            return false;
-        }
-
-        apply_editor_command(*command, false);
-        apply_editor_command_to_authored_objects(*command, false);
-        if (command->makes_dirty) {
-            m_state.dirty = true;
-        }
-        return true;
-    }
-
-    bool WorldScene::redo_editor_command()
-    {
-        const EditorCommand* command = m_state.editor_commands.redo_command();
-        if (!command) {
-            return false;
-        }
-
-        apply_editor_command(*command, true);
-        apply_editor_command_to_authored_objects(*command, true);
-        if (command->makes_dirty) {
-            m_state.dirty = true;
-        }
-        return true;
-    }
-
-    SceneOptions& WorldScene::get_scene_options()
-    {
-        return m_state.scene_options;
-    }
-
-    std::span<const SceneEvent> WorldScene::pending_scene_events() const noexcept
-    {
-        return m_state.events.pending();
-    }
-
-    void WorldScene::clear_scene_events() noexcept
-    {
-        m_state.events.clear();
-    }
-
-    EditorTool WorldScene::current_editor_tool() const noexcept
-    {
-        return m_state.editor_tool;
-    }
-
-    void WorldScene::set_current_editor_tool(EditorTool tool) noexcept
-    {
-        m_state.editor_tool = tool;
-    }
-
-    WorldSceneContext WorldScene::world_scene_context() noexcept
-    {
-        return WorldSceneContext{ &m_grid_options, &m_camera };
-    }
-
-    ConstWorldSceneContext WorldScene::world_scene_context() const noexcept
-    {
-        return ConstWorldSceneContext{ &m_grid_options, &m_camera };
-    }
-
-    void WorldScene::capture_authored_objects()
-    {
-        m_authored_objects = m_state.objects;
-        m_authored_objects.remove_runtime_objects();
-    }
-
-    void WorldScene::normalize_editor_command(EditorCommand& command) const
-    {
-        if (command.type == EditorCommandType::MoveViewport ||
-            command.type == EditorCommandType::CreateObject) {
-            return;
-        }
-
-        if (command.type == EditorCommandType::DeleteObject) {
-            if (const GameObject* authored = m_authored_objects.get_by_id(command.object_id)) {
-                command.before_object = *authored;
-            }
-            return;
-        }
-
-        if (command.type == EditorCommandType::DeleteObjects) {
-            for (GameObject& object : command.before_objects) {
-                if (const GameObject* authored = m_authored_objects.get_by_id(object.identity.id)) {
-                    object = *authored;
-                }
-            }
-            return;
-        }
-
-        if (command.type == EditorCommandType::MoveObjects) {
-            const std::size_t object_count = std::min(
-                command.before_objects.size(),
-                command.after_objects.size()
-            );
-
-            for (std::size_t index = 0; index < object_count; ++index) {
-                const GameObject incoming_before = command.before_objects[index];
-                const GameObject incoming_after = command.after_objects[index];
-                const GameObject* current_authored = m_authored_objects.get_by_id(incoming_after.identity.id);
-                if (!current_authored) {
-                    continue;
-                }
-
-                command.before_objects[index] = *current_authored;
-                command.after_objects[index] = *current_authored;
-                apply_authored_delta(
-                    EditorCommandType::MoveObject,
-                    incoming_before,
-                    incoming_after,
-                    command.after_objects[index]
-                );
-            }
-            return;
-        }
-
-        if (!command.before_object.has_value() || !command.after_object.has_value()) {
-            return;
-        }
-
-        const GameObject incoming_before = command.before_object.value();
-        const GameObject incoming_after = command.after_object.value();
-        const GameObject* current_authored = m_authored_objects.get_by_id(command.object_id);
+      for (std::size_t index = 0; index < object_count; ++index) {
+        const GameObject incoming_before = command.before_objects[index];
+        const GameObject incoming_after = command.after_objects[index];
+        const GameObject* current_authored =
+            m_authored_objects.get_by_id(incoming_after.identity.id);
         if (!current_authored) {
-            return;
+          continue;
         }
 
-        command.before_object = *current_authored;
-        command.after_object = *current_authored;
-        apply_authored_delta(
-            command.type,
-            incoming_before,
-            incoming_after,
-            command.after_object.value()
-        );
+        command.before_objects[index] = *current_authored;
+        command.after_objects[index] = *current_authored;
+        apply_authored_delta(EditorCommandType::MoveObject, incoming_before,
+                             incoming_after, command.after_objects[index]);
+      }
+      return;
     }
 
-    void WorldScene::apply_editor_command_to_authored_objects(
-        const EditorCommand& command,
-        bool use_after_state
-    ) {
-        const auto restore_authored = [this](const GameObject& object) {
-            restore_object_in_id_order(m_authored_objects, object);
-        };
+    if (!command.before_object.has_value() ||
+        !command.after_object.has_value()) {
+      return;
+    }
 
-        switch (command.type) {
-        case EditorCommandType::CreateObject:
-            if (use_after_state && command.after_object.has_value()) {
-                restore_authored(command.after_object.value());
-            }
-            else if (!use_after_state) {
-                m_authored_objects.remove_object(command.object_id);
-            }
-            break;
+    const GameObject incoming_before = command.before_object.value();
+    const GameObject incoming_after = command.after_object.value();
+    const GameObject* current_authored =
+        m_authored_objects.get_by_id(command.object_id);
+    if (!current_authored) {
+      return;
+    }
 
-        case EditorCommandType::DeleteObject:
-            if (use_after_state) {
-                m_authored_objects.remove_object(command.object_id);
-            }
-            else if (command.before_object.has_value()) {
-                restore_authored(command.before_object.value());
-            }
-            break;
+    command.before_object = *current_authored;
+    command.after_object = *current_authored;
+    apply_authored_delta(command.type, incoming_before, incoming_after,
+                         command.after_object.value());
+  }
 
-        case EditorCommandType::DeleteObjects:
-            if (use_after_state) {
-                for (const GameObjectId id : command.object_ids) {
-                    m_authored_objects.remove_object(id);
-                }
-            }
-            else {
-                for (const GameObject& object : command.before_objects) {
-                    restore_authored(object);
-                }
-            }
-            break;
+  void WorldScene::apply_editor_command_to_authored_objects(
+      const EditorCommand& command, bool use_after_state) {
+    const auto restore_authored = [this](const GameObject& object) {
+      restore_object_in_id_order(m_authored_objects, object);
+    };
 
-        case EditorCommandType::MoveObjects:
-            for (const GameObject& object : use_after_state ? command.after_objects : command.before_objects) {
-                restore_authored(object);
-            }
-            break;
+    switch (command.type) {
+    case EditorCommandType::CreateObject:
+      if (use_after_state && command.after_object.has_value()) {
+        restore_authored(command.after_object.value());
+      } else if (!use_after_state) {
+        m_authored_objects.remove_object(command.object_id);
+      }
+      break;
 
-        case EditorCommandType::MoveViewport:
-            break;
+    case EditorCommandType::DeleteObject:
+      if (use_after_state) {
+        m_authored_objects.remove_object(command.object_id);
+      } else if (command.before_object.has_value()) {
+        restore_authored(command.before_object.value());
+      }
+      break;
 
-        case EditorCommandType::MoveObject:
-        case EditorCommandType::RenameObject:
-        case EditorCommandType::ChangeObjectPosition:
-        case EditorCommandType::ChangeObjectSize:
-        case EditorCommandType::ChangeObjectRenderType:
-        case EditorCommandType::ChangeObjectColour:
-        case EditorCommandType::ChangeObjectZIndex:
-        case EditorCommandType::ChangeObjectFlag:
-        case EditorCommandType::ChangeSprite:
-            if (use_after_state && command.after_object.has_value()) {
-                restore_authored(command.after_object.value());
-            }
-            else if (!use_after_state && command.before_object.has_value()) {
-                restore_authored(command.before_object.value());
-            }
-            break;
+    case EditorCommandType::DeleteObjects:
+      if (use_after_state) {
+        for (const GameObjectId id : command.object_ids) {
+          m_authored_objects.remove_object(id);
         }
-    }
-
-
-    void WorldScene::restore_object_snapshot(const GameObject& object, bool select_restored)
-    {
-        restore_object_in_id_order(m_state.objects, object);
-
-        if (select_restored) {
-            m_state.objects.select(object.identity.id);
+      } else {
+        for (const GameObject& object : command.before_objects) {
+          restore_authored(object);
         }
+      }
+      break;
+
+    case EditorCommandType::MoveObjects:
+      for (const GameObject& object :
+           use_after_state ? command.after_objects : command.before_objects) {
+        restore_authored(object);
+      }
+      break;
+
+    case EditorCommandType::MoveViewport:
+      break;
+
+    case EditorCommandType::MoveObject:
+    case EditorCommandType::RenameObject:
+    case EditorCommandType::ChangeObjectPosition:
+    case EditorCommandType::ChangeObjectSize:
+    case EditorCommandType::ChangeObjectRenderType:
+    case EditorCommandType::ChangeObjectColour:
+    case EditorCommandType::ChangeObjectZIndex:
+    case EditorCommandType::ChangeObjectFlag:
+    case EditorCommandType::ChangeSprite:
+      if (use_after_state && command.after_object.has_value()) {
+        restore_authored(command.after_object.value());
+      } else if (!use_after_state && command.before_object.has_value()) {
+        restore_authored(command.before_object.value());
+      }
+      break;
+    }
+  }
+
+  void WorldScene::restore_object_snapshot(const GameObject& object,
+                                           bool select_restored) {
+    restore_object_in_id_order(m_state.objects, object);
+
+    if (select_restored) {
+      m_state.objects.select(object.identity.id);
+    }
+  }
+
+  void
+  WorldScene::restore_object_snapshots(const std::vector<GameObject>& objects) {
+    std::vector<GameObjectId> restored_ids;
+    restored_ids.reserve(objects.size());
+
+    for (const GameObject& object : objects) {
+      restore_object_snapshot(object, false);
+      restored_ids.push_back(object.identity.id);
     }
 
-    void WorldScene::restore_object_snapshots(const std::vector<GameObject>& objects)
-    {
-        std::vector<GameObjectId> restored_ids;
-        restored_ids.reserve(objects.size());
+    m_state.objects.select_many(restored_ids);
+  }
 
-        for (const GameObject& object : objects) {
-            restore_object_snapshot(object, false);
-            restored_ids.push_back(object.identity.id);
+  void WorldScene::apply_editor_command(const EditorCommand& command,
+                                        bool use_after_state) {
+    switch (command.type) {
+    case EditorCommandType::CreateObject:
+      if (use_after_state) {
+        if (command.after_object.has_value()) {
+          restore_object_snapshot(command.after_object.value());
         }
+      } else {
+        m_state.objects.remove_object(command.object_id);
+      }
+      break;
 
-        m_state.objects.select_many(restored_ids);
-    }
+    case EditorCommandType::DeleteObject:
+      if (use_after_state) {
+        m_state.objects.remove_object(command.object_id);
+      } else if (command.before_object.has_value()) {
+        restore_object_snapshot(command.before_object.value());
+      }
+      break;
 
-    void WorldScene::apply_editor_command(const EditorCommand& command, bool use_after_state)
-    {
-        switch (command.type) {
-        case EditorCommandType::CreateObject:
-            if (use_after_state) {
-                if (command.after_object.has_value()) {
-                    restore_object_snapshot(command.after_object.value());
-                }
-            } else {
-                m_state.objects.remove_object(command.object_id);
-            }
-            break;
-
-        case EditorCommandType::DeleteObject:
-            if (use_after_state) {
-                m_state.objects.remove_object(command.object_id);
-            } else if (command.before_object.has_value()) {
-                restore_object_snapshot(command.before_object.value());
-            }
-            break;
-
-        case EditorCommandType::DeleteObjects:
-            if (use_after_state) {
-                for (const GameObjectId id : command.object_ids) {
-                    m_state.objects.remove_object(id);
-                }
-
-                m_state.objects.clear_selection();
-            } else {
-                restore_object_snapshots(command.before_objects);
-            }
-            break;
-
-        case EditorCommandType::MoveObjects:
-            if (use_after_state) {
-                restore_object_snapshots(command.after_objects);
-            } else {
-                restore_object_snapshots(command.before_objects);
-            }
-            break;
-
-        case EditorCommandType::MoveViewport:
-            if (use_after_state) {
-                if (command.after_camera.has_value()) {
-                    m_camera.editor() = command.after_camera.value();
-                    m_camera.activate_editor();
-                }
-            } else if (command.before_camera.has_value()) {
-                m_camera.editor() = command.before_camera.value();
-                m_camera.activate_editor();
-            }
-            break;
-
-        case EditorCommandType::MoveObject:
-        case EditorCommandType::RenameObject:
-        case EditorCommandType::ChangeObjectPosition:
-        case EditorCommandType::ChangeObjectSize:
-        case EditorCommandType::ChangeObjectRenderType:
-        case EditorCommandType::ChangeObjectColour:
-        case EditorCommandType::ChangeObjectZIndex:
-        case EditorCommandType::ChangeObjectFlag:
-        case EditorCommandType::ChangeSprite:
-            if (use_after_state) {
-                if (command.after_object.has_value()) {
-                    restore_object_snapshot(command.after_object.value());
-                }
-            } else if (command.before_object.has_value()) {
-                restore_object_snapshot(command.before_object.value());
-            }
-            break;
-        }
-    }
-
-    bool WorldScene::scene_keyboard_input_enabled() const noexcept
-    {
-        return m_state.viewport.keyboard_input_enabled && m_state.viewport.has_area();
-    }
-
-    bool WorldScene::scene_mouse_input_enabled() const noexcept
-    {
-        return m_state.viewport.hovered && m_state.viewport.has_area();
-    }
-
-    Transform WorldScene::view_center_spawn_position(int width, int height) const
-    {
-        const Camera& camera = m_camera.active();
-
-        const float view_center_x = camera.x + (static_cast<float>(m_state.viewport.width) / camera.zoom) * 0.5f;
-        const float view_center_y = camera.y + (static_cast<float>(m_state.viewport.height) / camera.zoom) * 0.5f;
-
-        Transform transform{};
-        transform.x = view_center_x - (static_cast<float>(width) * 0.5f);
-        transform.y = view_center_y - (static_cast<float>(height) * 0.5f);
-
-        if (!m_grid_options.snap_to_grid || m_grid_options.grid_size <= 0) {
-            return transform;
+    case EditorCommandType::DeleteObjects:
+      if (use_after_state) {
+        for (const GameObjectId id : command.object_ids) {
+          m_state.objects.remove_object(id);
         }
 
-        const float grid = static_cast<float>(m_grid_options.grid_size);
-        transform.x = std::floor(transform.x / grid) * grid;
-        transform.y = std::floor(transform.y / grid) * grid;
-        return transform;
-    }
+        m_state.objects.clear_selection();
+      } else {
+        restore_object_snapshots(command.before_objects);
+      }
+      break;
 
-    Transform WorldScene::first_free_view_center_spawn_position(const GameObject& object) const
-    {
-        const int grid_size = m_grid_options.grid_size > 0
-            ? m_grid_options.grid_size
-            : object.size.width;
+    case EditorCommandType::MoveObjects:
+      if (use_after_state) {
+        restore_object_snapshots(command.after_objects);
+      } else {
+        restore_object_snapshots(command.before_objects);
+      }
+      break;
 
-        const Transform base = view_center_spawn_position(object.size.width, object.size.height);
-
-        constexpr int max_radius = 20;
-
-        for (int radius = 0; radius <= max_radius; ++radius) {
-            for (int y = -radius; y <= radius; ++y) {
-                for (int x = -radius; x <= radius; ++x) {
-                    if (std::abs(x) != radius && std::abs(y) != radius) {
-                        continue;
-                    }
-
-                    GameObject candidate = object;
-                    candidate.transform.x = base.x + static_cast<float>(x * grid_size);
-                    candidate.transform.y = base.y + static_cast<float>(y * grid_size);
-
-                    if (is_space_free(candidate)) {
-                        return candidate.transform;
-                    }
-                }
-            }
+    case EditorCommandType::MoveViewport:
+      if (use_after_state) {
+        if (command.after_camera.has_value()) {
+          m_camera.editor() = command.after_camera.value();
+          m_camera.activate_editor();
         }
+      } else if (command.before_camera.has_value()) {
+        m_camera.editor() = command.before_camera.value();
+        m_camera.activate_editor();
+      }
+      break;
 
-        return base;
-    }
-
-    bool WorldScene::is_space_free(const GameObject& candidate) const noexcept
-    {
-        for (const auto& object : m_state.objects.objects()) {
-            if (!object.lifecycle.active) {
-                continue;
-            }
-
-            if (!object.runtime.persistent) {
-                continue;
-            }
-
-            if (collision::is_overlapping(candidate, object)) {
-                return false;
-            }
+    case EditorCommandType::MoveObject:
+    case EditorCommandType::RenameObject:
+    case EditorCommandType::ChangeObjectPosition:
+    case EditorCommandType::ChangeObjectSize:
+    case EditorCommandType::ChangeObjectRenderType:
+    case EditorCommandType::ChangeObjectColour:
+    case EditorCommandType::ChangeObjectZIndex:
+    case EditorCommandType::ChangeObjectFlag:
+    case EditorCommandType::ChangeSprite:
+      if (use_after_state) {
+        if (command.after_object.has_value()) {
+          restore_object_snapshot(command.after_object.value());
         }
-
-        return true;
+      } else if (command.before_object.has_value()) {
+        restore_object_snapshot(command.before_object.value());
+      }
+      break;
     }
-}
+  }
+
+  bool WorldScene::scene_keyboard_input_enabled() const noexcept {
+    return m_state.viewport.keyboard_input_enabled &&
+           m_state.viewport.has_area();
+  }
+
+  bool WorldScene::scene_mouse_input_enabled() const noexcept {
+    return m_state.viewport.hovered && m_state.viewport.has_area();
+  }
+
+  Transform WorldScene::view_center_spawn_position(int width,
+                                                   int height) const {
+    const Camera& camera = m_camera.active();
+
+    const float view_center_x =
+        camera.x +
+        (static_cast<float>(m_state.viewport.width) / camera.zoom) * 0.5f;
+    const float view_center_y =
+        camera.y +
+        (static_cast<float>(m_state.viewport.height) / camera.zoom) * 0.5f;
+
+    Transform transform{};
+    transform.x = view_center_x - (static_cast<float>(width) * 0.5f);
+    transform.y = view_center_y - (static_cast<float>(height) * 0.5f);
+
+    if (!m_grid_options.snap_to_grid || m_grid_options.grid_size <= 0) {
+      return transform;
+    }
+
+    const float grid = static_cast<float>(m_grid_options.grid_size);
+    transform.x = std::floor(transform.x / grid) * grid;
+    transform.y = std::floor(transform.y / grid) * grid;
+    return transform;
+  }
+
+  Transform WorldScene::first_free_view_center_spawn_position(
+      const GameObject& object) const {
+    const int grid_size = m_grid_options.grid_size > 0
+                              ? m_grid_options.grid_size
+                              : object.size.width;
+
+    const Transform base =
+        view_center_spawn_position(object.size.width, object.size.height);
+
+    constexpr int max_radius = 20;
+
+    for (int radius = 0; radius <= max_radius; ++radius) {
+      for (int y = -radius; y <= radius; ++y) {
+        for (int x = -radius; x <= radius; ++x) {
+          if (std::abs(x) != radius && std::abs(y) != radius) {
+            continue;
+          }
+
+          GameObject candidate = object;
+          candidate.transform.x = base.x + static_cast<float>(x * grid_size);
+          candidate.transform.y = base.y + static_cast<float>(y * grid_size);
+
+          if (is_space_free(candidate)) {
+            return candidate.transform;
+          }
+        }
+      }
+    }
+
+    return base;
+  }
+
+  bool WorldScene::is_space_free(const GameObject& candidate) const noexcept {
+    for (const auto& object : m_state.objects.objects()) {
+      if (!object.lifecycle.active) {
+        continue;
+      }
+
+      if (!object.runtime.persistent) {
+        continue;
+      }
+
+      if (collision::is_overlapping(candidate, object)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+} // namespace prune

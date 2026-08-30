@@ -13,47 +13,56 @@
 
 namespace prune {
 
-    class PlatformerScene : public WorldScene {
-    public:
-        PlatformerScene(int window_width, int window_height);
+  class PlatformerScene : public WorldScene {
+  public:
+    PlatformerScene(int window_width, int window_height);
 
-        void on_exit() override;
+    void on_exit() override;
 
-        void new_scene() override;
+    void new_scene() override;
 
-        [[nodiscard]] std::string_view default_file_path() const noexcept override;
-        [[nodiscard]] std::string_view scene_type_id() const noexcept override;
-        [[nodiscard]] std::string_view scene_name() const noexcept override { return "Platformer"; }
-        [[nodiscard]] std::string_view scene_tools_label() const noexcept override { return "Platformer"; }
-        [[nodiscard]] ObjectConcept object_concept_for(const GameObject& object) const override;
-        [[nodiscard]] std::span<const SceneCreationAction> scene_creation_actions() const noexcept override;
-        GameObjectId create_scene_object(std::string_view action_id) override;
-        void draw_scene_tools(bool& open) override;
+    [[nodiscard]] std::string_view default_file_path() const noexcept override;
+    [[nodiscard]] std::string_view scene_type_id() const noexcept override;
+    [[nodiscard]] std::string_view scene_name() const noexcept override {
+      return "Platformer";
+    }
+    [[nodiscard]] std::string_view scene_tools_label() const noexcept override {
+      return "Platformer";
+    }
+    [[nodiscard]] ObjectConcept
+    object_concept_for(const GameObject& object) const override;
+    [[nodiscard]] std::span<const SceneCreationAction>
+    scene_creation_actions() const noexcept override;
+    GameObjectId create_scene_object(std::string_view action_id) override;
+    void draw_scene_tools(bool& open) override;
 
-        void draw_scene_inspector(GameObject& selected) override;
+    void draw_scene_inspector(GameObject& selected) override;
 
-    protected:
-        void update_runtime(float dt, const Input& input, bool keyboard_input_enabled) override;
-        void restart_runtime() override;
-        void set_runtime_paused(bool paused) noexcept override;
-        [[nodiscard]] bool is_runtime_paused() const noexcept override;
-        void save_scene_data(YAML::Node& root) const override;
-        [[nodiscard]] bool load_scene_data(const YAML::Node& root, std::string& error) override;
-        [[nodiscard]] bool restore_loaded_scene(SceneState& state, std::string& error) override;
-        [[nodiscard]] GameObject* game_camera_target() noexcept override;
+  protected:
+    void update_runtime(float dt, const Input& input,
+                        bool keyboard_input_enabled) override;
+    void restart_runtime() override;
+    void set_runtime_paused(bool paused) noexcept override;
+    [[nodiscard]] bool is_runtime_paused() const noexcept override;
+    void save_scene_data(YAML::Node& root) const override;
+    [[nodiscard]] bool load_scene_data(const YAML::Node& root,
+                                       std::string& error) override;
+    [[nodiscard]] bool restore_loaded_scene(SceneState& state,
+                                            std::string& error) override;
+    [[nodiscard]] GameObject* game_camera_target() noexcept override;
 
-    private:
-        void reset_runtime_state();
-        void restore_defaults();
-        [[nodiscard]] GameObject* player_object() noexcept;
-        [[nodiscard]] const GameObject* player_object() const noexcept;
+  private:
+    void reset_runtime_state();
+    void restore_defaults();
+    [[nodiscard]] GameObject* player_object() noexcept;
+    [[nodiscard]] const GameObject* player_object() const noexcept;
 
-        [[nodiscard]] GameObjectId add_platform_at_view_center();
-        [[nodiscard]] GameObjectId add_hazard_at_view_center();
+    [[nodiscard]] GameObjectId add_platform_at_view_center();
+    [[nodiscard]] GameObjectId add_hazard_at_view_center();
 
-        PlatformerState m_platformer_state;
-        PlatformerBehaviour m_platformer;
-        Platformer m_platformer_tools;
-    };
+    PlatformerState m_platformer_state;
+    PlatformerBehaviour m_platformer;
+    Platformer m_platformer_tools;
+  };
 
-}
+} // namespace prune

@@ -1,4 +1,6 @@
 [![Build](https://github.com/deanblackborough/Prune/actions/workflows/build.yml/badge.svg)](https://github.com/deanblackborough/Prune/actions/workflows/build.yml)
+[![Sanitizers](https://github.com/deanblackborough/Prune/actions/workflows/sanitize.yml/badge.svg)](https://github.com/deanblackborough/Prune/actions/workflows/sanitize.yml)
+[![Format](https://github.com/deanblackborough/Prune/actions/workflows/format.yml/badge.svg)](https://github.com/deanblackborough/Prune/actions/workflows/format.yml)
 
 # Prune
 
@@ -264,8 +266,10 @@ I will consider Prune ready for early external users when someone unfamiliar wit
 
 - [ ] Build and run on Linux with GCC and Clang, not just Windows/MSVC.
 - [ ] Run CI across a GCC, Clang, and MSVC compiler matrix.
-- [ ] Run the test suite and a scripted headless session under AddressSanitizer and UndefinedBehaviorSanitizer in CI.
-- [ ] Add a `.clang-format` config enforced in CI and a `clang-tidy` pass.
+- [x] Run the test suite under AddressSanitizer (Windows and Linux) and UndefinedBehaviorSanitizer (Linux) in CI.
+- [ ] Run a scripted headless session under the sanitizers (needs the runtime/editor split).
+- [x] Add a `.clang-format` config enforced in CI.
+- [ ] Add a `clang-tidy` pass.
 
 *Until all or the majority of the above is checked, please consider Prune an active 2D game engine and editor prototype rather than something you can depend.
 
@@ -355,7 +359,7 @@ build/Debug/Prune.exe
 ### Notes
 
 - The project is currently developed and tested on Windows.
-- The GitHub Actions workflow also builds the project on Windows.
+- GitHub Actions builds and tests the project on Windows, runs the test suite under sanitizers (AddressSanitizer on Windows, AddressSanitizer and UndefinedBehaviorSanitizer on Linux), and checks formatting.
 - Other platforms are not intentionally unsupported, but they are not verified yet.
 - If CMake cannot find SDL2, SDL2_image, or yaml-cpp, check that the vcpkg toolchain file path is correct.
 

@@ -9,15 +9,18 @@
 
 namespace prune {
 
-    class Scene;
+  class Scene;
 
-    class Outliner {
-    public:
-        void draw(GameObjectManager& objects, const Scene& scene);
-    private:
-        static std::string object_label(const GameObject& object, const Scene& scene);
-        bool contains_case_insensitive(std::string_view text, std::string_view query) const;
+  class Outliner {
+  public:
+    void draw(GameObjectManager& objects, const Scene& scene);
 
-        std::array<char, 128> m_object_search{};
-    };
-}
+  private:
+    static std::string object_label(const GameObject& object,
+                                    const Scene& scene);
+    bool contains_case_insensitive(std::string_view text,
+                                   std::string_view query) const;
+
+    std::array<char, 128> m_object_search{};
+  };
+} // namespace prune

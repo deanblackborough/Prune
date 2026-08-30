@@ -7,6 +7,34 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(PRUNE_SANITIZE "Build with AddressSanitizer (and UndefinedBehaviorSanitizer on Clang/GCC)" OFF)
+
+if(PRUNE_SANITIZE AND MSVC)
+    # MSVC AddressSanitizer is incompatible with the runtime checks CMake adds to Debug builds.
+    string(REGEX REPLACE "/RTC[1csu]+" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+    string(REGEX REPLACE "/RTC[1csu]+" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+endif()
+
+function(prune_enable_sanitizers target)
+    if(NOT PRUNE_SANITIZE)
+        return()
+    endif()
+
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /fsanitize=address)
+        target_link_options(${target} PRIVATE /INCREMENTAL:NO)
+        # vcpkg's SDL2 / Catch2 are not ASan-instrumented; disable the STL container
+        # annotations so mixed-annotation objects can still link (MSVC ASan limitation).
+        target_compile_definitions(${target} PRIVATE _DISABLE_STL_ANNOTATION)
+    else()
+        target_compile_options(${target} PRIVATE
+            -fsanitize=address,undefined
+            -fno-sanitize-recover=all
+            -fno-omit-frame-pointer)
+        target_link_options(${target} PRIVATE -fsanitize=address,undefined)
+    endif()
+endfunction()
+
 find_package(SDL2 REQUIRED CONFIG)
 find_package(SDL2_image REQUIRED CONFIG)
 find_package(yaml-cpp REQUIRED CONFIG)
@@ -108,6 +136,8 @@ if(MSVC)
 else()
     target_compile_options(Prune PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+prune_enable_sanitizers(Prune)
 
 if(BUILD_TESTING)
     add_subdirectory(tests)

@@ -17,142 +17,155 @@
 
 namespace prune {
 
-    struct WorldSceneContext {
-        GridOptions* grid_options = nullptr;
-        SceneCamera* camera = nullptr;
+  struct WorldSceneContext {
+    GridOptions* grid_options = nullptr;
+    SceneCamera* camera = nullptr;
 
-        [[nodiscard]] bool available() const noexcept {
-            return grid_options != nullptr && camera != nullptr;
-        }
-    };
+    [[nodiscard]] bool available() const noexcept {
+      return grid_options != nullptr && camera != nullptr;
+    }
+  };
 
-    struct ConstWorldSceneContext {
-        const GridOptions* grid_options = nullptr;
-        const SceneCamera* camera = nullptr;
+  struct ConstWorldSceneContext {
+    const GridOptions* grid_options = nullptr;
+    const SceneCamera* camera = nullptr;
 
-        [[nodiscard]] bool available() const noexcept {
-            return grid_options != nullptr && camera != nullptr;
-        }
-    };
+    [[nodiscard]] bool available() const noexcept {
+      return grid_options != nullptr && camera != nullptr;
+    }
+  };
 
-    struct SceneCreationAction {
-        std::string_view id;
-        std::string_view label;
-    };
+  struct SceneCreationAction {
+    std::string_view id;
+    std::string_view label;
+  };
 
-    class Scene {
-    public:
-        virtual ~Scene() = default;
+  class Scene {
+  public:
+    virtual ~Scene() = default;
 
-        Scene(const Scene&) = delete;
-        Scene& operator=(const Scene&) = delete;
+    Scene(const Scene&) = delete;
+    Scene& operator=(const Scene&) = delete;
 
-        // Called when an already-created scene becomes active. Must not create or restore default content.
-        virtual void on_enter() = 0;
+    // Called when an already-created scene becomes active. Must not create or
+    // restore default content.
+    virtual void on_enter() = 0;
 
-        // Creates the default authored content for a new scene. Must not be called after loading a scene from disk.
-        virtual void new_scene() = 0;
+    // Creates the default authored content for a new scene. Must not be called
+    // after loading a scene from disk.
+    virtual void new_scene() = 0;
 
-        virtual void on_exit() = 0;
-        virtual void update(float dt, const Input& input) = 0;
-        virtual void update_editor(float, const Input&) {}
-        virtual void render(SDL_Renderer* renderer) = 0;
+    virtual void on_exit() = 0;
+    virtual void update(float dt, const Input& input) = 0;
+    virtual void update_editor(float, const Input&) {}
+    virtual void render(SDL_Renderer* renderer) = 0;
 
-        // Restores runtime state and leaves execution playing, including when reset while paused.
-        virtual void reset_runtime() = 0;
-        virtual void pause_runtime() noexcept = 0;
-        virtual void play_runtime() noexcept = 0;
-        [[nodiscard]] virtual bool runtime_paused() const noexcept = 0;
+    // Restores runtime state and leaves execution playing, including when reset
+    // while paused.
+    virtual void reset_runtime() = 0;
+    virtual void pause_runtime() noexcept = 0;
+    virtual void play_runtime() noexcept = 0;
+    [[nodiscard]] virtual bool runtime_paused() const noexcept = 0;
 
-        [[nodiscard]] virtual bool save_to_file(std::string_view path, std::string& error) = 0;
-        [[nodiscard]] virtual bool load_from_file(std::string_view path, std::string& error) = 0;
-        [[nodiscard]] virtual bool is_dirty() const noexcept = 0;
-        [[nodiscard]] virtual std::string_view default_file_path() const noexcept = 0;
-        [[nodiscard]] virtual std::string_view scene_type_id() const noexcept = 0;
+    [[nodiscard]] virtual bool save_to_file(std::string_view path,
+                                            std::string& error) = 0;
+    [[nodiscard]] virtual bool load_from_file(std::string_view path,
+                                              std::string& error) = 0;
+    [[nodiscard]] virtual bool is_dirty() const noexcept = 0;
+    [[nodiscard]] virtual std::string_view
+    default_file_path() const noexcept = 0;
+    [[nodiscard]] virtual std::string_view scene_type_id() const noexcept = 0;
 
-        virtual void set_viewport(const SceneViewport& viewport) noexcept = 0;
-        [[nodiscard]] virtual const SceneViewport& get_viewport() const noexcept = 0;
-        [[nodiscard]] virtual int get_viewport_width() const noexcept = 0;
-        [[nodiscard]] virtual int get_viewport_height() const noexcept = 0;
+    virtual void set_viewport(const SceneViewport& viewport) noexcept = 0;
+    [[nodiscard]] virtual const SceneViewport&
+    get_viewport() const noexcept = 0;
+    [[nodiscard]] virtual int get_viewport_width() const noexcept = 0;
+    [[nodiscard]] virtual int get_viewport_height() const noexcept = 0;
 
-        [[nodiscard]] virtual std::string_view scene_name() const noexcept = 0;
+    [[nodiscard]] virtual std::string_view scene_name() const noexcept = 0;
 
-        [[nodiscard]] virtual bool object_is_selectable(const GameObject& object) const
-        {
-            return object.editor.selectable && object_concept_for(object).selectable;
-        }
+    [[nodiscard]] virtual bool
+    object_is_selectable(const GameObject& object) const {
+      return object.editor.selectable && object_concept_for(object).selectable;
+    }
 
-        [[nodiscard]] virtual bool object_is_editable(const GameObject& object) const
-        {
-            const ObjectConcept concept_for = object_concept_for(object);
+    [[nodiscard]] virtual bool
+    object_is_editable(const GameObject& object) const {
+      const ObjectConcept concept_for = object_concept_for(object);
 
-            return object.editor.selectable &&
-                concept_for.editable &&
-                !concept_for.runtime_only &&
-                object.identity.type != GameObjectType::Runtime;
-        }
+      return object.editor.selectable && concept_for.editable &&
+             !concept_for.runtime_only &&
+             object.identity.type != GameObjectType::Runtime;
+    }
 
-        [[nodiscard]] virtual bool object_is_movable(const GameObject& object) const
-        {
-            return object_is_selectable(object) &&
-                object_is_editable(object) &&
-                object.editor.movable;
-        }
+    [[nodiscard]] virtual bool
+    object_is_movable(const GameObject& object) const {
+      return object_is_selectable(object) && object_is_editable(object) &&
+             object.editor.movable;
+    }
 
-        [[nodiscard]] virtual bool object_is_scalable(const GameObject& object) const
-        {
-            return object_is_selectable(object) && object_is_editable(object);
-        }
+    [[nodiscard]] virtual bool
+    object_is_scalable(const GameObject& object) const {
+      return object_is_selectable(object) && object_is_editable(object);
+    }
 
-        [[nodiscard]] virtual ObjectConcept object_concept_for(const GameObject& object) const
-        {
-            return object_concepts::fallback_for(object);
-        }
+    [[nodiscard]] virtual ObjectConcept
+    object_concept_for(const GameObject& object) const {
+      return object_concepts::fallback_for(object);
+    }
 
-        [[nodiscard]] virtual std::string object_role_label(const GameObject& object) const
-        {
-            return std::string(object_concept_for(object).label);
-        }
+    [[nodiscard]] virtual std::string
+    object_role_label(const GameObject& object) const {
+      return std::string(object_concept_for(object).label);
+    }
 
-        [[nodiscard]] virtual std::span<const SceneCreationAction> scene_creation_actions() const noexcept
-        {
-            return {};
-        }
+    [[nodiscard]] virtual std::span<const SceneCreationAction>
+    scene_creation_actions() const noexcept {
+      return {};
+    }
 
-        virtual GameObjectId create_scene_object(std::string_view)
-        {
-            return k_invalid_game_object_id;
-        }
+    virtual GameObjectId create_scene_object(std::string_view) {
+      return k_invalid_game_object_id;
+    }
 
-        virtual bool execute_scene_creation_action(std::string_view)
-        {
-            return false;
-        }
+    virtual bool execute_scene_creation_action(std::string_view) {
+      return false;
+    }
 
-        [[nodiscard]] virtual std::string_view scene_tools_label() const noexcept = 0;
-        virtual void draw_scene_tools(bool& open) = 0;
-        virtual void draw_viewport_overlays() = 0;
+    [[nodiscard]] virtual std::string_view
+    scene_tools_label() const noexcept = 0;
+    virtual void draw_scene_tools(bool& open) = 0;
+    virtual void draw_viewport_overlays() = 0;
 
-        virtual GameObjectManager& get_object_manager() = 0;
-        virtual void record_editor_command(EditorCommand command) = 0;
-        [[nodiscard]] virtual const EditorCommandHistory& editor_command_history() const noexcept = 0;
-        virtual bool undo_editor_command() = 0;
-        virtual bool redo_editor_command() = 0;
+    virtual GameObjectManager& get_object_manager() = 0;
+    virtual void record_editor_command(EditorCommand command) = 0;
+    [[nodiscard]] virtual const EditorCommandHistory&
+    editor_command_history() const noexcept = 0;
+    virtual bool undo_editor_command() = 0;
+    virtual bool redo_editor_command() = 0;
 
-        virtual SceneOptions& get_scene_options() = 0;
+    virtual SceneOptions& get_scene_options() = 0;
 
-        [[nodiscard]] virtual std::span<const SceneEvent> pending_scene_events() const noexcept = 0;
-        virtual void clear_scene_events() noexcept = 0;
+    [[nodiscard]] virtual std::span<const SceneEvent>
+    pending_scene_events() const noexcept = 0;
+    virtual void clear_scene_events() noexcept = 0;
 
-        [[nodiscard]] virtual EditorTool current_editor_tool() const noexcept { return EditorTool::Select; }
-        virtual void set_current_editor_tool(EditorTool) noexcept {}
+    [[nodiscard]] virtual EditorTool current_editor_tool() const noexcept {
+      return EditorTool::Select;
+    }
+    virtual void set_current_editor_tool(EditorTool) noexcept {}
 
-        [[nodiscard]] virtual WorldSceneContext world_scene_context() noexcept { return {}; }
-        [[nodiscard]] virtual ConstWorldSceneContext world_scene_context() const noexcept { return {}; }
+    [[nodiscard]] virtual WorldSceneContext world_scene_context() noexcept {
+      return {};
+    }
+    [[nodiscard]] virtual ConstWorldSceneContext
+    world_scene_context() const noexcept {
+      return {};
+    }
 
-        virtual void draw_scene_inspector(GameObject& selected) = 0;
+    virtual void draw_scene_inspector(GameObject& selected) = 0;
 
-    protected:
-        Scene() = default;
-    };
-}
+  protected:
+    Scene() = default;
+  };
+} // namespace prune

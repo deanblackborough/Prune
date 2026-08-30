@@ -1,7 +1,7 @@
 #include "prune/scene/simple_shooter/simple_shooter_player_controller.hpp"
 
-#include "prune/scene/game_object.hpp"
 #include "prune/core/input.hpp"
+#include "prune/scene/game_object.hpp"
 
 #include <SDL2/SDL.h>
 #include <algorithm>
@@ -9,46 +9,44 @@
 
 namespace prune {
 
-    Velocity SimpleShooterPlayerController::movement_velocity(const Input& input) const
-    {
-        float move_x = 0.0f;
-        float move_y = 0.0f;
+  Velocity
+  SimpleShooterPlayerController::movement_velocity(const Input& input) const {
+    float move_x = 0.0f;
+    float move_y = 0.0f;
 
-        if (input.is_key_down(SDL_SCANCODE_A)) {
-            move_x -= 1.0f;
-        }
-
-        if (input.is_key_down(SDL_SCANCODE_D)) {
-            move_x += 1.0f;
-        }
-
-        if (input.is_key_down(SDL_SCANCODE_W)) {
-            move_y -= 1.0f;
-        }
-
-        if (input.is_key_down(SDL_SCANCODE_S)) {
-            move_y += 1.0f;
-        }
-
-        Velocity velocity{};
-
-        if (move_x != 0.0f || move_y != 0.0f) {
-            const float length = std::sqrt((move_x * move_x) + (move_y * move_y));
-
-            velocity.x = (move_x / length) * m_speed;
-            velocity.y = (move_y / length) * m_speed;
-        }
-
-        return velocity;
+    if (input.is_key_down(SDL_SCANCODE_A)) {
+      move_x -= 1.0f;
     }
 
-    float SimpleShooterPlayerController::speed() const noexcept
-    {
-        return m_speed;
+    if (input.is_key_down(SDL_SCANCODE_D)) {
+      move_x += 1.0f;
     }
 
-    void SimpleShooterPlayerController::set_speed(float speed) noexcept
-    {
-        m_speed = std::max(0.0f, speed);
+    if (input.is_key_down(SDL_SCANCODE_W)) {
+      move_y -= 1.0f;
     }
-}
+
+    if (input.is_key_down(SDL_SCANCODE_S)) {
+      move_y += 1.0f;
+    }
+
+    Velocity velocity{};
+
+    if (move_x != 0.0f || move_y != 0.0f) {
+      const float length = std::sqrt((move_x * move_x) + (move_y * move_y));
+
+      velocity.x = (move_x / length) * m_speed;
+      velocity.y = (move_y / length) * m_speed;
+    }
+
+    return velocity;
+  }
+
+  float SimpleShooterPlayerController::speed() const noexcept {
+    return m_speed;
+  }
+
+  void SimpleShooterPlayerController::set_speed(float speed) noexcept {
+    m_speed = std::max(0.0f, speed);
+  }
+} // namespace prune

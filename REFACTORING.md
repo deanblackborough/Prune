@@ -81,9 +81,9 @@ mid-refactor mixes formatting churn into structural changes.
 
 ### Checklist
 
-- [ ] Add a `.clang-format` matching the current house style as closely as possible.
+- [x] Add a `.clang-format` matching the current house style as closely as possible.
 - [ ] Apply it to the whole tree in a single isolated commit.
-- [ ] Enforce it in CI (fail on unformatted diff).
+- [x] Enforce it in CI (fail on unformatted diff).
 
 ## P0.2. Sanitizer build + tests under it in CI
 
@@ -94,8 +94,8 @@ the class of bug ASan/UBSan catch. This must be running before that code moves, 
 
 ### Checklist
 
-- [ ] Add an ASan + UBSan build configuration.
-- [ ] Run the existing test suite under it in CI.
+- [x] Add an ASan + UBSan build configuration.
+- [x] Run the existing test suite under it in CI.
 - [ ] Fix anything it flags in the current code before starting A1.
 
 ## P0.3. Second compiler / Linux build

@@ -40,6 +40,14 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
+    },
+    {
+      "name": "x64-asan",
+      "displayName": "x64 Debug + Sanitizers",
+      "inherits": "x64-debug",
+      "cacheVariables": {
+        "PRUNE_SANITIZE": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -52,6 +60,11 @@
       "name": "x64-release-build",
       "displayName": "x64 Release Build",
       "configurePreset": "x64-release"
+    },
+    {
+      "name": "x64-asan-build",
+      "displayName": "x64 Debug + Sanitizers Build",
+      "configurePreset": "x64-asan"
     }
   ],
   "testPresets": [
@@ -67,6 +80,14 @@
       "name": "x64-release-test",
       "displayName": "x64 Release Tests",
       "configurePreset": "x64-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "x64-asan-test",
+      "displayName": "x64 Debug + Sanitizers Tests",
+      "configurePreset": "x64-asan",
       "output": {
         "outputOnFailure": true
       }

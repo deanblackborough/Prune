@@ -4,8 +4,8 @@
 
 namespace prune {
 
-    class SimpleShooter {
-    public:
-        void draw(SimpleShooterState& state);
-    };
-}
+  class SimpleShooter {
+  public:
+    void draw(SimpleShooterState& state);
+  };
+} // namespace prune

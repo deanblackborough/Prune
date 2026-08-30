@@ -1,0 +1,78 @@
+name: Sanitizers
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-asan:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: "cb2981c4e03d421fa03b9bb5044cd1986180e7e4"
+
+      - name: Put the ASan runtime on PATH
+        shell: pwsh
+        run: |
+          $install = & vswhere -latest -property installationPath
+          $version = (Get-Content "$install\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt").Trim()
+          "$install\VC\Tools\MSVC\$version\bin\Hostx64\x64" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DBUILD_TESTING=ON -DPRUNE_SANITIZE=ON -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+      - name: Build tests
+        run: cmake --build build --config Debug --target PruneTests
+
+      - name: Test
+        run: ctest --test-dir build -C Debug --output-on-failure --no-tests=error
+        env:
+          ASAN_OPTIONS: abort_on_error=1
+
+  linux-sanitizers:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ninja-build clang \
+            libsdl2-dev libsdl2-image-dev libyaml-cpp-dev catch2
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DBUILD_TESTING=ON
+          -DPRUNE_SANITIZE=ON
+          -DCMAKE_C_COMPILER=clang
+          -DCMAKE_CXX_COMPILER=clang++
+
+      - name: Build tests
+        run: cmake --build build --target PruneTests
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --no-tests=error
+        env:
+          ASAN_OPTIONS: abort_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1

@@ -5,10 +5,11 @@
 
 namespace prune {
 
-    class Options {
-    public:
-        void draw(SceneOptions& scene_options, GridOptions& grid_options, SceneCamera& camera);
-    private:
+  class Options {
+  public:
+    void draw(SceneOptions& scene_options, GridOptions& grid_options,
+              SceneCamera& camera);
 
-    };
-}
+  private:
+  };
+} // namespace prune

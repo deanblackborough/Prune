@@ -4,9 +4,9 @@
 
 namespace prune {
 
-    class Artillery {
-    public:
-        [[nodiscard]] bool draw(ArtilleryState& state);
-    };
+  class Artillery {
+  public:
+    [[nodiscard]] bool draw(ArtilleryState& state);
+  };
 
-}
+} // namespace prune
