@@ -97,11 +97,13 @@ Out of scope for the first pass:
 
 Prune currently only builds and is verified on Windows/MSVC. Portable, sanitizer-clean C++ is a credibility signal worth having, and Linux-first contributors cannot try Prune at all today.
 
+`REFACTORING.md` Phase 0 pulls the high-leverage items here (`.clang-format`, sanitizer build + tests, second compiler / Linux build, lifetime ADR) ahead of the architecture refactor, because they de-risk it. The two items left for later are marked below.
+
 * Build and run on Linux with both GCC and Clang, alongside the existing Windows/MSVC build.
 * Extend CI to a compiler matrix (GCC, Clang, MSVC).
 * Add an AddressSanitizer + UndefinedBehaviorSanitizer build and run the test suite under it in CI.
-* Add a scripted headless run of the app under sanitizers (needs a smoke/headless mode or a dummy SDL video driver).
-* Add a `.clang-format` config enforced in CI, and a `clang-tidy` pass.
+* Add a scripted headless run of the app under sanitizers (needs a smoke/headless mode or a dummy SDL video driver). Blocked until `REFACTORING.md` B2 removes ImGui from the runtime scene layer and B5 provides a `prune_runtime` target.
+* Add a `.clang-format` config enforced in CI (Phase 0), and a `clang-tidy` pass (better after the architecture refactor settles).
 * Work through the portability issues the Linux port surfaces (`std::filesystem` path handling, SDL include paths, any MSVC-isms).
 * Document object lifetime and pointer-validity discipline (ids as the durable handle, pointers as frame-local) as an ADR.
 
