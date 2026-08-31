@@ -105,7 +105,6 @@ namespace prune {
     m_state.objects.clear();
     m_platformer_state = {};
     m_camera.reset();
-    m_grid_options = {};
     m_state.scene_options = {};
     m_state.drag_state = {};
     m_state.editor_tool = EditorTool::Select;

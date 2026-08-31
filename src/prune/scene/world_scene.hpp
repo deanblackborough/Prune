@@ -66,6 +66,7 @@ namespace prune {
     [[nodiscard]] WorldSceneContext world_scene_context() noexcept final;
     [[nodiscard]] ConstWorldSceneContext
     world_scene_context() const noexcept final;
+    void bind_grid_options(GridOptions& grid_options) noexcept final;
 
   protected:
     WorldScene() = default;
@@ -101,7 +102,7 @@ namespace prune {
     virtual void establish_game_camera() {}
 
     SceneState m_state;
-    GridOptions m_grid_options;
+    GridOptions* m_grid_options = nullptr;
     SceneCamera m_camera;
 
   private:

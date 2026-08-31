@@ -109,7 +109,6 @@ namespace prune {
     m_state.objects.clear();
     m_artillery_state = {};
     m_camera.reset();
-    m_grid_options = {};
     m_state.scene_options = {};
     m_state.drag_state = {};
     m_state.editor_tool = EditorTool::Select;
@@ -136,7 +135,6 @@ namespace prune {
 
     m_state.objects.select(m_artillery_state.player_one_id);
 
-    m_grid_options.grid_size = 16;
     establish_game_camera();
   }
 

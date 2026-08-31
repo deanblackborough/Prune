@@ -163,6 +163,8 @@ namespace prune {
       return {};
     }
 
+    virtual void bind_grid_options(GridOptions&) noexcept {}
+
     virtual void draw_scene_inspector(GameObject& selected) = 0;
 
   protected:

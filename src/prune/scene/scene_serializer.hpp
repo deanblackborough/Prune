@@ -10,11 +10,9 @@ namespace prune {
 
   class SceneSerializer {
   public:
-    static void save_to_node(const SceneState& state,
-                             const GridOptions& grid_options, YAML::Node& root);
+    static void save_to_node(const SceneState& state, YAML::Node& root);
 
     [[nodiscard]] static bool load_from_node(SceneState& state,
-                                             GridOptions& grid_options,
                                              const YAML::Node& root,
                                              std::string& error);
   };

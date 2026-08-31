@@ -98,12 +98,12 @@ namespace prune {
   }
 
   void WorldScene::update_editor(float dt, const Input& input) {
-    m_interaction.update(*this, m_state, m_camera, m_grid_options, dt, input);
+    m_interaction.update(*this, m_state, m_camera, *m_grid_options, dt, input);
     m_camera.update_game_camera(m_state.viewport, game_camera_target());
   }
 
   void WorldScene::render(SDL_Renderer* renderer) {
-    m_renderer.render(renderer, *this, m_state, m_camera, m_grid_options);
+    m_renderer.render(renderer, *this, m_state, m_camera, *m_grid_options);
     render_overlay(renderer);
   }
 
@@ -224,7 +224,7 @@ namespace prune {
 
       SceneState authored_state = m_state;
       authored_state.objects = m_authored_objects;
-      SceneSerializer::save_to_node(authored_state, m_grid_options, root);
+      SceneSerializer::save_to_node(authored_state, root);
       save_scene_data(root);
 
       std::ofstream output{std::string(path)};
@@ -265,10 +265,7 @@ namespace prune {
       SceneState loaded_state = m_state;
       loaded_state.events.clear();
 
-      GridOptions loaded_grid_options = m_grid_options;
-
-      if (!SceneSerializer::load_from_node(loaded_state, loaded_grid_options,
-                                           root, error)) {
+      if (!SceneSerializer::load_from_node(loaded_state, root, error)) {
         return false;
       }
 
@@ -285,7 +282,6 @@ namespace prune {
       m_state.drag_state = {};
       m_state.editor_commands.clear();
       m_state.dirty = false;
-      m_grid_options = loaded_grid_options;
 
       sanitize_loaded_selection();
       m_camera.reset();
@@ -390,11 +386,15 @@ namespace prune {
   }
 
   WorldSceneContext WorldScene::world_scene_context() noexcept {
-    return WorldSceneContext{&m_grid_options, &m_camera};
+    return WorldSceneContext{m_grid_options, &m_camera};
   }
 
   ConstWorldSceneContext WorldScene::world_scene_context() const noexcept {
-    return ConstWorldSceneContext{&m_grid_options, &m_camera};
+    return ConstWorldSceneContext{m_grid_options, &m_camera};
+  }
+
+  void WorldScene::bind_grid_options(GridOptions& grid_options) noexcept {
+    m_grid_options = &grid_options;
   }
 
   void WorldScene::capture_authored_objects() {
@@ -648,11 +648,11 @@ namespace prune {
     transform.x = view_center_x - (static_cast<float>(width) * 0.5f);
     transform.y = view_center_y - (static_cast<float>(height) * 0.5f);
 
-    if (!m_grid_options.snap_to_grid || m_grid_options.grid_size <= 0) {
+    if (!m_grid_options->snap_to_grid || m_grid_options->grid_size <= 0) {
       return transform;
     }
 
-    const float grid = static_cast<float>(m_grid_options.grid_size);
+    const float grid = static_cast<float>(m_grid_options->grid_size);
     transform.x = std::floor(transform.x / grid) * grid;
     transform.y = std::floor(transform.y / grid) * grid;
     return transform;
@@ -660,8 +660,8 @@ namespace prune {
 
   Transform WorldScene::first_free_view_center_spawn_position(
       const GameObject& object) const {
-    const int grid_size = m_grid_options.grid_size > 0
-                              ? m_grid_options.grid_size
+    const int grid_size = m_grid_options->grid_size > 0
+                              ? m_grid_options->grid_size
                               : object.size.width;
 
     const Transform base =

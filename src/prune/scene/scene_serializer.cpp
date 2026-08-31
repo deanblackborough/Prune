@@ -13,7 +13,6 @@ namespace prune {
     struct LoadedSceneState {
       GameObjectManager objects;
       GameObjectId selected_id = k_invalid_game_object_id;
-      GridOptions grid_options{};
       SceneOptions scene_options{};
     };
 
@@ -376,16 +375,8 @@ namespace prune {
 
   } // namespace
 
-  void SceneSerializer::save_to_node(const SceneState& state,
-                                     const GridOptions& grid_options,
-                                     YAML::Node& root) {
+  void SceneSerializer::save_to_node(const SceneState& state, YAML::Node& root) {
     root["scene"]["next_object_id"] = state.objects.next_id();
-
-    root["grid"]["show_grid"] = grid_options.show_grid;
-    root["grid"]["snap_to_grid"] = grid_options.snap_to_grid;
-    root["grid"]["grid_size"] = grid_options.grid_size;
-    root["grid"]["nudge_step"] = grid_options.nudge_step;
-    root["grid"]["shift_nudge_steps"] = grid_options.shift_nudge_steps;
 
     root["options"]["highlight_selected"] =
         state.scene_options.highlight_selected;
@@ -404,15 +395,13 @@ namespace prune {
   }
 
   bool SceneSerializer::load_from_node(SceneState& state,
-                                       GridOptions& grid_options,
                                        const YAML::Node& root,
                                        std::string& error) {
     const YAML::Node scene = root["scene"];
-    const YAML::Node grid = root["grid"];
     const YAML::Node options = root["options"];
     const YAML::Node objects = root["objects"];
 
-    if (!scene || !grid || !options || !objects || !objects.IsSequence()) {
+    if (!scene || !options || !objects || !objects.IsSequence()) {
       error = "Save file is missing required generic scene sections.";
       return false;
     }
@@ -423,18 +412,6 @@ namespace prune {
 
     if (!read_required_uint(scene, "next_object_id", loaded_next_id)) {
       error = "scene.next_object_id is missing.";
-      return false;
-    }
-
-    if (!read_required_bool(grid, "show_grid", loaded.grid_options.show_grid) ||
-        !read_required_bool(grid, "snap_to_grid",
-                            loaded.grid_options.snap_to_grid) ||
-        !read_required_int(grid, "grid_size", loaded.grid_options.grid_size) ||
-        !read_required_int(grid, "nudge_step",
-                           loaded.grid_options.nudge_step) ||
-        !read_required_int(grid, "shift_nudge_steps",
-                           loaded.grid_options.shift_nudge_steps)) {
-      error = "grid is incomplete.";
       return false;
     }
 
@@ -488,7 +465,6 @@ namespace prune {
     loaded.objects.set_selected_id(loaded.selected_id);
 
     state.objects = std::move(loaded.objects);
-    grid_options = loaded.grid_options;
     state.scene_options = loaded.scene_options;
 
     return true;

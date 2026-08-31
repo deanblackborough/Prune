@@ -3,6 +3,7 @@
 #include "prune/core/defaults.hpp"
 #include "prune/editor/editor_command.hpp"
 #include "prune/editor/editor_tool.hpp"
+#include "prune/editor/grid_options.hpp"
 #include "prune/editor/tools/transform_gizmo.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
@@ -40,19 +41,6 @@ namespace prune {
   struct SceneOptions {
     bool highlight_selected = true;
     DebugOverlayOptions debug_overlays{};
-  };
-
-  struct GridOptions {
-    bool show_grid = true;
-    bool snap_to_grid = true;
-    int grid_size = k_default_object_size;
-    int nudge_step = 8;
-    int shift_nudge_steps = 4;
-
-    int min_grid_size = k_min_object_size;
-    int max_grid_size = k_max_object_size;
-    int min_nudge_step = 4;
-    int max_nudge_step = 64;
   };
 
   enum class DragMode { None = 0, MoveObjects, ScaleObject };

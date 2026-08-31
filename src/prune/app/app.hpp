@@ -2,6 +2,7 @@
 
 #include "prune/core/input.hpp"
 #include "prune/core/window.hpp"
+#include "prune/editor/grid_options.hpp"
 
 #include <memory>
 
@@ -59,6 +60,8 @@ namespace prune {
     std::unique_ptr<AudioSystem> m_audio;
     std::unique_ptr<Time> m_time;
     std::unique_ptr<Input> m_input;
+    GridOptions m_grid_options;
+
     std::unique_ptr<Scene> m_scene;
     std::unique_ptr<Ui> m_ui;
 
