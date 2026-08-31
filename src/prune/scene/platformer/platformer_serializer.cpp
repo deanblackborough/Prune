@@ -6,11 +6,10 @@ namespace prune {
                                           YAML::Node& root) {
     root["platformer"]["player_id"] = state.player_id;
     root["platformer"]["player_start_id"] = state.player_start_id;
-    root["platformer"]["paused"] = state.options.paused;
-    root["platformer"]["move_speed"] = state.options.move_speed;
-    root["platformer"]["jump_velocity"] = state.options.jump_velocity;
-    root["platformer"]["gravity"] = state.options.gravity;
-    root["platformer"]["max_fall_speed"] = state.options.max_fall_speed;
+    root["platformer"]["move_speed"] = state.settings.move_speed;
+    root["platformer"]["jump_velocity"] = state.settings.jump_velocity;
+    root["platformer"]["gravity"] = state.settings.gravity;
+    root["platformer"]["max_fall_speed"] = state.settings.max_fall_speed;
   }
 
   bool PlatformerSerializer::load_from_node(const YAML::Node& root,
@@ -34,24 +33,20 @@ namespace prune {
       state.player_start_id = platformer["player_start_id"].as<GameObjectId>();
     }
 
-    if (platformer["paused"]) {
-      state.options.paused = platformer["paused"].as<bool>();
-    }
-
     if (platformer["move_speed"]) {
-      state.options.move_speed = platformer["move_speed"].as<float>();
+      state.settings.move_speed = platformer["move_speed"].as<float>();
     }
 
     if (platformer["jump_velocity"]) {
-      state.options.jump_velocity = platformer["jump_velocity"].as<float>();
+      state.settings.jump_velocity = platformer["jump_velocity"].as<float>();
     }
 
     if (platformer["gravity"]) {
-      state.options.gravity = platformer["gravity"].as<float>();
+      state.settings.gravity = platformer["gravity"].as<float>();
     }
 
     if (platformer["max_fall_speed"]) {
-      state.options.max_fall_speed = platformer["max_fall_speed"].as<float>();
+      state.settings.max_fall_speed = platformer["max_fall_speed"].as<float>();
     }
 
     return true;

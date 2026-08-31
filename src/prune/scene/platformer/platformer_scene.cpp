@@ -86,15 +86,15 @@ namespace prune {
   }
 
   void PlatformerScene::restart_runtime() {
-    m_platformer_state.player_grounded = false;
+    m_platformer_state.runtime = {};
   }
 
   void PlatformerScene::set_runtime_paused(bool paused) noexcept {
-    m_platformer_state.options.paused = paused;
+    m_platformer_state.runtime.paused = paused;
   }
 
   bool PlatformerScene::is_runtime_paused() const noexcept {
-    return m_platformer_state.options.paused;
+    return m_platformer_state.runtime.paused;
   }
 
   GameObject* PlatformerScene::game_camera_target() noexcept {
@@ -204,20 +204,20 @@ namespace prune {
 
       tooling::imgui::property_table::text("Velocity", velocity_buffer);
       tooling::imgui::property_table::text(
-          "Grounded", bool_label(m_platformer_state.player_grounded));
+          "Grounded", bool_label(m_platformer_state.runtime.player_grounded));
       tooling::imgui::property_table::text(
           "Move Speed",
           std::to_string(
-              static_cast<int>(m_platformer_state.options.move_speed))
+              static_cast<int>(m_platformer_state.settings.move_speed))
               .c_str());
       tooling::imgui::property_table::text(
           "Jump Velocity",
           std::to_string(
-              static_cast<int>(m_platformer_state.options.jump_velocity))
+              static_cast<int>(m_platformer_state.settings.jump_velocity))
               .c_str());
       tooling::imgui::property_table::text(
           "Gravity",
-          std::to_string(static_cast<int>(m_platformer_state.options.gravity))
+          std::to_string(static_cast<int>(m_platformer_state.settings.gravity))
               .c_str());
       tooling::imgui::property_table::text(
           "Reset Target Id",
