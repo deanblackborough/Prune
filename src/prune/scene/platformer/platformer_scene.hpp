@@ -15,7 +15,8 @@ namespace prune {
 
   class PlatformerScene : public WorldScene {
   public:
-    PlatformerScene(int window_width, int window_height);
+    PlatformerScene(int window_width, int window_height,
+                    GridOptions& grid_options);
 
     void on_exit() override;
 

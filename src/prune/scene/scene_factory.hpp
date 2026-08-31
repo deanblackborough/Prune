@@ -33,7 +33,8 @@ namespace prune {
   class SceneFactory {
   public:
     [[nodiscard]] static std::unique_ptr<Scene>
-    create(SceneType type, int window_width, int window_height);
+    create(SceneType type, int window_width, int window_height,
+           GridOptions& grid_options);
 
     [[nodiscard]] static std::unique_ptr<Scene>
     create_from_file(std::string_view path, int window_width, int window_height,

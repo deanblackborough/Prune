@@ -31,17 +31,21 @@ namespace prune {
   }
 
   std::unique_ptr<Scene> SceneFactory::create(SceneType type, int window_width,
-                                              int window_height) {
+                                              int window_height,
+                                              GridOptions& grid_options) {
     switch (type) {
     case SceneType::Artillery:
-      return std::make_unique<ArtilleryScene>(window_width, window_height);
+      return std::make_unique<ArtilleryScene>(window_width, window_height,
+                                              grid_options);
 
     case SceneType::Platformer:
-      return std::make_unique<PlatformerScene>(window_width, window_height);
+      return std::make_unique<PlatformerScene>(window_width, window_height,
+                                               grid_options);
 
     case SceneType::SimpleShooter:
     default:
-      return std::make_unique<SimpleShooterScene>(window_width, window_height);
+      return std::make_unique<SimpleShooterScene>(window_width, window_height,
+                                                  grid_options);
     }
   }
 
@@ -66,9 +70,7 @@ namespace prune {
       }
 
       std::unique_ptr<Scene> scene =
-          create(descriptor->type, window_width, window_height);
-
-      scene->bind_grid_options(grid_options);
+          create(descriptor->type, window_width, window_height, grid_options);
 
       if (!scene->load_from_file(path, error)) {
         return nullptr;

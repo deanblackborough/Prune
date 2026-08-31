@@ -16,7 +16,8 @@ namespace prune {
 
   class SimpleShooterScene : public WorldScene {
   public:
-    SimpleShooterScene(int window_width, int window_height);
+    SimpleShooterScene(int window_width, int window_height,
+                       GridOptions& grid_options);
     SimpleShooterScene(const SimpleShooterScene&) = delete;
     SimpleShooterScene& operator=(const SimpleShooterScene&) = delete;
     void on_exit() override;

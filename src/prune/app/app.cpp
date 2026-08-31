@@ -14,7 +14,6 @@
 #include "prune/app/app.hpp"
 #include "prune/audio/audio_system.hpp"
 #include "prune/core/time.hpp"
-#include "prune/scene/scene.hpp"
 #include "prune/scene/scene_factory.hpp"
 #include "prune/tooling/theme.hpp"
 #include "prune/tooling/ui.hpp"
@@ -30,8 +29,7 @@ namespace prune {
     m_input = std::make_unique<Input>();
     m_time = std::make_unique<Time>();
     m_scene = SceneFactory::create(SceneType::Platformer, m_window->width(),
-                                   m_window->height());
-    m_scene->bind_grid_options(m_grid_options);
+                                   m_window->height(), m_grid_options);
     m_scene->new_scene();
     m_scene->on_enter();
     m_ui = std::make_unique<Ui>();
@@ -102,9 +100,8 @@ namespace prune {
           m_scene->on_exit();
 
           m_scene = SceneFactory::create(new_scene_type, m_window->width(),
-                                         m_window->height());
+                                         m_window->height(), m_grid_options);
 
-          m_scene->bind_grid_options(m_grid_options);
           m_scene->new_scene();
           m_scene->on_enter();
           m_ui->set_file_status("Created new scene", false);

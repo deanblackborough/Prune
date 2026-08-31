@@ -92,6 +92,9 @@ namespace prune {
     }
   } // namespace
 
+  WorldScene::WorldScene(GridOptions& grid_options) noexcept
+      : m_grid_options(&grid_options) {}
+
   void WorldScene::update(float dt, const Input& input) {
     update_runtime(dt, input, scene_keyboard_input_enabled());
     m_camera.update_game_camera(m_state.viewport, game_camera_target());
@@ -391,10 +394,6 @@ namespace prune {
 
   ConstWorldSceneContext WorldScene::world_scene_context() const noexcept {
     return ConstWorldSceneContext{m_grid_options, &m_camera};
-  }
-
-  void WorldScene::bind_grid_options(GridOptions& grid_options) noexcept {
-    m_grid_options = &grid_options;
   }
 
   void WorldScene::capture_authored_objects() {

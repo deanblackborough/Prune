@@ -14,7 +14,8 @@ namespace prune {
 
   class ArtilleryScene : public WorldScene {
   public:
-    ArtilleryScene(int window_width, int window_height);
+    ArtilleryScene(int window_width, int window_height,
+                   GridOptions& grid_options);
 
     void on_exit() override;
     void new_scene() override;

@@ -118,7 +118,9 @@ namespace prune {
     }
   } // namespace
 
-  SimpleShooterScene::SimpleShooterScene(int window_width, int window_height) {
+  SimpleShooterScene::SimpleShooterScene(int window_width, int window_height,
+                                         GridOptions& grid_options)
+      : WorldScene(grid_options) {
     m_state.viewport.width = window_width;
     m_state.viewport.height = window_height;
   }
