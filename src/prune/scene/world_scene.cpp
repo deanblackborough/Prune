@@ -224,8 +224,7 @@ namespace prune {
 
       SceneState authored_state = m_state;
       authored_state.objects = m_authored_objects;
-      SceneSerializer::save_to_node(authored_state, m_camera, m_grid_options,
-                                    root);
+      SceneSerializer::save_to_node(authored_state, m_grid_options, root);
       save_scene_data(root);
 
       std::ofstream output{std::string(path)};
@@ -266,11 +265,10 @@ namespace prune {
       SceneState loaded_state = m_state;
       loaded_state.events.clear();
 
-      SceneCamera loaded_camera = m_camera;
       GridOptions loaded_grid_options = m_grid_options;
 
-      if (!SceneSerializer::load_from_node(loaded_state, loaded_camera,
-                                           loaded_grid_options, root, error)) {
+      if (!SceneSerializer::load_from_node(loaded_state, loaded_grid_options,
+                                           root, error)) {
         return false;
       }
 
@@ -287,11 +285,11 @@ namespace prune {
       m_state.drag_state = {};
       m_state.editor_commands.clear();
       m_state.dirty = false;
-      m_camera = loaded_camera;
       m_grid_options = loaded_grid_options;
 
       sanitize_loaded_selection();
-      m_camera.update_game_camera(m_state.viewport, game_camera_target());
+      m_camera.reset();
+      establish_game_camera();
       capture_authored_objects();
 
       return true;

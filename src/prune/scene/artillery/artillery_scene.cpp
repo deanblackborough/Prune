@@ -137,6 +137,10 @@ namespace prune {
     m_state.objects.select(m_artillery_state.player_one_id);
 
     m_grid_options.grid_size = 16;
+    establish_game_camera();
+  }
+
+  void ArtilleryScene::establish_game_camera() {
     m_camera.game().x = 0.0f;
     m_camera.game().y = 24.0f;
     m_camera.game().zoom = 2.4f;

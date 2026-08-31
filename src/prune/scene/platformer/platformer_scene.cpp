@@ -137,6 +137,10 @@ namespace prune {
     m_platformer.reset_player(m_state, m_platformer_state);
     m_state.objects.select(m_platformer_state.player_id);
 
+    establish_game_camera();
+  }
+
+  void PlatformerScene::establish_game_camera() {
     m_camera.game().zoom = 3.0f;
     m_camera.editor().zoom = 3.0f;
     m_camera.update_game_camera(m_state.viewport, player_object());

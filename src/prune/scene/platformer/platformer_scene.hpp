@@ -50,6 +50,7 @@ namespace prune {
     [[nodiscard]] bool restore_loaded_scene(SceneState& state,
                                             std::string& error) override;
     [[nodiscard]] GameObject* game_camera_target() noexcept override;
+    void establish_game_camera() override;
 
   private:
     void reset_runtime_state();

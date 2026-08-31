@@ -15,7 +15,6 @@ namespace prune {
       GameObjectId selected_id = k_invalid_game_object_id;
       GridOptions grid_options{};
       SceneOptions scene_options{};
-      CameraState camera_state{};
     };
 
     const char* to_string(GameObjectType type) noexcept {
@@ -375,52 +374,12 @@ namespace prune {
       return true;
     }
 
-    bool parse_camera_mode(const YAML::Node& node, CameraMode& out) {
-      if (!node) {
-        return false;
-      }
-
-      const std::string value = node.as<std::string>();
-
-      if (value == "editor") {
-        out = CameraMode::Editor;
-        return true;
-      }
-
-      if (value == "game") {
-        out = CameraMode::Game;
-        return true;
-      }
-
-      return false;
-    }
   } // namespace
 
   void SceneSerializer::save_to_node(const SceneState& state,
-                                     const SceneCamera& camera,
                                      const GridOptions& grid_options,
                                      YAML::Node& root) {
     root["scene"]["next_object_id"] = state.objects.next_id();
-
-    if (const GameObject* selected = state.objects.selected_object();
-        selected != nullptr && object_is_persistable(*selected)) {
-      root["scene"]["selected_object_id"] = selected->identity.id;
-    }
-
-    root["cameras"]["mode"] =
-        camera.state().mode == CameraMode::Editor ? "editor" : "game";
-
-    root["cameras"]["editor"]["x"] = camera.state().editor.x;
-    root["cameras"]["editor"]["y"] = camera.state().editor.y;
-    root["cameras"]["editor"]["speed"] = camera.state().editor.speed;
-    root["cameras"]["editor"]["zoom"] = camera.state().editor.zoom;
-
-    root["cameras"]["game"]["x"] = camera.state().game.x;
-    root["cameras"]["game"]["y"] = camera.state().game.y;
-    root["cameras"]["game"]["speed"] = camera.state().game.speed;
-    root["cameras"]["game"]["zoom"] = camera.state().game.zoom;
-    root["cameras"]["game"]["follow_target"] =
-        camera.state().game_options.follow_target;
 
     root["grid"]["show_grid"] = grid_options.show_grid;
     root["grid"]["snap_to_grid"] = grid_options.snap_to_grid;
@@ -430,12 +389,6 @@ namespace prune {
 
     root["options"]["highlight_selected"] =
         state.scene_options.highlight_selected;
-    root["options"]["debug_overlays"]["collision_bounds"] =
-        state.scene_options.debug_overlays.show_collision_bounds;
-    root["options"]["debug_overlays"]["runtime_markers"] =
-        state.scene_options.debug_overlays.show_runtime_markers;
-    root["options"]["debug_overlays"]["role_labels"] =
-        state.scene_options.debug_overlays.show_role_labels;
 
     YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
 
@@ -450,18 +403,16 @@ namespace prune {
     root["objects"] = objects;
   }
 
-  bool SceneSerializer::load_from_node(SceneState& state, SceneCamera& camera,
+  bool SceneSerializer::load_from_node(SceneState& state,
                                        GridOptions& grid_options,
                                        const YAML::Node& root,
                                        std::string& error) {
     const YAML::Node scene = root["scene"];
-    const YAML::Node cameras = root["cameras"];
     const YAML::Node grid = root["grid"];
     const YAML::Node options = root["options"];
     const YAML::Node objects = root["objects"];
 
-    if (!scene || !cameras || !grid || !options || !objects ||
-        !objects.IsSequence()) {
+    if (!scene || !grid || !options || !objects || !objects.IsSequence()) {
       error = "Save file is missing required generic scene sections.";
       return false;
     }
@@ -469,46 +420,9 @@ namespace prune {
     LoadedSceneState loaded{};
 
     GameObjectId loaded_next_id = 1;
-    GameObjectId loaded_selected_id = k_invalid_game_object_id;
 
     if (!read_required_uint(scene, "next_object_id", loaded_next_id)) {
       error = "scene.next_object_id is missing.";
-      return false;
-    }
-
-    if (scene["selected_object_id"]) {
-      loaded_selected_id = scene["selected_object_id"].as<GameObjectId>();
-    }
-
-    const YAML::Node editor = cameras["editor"];
-    const YAML::Node game = cameras["game"];
-
-    if (!editor || !game) {
-      error = "cameras section is incomplete.";
-      return false;
-    }
-
-    if (!parse_camera_mode(cameras["mode"], loaded.camera_state.mode)) {
-      error = "cameras.mode is invalid.";
-      return false;
-    }
-
-    if (!read_required_float(editor, "x", loaded.camera_state.editor.x) ||
-        !read_required_float(editor, "y", loaded.camera_state.editor.y) ||
-        !read_required_float(editor, "speed",
-                             loaded.camera_state.editor.speed) ||
-        !read_required_float(editor, "zoom", loaded.camera_state.editor.zoom)) {
-      error = "cameras.editor is incomplete.";
-      return false;
-    }
-
-    if (!read_required_float(game, "x", loaded.camera_state.game.x) ||
-        !read_required_float(game, "y", loaded.camera_state.game.y) ||
-        !read_required_float(game, "speed", loaded.camera_state.game.speed) ||
-        !read_required_float(game, "zoom", loaded.camera_state.game.zoom) ||
-        !read_required_bool(game, "follow_target",
-                            loaded.camera_state.game_options.follow_target)) {
-      error = "cameras.game is incomplete.";
       return false;
     }
 
@@ -528,24 +442,6 @@ namespace prune {
                             loaded.scene_options.highlight_selected)) {
       error = "options.highlight_selected is missing.";
       return false;
-    }
-
-    const YAML::Node debug_overlays = options["debug_overlays"];
-    if (debug_overlays) {
-      loaded.scene_options.debug_overlays.show_collision_bounds =
-          debug_overlays["collision_bounds"]
-              ? debug_overlays["collision_bounds"].as<bool>()
-              : false;
-
-      loaded.scene_options.debug_overlays.show_runtime_markers =
-          debug_overlays["runtime_markers"]
-              ? debug_overlays["runtime_markers"].as<bool>()
-              : false;
-
-      loaded.scene_options.debug_overlays.show_role_labels =
-          debug_overlays["role_labels"]
-              ? debug_overlays["role_labels"].as<bool>()
-              : false;
     }
 
     for (const auto& entry : objects) {
@@ -585,10 +481,7 @@ namespace prune {
 
     loaded.objects.set_next_id(loaded_next_id);
 
-    if (loaded_selected_id != k_invalid_game_object_id &&
-        loaded.objects.get_by_id(loaded_selected_id) != nullptr) {
-      loaded.selected_id = loaded_selected_id;
-    } else if (!loaded.objects.empty()) {
+    if (!loaded.objects.empty()) {
       loaded.selected_id = loaded.objects.objects().front().identity.id;
     }
 
@@ -597,7 +490,6 @@ namespace prune {
     state.objects = std::move(loaded.objects);
     grid_options = loaded.grid_options;
     state.scene_options = loaded.scene_options;
-    camera.state() = loaded.camera_state;
 
     return true;
   }

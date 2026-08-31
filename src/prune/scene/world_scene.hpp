@@ -98,6 +98,7 @@ namespace prune {
       return nullptr;
     }
     virtual void render_overlay(SDL_Renderer*) {}
+    virtual void establish_game_camera() {}
 
     SceneState m_state;
     GridOptions m_grid_options;

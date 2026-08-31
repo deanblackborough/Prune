@@ -47,6 +47,7 @@ namespace prune {
     [[nodiscard]] bool restore_loaded_scene(SceneState& state,
                                             std::string& error) override;
     void render_overlay(SDL_Renderer* renderer) override;
+    void establish_game_camera() override;
 
   private:
     void reset_runtime_state();

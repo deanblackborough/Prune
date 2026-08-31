@@ -240,14 +240,14 @@ namespace prune {
 
     m_state.objects.select(m_simple_shooter_state.player_id);
 
+    establish_game_camera();
+  }
+
+  void SimpleShooterScene::establish_game_camera() {
     m_camera.update_game_camera(m_state.viewport, player_object());
   }
 
-  void SimpleShooterScene::new_scene() {
-    restore_defaults();
-
-    m_camera.update_game_camera(m_state.viewport, player_object());
-  }
+  void SimpleShooterScene::new_scene() { restore_defaults(); }
 
   std::string_view SimpleShooterScene::default_file_path() const noexcept {
     if (const SceneDescriptor* descriptor =

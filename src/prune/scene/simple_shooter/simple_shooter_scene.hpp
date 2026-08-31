@@ -53,6 +53,7 @@ namespace prune {
                                             std::string& error) override;
     [[nodiscard]] GameObject* game_camera_target() noexcept override;
     void render_overlay(SDL_Renderer* renderer) override;
+    void establish_game_camera() override;
 
   private:
     void reset_runtime_state();
