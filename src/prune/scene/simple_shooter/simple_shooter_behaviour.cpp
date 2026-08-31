@@ -14,12 +14,12 @@ namespace prune {
                                       SimpleShooterState& shooter_state,
                                       float dt, const Input& input,
                                       bool keyboard_input_enabled) {
-    if (shooter_state.options.paused) {
+    if (shooter_state.runtime.paused) {
       return;
     }
 
-    if (shooter_state.fire_cooldown_remaining > 0.0f) {
-      shooter_state.fire_cooldown_remaining -= dt;
+    if (shooter_state.runtime.fire_cooldown_remaining > 0.0f) {
+      shooter_state.runtime.fire_cooldown_remaining -= dt;
     }
 
     update_player(state, camera, shooter_state, dt, input,
@@ -35,7 +35,7 @@ namespace prune {
 
   void SimpleShooterBehaviour::reset(SceneState& state,
                                      SimpleShooterState& shooter_state) {
-    shooter_state.fire_cooldown_remaining = 0.0f;
+    shooter_state.runtime.fire_cooldown_remaining = 0.0f;
 
     for (auto& object : state.objects.objects()) {
       if (simple_shooter_concepts::is_projectile(object)) {
@@ -142,7 +142,8 @@ namespace prune {
     }
 
     player->motion.velocity =
-        shooter_state.player_controller.movement_velocity(input);
+        shooter_state.player_controller.movement_velocity(
+            input, shooter_state.settings.player_speed);
 
     const bool is_moving =
         player->motion.velocity.x != 0.0f || player->motion.velocity.y != 0.0f;
@@ -190,7 +191,7 @@ namespace prune {
       return;
     }
 
-    if (shooter_state.fire_cooldown_remaining > 0.0f ||
+    if (shooter_state.runtime.fire_cooldown_remaining > 0.0f ||
         !input.is_key_down(SDL_SCANCODE_SPACE)) {
       return;
     }
@@ -202,11 +203,12 @@ namespace prune {
 
     state.objects.create_object(
         simple_shooter_factory::create_projectile_from_player(
-            *player, shooter_state.options.projectile_speed,
-            shooter_state.options.projectile_lifetime));
+            *player, shooter_state.settings.projectile_speed,
+            shooter_state.settings.projectile_lifetime));
 
     state.events.emit(scene_events::player_fired);
-    shooter_state.fire_cooldown_remaining = shooter_state.options.fire_cooldown;
+    shooter_state.runtime.fire_cooldown_remaining =
+        shooter_state.settings.fire_cooldown;
   }
 
   void SimpleShooterBehaviour::update_enemies(
@@ -245,8 +247,10 @@ namespace prune {
       direction_x /= length;
       direction_y /= length;
 
-      enemy.motion.velocity.x = direction_x * shooter_state.options.enemy_speed;
-      enemy.motion.velocity.y = direction_y * shooter_state.options.enemy_speed;
+      enemy.motion.velocity.x =
+          direction_x * shooter_state.settings.enemy_speed;
+      enemy.motion.velocity.y =
+          direction_y * shooter_state.settings.enemy_speed;
 
       move_object(state, enemy, enemy.motion.velocity.x * dt,
                   enemy.motion.velocity.y * dt, true);
@@ -322,7 +326,7 @@ namespace prune {
 
   void SimpleShooterBehaviour::ensure_enemy_count(
       SceneState& state, const SimpleShooterState& shooter_state) {
-    const int target_enemy_count = shooter_state.options.max_live_enemies;
+    const int target_enemy_count = shooter_state.settings.max_live_enemies;
     int live_enemy_count = 0;
 
     for (auto& object : state.objects.objects()) {

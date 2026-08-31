@@ -8,29 +8,24 @@ namespace prune {
   void SimpleShooter::draw(SimpleShooterState& state) {
     if (tooling::imgui::layout::collapsing_header("Game")) {
       if (tooling::imgui::property_table::begin("##simple_shooter_game")) {
-        float player_speed = state.player_controller.speed();
-
-        if (tooling::imgui::property_table::slider_float(
-                "Player Speed", "##player_speed", player_speed, 0.0f, 512.0f,
-                "%.2f")) {
-          state.player_controller.set_speed(player_speed);
-        }
-
         tooling::imgui::property_table::slider_float(
-            "Enemy Speed", "##enemy_speed", state.options.enemy_speed, 0.0f,
+            "Player Speed", "##player_speed", state.settings.player_speed, 0.0f,
+            512.0f, "%.2f");
+        tooling::imgui::property_table::slider_float(
+            "Enemy Speed", "##enemy_speed", state.settings.enemy_speed, 0.0f,
             160.0f);
         tooling::imgui::property_table::slider_float(
             "Projectile Speed", "##projectile_speed",
-            state.options.projectile_speed, 40.0f, 400.0f);
+            state.settings.projectile_speed, 40.0f, 400.0f);
         tooling::imgui::property_table::slider_float(
             "Projectile Lifetime", "##projectile_lifetime",
-            state.options.projectile_lifetime, 0.2f, 4.0f);
+            state.settings.projectile_lifetime, 0.2f, 4.0f);
         tooling::imgui::property_table::slider_float(
-            "Fire Cooldown", "##fire_cooldown", state.options.fire_cooldown,
+            "Fire Cooldown", "##fire_cooldown", state.settings.fire_cooldown,
             0.05f, 1.0f);
         tooling::imgui::property_table::slider_int(
             "Max Live Enemies", "##max_live_enemies",
-            state.options.max_live_enemies, 0, 8);
+            state.settings.max_live_enemies, 0, 8);
         tooling::imgui::property_table::end();
       }
     }
