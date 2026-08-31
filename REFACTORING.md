@@ -82,7 +82,7 @@ mid-refactor mixes formatting churn into structural changes.
 ### Checklist
 
 - [x] Add a `.clang-format` matching the current house style as closely as possible.
-- [ ] Apply it to the whole tree in a single isolated commit.
+- [x] Apply it to the whole tree in a single isolated commit.
 - [x] Enforce it in CI (fail on unformatted diff).
 
 ## P0.2. Sanitizer build + tests under it in CI
@@ -189,24 +189,24 @@ Decisions taken:
 
 ### Checklist
 
-- [ ] Platformer: split into `PlatformerSettings { move_speed, jump_velocity, gravity,
+- [x] Platformer: split into `PlatformerSettings { move_speed, jump_velocity, gravity,
       max_fall_speed }` and `PlatformerRuntime { bool paused, bool player_grounded }`.
-- [ ] Simple Shooter: `SimpleShooterSettings` (including player speed, moved out of
+- [x] Simple Shooter: `SimpleShooterSettings` (including player speed, moved out of
       `player_controller` or exposed from it as authored config) and a runtime struct.
-- [ ] Artillery: `ArtillerySettings { gravity, min_power, max_power, initial_p1_aim,
+- [x] Artillery: `ArtillerySettings { gravity, min_power, max_power, initial_p1_aim,
       initial_p2_aim }` and `ArtilleryRuntime { current_turn, projectile_active, live p1/p2
       aim }`. Drop the ad-hoc `m_authored_*_aim` members once settings hold the initial aims.
-- [ ] Scene serializers write only the authored settings struct. Remove `paused` and any other
+- [x] Scene serializers write only the authored settings struct. Remove `paused` and any other
       runtime value from the persisted node.
-- [ ] `reset_runtime()` rebuilds the runtime struct from defaults + authored settings.
-- [ ] Generic serializer: stop writing `selected_object_id`, the whole `cameras` section, and
+- [x] `reset_runtime()` rebuilds the runtime struct from defaults + authored settings.
+- [x] Generic serializer: stop writing `selected_object_id`, the whole `cameras` section, and
       `options.debug_overlays.*`. Keep `objects` and `scene.next_object_id`.
-- [ ] `load_from_node` no longer requires a `cameras` section; drop that from the required-keys
+- [x] `load_from_node` no longer requires a `cameras` section; drop that from the required-keys
       check.
-- [ ] Each scene establishes game camera framing on load (not only on `new_scene`) — move the
+- [x] Each scene establishes game camera framing on load (not only on `new_scene`) — move the
       framing setup so both paths call it.
-- [ ] Move grid options off `SceneState` / save into an editor session location.
-- [ ] Loading an old save file that still contains the removed keys must not error — ignore
+- [x] Move grid options off `SceneState` / save into an editor session location.
+- [x] Loading an old save file that still contains the removed keys must not error — ignore
       unknown keys.
 
 ### Out of scope
