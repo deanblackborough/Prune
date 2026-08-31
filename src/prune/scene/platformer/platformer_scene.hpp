@@ -15,7 +15,8 @@ namespace prune {
 
   class PlatformerScene : public WorldScene {
   public:
-    PlatformerScene(int window_width, int window_height);
+    PlatformerScene(int window_width, int window_height,
+                    GridOptions& grid_options);
 
     void on_exit() override;
 
@@ -50,6 +51,7 @@ namespace prune {
     [[nodiscard]] bool restore_loaded_scene(SceneState& state,
                                             std::string& error) override;
     [[nodiscard]] GameObject* game_camera_target() noexcept override;
+    void establish_game_camera() override;
 
   private:
     void reset_runtime_state();

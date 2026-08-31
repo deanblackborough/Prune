@@ -118,7 +118,9 @@ namespace prune {
     }
   } // namespace
 
-  SimpleShooterScene::SimpleShooterScene(int window_width, int window_height) {
+  SimpleShooterScene::SimpleShooterScene(int window_width, int window_height,
+                                         GridOptions& grid_options)
+      : WorldScene(grid_options) {
     m_state.viewport.width = window_width;
     m_state.viewport.height = window_height;
   }
@@ -173,15 +175,15 @@ namespace prune {
   }
 
   void SimpleShooterScene::restart_runtime() {
-    m_simple_shooter_state.fire_cooldown_remaining = 0.0f;
+    m_simple_shooter_state.runtime = {};
   }
 
   void SimpleShooterScene::set_runtime_paused(bool paused) noexcept {
-    m_simple_shooter_state.options.paused = paused;
+    m_simple_shooter_state.runtime.paused = paused;
   }
 
   bool SimpleShooterScene::is_runtime_paused() const noexcept {
-    return m_simple_shooter_state.options.paused;
+    return m_simple_shooter_state.runtime.paused;
   }
 
   GameObject* SimpleShooterScene::game_camera_target() noexcept {
@@ -208,7 +210,6 @@ namespace prune {
 
     m_camera.reset();
 
-    m_grid_options = {};
     m_state.scene_options = {};
     m_state.drag_state = {};
     m_state.editor_tool = EditorTool::Select;
@@ -240,14 +241,14 @@ namespace prune {
 
     m_state.objects.select(m_simple_shooter_state.player_id);
 
+    establish_game_camera();
+  }
+
+  void SimpleShooterScene::establish_game_camera() {
     m_camera.update_game_camera(m_state.viewport, player_object());
   }
 
-  void SimpleShooterScene::new_scene() {
-    restore_defaults();
-
-    m_camera.update_game_camera(m_state.viewport, player_object());
-  }
+  void SimpleShooterScene::new_scene() { restore_defaults(); }
 
   std::string_view SimpleShooterScene::default_file_path() const noexcept {
     if (const SceneDescriptor* descriptor =
@@ -307,16 +308,17 @@ namespace prune {
           "Facing", direction_label(selected.motion.facing));
       tooling::imgui::property_table::text(
           "Controller Speed",
-          std::to_string(static_cast<int>(
-                             m_simple_shooter_state.player_controller.speed()))
+          std::to_string(
+              static_cast<int>(m_simple_shooter_state.settings.player_speed))
               .c_str());
       tooling::imgui::property_table::text(
           "Fire Ready",
-          bool_label(m_simple_shooter_state.fire_cooldown_remaining <= 0.0f));
+          bool_label(m_simple_shooter_state.runtime.fire_cooldown_remaining <=
+                     0.0f));
 
       char cooldown_buffer[32];
       std::snprintf(cooldown_buffer, sizeof(cooldown_buffer), "%.2fs",
-                    m_simple_shooter_state.fire_cooldown_remaining);
+                    m_simple_shooter_state.runtime.fire_cooldown_remaining);
       tooling::imgui::property_table::text("Cooldown Remaining",
                                            cooldown_buffer);
     } else if (kind == simple_shooter_concepts::ObjectKind::Enemy) {
@@ -326,14 +328,14 @@ namespace prune {
       tooling::imgui::property_table::text(
           "Enemy Speed",
           std::to_string(
-              static_cast<int>(m_simple_shooter_state.options.enemy_speed))
+              static_cast<int>(m_simple_shooter_state.settings.enemy_speed))
               .c_str());
       tooling::imgui::property_table::text(
           "Spawn Object Id",
           std::to_string(m_simple_shooter_state.enemy_spawn_id).c_str());
       tooling::imgui::property_table::text(
           "Max Live Enemies",
-          std::to_string(m_simple_shooter_state.options.max_live_enemies)
+          std::to_string(m_simple_shooter_state.settings.max_live_enemies)
               .c_str());
     } else if (kind == simple_shooter_concepts::ObjectKind::Projectile) {
       char lifetime_buffer[32];
@@ -343,12 +345,12 @@ namespace prune {
       tooling::imgui::property_table::text("Remaining", lifetime_buffer);
       tooling::imgui::property_table::text(
           "Projectile Speed",
-          std::to_string(
-              static_cast<int>(m_simple_shooter_state.options.projectile_speed))
+          std::to_string(static_cast<int>(
+                             m_simple_shooter_state.settings.projectile_speed))
               .c_str());
       tooling::imgui::property_table::text(
           "Configured Lifetime",
-          std::to_string(m_simple_shooter_state.options.projectile_lifetime)
+          std::to_string(m_simple_shooter_state.settings.projectile_lifetime)
               .c_str());
     } else if (kind == simple_shooter_concepts::ObjectKind::Wall) {
       tooling::imgui::property_table::text(

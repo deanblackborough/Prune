@@ -16,7 +16,8 @@ namespace prune {
 
   class SimpleShooterScene : public WorldScene {
   public:
-    SimpleShooterScene(int window_width, int window_height);
+    SimpleShooterScene(int window_width, int window_height,
+                       GridOptions& grid_options);
     SimpleShooterScene(const SimpleShooterScene&) = delete;
     SimpleShooterScene& operator=(const SimpleShooterScene&) = delete;
     void on_exit() override;
@@ -53,6 +54,7 @@ namespace prune {
                                             std::string& error) override;
     [[nodiscard]] GameObject* game_camera_target() noexcept override;
     void render_overlay(SDL_Renderer* renderer) override;
+    void establish_game_camera() override;
 
   private:
     void reset_runtime_state();

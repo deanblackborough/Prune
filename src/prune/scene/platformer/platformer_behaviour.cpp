@@ -27,7 +27,7 @@ namespace prune {
                                    PlatformerState& platformer_state, float dt,
                                    const Input& input,
                                    bool keyboard_input_enabled) {
-    if (platformer_state.options.paused) {
+    if (platformer_state.runtime.paused) {
       return;
     }
 
@@ -99,18 +99,18 @@ namespace prune {
 
       if ((input.was_key_pressed(SDL_SCANCODE_W) ||
            input.was_key_pressed(SDL_SCANCODE_SPACE)) &&
-          platformer_state.player_grounded) {
-        player->motion.velocity.y = -platformer_state.options.jump_velocity;
-        platformer_state.player_grounded = false;
+          platformer_state.runtime.player_grounded) {
+        player->motion.velocity.y = -platformer_state.settings.jump_velocity;
+        platformer_state.runtime.player_grounded = false;
         state.events.emit(scene_events::player_jumped);
       }
     }
 
     player->motion.velocity.x =
-        horizontal * platformer_state.options.move_speed;
+        horizontal * platformer_state.settings.move_speed;
     player->motion.velocity.y = std::min(
-        player->motion.velocity.y + (platformer_state.options.gravity * dt),
-        platformer_state.options.max_fall_speed);
+        player->motion.velocity.y + (platformer_state.settings.gravity * dt),
+        platformer_state.settings.max_fall_speed);
 
     bool grounded = false;
 
@@ -119,7 +119,7 @@ namespace prune {
     move_player_axis(state, *player, 0.0f, player->motion.velocity.y * dt,
                      grounded);
 
-    platformer_state.player_grounded = grounded;
+    platformer_state.runtime.player_grounded = grounded;
 
     if (grounded && player->motion.velocity.y > 0.0f) {
       player->motion.velocity.y = 0.0f;
@@ -209,6 +209,6 @@ namespace prune {
 
     player->motion.velocity = {};
     player->motion.facing = Direction::Right;
-    platformer_state.player_grounded = false;
+    platformer_state.runtime.player_grounded = false;
   }
 } // namespace prune

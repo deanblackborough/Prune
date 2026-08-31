@@ -12,17 +12,16 @@ namespace prune {
     }
   } // namespace
 
-  bool Artillery::draw(ArtilleryState& state) {
-    bool authored_aim_changed = false;
-
+  void Artillery::draw(ArtilleryState& state) {
     if (tooling::imgui::layout::collapsing_header("Game")) {
       if (tooling::imgui::property_table::begin("##artillery_game")) {
-        tooling::imgui::property_table::text("Current Player",
-                                             turn_label(state.current_turn));
         tooling::imgui::property_table::text(
-            "Projectile Active", state.projectile_active ? "Yes" : "No");
+            "Current Player", turn_label(state.runtime.current_turn));
+        tooling::imgui::property_table::text(
+            "Projectile Active",
+            state.runtime.projectile_active ? "Yes" : "No");
         tooling::imgui::property_table::slider_float(
-            "Gravity", "##artillery_gravity", state.options.gravity, 60.0f,
+            "Gravity", "##artillery_gravity", state.settings.gravity, 60.0f,
             360.0f, "%.1f");
         tooling::imgui::property_table::end();
       }
@@ -30,18 +29,22 @@ namespace prune {
 
     if (tooling::imgui::layout::collapsing_header("Player Aims")) {
       if (tooling::imgui::property_table::begin("##artillery_player_aims")) {
-        authored_aim_changed |= tooling::imgui::property_table::slider_float(
+        tooling::imgui::property_table::slider_float(
             "P1 Angle", "##artillery_p1_angle",
-            state.player_one_aim.angle_degrees, 5.0f, 85.0f, "%.1f");
-        authored_aim_changed |= tooling::imgui::property_table::slider_float(
-            "P1 Power", "##artillery_p1_power", state.player_one_aim.power,
-            state.options.min_power, state.options.max_power, "%.1f");
-        authored_aim_changed |= tooling::imgui::property_table::slider_float(
+            state.settings.initial_player_one_aim.angle_degrees, 5.0f, 85.0f,
+            "%.1f");
+        tooling::imgui::property_table::slider_float(
+            "P1 Power", "##artillery_p1_power",
+            state.settings.initial_player_one_aim.power,
+            state.settings.min_power, state.settings.max_power, "%.1f");
+        tooling::imgui::property_table::slider_float(
             "P2 Angle", "##artillery_p2_angle",
-            state.player_two_aim.angle_degrees, 5.0f, 85.0f, "%.1f");
-        authored_aim_changed |= tooling::imgui::property_table::slider_float(
-            "P2 Power", "##artillery_p2_power", state.player_two_aim.power,
-            state.options.min_power, state.options.max_power, "%.1f");
+            state.settings.initial_player_two_aim.angle_degrees, 5.0f, 85.0f,
+            "%.1f");
+        tooling::imgui::property_table::slider_float(
+            "P2 Power", "##artillery_p2_power",
+            state.settings.initial_player_two_aim.power,
+            state.settings.min_power, state.settings.max_power, "%.1f");
         tooling::imgui::property_table::end();
       }
     }
@@ -58,8 +61,6 @@ namespace prune {
           "R resets the round with one of three fixed terrain layouts.");
       ImGui::BulletText("A tank hit resets the game immediately.");
     }
-
-    return authored_aim_changed;
   }
 
 } // namespace prune

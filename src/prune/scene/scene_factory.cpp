@@ -31,24 +31,28 @@ namespace prune {
   }
 
   std::unique_ptr<Scene> SceneFactory::create(SceneType type, int window_width,
-                                              int window_height) {
+                                              int window_height,
+                                              GridOptions& grid_options) {
     switch (type) {
     case SceneType::Artillery:
-      return std::make_unique<ArtilleryScene>(window_width, window_height);
+      return std::make_unique<ArtilleryScene>(window_width, window_height,
+                                              grid_options);
 
     case SceneType::Platformer:
-      return std::make_unique<PlatformerScene>(window_width, window_height);
+      return std::make_unique<PlatformerScene>(window_width, window_height,
+                                               grid_options);
 
     case SceneType::SimpleShooter:
     default:
-      return std::make_unique<SimpleShooterScene>(window_width, window_height);
+      return std::make_unique<SimpleShooterScene>(window_width, window_height,
+                                                  grid_options);
     }
   }
 
-  std::unique_ptr<Scene> SceneFactory::create_from_file(std::string_view path,
-                                                        int window_width,
-                                                        int window_height,
-                                                        std::string& error) {
+  std::unique_ptr<Scene>
+  SceneFactory::create_from_file(std::string_view path, int window_width,
+                                 int window_height, GridOptions& grid_options,
+                                 std::string& error) {
     try {
       const YAML::Node root = YAML::LoadFile(std::string(path));
 
@@ -66,7 +70,7 @@ namespace prune {
       }
 
       std::unique_ptr<Scene> scene =
-          create(descriptor->type, window_width, window_height);
+          create(descriptor->type, window_width, window_height, grid_options);
 
       if (!scene->load_from_file(path, error)) {
         return nullptr;

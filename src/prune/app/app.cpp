@@ -29,7 +29,7 @@ namespace prune {
     m_input = std::make_unique<Input>();
     m_time = std::make_unique<Time>();
     m_scene = SceneFactory::create(SceneType::Platformer, m_window->width(),
-                                   m_window->height());
+                                   m_window->height(), m_grid_options);
     m_scene->new_scene();
     m_scene->on_enter();
     m_ui = std::make_unique<Ui>();
@@ -100,7 +100,7 @@ namespace prune {
           m_scene->on_exit();
 
           m_scene = SceneFactory::create(new_scene_type, m_window->width(),
-                                         m_window->height());
+                                         m_window->height(), m_grid_options);
 
           m_scene->new_scene();
           m_scene->on_enter();
@@ -112,7 +112,8 @@ namespace prune {
           const std::string scene_file_path{m_scene->default_file_path()};
 
           std::unique_ptr<Scene> loaded_scene = SceneFactory::create_from_file(
-              scene_file_path, m_window->width(), m_window->height(), error);
+              scene_file_path, m_window->width(), m_window->height(),
+              m_grid_options, error);
 
           if (loaded_scene) {
             m_scene->on_exit();

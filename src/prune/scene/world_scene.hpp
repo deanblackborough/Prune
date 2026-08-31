@@ -68,7 +68,7 @@ namespace prune {
     world_scene_context() const noexcept final;
 
   protected:
-    WorldScene() = default;
+    explicit WorldScene(GridOptions& grid_options) noexcept;
 
     [[nodiscard]] bool scene_keyboard_input_enabled() const noexcept;
     [[nodiscard]] bool scene_mouse_input_enabled() const noexcept;
@@ -98,9 +98,10 @@ namespace prune {
       return nullptr;
     }
     virtual void render_overlay(SDL_Renderer*) {}
+    virtual void establish_game_camera() {}
 
     SceneState m_state;
-    GridOptions m_grid_options;
+    GridOptions* const m_grid_options;
     SceneCamera m_camera;
 
   private:

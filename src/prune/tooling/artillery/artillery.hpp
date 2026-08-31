@@ -6,7 +6,7 @@ namespace prune {
 
   class Artillery {
   public:
-    [[nodiscard]] bool draw(ArtilleryState& state);
+    void draw(ArtilleryState& state);
   };
 
 } // namespace prune

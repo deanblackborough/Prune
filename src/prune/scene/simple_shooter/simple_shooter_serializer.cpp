@@ -1,5 +1,7 @@
 #include "prune/scene/simple_shooter/simple_shooter_serializer.hpp"
 
+#include <algorithm>
+
 namespace prune {
 
   namespace {
@@ -22,15 +24,16 @@ namespace prune {
     root["simple_shooter"]["player_id"] = state.player_id;
     root["simple_shooter"]["enemy_id"] = state.enemy_id;
     root["simple_shooter"]["enemy_spawn_id"] = state.enemy_spawn_id;
-    root["simple_shooter"]["player_speed"] = state.player_controller.speed();
+    root["simple_shooter"]["player_speed"] = state.settings.player_speed;
 
-    root["simple_shooter"]["paused"] = state.options.paused;
-    root["simple_shooter"]["enemy_speed"] = state.options.enemy_speed;
-    root["simple_shooter"]["projectile_speed"] = state.options.projectile_speed;
+    root["simple_shooter"]["enemy_speed"] = state.settings.enemy_speed;
+    root["simple_shooter"]["projectile_speed"] =
+        state.settings.projectile_speed;
     root["simple_shooter"]["projectile_lifetime"] =
-        state.options.projectile_lifetime;
-    root["simple_shooter"]["fire_cooldown"] = state.options.fire_cooldown;
-    root["simple_shooter"]["max_live_enemies"] = state.options.max_live_enemies;
+        state.settings.projectile_lifetime;
+    root["simple_shooter"]["fire_cooldown"] = state.settings.fire_cooldown;
+    root["simple_shooter"]["max_live_enemies"] =
+        state.settings.max_live_enemies;
   }
 
   bool SimpleShooterSerializer::load_from_node(const YAML::Node& root,
@@ -44,7 +47,7 @@ namespace prune {
     }
 
     if (!simple_shooter["player_id"] || !simple_shooter["player_speed"] ||
-        !simple_shooter["paused"] || !simple_shooter["enemy_speed"] ||
+        !simple_shooter["enemy_speed"] ||
         (!has_projectile_options(simple_shooter) &&
          !has_legacy_bullet_options(simple_shooter))) {
       error = "simple_shooter options are incomplete.";
@@ -59,30 +62,30 @@ namespace prune {
         simple_shooter["enemy_spawn_id"]
             ? simple_shooter["enemy_spawn_id"].as<GameObjectId>()
             : k_invalid_game_object_id;
-    state.player_controller.set_speed(
-        simple_shooter["player_speed"].as<float>());
+    state.settings.player_speed =
+        std::max(0.0f, simple_shooter["player_speed"].as<float>());
 
-    state.options.paused = simple_shooter["paused"].as<bool>();
-    state.options.enemy_speed = simple_shooter["enemy_speed"].as<float>();
+    state.settings.enemy_speed = simple_shooter["enemy_speed"].as<float>();
 
     if (has_projectile_options(simple_shooter)) {
-      state.options.projectile_speed =
+      state.settings.projectile_speed =
           simple_shooter["projectile_speed"].as<float>();
-      state.options.projectile_lifetime =
+      state.settings.projectile_lifetime =
           simple_shooter["projectile_lifetime"].as<float>();
     } else {
-      state.options.projectile_speed =
+      state.settings.projectile_speed =
           simple_shooter["bullet_speed"].as<float>();
-      state.options.projectile_lifetime =
+      state.settings.projectile_lifetime =
           simple_shooter["bullet_lifetime"].as<float>();
     }
 
     if (simple_shooter["fire_cooldown"]) {
-      state.options.fire_cooldown = simple_shooter["fire_cooldown"].as<float>();
+      state.settings.fire_cooldown =
+          simple_shooter["fire_cooldown"].as<float>();
     }
 
     if (simple_shooter["max_live_enemies"]) {
-      state.options.max_live_enemies =
+      state.settings.max_live_enemies =
           simple_shooter["max_live_enemies"].as<int>();
     }
 

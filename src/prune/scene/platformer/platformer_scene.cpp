@@ -68,7 +68,9 @@ namespace prune {
     }
   } // namespace
 
-  PlatformerScene::PlatformerScene(int window_width, int window_height) {
+  PlatformerScene::PlatformerScene(int window_width, int window_height,
+                                   GridOptions& grid_options)
+      : WorldScene(grid_options) {
     m_state.viewport.width = window_width;
     m_state.viewport.height = window_height;
   }
@@ -85,16 +87,14 @@ namespace prune {
                         keyboard_input_enabled);
   }
 
-  void PlatformerScene::restart_runtime() {
-    m_platformer_state.player_grounded = false;
-  }
+  void PlatformerScene::restart_runtime() { m_platformer_state.runtime = {}; }
 
   void PlatformerScene::set_runtime_paused(bool paused) noexcept {
-    m_platformer_state.options.paused = paused;
+    m_platformer_state.runtime.paused = paused;
   }
 
   bool PlatformerScene::is_runtime_paused() const noexcept {
-    return m_platformer_state.options.paused;
+    return m_platformer_state.runtime.paused;
   }
 
   GameObject* PlatformerScene::game_camera_target() noexcept {
@@ -105,7 +105,6 @@ namespace prune {
     m_state.objects.clear();
     m_platformer_state = {};
     m_camera.reset();
-    m_grid_options = {};
     m_state.scene_options = {};
     m_state.drag_state = {};
     m_state.editor_tool = EditorTool::Select;
@@ -137,6 +136,10 @@ namespace prune {
     m_platformer.reset_player(m_state, m_platformer_state);
     m_state.objects.select(m_platformer_state.player_id);
 
+    establish_game_camera();
+  }
+
+  void PlatformerScene::establish_game_camera() {
     m_camera.game().zoom = 3.0f;
     m_camera.editor().zoom = 3.0f;
     m_camera.update_game_camera(m_state.viewport, player_object());
@@ -204,20 +207,20 @@ namespace prune {
 
       tooling::imgui::property_table::text("Velocity", velocity_buffer);
       tooling::imgui::property_table::text(
-          "Grounded", bool_label(m_platformer_state.player_grounded));
+          "Grounded", bool_label(m_platformer_state.runtime.player_grounded));
       tooling::imgui::property_table::text(
           "Move Speed",
           std::to_string(
-              static_cast<int>(m_platformer_state.options.move_speed))
+              static_cast<int>(m_platformer_state.settings.move_speed))
               .c_str());
       tooling::imgui::property_table::text(
           "Jump Velocity",
           std::to_string(
-              static_cast<int>(m_platformer_state.options.jump_velocity))
+              static_cast<int>(m_platformer_state.settings.jump_velocity))
               .c_str());
       tooling::imgui::property_table::text(
           "Gravity",
-          std::to_string(static_cast<int>(m_platformer_state.options.gravity))
+          std::to_string(static_cast<int>(m_platformer_state.settings.gravity))
               .c_str());
       tooling::imgui::property_table::text(
           "Reset Target Id",

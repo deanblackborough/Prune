@@ -9,8 +9,8 @@
 
 namespace prune {
 
-  Velocity
-  SimpleShooterPlayerController::movement_velocity(const Input& input) const {
+  Velocity SimpleShooterPlayerController::movement_velocity(const Input& input,
+                                                            float speed) const {
     float move_x = 0.0f;
     float move_y = 0.0f;
 
@@ -34,19 +34,12 @@ namespace prune {
 
     if (move_x != 0.0f || move_y != 0.0f) {
       const float length = std::sqrt((move_x * move_x) + (move_y * move_y));
+      const float clamped_speed = std::max(0.0f, speed);
 
-      velocity.x = (move_x / length) * m_speed;
-      velocity.y = (move_y / length) * m_speed;
+      velocity.x = (move_x / length) * clamped_speed;
+      velocity.y = (move_y / length) * clamped_speed;
     }
 
     return velocity;
-  }
-
-  float SimpleShooterPlayerController::speed() const noexcept {
-    return m_speed;
-  }
-
-  void SimpleShooterPlayerController::set_speed(float speed) noexcept {
-    m_speed = std::max(0.0f, speed);
   }
 } // namespace prune
