@@ -82,12 +82,6 @@ namespace prune {
     m_state.viewport.height = window_height;
   }
 
-  void ArtilleryScene::on_scene_enter() {
-    m_authored_turn = m_artillery_state.current_turn;
-    m_authored_player_one_aim = m_artillery_state.player_one_aim;
-    m_authored_player_two_aim = m_artillery_state.player_two_aim;
-  }
-
   void ArtilleryScene::on_exit() {
     m_state.objects.clear();
     m_artillery_state = {};
@@ -100,20 +94,15 @@ namespace prune {
   }
 
   void ArtilleryScene::restart_runtime() {
-    m_artillery_state.projectile_id = k_invalid_game_object_id;
-    m_artillery_state.projectile_owner_id = k_invalid_game_object_id;
-    m_artillery_state.projectile_active = false;
-    m_artillery_state.current_turn = m_authored_turn;
-    m_artillery_state.player_one_aim = m_authored_player_one_aim;
-    m_artillery_state.player_two_aim = m_authored_player_two_aim;
+    m_artillery_state.runtime = fresh_runtime(m_artillery_state.settings);
   }
 
   void ArtilleryScene::set_runtime_paused(bool paused) noexcept {
-    m_artillery_state.options.paused = paused;
+    m_artillery_state.runtime.paused = paused;
   }
 
   bool ArtilleryScene::is_runtime_paused() const noexcept {
-    return m_artillery_state.options.paused;
+    return m_artillery_state.runtime.paused;
   }
 
   void ArtilleryScene::reset_runtime_state() {
@@ -190,10 +179,7 @@ namespace prune {
 
       ImGui::Separator();
 
-      if (m_artillery_tools.draw(m_artillery_state)) {
-        m_authored_player_one_aim = m_artillery_state.player_one_aim;
-        m_authored_player_two_aim = m_artillery_state.player_two_aim;
-      }
+      m_artillery_tools.draw(m_artillery_state);
     }
 
     ImGui::End();
@@ -214,15 +200,16 @@ namespace prune {
       tooling::imgui::property_table::text(
           "Current Player",
           bool_label(selected.identity.id ==
-                     (m_artillery_state.current_turn == ArtilleryTurn::PlayerOne
+                     (m_artillery_state.runtime.current_turn ==
+                              ArtilleryTurn::PlayerOne
                           ? m_artillery_state.player_one_id
                           : m_artillery_state.player_two_id)));
       tooling::imgui::property_table::text(
-          "Turn", turn_label(m_artillery_state.current_turn));
+          "Turn", turn_label(m_artillery_state.runtime.current_turn));
       const ArtilleryAim& aim =
           selected.identity.id == m_artillery_state.player_two_id
-              ? m_artillery_state.player_two_aim
-              : m_artillery_state.player_one_aim;
+              ? m_artillery_state.runtime.player_two_aim
+              : m_artillery_state.runtime.player_one_aim;
 
       tooling::imgui::property_table::text(
           "Angle", std::to_string(static_cast<int>(aim.angle_degrees)).c_str());
@@ -265,14 +252,7 @@ namespace prune {
   }
 
   void ArtilleryScene::save_scene_data(YAML::Node& root) const {
-    ArtilleryState authored_state = m_artillery_state;
-    authored_state.projectile_id = k_invalid_game_object_id;
-    authored_state.projectile_owner_id = k_invalid_game_object_id;
-    authored_state.projectile_active = false;
-    authored_state.current_turn = m_authored_turn;
-    authored_state.player_one_aim = m_authored_player_one_aim;
-    authored_state.player_two_aim = m_authored_player_two_aim;
-    ArtillerySerializer::save_to_node(authored_state, root);
+    ArtillerySerializer::save_to_node(m_artillery_state, root);
   }
 
   bool ArtilleryScene::load_scene_data(const YAML::Node& root,
@@ -301,9 +281,7 @@ namespace prune {
       return false;
     }
 
-    m_artillery_state.projectile_id = k_invalid_game_object_id;
-    m_artillery_state.projectile_owner_id = k_invalid_game_object_id;
-    m_artillery_state.projectile_active = false;
+    m_artillery_state.runtime = fresh_runtime(m_artillery_state.settings);
     return true;
   }
 
@@ -316,7 +294,7 @@ namespace prune {
     const Camera& camera = m_camera.active();
     const float zoom = std::max(camera.zoom, 0.01f);
     const bool firing_right =
-        m_artillery_state.current_turn == ArtilleryTurn::PlayerOne;
+        m_artillery_state.runtime.current_turn == ArtilleryTurn::PlayerOne;
     const float direction = firing_right ? 1.0f : -1.0f;
     const ArtilleryAim& aim = current_aim(m_artillery_state);
     const float radians =
@@ -353,7 +331,7 @@ namespace prune {
 
   GameObject* ArtilleryScene::current_tank() noexcept {
     const GameObjectId id =
-        m_artillery_state.current_turn == ArtilleryTurn::PlayerOne
+        m_artillery_state.runtime.current_turn == ArtilleryTurn::PlayerOne
             ? m_artillery_state.player_one_id
             : m_artillery_state.player_two_id;
 
@@ -362,7 +340,7 @@ namespace prune {
 
   const GameObject* ArtilleryScene::current_tank() const noexcept {
     const GameObjectId id =
-        m_artillery_state.current_turn == ArtilleryTurn::PlayerOne
+        m_artillery_state.runtime.current_turn == ArtilleryTurn::PlayerOne
             ? m_artillery_state.player_one_id
             : m_artillery_state.player_two_id;
 

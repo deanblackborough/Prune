@@ -36,7 +36,6 @@ namespace prune {
     void draw_scene_inspector(GameObject& selected) override;
 
   protected:
-    void on_scene_enter() override;
     void update_runtime(float dt, const Input& input,
                         bool keyboard_input_enabled) override;
     void restart_runtime() override;
@@ -57,9 +56,6 @@ namespace prune {
     [[nodiscard]] const GameObject* current_tank() const noexcept;
 
     ArtilleryState m_artillery_state;
-    ArtilleryTurn m_authored_turn = ArtilleryTurn::PlayerOne;
-    ArtilleryAim m_authored_player_one_aim{};
-    ArtilleryAim m_authored_player_two_aim{};
     ArtilleryBehaviour m_artillery;
     Artillery m_artillery_tools;
   };
