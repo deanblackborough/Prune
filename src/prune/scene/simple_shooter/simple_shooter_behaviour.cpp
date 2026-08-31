@@ -141,9 +141,8 @@ namespace prune {
       return;
     }
 
-    player->motion.velocity =
-        shooter_state.player_controller.movement_velocity(
-            input, shooter_state.settings.player_speed);
+    player->motion.velocity = shooter_state.player_controller.movement_velocity(
+        input, shooter_state.settings.player_speed);
 
     const bool is_moving =
         player->motion.velocity.x != 0.0f || player->motion.velocity.y != 0.0f;

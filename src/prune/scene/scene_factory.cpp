@@ -45,11 +45,10 @@ namespace prune {
     }
   }
 
-  std::unique_ptr<Scene> SceneFactory::create_from_file(std::string_view path,
-                                                        int window_width,
-                                                        int window_height,
-                                                        GridOptions& grid_options,
-                                                        std::string& error) {
+  std::unique_ptr<Scene>
+  SceneFactory::create_from_file(std::string_view path, int window_width,
+                                 int window_height, GridOptions& grid_options,
+                                 std::string& error) {
     try {
       const YAML::Node root = YAML::LoadFile(std::string(path));
 

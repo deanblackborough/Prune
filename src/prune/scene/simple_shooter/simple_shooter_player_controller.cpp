@@ -9,9 +9,8 @@
 
 namespace prune {
 
-  Velocity
-  SimpleShooterPlayerController::movement_velocity(const Input& input,
-                                                   float speed) const {
+  Velocity SimpleShooterPlayerController::movement_velocity(const Input& input,
+                                                            float speed) const {
     float move_x = 0.0f;
     float move_y = 0.0f;
 

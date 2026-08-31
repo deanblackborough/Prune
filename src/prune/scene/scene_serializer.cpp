@@ -375,7 +375,8 @@ namespace prune {
 
   } // namespace
 
-  void SceneSerializer::save_to_node(const SceneState& state, YAML::Node& root) {
+  void SceneSerializer::save_to_node(const SceneState& state,
+                                     YAML::Node& root) {
     root["scene"]["next_object_id"] = state.objects.next_id();
 
     root["options"]["highlight_selected"] =

@@ -85,9 +85,7 @@ namespace prune {
                         keyboard_input_enabled);
   }
 
-  void PlatformerScene::restart_runtime() {
-    m_platformer_state.runtime = {};
-  }
+  void PlatformerScene::restart_runtime() { m_platformer_state.runtime = {}; }
 
   void PlatformerScene::set_runtime_paused(bool paused) noexcept {
     m_platformer_state.runtime.paused = paused;
