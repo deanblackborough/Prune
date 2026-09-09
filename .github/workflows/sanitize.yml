@@ -44,7 +44,7 @@ jobs:
           ASAN_OPTIONS: abort_on_error=1
 
   linux-sanitizers:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Check out repository
@@ -56,7 +56,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            ninja-build clang \
+            ninja-build clang-18 \
             libsdl2-dev libsdl2-image-dev libyaml-cpp-dev catch2
 
       - name: Configure CMake
@@ -65,8 +65,8 @@ jobs:
           -DCMAKE_BUILD_TYPE=Debug
           -DBUILD_TESTING=ON
           -DPRUNE_SANITIZE=ON
-          -DCMAKE_C_COMPILER=clang
-          -DCMAKE_CXX_COMPILER=clang++
+          -DCMAKE_C_COMPILER=clang-18
+          -DCMAKE_CXX_COMPILER=clang++-18
 
       - name: Build tests
         run: cmake --build build --target PruneTests

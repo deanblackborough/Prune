@@ -121,8 +121,9 @@ Phase A begins from a green cross-platform baseline.
       `switch` in `tooling/editor/tracked_property_table.cpp`). No include-path or
       initializer-ordering breakage.
 - [x] Extend CI to the compiler matrix. — `build.yml` now has `windows-msvc` (vcpkg, Release)
-      plus a `linux` matrix (`gcc` / `clang`, Debug, apt deps). MSVC ASan and Linux Clang
-      ASan/UBSan remain in `sanitize.yml`.
+      plus a `linux` matrix (`gcc` / `clang`, Debug, apt deps), pinned to `ubuntu-24.04` with
+      explicit `gcc-13` / `clang-18` packages. MSVC ASan and Linux Clang ASan/UBSan remain in
+      `sanitize.yml` (Linux leg pinned the same way).
 
 ## P0.4. Object lifetime / pointer-validity ADR
 
