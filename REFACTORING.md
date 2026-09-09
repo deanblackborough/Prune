@@ -112,10 +112,17 @@ Phase A begins from a green cross-platform baseline.
 
 ### Checklist
 
-- [ ] Build with Clang (Windows or Linux) alongside MSVC.
-- [ ] Build and run on Linux with GCC and Clang.
-- [ ] Work through the portability issues the port surfaces.
-- [ ] Extend CI to the compiler matrix (GCC, Clang, MSVC).
+- [x] Build with Clang (Windows or Linux) alongside MSVC. — Clang 18 on Linux (WSL Ubuntu 24.04).
+- [x] Build on Linux with GCC and Clang. — GCC 13 and Clang 18, app + tests, system SDL2 /
+      SDL2_image / yaml-cpp / Catch2. Running the app under a Linux display (WSLg) is deferred.
+- [x] Work through the portability issues the port surfaces. — the port was near-clean: three
+      pre-existing warnings the second compiler flagged, now fixed (two `ImGui::TextWrapped`
+      format-string-security calls in `tooling/imgui/property_table.cpp`, one unhandled-enum
+      `switch` in `tooling/editor/tracked_property_table.cpp`). No include-path or
+      initializer-ordering breakage.
+- [x] Extend CI to the compiler matrix. — `build.yml` now has `windows-msvc` (vcpkg, Release)
+      plus a `linux` matrix (`gcc` / `clang`, Debug, apt deps). MSVC ASan and Linux Clang
+      ASan/UBSan remain in `sanitize.yml`.
 
 ## P0.4. Object lifetime / pointer-validity ADR
 
