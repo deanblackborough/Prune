@@ -56,7 +56,7 @@ namespace prune::tooling::imgui::property_table {
 
   bool text_wrapped(const char* label, const char* value) {
     begin_row(label);
-    ImGui::TextWrapped(value);
+    ImGui::TextWrapped("%s", value);
     return true;
   }
 
@@ -138,7 +138,7 @@ namespace prune::tooling::imgui::property_table {
   }
 
   bool text_wrapped_raw(const char* text) {
-    ImGui::TextWrapped(text);
+    ImGui::TextWrapped("%s", text);
     return true;
   }
 

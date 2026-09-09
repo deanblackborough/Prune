@@ -51,6 +51,8 @@ namespace prune::tooling::editor::tracked_property_table {
 
       case EditorCommandType::CreateObject:
       case EditorCommandType::DeleteObject:
+      case EditorCommandType::MoveObjects:
+      case EditorCommandType::DeleteObjects:
       case EditorCommandType::MoveViewport:
         return true;
       }

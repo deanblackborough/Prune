@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  build-windows:
+  windows-msvc:
     runs-on: windows-latest
 
     steps:
@@ -40,3 +40,48 @@ jobs:
           name: prune-windows
           path: build/Release/Prune.exe
           retention-days: 30
+
+  linux:
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: gcc
+            packages: gcc-13 g++-13
+            cc: gcc-13
+            cxx: g++-13
+          - compiler: clang
+            packages: clang-18
+            cc: clang-18
+            cxx: clang++-18
+
+    name: linux-${{ matrix.compiler }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ninja-build ${{ matrix.packages }} \
+            libsdl2-dev libsdl2-image-dev libyaml-cpp-dev catch2
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DBUILD_TESTING=ON
+          -DCMAKE_C_COMPILER=${{ matrix.cc }}
+          -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --no-tests=error
