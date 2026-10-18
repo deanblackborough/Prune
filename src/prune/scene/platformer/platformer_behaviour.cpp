@@ -119,6 +119,7 @@ namespace prune {
     move_player_axis(state, *player, 0.0f, player->motion.velocity.y * dt,
                      grounded);
 
+    grounded = grounded || is_resting_on_solid(state, *player);
     platformer_state.runtime.player_grounded = grounded;
 
     if (grounded && player->motion.velocity.y > 0.0f) {
@@ -173,6 +174,25 @@ namespace prune {
         player.motion.velocity.y = 0.0f;
       }
     }
+  }
+
+  bool PlatformerBehaviour::is_resting_on_solid(
+      const SceneState& state, const GameObject& player) const noexcept {
+    GameObject probe = player;
+    probe.transform.y += 1.0f;
+
+    for (const auto& object : state.objects.objects()) {
+      if (object.identity.id == player.identity.id ||
+          !is_active_solid_platformer_block(object)) {
+        continue;
+      }
+
+      if (collision::are_active_overlapping(probe, object)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   bool

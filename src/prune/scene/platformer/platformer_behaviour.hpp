@@ -33,6 +33,9 @@ namespace prune {
                        const Input& input, bool keyboard_input_enabled) const;
     void move_player_axis(SceneState& state, GameObject& player, float delta_x,
                           float delta_y, bool& grounded) const;
+    [[nodiscard]] bool
+    is_resting_on_solid(const SceneState& state,
+                        const GameObject& player) const noexcept;
     [[nodiscard]] bool touches_hazard(const SceneState& state,
                                       const GameObject& player) const noexcept;
   };
