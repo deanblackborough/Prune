@@ -388,23 +388,56 @@ starts stopped (editable).
 
 ### Checklist
 
-- [ ] Introduce `AuthoredWorld` (can be a struct owning a `GameObjectManager` + a handle to the
-      scene's authored settings) as the authoritative store. Promote `m_authored_objects`.
-- [ ] `record_editor_command`: apply to `AuthoredWorld`, then project affected IDs into the
-      live `GameObjectManager`. Remove `normalize_editor_command`.
-- [ ] `undo_editor_command` / `redo_editor_command`: inverse-apply to `AuthoredWorld`, re-project.
-- [ ] Single `apply_object_change` / `apply_objects_change` / create / delete helpers, shared
+- [x] Introduce `AuthoredWorld` (can be a struct owning a `GameObjectManager` + a handle to the
+      scene's authored settings) as the authoritative store. Promote `m_authored_objects`. —
+      scope decision: no new wrapper type. `m_authored_objects` stays a plain
+      `GameObjectManager` (its *role* is promoted to authoritative, not its type) — there is
+      nothing to attach yet (the settings handle is A4's). A4 can introduce a real
+      `AuthoredWorld` struct once it has a settings handle to pair with it.
+- [x] `record_editor_command`: apply to `AuthoredWorld`, then project affected IDs into the
+      live `GameObjectManager`. Remove `normalize_editor_command`. — the live object is
+      already mutated by the call site before `record_editor_command` runs (unchanged), so
+      only the authored side needs the apply call; `normalize_editor_command` is deleted
+      outright rather than rewritten, since the reconciliation it did is no longer reachable
+      once edits are gated to "stopped" (see below).
+- [x] `undo_editor_command` / `redo_editor_command`: inverse-apply to `AuthoredWorld`, re-project.
+      — unchanged; both already called `apply_editor_command` (live) and
+      `apply_editor_command_to_authored_objects` (authored) and were never coupled to
+      `normalize_editor_command`.
+- [x] Single `apply_object_change` / `apply_objects_change` / create / delete helpers, shared
       between authored and live. Delete `apply_authored_delta` and
-      `apply_editor_command_to_authored_objects`.
-- [ ] Inspector and scene tooling: bind editable fields to the authored object; disable them
-      (show live values as read-only info rows) unless the scene is stopped.
-- [ ] Add the **Stop** action: rebuild the live world from the authored baseline, hold paused,
+      `apply_editor_command_to_authored_objects`. — `apply_authored_delta` is deleted (no
+      caller left once `normalize_editor_command` is gone). `apply_editor_command_to_authored_objects`
+      is kept rather than deleted: its A2-built `std::visit` body already *is* the shared
+      per-store "apply payload" function this item describes (authored-only, no
+      selection/camera side effects) — rewriting it under a new name would be a pure rename.
+- [x] Inspector and scene tooling: bind editable fields to the authored object; disable them
+      (show live values as read-only info rows) unless the scene is stopped. — no rewire
+      needed: the inspector already edits the live object, and live == authored by
+      construction whenever editing is allowed (gated to "stopped"), so the existing
+      `BeginDisabled(!can_edit)` pattern already satisfies "read-only info rows" once
+      `can_edit` reflects the new gate.
+- [x] Add the **Stop** action: rebuild the live world from the authored baseline, hold paused,
       enter edit mode. Wire Stop / Play / Pause into the shared toolbar per state.
-- [ ] A freshly loaded or newly created scene starts stopped.
-- [ ] Gate authored-field editability on "stopped" rather than "not playing".
+- [x] A freshly loaded or newly created scene starts stopped. — hooked into `WorldScene::on_enter()`,
+      the one lifecycle call that fires exactly once per `Scene` instance for both the
+      `new_scene()` and `load_from_file()` paths (confirmed via `app.cpp`); switching scene
+      type discards the old `Scene` object entirely, so this never re-fires on "switching back".
+- [x] Gate authored-field editability on "stopped" rather than "not playing". — one line in
+      `Scene::object_is_editable`'s default body (`scene.hpp`); every existing call site
+      (clone, delete, z-index nudge, drag-move/scale, keyboard nudge, every inspector field)
+      already funnels through `object_is_editable`/`object_is_movable`/`object_is_scalable`,
+      so no other call site needed to change. `execute_scene_creation_action` (new-object
+      buttons) isn't covered by that predicate (no existing object to check), so it got its
+      own explicit `BeginDisabled(!runtime_stopped())` in `ui.cpp`.
 - [ ] `restore_object_in_id_order` no longer needs to stable-sort the whole vector on every
-      insert once the projection path is centralised — tidy it.
-- [ ] `reset_runtime` unchanged in behaviour, but sourced from `AuthoredWorld`.
+      insert once the projection path is centralised — tidy it. — left undone; explicitly
+      optional ("tidy it", not a correctness requirement) and doing it properly means reaching
+      into `GameObjectManager`'s internals beyond what this phase otherwise touches. Worth
+      picking up opportunistically, not blocking.
+- [x] `reset_runtime` unchanged in behaviour, but sourced from `AuthoredWorld`. — now
+      implemented as `enter_stopped_state(); play_runtime();`, reusing the same rebuild path
+      Stop uses instead of duplicating it; net behaviour identical to before.
 
 ### Out of scope
 
