@@ -120,8 +120,8 @@ target_include_directories(Prune PRIVATE
 )
 
 target_link_libraries(Prune PRIVATE
-        SDL2::SDL2
-        SDL2_image::SDL2_image
+        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+        $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
         yaml-cpp::yaml-cpp
 )
 

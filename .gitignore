@@ -4,6 +4,7 @@
 .vs/
 out/
 vcpkg_installed/
+CMakeUserPresets.json
 
 # Prerequisites
 *.d
