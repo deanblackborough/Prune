@@ -96,7 +96,9 @@ the class of bug ASan/UBSan catch. This must be running before that code moves, 
 
 - [x] Add an ASan + UBSan build configuration.
 - [x] Run the existing test suite under it in CI.
-- [ ] Fix anything it flags in the current code before starting A1.
+- [x] Fix anything it flags in the current code before starting A1. — `sanitize.yml`
+      (Windows ASan, Linux ASan/UBSan) is green on current `main` (and has been since the
+      sanitizer build landed); nothing outstanding to fix.
 
 ## P0.3. Second compiler / Linux build
 
@@ -287,15 +289,22 @@ all scene types.
 
 ### Checklist
 
-- [ ] Define the payload structs and the `std::variant`. Keep `GameObjectId` helpers where
+- [x] Define the payload structs and the `std::variant`. Keep `GameObjectId` helpers where
       consumers still need a quick "which objects did this touch" answer (a small
-      `affected_ids(const EditorCommand&)` free function over the variant).
-- [ ] Rewrite the `make_*` factories to build payloads. Collapse the nine object-edit helpers
+      `affected_ids(const EditorCommand&)` free function over the variant). — the variant
+      holds `ObjectChange`, `ObjectsChange`, `ObjectCreate`, `ObjectDelete`, `ObjectsDelete`,
+      `ViewportChange`. `SceneSettingsChange` (shown in this section's original target code)
+      is deliberately deferred to A4, which is where it is actually produced and consumed —
+      adding it now would mean an unhandled/untested `std::visit` arm.
+- [x] Rewrite the `make_*` factories to build payloads. Collapse the nine object-edit helpers
       into `make_object_change(label, before, after, detail)`.
-- [ ] Replace every `switch (command.type)` with `std::visit` or `std::get_if`.
-- [ ] Delete `EditorCommandType` and `editor_command_type_label`.
-- [ ] Update `tests/editor_command_history_tests.cpp` and add payload construction coverage.
-- [ ] Do this before rotation. Rotation then lands as a label + reuse of `ObjectChange`.
+- [x] Replace every `switch (command.type)` with `std::visit` or `std::get_if`. — used the
+      `overloaded` visitor-lambda-set idiom in `world_scene.cpp`.
+- [x] Delete `EditorCommandType` and `editor_command_type_label`. — `tracked_property_table`
+      (the one other consumer, for its per-field "did this change" check and label text) gets
+      its own small local `TrackedField` enum, unrelated to `EditorCommandPayload`.
+- [x] Update `tests/editor_command_history_tests.cpp` and add payload construction coverage.
+- [x] Do this before rotation. Rotation then lands as a label + reuse of `ObjectChange`.
 
 ### Out of scope
 
