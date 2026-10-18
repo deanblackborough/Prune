@@ -1,5 +1,6 @@
 
 #include <cstddef>
+#include <vector>
 
 #include "imgui.h"
 
@@ -48,9 +49,7 @@ namespace prune {
           ImGui::BeginDisabled();
         }
 
-        const char* label = command.label.empty()
-                                ? editor_command_type_label(command.type)
-                                : command.label.c_str();
+        const char* label = command.label.c_str();
 
         if (command.detail.empty()) {
           ImGui::Text("%s%zu. %s", applied ? "" : "redo: ", command_index + 1,
@@ -61,13 +60,13 @@ namespace prune {
                       command.detail.c_str());
         }
 
-        if (command.object_ids.size() > 1) {
+        const std::vector<GameObjectId> ids = affected_ids(command);
+        if (ids.size() > 1) {
           ImGui::SameLine();
-          ImGui::TextDisabled("%zu objects", command.object_ids.size());
-        } else if (command.object_id != k_invalid_game_object_id) {
+          ImGui::TextDisabled("%zu objects", ids.size());
+        } else if (!ids.empty() && ids.front() != k_invalid_game_object_id) {
           ImGui::SameLine();
-          ImGui::TextDisabled("#%u",
-                              static_cast<unsigned int>(command.object_id));
+          ImGui::TextDisabled("#%u", static_cast<unsigned int>(ids.front()));
         }
 
         if (!applied) {

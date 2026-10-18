@@ -13,10 +13,24 @@ namespace prune {
 
 namespace prune::tooling::editor::tracked_property_table {
 
+  // Which GameObject field an inspector control edits. Used only for the
+  // "did this field actually change" check and the undo-history label —
+  // unrelated to EditorCommand's own payload shape.
+  enum class TrackedField {
+    Position,
+    Size,
+    RenderType,
+    Colour,
+    ZIndex,
+    Flag,
+    Sprite,
+    Rename,
+  };
+
   class ObjectEditTracker {
   public:
     void capture_if_activated(const GameObject& before);
-    void commit_if_deactivated_after_edit(Scene& scene, EditorCommandType type,
+    void commit_if_deactivated_after_edit(Scene& scene, TrackedField field,
                                           const GameObject& after,
                                           std::string_view detail = {});
     void reset() noexcept;
@@ -25,35 +39,34 @@ namespace prune::tooling::editor::tracked_property_table {
     std::optional<GameObject> m_before;
   };
 
-  bool drag_float(ObjectEditTracker& tracker, Scene& scene,
-                  EditorCommandType type, GameObject& object, const char* label,
-                  const char* id, float& value, float speed = 1.0f,
-                  float min = 0.0f, float max = 0.0f,
-                  const char* format = "%.3f", std::string_view detail = {});
-
-  bool slider_int(ObjectEditTracker& tracker, Scene& scene,
-                  EditorCommandType type, GameObject& object, const char* label,
-                  const char* id, int& value, int min, int max,
+  bool drag_float(ObjectEditTracker& tracker, Scene& scene, TrackedField field,
+                  GameObject& object, const char* label, const char* id,
+                  float& value, float speed = 1.0f, float min = 0.0f,
+                  float max = 0.0f, const char* format = "%.3f",
                   std::string_view detail = {});
 
-  bool drag_int(ObjectEditTracker& tracker, Scene& scene,
-                EditorCommandType type, GameObject& object, const char* label,
-                const char* id, int& value, float speed = 1.0f, int min = 0,
-                int max = 0, std::string_view detail = {});
+  bool slider_int(ObjectEditTracker& tracker, Scene& scene, TrackedField field,
+                  GameObject& object, const char* label, const char* id,
+                  int& value, int min, int max, std::string_view detail = {});
 
-  bool color3(ObjectEditTracker& tracker, Scene& scene, EditorCommandType type,
+  bool drag_int(ObjectEditTracker& tracker, Scene& scene, TrackedField field,
+                GameObject& object, const char* label, const char* id,
+                int& value, float speed = 1.0f, int min = 0, int max = 0,
+                std::string_view detail = {});
+
+  bool color3(ObjectEditTracker& tracker, Scene& scene, TrackedField field,
               GameObject& object, const char* label, const char* id,
               float color[3], std::string_view detail = {});
 
-  bool checkbox(Scene& scene, EditorCommandType type, GameObject& object,
+  bool checkbox(Scene& scene, TrackedField field, GameObject& object,
                 const char* label, const char* id, bool& value,
                 std::string_view detail = {});
 
-  bool sprite_picker(Scene& scene, EditorCommandType type, GameObject& object,
+  bool sprite_picker(Scene& scene, TrackedField field, GameObject& object,
                      const char* label, const char* id, std::string& sprite_key,
                      std::string_view detail = {});
 
-  bool commit_if_changed(Scene& scene, EditorCommandType type,
+  bool commit_if_changed(Scene& scene, TrackedField field,
                          const GameObject& before, const GameObject& after,
                          std::string_view detail = {});
 

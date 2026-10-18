@@ -1,10 +1,10 @@
 #pragma once
 
 #include <cstddef>
-#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 #include "prune/scene/game_object.hpp"
@@ -12,38 +12,42 @@
 
 namespace prune {
 
-  enum class EditorCommandType {
-    MoveObject = 0,
-    CreateObject,
-    DeleteObject,
-    RenameObject,
-    ChangeObjectPosition,
-    ChangeObjectSize,
-    ChangeObjectRenderType,
-    ChangeObjectColour,
-    ChangeObjectZIndex,
-    ChangeObjectFlag,
-    ChangeSprite,
-    MoveViewport,
-    MoveObjects,
-    DeleteObjects
+  struct ObjectChange {
+    GameObject before;
+    GameObject after;
   };
 
+  struct ObjectsChange {
+    std::vector<GameObject> before;
+    std::vector<GameObject> after;
+  };
+
+  struct ObjectCreate {
+    GameObject object;
+  };
+
+  struct ObjectDelete {
+    GameObject object;
+  };
+
+  struct ObjectsDelete {
+    std::vector<GameObject> objects;
+  };
+
+  struct ViewportChange {
+    Camera before;
+    Camera after;
+  };
+
+  using EditorCommandPayload =
+      std::variant<ObjectChange, ObjectsChange, ObjectCreate, ObjectDelete,
+                   ObjectsDelete, ViewportChange>;
+
   struct EditorCommand {
-    EditorCommandType type = EditorCommandType::MoveObject;
-    bool makes_dirty = true;
     std::string label;
     std::string detail;
-    GameObjectId object_id = k_invalid_game_object_id;
-
-    std::optional<GameObject> before_object;
-    std::optional<GameObject> after_object;
-    std::vector<GameObject> before_objects;
-    std::vector<GameObject> after_objects;
-    std::vector<GameObjectId> object_ids;
-
-    std::optional<Camera> before_camera;
-    std::optional<Camera> after_camera;
+    bool makes_dirty = true;
+    EditorCommandPayload payload;
   };
 
   class EditorCommandHistory {
@@ -68,35 +72,31 @@ namespace prune {
     std::size_t m_next_command_index = 0;
   };
 
-  [[nodiscard]] const char*
-  editor_command_type_label(EditorCommandType type) noexcept;
+  [[nodiscard]] std::vector<GameObjectId>
+  affected_ids(const EditorCommand& command);
 
-  [[nodiscard]] EditorCommand make_object_command(EditorCommandType type,
-                                                  std::string_view label,
+  [[nodiscard]] EditorCommand make_object_change(std::string_view label,
                                                   const GameObject& before,
                                                   const GameObject& after,
                                                   std::string_view detail = {});
 
   [[nodiscard]] EditorCommand
-  make_create_object_command(const GameObject& created,
-                             std::string_view detail = {});
+  make_object_create(const GameObject& created, std::string_view detail = {});
 
   [[nodiscard]] EditorCommand
-  make_delete_object_command(const GameObject& deleted,
-                             std::string_view detail = {});
+  make_object_delete(const GameObject& deleted, std::string_view detail = {});
 
   [[nodiscard]] EditorCommand
-  make_multi_object_command(EditorCommandType type, std::string_view label,
-                            std::span<const GameObject> before,
-                            std::span<const GameObject> after,
-                            std::string_view detail = {});
+  make_objects_change(std::string_view label, std::span<const GameObject> before,
+                      std::span<const GameObject> after,
+                      std::string_view detail = {});
 
   [[nodiscard]] EditorCommand
-  make_multi_delete_object_command(std::span<const GameObject> deleted,
-                                   std::string_view detail = {});
+  make_objects_delete(std::span<const GameObject> deleted,
+                      std::string_view detail = {});
 
   [[nodiscard]] EditorCommand
-  make_viewport_command(std::string_view label, const Camera& before,
-                        const Camera& after, std::string_view detail = {});
+  make_viewport_change(std::string_view label, const Camera& before,
+                       const Camera& after, std::string_view detail = {});
 
 } // namespace prune

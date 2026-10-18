@@ -52,9 +52,8 @@ namespace prune {
         const Camera after = camera.editor();
         if (m_viewport_pan_start.x != after.x ||
             m_viewport_pan_start.y != after.y) {
-          scene.record_editor_command(make_viewport_command(
-              editor_command_type_label(EditorCommandType::MoveViewport),
-              m_viewport_pan_start, after, "Mouse pan"));
+          scene.record_editor_command(make_viewport_change(
+              "Move viewport", m_viewport_pan_start, after, "Mouse pan"));
         }
 
         m_viewport_pan_active = false;
@@ -138,15 +137,12 @@ namespace prune {
           }
 
           if (before_objects.size() == 1) {
-            scene.record_editor_command(make_object_command(
-                EditorCommandType::MoveObject,
-                editor_command_type_label(EditorCommandType::MoveObject),
-                before_objects.front(), after_objects.front(), "Mouse drag"));
+            scene.record_editor_command(make_object_change(
+                "Move object", before_objects.front(), after_objects.front(),
+                "Mouse drag"));
           } else if (!before_objects.empty()) {
-            scene.record_editor_command(make_multi_object_command(
-                EditorCommandType::MoveObjects,
-                editor_command_type_label(EditorCommandType::MoveObjects),
-                before_objects, after_objects,
+            scene.record_editor_command(make_objects_change(
+                "Move objects", before_objects, after_objects,
                 std::to_string(before_objects.size()) +
                     " objects, mouse drag"));
           }
@@ -162,9 +158,8 @@ namespace prune {
                                  before.size.height != object->size.height;
 
             if (changed) {
-              scene.record_editor_command(make_object_command(
-                  EditorCommandType::ChangeObjectSize, "Scale object", before,
-                  *object, "Mouse drag"));
+              scene.record_editor_command(make_object_change(
+                  "Scale object", before, *object, "Mouse drag"));
             }
           }
           break;
@@ -369,15 +364,12 @@ namespace prune {
     }
 
     if (before_objects.size() == 1) {
-      scene.record_editor_command(make_object_command(
-          EditorCommandType::MoveObject,
-          editor_command_type_label(EditorCommandType::MoveObject),
-          before_objects.front(), after_objects.front(), "Keyboard nudge"));
+      scene.record_editor_command(make_object_change(
+          "Move object", before_objects.front(), after_objects.front(),
+          "Keyboard nudge"));
     } else if (!before_objects.empty()) {
-      scene.record_editor_command(make_multi_object_command(
-          EditorCommandType::MoveObjects,
-          editor_command_type_label(EditorCommandType::MoveObjects),
-          before_objects, after_objects,
+      scene.record_editor_command(make_objects_change(
+          "Move objects", before_objects, after_objects,
           std::to_string(before_objects.size()) + " objects, keyboard nudge"));
     }
   }

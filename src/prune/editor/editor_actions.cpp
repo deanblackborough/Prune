@@ -69,7 +69,7 @@ namespace prune {
 
     objects.select(clone_id);
     scene.record_editor_command(
-        make_create_object_command(*created, created->identity.name));
+        make_object_create(*created, created->identity.name));
     return true;
   }
 
@@ -101,10 +101,10 @@ namespace prune {
     }
 
     if (deleted_objects.size() == 1) {
-      scene.record_editor_command(make_delete_object_command(
+      scene.record_editor_command(make_object_delete(
           deleted_objects.front(), deleted_objects.front().identity.name));
     } else {
-      scene.record_editor_command(make_multi_delete_object_command(
+      scene.record_editor_command(make_objects_delete(
           deleted_objects,
           std::to_string(deleted_objects.size()) + " objects"));
     }
@@ -137,10 +137,9 @@ namespace prune {
     const GameObject before = *selected;
     selected->render.z_index = current + delta;
 
-    scene.record_editor_command(make_object_command(
-        EditorCommandType::ChangeObjectZIndex,
-        editor_command_type_label(EditorCommandType::ChangeObjectZIndex),
-        before, *selected, std::to_string(selected->render.z_index)));
+    scene.record_editor_command(make_object_change(
+        "Change render order", before, *selected,
+        std::to_string(selected->render.z_index)));
 
     return true;
   }

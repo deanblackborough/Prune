@@ -9,6 +9,8 @@
 
 namespace prune {
 
+  using tooling::editor::tracked_property_table::TrackedField;
+
   void Inspector::draw(Scene& scene, const Camera& camera) {
     GameObjectManager& objects = scene.get_object_manager();
 
@@ -58,10 +60,9 @@ namespace prune {
                 m_rename_buffer.data(), selected->identity.id);
 
             if (before.identity.name != selected->identity.name) {
-              scene.record_editor_command(make_object_command(
-                  EditorCommandType::RenameObject,
-                  editor_command_type_label(EditorCommandType::RenameObject),
-                  before, *selected, selected->identity.name));
+              scene.record_editor_command(make_object_change(
+                  "Rename object", before, *selected,
+                  selected->identity.name));
             }
 
             std::snprintf(m_rename_buffer.data(), m_rename_buffer.size(), "%s",
@@ -152,13 +153,13 @@ namespace prune {
 
         tooling::editor::tracked_property_table::drag_float(
             m_object_edit_tracker, scene,
-            EditorCommandType::ChangeObjectPosition, *selected, "X",
+            TrackedField::Position, *selected, "X",
             "transform_x", selected->transform.x, 1.0f, 0.0f, 0.0f, "%.3f",
             "X");
 
         tooling::editor::tracked_property_table::drag_float(
             m_object_edit_tracker, scene,
-            EditorCommandType::ChangeObjectPosition, *selected, "Y",
+            TrackedField::Position, *selected, "Y",
             "transform_y", selected->transform.y, 1.0f, 0.0f, 0.0f, "%.3f",
             "Y");
 
@@ -172,12 +173,12 @@ namespace prune {
         ImGui::BeginDisabled(!can_scale);
 
         tooling::editor::tracked_property_table::slider_int(
-            m_object_edit_tracker, scene, EditorCommandType::ChangeObjectSize,
+            m_object_edit_tracker, scene, TrackedField::Size,
             *selected, "Width", "##width", selected->size.width,
             k_min_object_size, k_max_object_size, "Width");
 
         tooling::editor::tracked_property_table::slider_int(
-            m_object_edit_tracker, scene, EditorCommandType::ChangeObjectSize,
+            m_object_edit_tracker, scene, TrackedField::Size,
             *selected, "Height", "##height", selected->size.height,
             k_min_object_size, k_max_object_size, "Height");
 
@@ -201,7 +202,7 @@ namespace prune {
               (render_type == 0) ? RenderType::Rectangle : RenderType::Sprite;
 
           tooling::editor::tracked_property_table::commit_if_changed(
-              scene, EditorCommandType::ChangeObjectRenderType, before,
+              scene, TrackedField::RenderType, before,
               *selected,
               (selected->render.type == RenderType::Rectangle) ? "Rectangle"
                                                                : "Sprite");
@@ -211,25 +212,25 @@ namespace prune {
         case RenderType::Rectangle: {
           tooling::editor::tracked_property_table::color3(
               m_object_edit_tracker, scene,
-              EditorCommandType::ChangeObjectColour, *selected, "Colour",
+              TrackedField::Colour, *selected, "Colour",
               "##colour", selected->render.rectangle.color, "Rectangle colour");
         } break;
 
         case RenderType::Sprite: {
           tooling::editor::tracked_property_table::sprite_picker(
-              scene, EditorCommandType::ChangeSprite, *selected, "Sprite",
+              scene, TrackedField::Sprite, *selected, "Sprite",
               "##sprite_key", selected->render.sprite.sprite_key, "Sprite key");
         }
           {
             tooling::editor::tracked_property_table::checkbox(
-                scene, EditorCommandType::ChangeSprite, *selected, "Flip X",
+                scene, TrackedField::Sprite, *selected, "Flip X",
                 "##sprite_flip_x", selected->render.sprite.flip_x, "Flip X");
           }
           break;
         }
 
         tooling::editor::tracked_property_table::drag_int(
-            m_object_edit_tracker, scene, EditorCommandType::ChangeObjectZIndex,
+            m_object_edit_tracker, scene, TrackedField::ZIndex,
             *selected, "Z Index", "##z_index", selected->render.z_index, 1.0f,
             0, 0, "Z Index");
 
@@ -292,21 +293,21 @@ namespace prune {
 
         {
           tooling::editor::tracked_property_table::checkbox(
-              scene, EditorCommandType::ChangeObjectFlag, *selected,
+              scene, TrackedField::Flag, *selected,
               "Lifecycle Active", "##active", selected->lifecycle.active,
               "Lifecycle Active");
         }
 
         {
           tooling::editor::tracked_property_table::checkbox(
-              scene, EditorCommandType::ChangeObjectFlag, *selected,
+              scene, TrackedField::Flag, *selected,
               "Render Visible", "##visible", selected->render.visible,
               "Render Visible");
         }
 
         {
           tooling::editor::tracked_property_table::checkbox(
-              scene, EditorCommandType::ChangeObjectFlag, *selected,
+              scene, TrackedField::Flag, *selected,
               "Collision Solid", "##solid", selected->collision.solid,
               "Collision Solid");
         }
