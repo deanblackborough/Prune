@@ -23,62 +23,6 @@ namespace prune {
     template <class... Visitors>
     overloaded(Visitors...) -> overloaded<Visitors...>;
 
-    // Copies to `authored` whichever authored-relevant fields differ between
-    // `before` and `after`. A command's label says what the edit *was called*
-    // (e.g. "Scale object"), but replay only needs to know what changed.
-    void apply_authored_delta(const GameObject& before, const GameObject& after,
-                              GameObject& authored) {
-      if (before.transform.x != after.transform.x ||
-          before.transform.y != after.transform.y) {
-        authored.transform = after.transform;
-      }
-
-      if (before.size.width != after.size.width ||
-          before.size.height != after.size.height) {
-        authored.size = after.size;
-      }
-
-      if (before.identity.name != after.identity.name) {
-        authored.identity.name = after.identity.name;
-      }
-
-      if (before.render.type != after.render.type) {
-        authored.render.type = after.render.type;
-      }
-
-      if (!std::equal(std::begin(before.render.rectangle.color),
-                      std::end(before.render.rectangle.color),
-                      std::begin(after.render.rectangle.color))) {
-        std::copy(std::begin(after.render.rectangle.color),
-                  std::end(after.render.rectangle.color),
-                  std::begin(authored.render.rectangle.color));
-      }
-
-      if (before.render.z_index != after.render.z_index) {
-        authored.render.z_index = after.render.z_index;
-      }
-
-      if (before.lifecycle.active != after.lifecycle.active) {
-        authored.lifecycle.active = after.lifecycle.active;
-      }
-
-      if (before.render.visible != after.render.visible) {
-        authored.render.visible = after.render.visible;
-      }
-
-      if (before.collision.solid != after.collision.solid) {
-        authored.collision.solid = after.collision.solid;
-      }
-
-      if (before.render.sprite.sprite_key != after.render.sprite.sprite_key) {
-        authored.render.sprite.sprite_key = after.render.sprite.sprite_key;
-      }
-
-      if (before.render.sprite.flip_x != after.render.sprite.flip_x) {
-        authored.render.sprite.flip_x = after.render.sprite.flip_x;
-      }
-    }
-
     void restore_object_in_id_order(GameObjectManager& objects,
                                     const GameObject& object) {
       if (GameObject* existing = objects.get_by_id(object.identity.id)) {
@@ -114,9 +58,10 @@ namespace prune {
   void WorldScene::on_enter() {
     capture_authored_objects();
     on_scene_enter();
+    enter_stopped_state();
   }
 
-  void WorldScene::reset_runtime() {
+  void WorldScene::enter_stopped_state() {
     const std::vector<GameObjectId> selected_ids(
         m_state.objects.selected_ids().begin(),
         m_state.objects.selected_ids().end());
@@ -127,17 +72,30 @@ namespace prune {
     m_state.drag_state = {};
 
     restart_runtime();
-    play_runtime();
+    set_runtime_paused(true);
+    m_stopped = true;
     m_camera.update_game_camera(m_state.viewport, game_camera_target());
+  }
+
+  void WorldScene::reset_runtime() {
+    enter_stopped_state();
+    play_runtime();
   }
 
   void WorldScene::pause_runtime() noexcept { set_runtime_paused(true); }
 
-  void WorldScene::play_runtime() noexcept { set_runtime_paused(false); }
+  void WorldScene::play_runtime() noexcept {
+    set_runtime_paused(false);
+    m_stopped = false;
+  }
 
   bool WorldScene::runtime_paused() const noexcept {
     return is_runtime_paused();
   }
+
+  void WorldScene::stop_runtime() { enter_stopped_state(); }
+
+  bool WorldScene::runtime_stopped() const noexcept { return m_stopped; }
 
   void WorldScene::draw_viewport_overlays() {
     if (!m_state.viewport.has_area()) {
@@ -327,7 +285,6 @@ namespace prune {
   }
 
   void WorldScene::record_editor_command(EditorCommand command) {
-    normalize_editor_command(command);
     apply_editor_command_to_authored_objects(command, true);
 
     if (command.makes_dirty) {
@@ -400,62 +357,6 @@ namespace prune {
   void WorldScene::capture_authored_objects() {
     m_authored_objects = m_state.objects;
     m_authored_objects.remove_runtime_objects();
-  }
-
-  void WorldScene::normalize_editor_command(EditorCommand& command) const {
-    std::visit(
-        overloaded{
-            [](ObjectCreate&) {},
-            [](ViewportChange&) {},
-            [this](ObjectDelete& payload) {
-              if (const GameObject* authored = m_authored_objects.get_by_id(
-                      payload.object.identity.id)) {
-                payload.object = *authored;
-              }
-            },
-            [this](ObjectsDelete& payload) {
-              for (GameObject& object : payload.objects) {
-                if (const GameObject* authored =
-                        m_authored_objects.get_by_id(object.identity.id)) {
-                  object = *authored;
-                }
-              }
-            },
-            [this](ObjectsChange& payload) {
-              const std::size_t object_count =
-                  std::min(payload.before.size(), payload.after.size());
-
-              for (std::size_t index = 0; index < object_count; ++index) {
-                const GameObject incoming_before = payload.before[index];
-                const GameObject incoming_after = payload.after[index];
-                const GameObject* current_authored =
-                    m_authored_objects.get_by_id(incoming_after.identity.id);
-                if (!current_authored) {
-                  continue;
-                }
-
-                payload.before[index] = *current_authored;
-                payload.after[index] = *current_authored;
-                apply_authored_delta(incoming_before, incoming_after,
-                                     payload.after[index]);
-              }
-            },
-            [this](ObjectChange& payload) {
-              const GameObject incoming_before = payload.before;
-              const GameObject incoming_after = payload.after;
-              const GameObject* current_authored =
-                  m_authored_objects.get_by_id(incoming_after.identity.id);
-              if (!current_authored) {
-                return;
-              }
-
-              payload.before = *current_authored;
-              payload.after = *current_authored;
-              apply_authored_delta(incoming_before, incoming_after,
-                                   payload.after);
-            },
-        },
-        command.payload);
   }
 
   void WorldScene::apply_editor_command_to_authored_objects(

@@ -189,13 +189,24 @@ namespace prune {
       }
 
       ImGui::SameLine();
-      if (scene.runtime_paused()) {
+      if (scene.runtime_stopped()) {
         if (ImGui::Button("Play", ImVec2(k_tool_button_min_width, 0.0f))) {
           scene.play_runtime();
         }
-      } else if (ImGui::Button("Pause",
-                               ImVec2(k_tool_button_min_width, 0.0f))) {
-        scene.pause_runtime();
+      } else {
+        if (scene.runtime_paused()) {
+          if (ImGui::Button("Play", ImVec2(k_tool_button_min_width, 0.0f))) {
+            scene.play_runtime();
+          }
+        } else if (ImGui::Button("Pause",
+                                 ImVec2(k_tool_button_min_width, 0.0f))) {
+          scene.pause_runtime();
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Stop", ImVec2(k_tool_button_min_width, 0.0f))) {
+          scene.stop_runtime();
+        }
       }
 
       ImGui::Separator();
@@ -238,6 +249,8 @@ namespace prune {
         ImGui::Separator();
         ImGui::TextUnformatted("Create");
 
+        ImGui::BeginDisabled(!scene.runtime_stopped());
+
         const std::span<const SceneCreationAction> actions =
             scene.scene_creation_actions();
         for (std::size_t index = 0; index < actions.size(); ++index) {
@@ -248,6 +261,8 @@ namespace prune {
           draw_scene_creation_action_button(scene, actions[index],
                                             layout.scene_creation_button_width);
         }
+
+        ImGui::EndDisabled();
       }
 
       ImGui::EndGroup();

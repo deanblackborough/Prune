@@ -31,6 +31,8 @@ namespace prune {
     void pause_runtime() noexcept final;
     void play_runtime() noexcept final;
     [[nodiscard]] bool runtime_paused() const noexcept final;
+    void stop_runtime() final;
+    [[nodiscard]] bool runtime_stopped() const noexcept final;
 
     [[nodiscard]] bool save_to_file(std::string_view path,
                                     std::string& error) final;
@@ -107,7 +109,7 @@ namespace prune {
   private:
     void sanitize_loaded_selection() noexcept;
     void capture_authored_objects();
-    void normalize_editor_command(EditorCommand& command) const;
+    void enter_stopped_state();
     void apply_editor_command_to_authored_objects(const EditorCommand& command,
                                                   bool use_after_state);
     void restore_object_snapshot(const GameObject& object,
@@ -119,5 +121,6 @@ namespace prune {
     SceneRenderer m_renderer;
     SceneInteraction m_interaction;
     GameObjectManager m_authored_objects;
+    bool m_stopped = true;
   };
 } // namespace prune
