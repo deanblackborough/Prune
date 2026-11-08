@@ -9,6 +9,14 @@ namespace prune {
     float jump_velocity = 285.0f;
     float gravity = 860.0f;
     float max_fall_speed = 420.0f;
+
+    // Seconds after leaving a platform where a jump still counts as
+    // grounded.
+    float coyote_time_seconds = 0.1f;
+
+    // Seconds before landing where a jump press is remembered and fires
+    // once grounded, instead of being dropped if pressed a frame early.
+    float jump_buffer_seconds = 0.15f;
   };
 
   struct PlatformerRuntime {

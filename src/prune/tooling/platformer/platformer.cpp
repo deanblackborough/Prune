@@ -48,6 +48,18 @@ namespace prune {
             "##platformer_max_fall_speed", state.settings.max_fall_speed,
             160.0f, 720.0f, "%.2f");
 
+        tooling::editor::tracked_settings_table::slider_float(
+            m_settings_tracker, scene,
+            [&state] { return settings_snapshot(state.settings); },
+            "Change coyote time", "Coyote Time (s)", "##platformer_coyote_time",
+            state.settings.coyote_time_seconds, 0.0f, 0.3f, "%.3f");
+
+        tooling::editor::tracked_settings_table::slider_float(
+            m_settings_tracker, scene,
+            [&state] { return settings_snapshot(state.settings); },
+            "Change jump buffer", "Jump Buffer (s)", "##platformer_jump_buffer",
+            state.settings.jump_buffer_seconds, 0.0f, 0.3f, "%.3f");
+
         tooling::imgui::property_table::end();
       }
     }

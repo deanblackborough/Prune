@@ -43,6 +43,8 @@ namespace prune {
     node["jump_velocity"] = settings.jump_velocity;
     node["gravity"] = settings.gravity;
     node["max_fall_speed"] = settings.max_fall_speed;
+    node["coyote_time_seconds"] = settings.coyote_time_seconds;
+    node["jump_buffer_seconds"] = settings.jump_buffer_seconds;
   }
 
   void
@@ -62,6 +64,14 @@ namespace prune {
 
     if (node["max_fall_speed"]) {
       settings.max_fall_speed = node["max_fall_speed"].as<float>();
+    }
+
+    if (node["coyote_time_seconds"]) {
+      settings.coyote_time_seconds = node["coyote_time_seconds"].as<float>();
+    }
+
+    if (node["jump_buffer_seconds"]) {
+      settings.jump_buffer_seconds = node["jump_buffer_seconds"].as<float>();
     }
   }
 

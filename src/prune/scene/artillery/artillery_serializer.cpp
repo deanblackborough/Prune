@@ -64,6 +64,8 @@ namespace prune {
     node["projectile_lifetime"] = settings.projectile_lifetime;
     node["min_power"] = settings.min_power;
     node["max_power"] = settings.max_power;
+    node["min_angle_degrees"] = settings.min_angle_degrees;
+    node["max_angle_degrees"] = settings.max_angle_degrees;
     node["angle_step"] = settings.angle_step;
     node["power_step"] = settings.power_step;
   }
@@ -97,6 +99,14 @@ namespace prune {
     settings.max_power = node["max_power"].as<float>();
     settings.angle_step = node["angle_step"].as<float>();
     settings.power_step = node["power_step"].as<float>();
+
+    if (node["min_angle_degrees"]) {
+      settings.min_angle_degrees = node["min_angle_degrees"].as<float>();
+    }
+
+    if (node["max_angle_degrees"]) {
+      settings.max_angle_degrees = node["max_angle_degrees"].as<float>();
+    }
 
     return true;
   }

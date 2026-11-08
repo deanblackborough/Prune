@@ -16,6 +16,8 @@ namespace prune {
     float projectile_lifetime = 8.0f;
     float min_power = 80.0f;
     float max_power = 340.0f;
+    float min_angle_degrees = 5.0f;
+    float max_angle_degrees = 85.0f;
     float angle_step = 45.0f;
     float power_step = 120.0f;
     ArtilleryAim initial_player_one_aim{};

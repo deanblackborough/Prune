@@ -163,7 +163,9 @@ namespace prune {
       aim.power -= artillery_state.settings.power_step * dt;
     }
 
-    aim.angle_degrees = std::clamp(aim.angle_degrees, 5.0f, 85.0f);
+    aim.angle_degrees = std::clamp(aim.angle_degrees,
+                                   artillery_state.settings.min_angle_degrees,
+                                   artillery_state.settings.max_angle_degrees);
     aim.power = std::clamp(aim.power, artillery_state.settings.min_power,
                            artillery_state.settings.max_power);
 

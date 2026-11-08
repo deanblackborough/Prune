@@ -10,9 +10,6 @@ namespace prune {
 
   namespace {
 
-    constexpr float k_coyote_time_seconds = 0.1f;
-    constexpr float k_jump_buffer_seconds = 0.15f;
-
     [[nodiscard]] bool
     is_active_solid_platformer_block(const GameObject& object) noexcept {
       return object.lifecycle.active && object.collision.solid &&
@@ -116,7 +113,8 @@ namespace prune {
       // mid-air get remembered and silently replayed on some later,
       // unrelated landing.
       if (jump_pressed && player->motion.velocity.y >= 0.0f) {
-        platformer_state.runtime.jump_buffer_remaining = k_jump_buffer_seconds;
+        platformer_state.runtime.jump_buffer_remaining =
+            platformer_state.settings.jump_buffer_seconds;
       }
     }
 
@@ -155,7 +153,8 @@ namespace prune {
     runtime.player_grounded = grounded;
 
     if (grounded) {
-      runtime.coyote_time_remaining = k_coyote_time_seconds;
+      runtime.coyote_time_remaining =
+          platformer_state.settings.coyote_time_seconds;
     } else if (runtime.coyote_time_remaining > 0.0f) {
       runtime.coyote_time_remaining =
           std::max(0.0f, runtime.coyote_time_remaining - dt);
