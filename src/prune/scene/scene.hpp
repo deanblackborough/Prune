@@ -139,8 +139,6 @@ namespace prune {
 
     [[nodiscard]] virtual std::string_view
     scene_tools_label() const noexcept = 0;
-    virtual void draw_scene_tools(bool& open) = 0;
-    virtual void draw_viewport_overlays() = 0;
 
     virtual GameObjectManager& get_object_manager() = 0;
     virtual void record_editor_command(EditorCommand command) = 0;
@@ -167,8 +165,6 @@ namespace prune {
     world_scene_context() const noexcept {
       return {};
     }
-
-    virtual void draw_scene_inspector(GameObject& selected) = 0;
 
   protected:
     Scene() = default;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <SDL2/SDL.h>
@@ -15,9 +16,11 @@
 namespace prune {
 
   class Scene;
+  class SceneEditor;
 
   class Ui {
   public:
+    Ui();
     ~Ui();
 
     void build(Scene& scene, SDL_Renderer* renderer, bool& new_scene_requested,
@@ -28,10 +31,12 @@ namespace prune {
 
   private:
     void save_scene(Scene& scene);
-    void draw_scene_viewport(Scene& scene, SDL_Renderer* renderer);
+    void draw_scene_viewport(Scene& scene, SceneEditor& scene_editor,
+                             SDL_Renderer* renderer);
     void ensure_scene_render_target(SDL_Renderer* renderer, int width,
                                     int height);
     void destroy_scene_render_target();
+    SceneEditor& ensure_scene_editor(const Scene& scene);
 
     SDL_Texture* m_scene_render_target = nullptr;
     int m_scene_render_target_width = 0;
@@ -45,6 +50,10 @@ namespace prune {
     CommandHistoryPanel m_command_history;
     Stats m_stats;
     Options m_options;
+
+    std::unique_ptr<SceneEditor> m_scene_editor;
+    SceneType m_scene_editor_type = SceneType::SimpleShooter;
+    bool m_has_scene_editor = false;
 
     std::string m_file_status;
     bool m_file_status_is_error = false;

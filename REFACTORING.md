@@ -658,12 +658,41 @@ small explicit factory (mirroring `SceneFactory`). No plugin system, no registra
 
 ### Checklist
 
-- [ ] Remove `draw_*` from the `Scene` interface.
-- [ ] Introduce a `SceneEditor` (name TBD) interface with the presentation methods.
-- [ ] One `SceneEditor` implementation per scene type; move the `draw_*` bodies into them.
-- [ ] Small explicit factory: scene type → `SceneEditor`.
-- [ ] `WorldScene` and scene subclasses drop their ImGui / `tooling/` includes.
-- [ ] The editor shell owns the active `SceneEditor` and drives it.
+- [x] Remove `draw_*` from the `Scene` interface. — `draw_scene_tools`, `draw_scene_inspector`,
+      `draw_viewport_overlays` dropped from `scene.hpp`; `scene_tools_label()` stays (it's just a
+      string, no ImGui dependency).
+- [x] Introduce a `SceneEditor` interface with the presentation methods. — new
+      `src/prune/scene/scene_editor.hpp`: `draw_scene_tools(Scene&, bool&)`,
+      `draw_scene_inspector(Scene&, GameObject&)`, `draw_viewport_overlays(Scene&)`, all taking
+      the scene by reference since the editor no longer owns the data.
+- [x] One `SceneEditor` implementation per scene type; move the `draw_*` bodies into them. —
+      `PlatformerEditor`/`SimpleShooterEditor`/`ArtilleryEditor`, each `final : public
+      WorldSceneEditor`, moved verbatim from the old scene methods, rebound to a new
+      `*_state()` accessor each scene now exposes (`platformer_state()`,
+      `simple_shooter_state()`, `artillery_state()`) so the editor can still reach the settings
+      it binds widgets to. `WorldSceneEditor` (new, between `SceneEditor` and the concrete
+      editors) carries the generic `draw_viewport_overlays`/`draw_debug_tools` that used to live
+      on `WorldScene`, rewritten against `Scene`'s existing public accessors only — no new
+      `WorldScene` encapsulation was needed for this part.
+- [x] Small explicit factory: scene type → `SceneEditor`. — `SceneEditorFactory::create`
+      (`scene_editor_factory.hpp/.cpp`), mirroring `SceneFactory`'s switch-on-`SceneType` shape.
+- [x] `WorldScene` and scene subclasses drop their ImGui / `tooling/` includes. — all three
+      `*_scene.cpp`/`.hpp` and `world_scene.cpp`/`.hpp` are ImGui-free; `tests/CMakeLists.txt`
+      no longer links ImGui or `tooling/imgui/*` either, now that `world_scene.cpp` (the only
+      reason they were there) doesn't need them.
+- [x] The editor shell owns the active `SceneEditor` and drives it. — `Ui` holds a
+      `std::unique_ptr<SceneEditor>`, lazily (re)created in `ensure_scene_editor()` by mapping
+      the live scene's `scene_type_id()` back to a `SceneType` via `scene_descriptor_for_id` and
+      comparing against the editor currently held; recreated whenever that type changes (new
+      scene, loaded scene, any future swap path), so `Ui` never has to be told explicitly.
+      `Ui`'s default constructor had to move out of the header (`Ui();` declared, `= default`
+      in `ui.cpp`) since an implicitly-defined one at the call site in `app.cpp` would try to
+      instantiate `~unique_ptr<SceneEditor>` with `SceneEditor` still incomplete there.
+
+Verified: `Prune` and `PruneTests` both build clean (clang, macOS arm64), all 139 existing
+assertions still pass, and the app launches without crashing. Did not drive the running app's
+ImGui panels interactively (no GUI automation available in this environment) — worth a manual
+pass over all three scene tool/inspector panels before relying on this.
 
 ---
 

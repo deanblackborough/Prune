@@ -40,9 +40,6 @@ namespace prune {
       scene_tools_label() const noexcept override {
         return "Authoring Test";
       }
-      void draw_scene_tools(bool&) override {}
-      void draw_scene_inspector(GameObject&) override {}
-
       [[nodiscard]] float setting_value() const noexcept {
         return m_setting_value;
       }

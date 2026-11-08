@@ -6,29 +6,16 @@
 #include <SDL2/SDL.h>
 #include <yaml-cpp/yaml.h>
 
-#include "imgui.h"
-
 #include "prune/core/defaults.hpp"
 #include "prune/scene/artillery/artillery_concepts.hpp"
 #include "prune/scene/artillery/artillery_factory.hpp"
 #include "prune/scene/artillery/artillery_scene.hpp"
 #include "prune/scene/artillery/artillery_serializer.hpp"
 #include "prune/scene/scene_factory.hpp"
-#include "prune/tooling/editor_layout.hpp"
-#include "prune/tooling/imgui/layout.hpp"
-#include "prune/tooling/imgui/property_table.hpp"
 
 namespace prune {
 
   namespace {
-    [[nodiscard]] const char* bool_label(bool value) noexcept {
-      return value ? "Yes" : "No";
-    }
-
-    [[nodiscard]] const char* turn_label(ArtilleryTurn turn) noexcept {
-      return turn == ArtilleryTurn::PlayerTwo ? "Player Two" : "Player One";
-    }
-
     [[nodiscard]] GameObjectId
     first_object_id_for_kind(const SceneState& state,
                              artillery_concepts::ObjectKind kind) noexcept {
@@ -173,68 +160,6 @@ namespace prune {
     }
 
     return k_invalid_game_object_id;
-  }
-
-  void ArtilleryScene::draw_scene_tools(bool& open) {
-    tooling::EditorLayout::scene_panel();
-
-    if (ImGui::Begin("Artillery", &open)) {
-      draw_debug_tools();
-
-      ImGui::Separator();
-
-      m_artillery_tools.draw(*this, m_artillery_state);
-    }
-
-    ImGui::End();
-  }
-
-  void ArtilleryScene::draw_scene_inspector(GameObject& selected) {
-    if (!tooling::imgui::layout::collapsing_header("Artillery", true)) {
-      return;
-    }
-
-    if (!tooling::imgui::property_table::begin("##artillery_inspector")) {
-      return;
-    }
-
-    const auto kind = artillery_concepts::kind_for(selected);
-
-    if (kind == artillery_concepts::ObjectKind::Tank) {
-      tooling::imgui::property_table::text(
-          "Current Player",
-          bool_label(selected.identity.id ==
-                     (m_artillery_state.runtime.current_turn ==
-                              ArtilleryTurn::PlayerOne
-                          ? m_artillery_state.player_one_id
-                          : m_artillery_state.player_two_id)));
-      tooling::imgui::property_table::text(
-          "Turn", turn_label(m_artillery_state.runtime.current_turn));
-      const ArtilleryAim& aim =
-          selected.identity.id == m_artillery_state.player_two_id
-              ? m_artillery_state.runtime.player_two_aim
-              : m_artillery_state.runtime.player_one_aim;
-
-      tooling::imgui::property_table::text(
-          "Angle", std::to_string(static_cast<int>(aim.angle_degrees)).c_str());
-      tooling::imgui::property_table::text(
-          "Power", std::to_string(static_cast<int>(aim.power)).c_str());
-    } else if (kind == artillery_concepts::ObjectKind::TerrainLine) {
-      tooling::imgui::property_table::text("Generated Terrain", "Yes");
-      tooling::imgui::property_table::text(
-          "Projectile Collision", bool_label(selected.collision.solid));
-    } else if (kind == artillery_concepts::ObjectKind::Projectile) {
-      char velocity_buffer[64];
-      std::snprintf(velocity_buffer, sizeof(velocity_buffer), "x %.1f, y %.1f",
-                    selected.motion.velocity.x, selected.motion.velocity.y);
-      tooling::imgui::property_table::text("Velocity", velocity_buffer);
-      tooling::imgui::property_table::text("Runtime Object", "Yes");
-    } else {
-      tooling::imgui::property_table::text(
-          "Artillery Behaviour", "No Artillery behaviour is assigned");
-    }
-
-    tooling::imgui::property_table::end();
   }
 
   std::string_view ArtilleryScene::default_file_path() const noexcept {

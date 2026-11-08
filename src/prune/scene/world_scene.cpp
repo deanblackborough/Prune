@@ -7,12 +7,8 @@
 #include <string>
 #include <utility>
 
-#include "imgui.h"
-
 #include "prune/scene/collision.hpp"
 #include "prune/scene/scene_serializer.hpp"
-#include "prune/tooling/imgui/layout.hpp"
-#include "prune/tooling/imgui/property_table.hpp"
 
 namespace prune {
 
@@ -97,44 +93,6 @@ namespace prune {
 
   bool WorldScene::runtime_stopped() const noexcept { return m_stopped; }
 
-  void WorldScene::draw_viewport_overlays() {
-    if (!m_state.viewport.has_area()) {
-      return;
-    }
-
-    if (!m_state.scene_options.debug_overlays.show_role_labels) {
-      return;
-    }
-
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    const Camera& camera = m_camera.active();
-    const float zoom = std::max(camera.zoom, 0.01f);
-    const ImU32 label_colour = IM_COL32(230, 220, 245, 230);
-    const ImU32 label_shadow_colour = IM_COL32(18, 14, 24, 220);
-
-    for (const auto& object : m_state.objects.objects()) {
-      if (!object.lifecycle.active || !object.render.visible) {
-        continue;
-      }
-
-      const std::string label = object_role_label(object);
-      if (label.empty()) {
-        continue;
-      }
-
-      const float screen_x = static_cast<float>(m_state.viewport.screen_x) +
-                             ((object.transform.x - camera.x) * zoom);
-
-      const float screen_y = static_cast<float>(m_state.viewport.screen_y) +
-                             ((object.transform.y - camera.y) * zoom) - 18.0f;
-
-      const ImVec2 pos{screen_x, screen_y};
-      draw_list->AddText(ImVec2(pos.x + 1.0f, pos.y + 1.0f),
-                         label_shadow_colour, label.c_str());
-      draw_list->AddText(pos, label_colour, label.c_str());
-    }
-  }
-
   bool WorldScene::execute_scene_creation_action(std::string_view action_id) {
     for (const SceneCreationAction& action : scene_creation_actions()) {
       if (action.id != action_id) {
@@ -156,27 +114,6 @@ namespace prune {
     }
 
     return false;
-  }
-
-  void WorldScene::draw_debug_tools() {
-    if (!tooling::imgui::layout::collapsing_header("Debug")) {
-      return;
-    }
-
-    DebugOverlayOptions& overlays = m_state.scene_options.debug_overlays;
-
-    if (tooling::imgui::property_table::begin("Debug")) {
-      tooling::imgui::property_table::checkbox("Collision bounds",
-                                               "###collision_bounds",
-                                               overlays.show_collision_bounds);
-      tooling::imgui::property_table::checkbox("Runtime object markers",
-                                               "###runtime_markers",
-                                               overlays.show_runtime_markers);
-      tooling::imgui::property_table::checkbox("Scene role labels",
-                                               "###scene_role_labels",
-                                               overlays.show_role_labels);
-      tooling::imgui::property_table::end();
-    }
   }
 
   bool WorldScene::save_to_file(std::string_view path, std::string& error) {

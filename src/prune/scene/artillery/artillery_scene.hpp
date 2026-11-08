@@ -8,7 +8,6 @@
 #include "prune/scene/artillery/artillery_behaviour.hpp"
 #include "prune/scene/artillery/artillery_state.hpp"
 #include "prune/scene/world_scene.hpp"
-#include "prune/tooling/artillery/artillery.hpp"
 
 namespace prune {
 
@@ -33,8 +32,13 @@ namespace prune {
     [[nodiscard]] std::span<const SceneCreationAction>
     scene_creation_actions() const noexcept override;
     GameObjectId create_scene_object(std::string_view action_id) override;
-    void draw_scene_tools(bool& open) override;
-    void draw_scene_inspector(GameObject& selected) override;
+
+    // Exposed for ArtilleryEditor, which owns the ImGui-facing tools and
+    // inspector panels. The scene still owns the data; the editor just binds
+    // widgets to it.
+    [[nodiscard]] ArtilleryState& artillery_state() noexcept {
+      return m_artillery_state;
+    }
 
   protected:
     void update_runtime(float dt, const Input& input,
@@ -60,7 +64,6 @@ namespace prune {
 
     ArtilleryState m_artillery_state;
     ArtilleryBehaviour m_artillery;
-    Artillery m_artillery_tools;
   };
 
 } // namespace prune

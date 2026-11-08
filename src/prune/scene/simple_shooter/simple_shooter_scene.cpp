@@ -1,13 +1,10 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <cstdio>
 #include <string>
 
 #include <SDL2/SDL.h>
 #include <yaml-cpp/yaml.h>
-
-#include "imgui.h"
 
 #include "prune/core/input.hpp"
 #include "prune/scene/scene_factory.hpp"
@@ -16,32 +13,10 @@
 #include "prune/scene/simple_shooter/simple_shooter_ids.hpp"
 #include "prune/scene/simple_shooter/simple_shooter_scene.hpp"
 #include "prune/scene/simple_shooter/simple_shooter_serializer.hpp"
-#include "prune/tooling/editor_layout.hpp"
-#include "prune/tooling/imgui/layout.hpp"
-#include "prune/tooling/imgui/property_table.hpp"
 
 namespace prune {
 
   namespace {
-
-    [[nodiscard]] const char* bool_label(bool value) noexcept {
-      return value ? "Yes" : "No";
-    }
-
-    [[nodiscard]] const char* direction_label(Direction direction) noexcept {
-      switch (direction) {
-      case Direction::Up:
-        return "Up";
-      case Direction::Down:
-        return "Down";
-      case Direction::Left:
-        return "Left";
-      case Direction::Right:
-        return "Right";
-      }
-
-      return "Unknown";
-    }
 
     [[nodiscard]] GameObjectId first_object_id_for_kind(
         const SceneState& state,
@@ -116,20 +91,6 @@ namespace prune {
     m_simple_shooter_state.player_id = k_invalid_game_object_id;
     m_simple_shooter_state.enemy_id = k_invalid_game_object_id;
     m_simple_shooter_state.enemy_spawn_id = k_invalid_game_object_id;
-  }
-
-  void SimpleShooterScene::draw_scene_tools(bool& open) {
-    tooling::EditorLayout::scene_panel();
-
-    if (ImGui::Begin("Simple Shooter", &open)) {
-      draw_debug_tools();
-
-      ImGui::Separator();
-
-      m_simple_shooter_tools.draw(*this, m_simple_shooter_state);
-    }
-
-    ImGui::End();
   }
 
   ObjectConcept
@@ -285,88 +246,6 @@ namespace prune {
     restore_loaded_shooter_concepts(state, m_simple_shooter_state);
     m_simple_shooter.reset(state, m_simple_shooter_state);
     return true;
-  }
-
-  void SimpleShooterScene::draw_scene_inspector(GameObject& selected) {
-    if (!tooling::imgui::layout::collapsing_header("Simple Shooter", true)) {
-      return;
-    }
-
-    if (!tooling::imgui::property_table::begin("##simple_shooter_inspector")) {
-      return;
-    }
-
-    const auto kind = simple_shooter_concepts::kind_for(selected);
-
-    if (kind == simple_shooter_concepts::ObjectKind::Player) {
-      tooling::imgui::property_table::text(
-          "Facing", direction_label(selected.motion.facing));
-      tooling::imgui::property_table::text(
-          "Controller Speed",
-          std::to_string(
-              static_cast<int>(m_simple_shooter_state.settings.player_speed))
-              .c_str());
-      tooling::imgui::property_table::text(
-          "Fire Ready",
-          bool_label(m_simple_shooter_state.runtime.fire_cooldown_remaining <=
-                     0.0f));
-
-      char cooldown_buffer[32];
-      std::snprintf(cooldown_buffer, sizeof(cooldown_buffer), "%.2fs",
-                    m_simple_shooter_state.runtime.fire_cooldown_remaining);
-      tooling::imgui::property_table::text("Cooldown Remaining",
-                                           cooldown_buffer);
-    } else if (kind == simple_shooter_concepts::ObjectKind::Enemy) {
-      tooling::imgui::property_table::text(
-          "Tracked Enemy",
-          bool_label(selected.identity.id == m_simple_shooter_state.enemy_id));
-      tooling::imgui::property_table::text(
-          "Enemy Speed",
-          std::to_string(
-              static_cast<int>(m_simple_shooter_state.settings.enemy_speed))
-              .c_str());
-      tooling::imgui::property_table::text(
-          "Spawn Object Id",
-          std::to_string(m_simple_shooter_state.enemy_spawn_id).c_str());
-      tooling::imgui::property_table::text(
-          "Max Live Enemies",
-          std::to_string(m_simple_shooter_state.settings.max_live_enemies)
-              .c_str());
-    } else if (kind == simple_shooter_concepts::ObjectKind::Projectile) {
-      char lifetime_buffer[32];
-      std::snprintf(lifetime_buffer, sizeof(lifetime_buffer), "%.2fs",
-                    selected.lifecycle.remaining);
-
-      tooling::imgui::property_table::text("Remaining", lifetime_buffer);
-      tooling::imgui::property_table::text(
-          "Projectile Speed",
-          std::to_string(static_cast<int>(
-                             m_simple_shooter_state.settings.projectile_speed))
-              .c_str());
-      tooling::imgui::property_table::text(
-          "Configured Lifetime",
-          std::to_string(m_simple_shooter_state.settings.projectile_lifetime)
-              .c_str());
-    } else if (kind == simple_shooter_concepts::ObjectKind::Wall) {
-      tooling::imgui::property_table::text(
-          "Blocks Player", bool_label(selected.collision.solid));
-      tooling::imgui::property_table::text(
-          "Stops Projectiles", bool_label(selected.collision.solid));
-    } else if (kind == simple_shooter_concepts::ObjectKind::Spawn) {
-      tooling::imgui::property_table::text(
-          "Tracked Spawn", bool_label(selected.identity.id ==
-                                      m_simple_shooter_state.enemy_spawn_id));
-      tooling::imgui::property_table::text("Used By",
-                                           "Enemy respawn/reset loop");
-      tooling::imgui::property_table::text(
-          "Enemy Object Id",
-          std::to_string(m_simple_shooter_state.enemy_id).c_str());
-    } else {
-      tooling::imgui::property_table::text(
-          "Shooter Behaviour", "No Simple Shooter behaviour is assigned");
-    }
-
-    tooling::imgui::property_table::end();
   }
 
   GameObjectId SimpleShooterScene::create_wall_at_view_center() {

@@ -15,17 +15,10 @@ add_executable(PruneTests
     ${PROJECT_SOURCE_DIR}/src/prune/scene/game_object_manager.cpp
     ${PROJECT_SOURCE_DIR}/src/prune/scene/collision.cpp
     ${PROJECT_SOURCE_DIR}/src/prune/resources/sprites.cpp
-    ${PROJECT_SOURCE_DIR}/src/prune/tooling/imgui/property_table.cpp
-    ${PROJECT_SOURCE_DIR}/src/prune/tooling/imgui/layout.cpp
-    ${PROJECT_SOURCE_DIR}/external/imgui/imgui.cpp
-    ${PROJECT_SOURCE_DIR}/external/imgui/imgui_draw.cpp
-    ${PROJECT_SOURCE_DIR}/external/imgui/imgui_tables.cpp
-    ${PROJECT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
 )
 
 target_include_directories(PruneTests PRIVATE
     ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/external/imgui
 )
 
 target_link_libraries(PruneTests PRIVATE

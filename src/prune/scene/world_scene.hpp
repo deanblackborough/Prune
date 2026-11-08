@@ -25,7 +25,6 @@ namespace prune {
     void update(float dt, const Input& input) final;
     void update_editor(float dt, const Input& input) final;
     void render(SDL_Renderer* renderer) final;
-    void draw_viewport_overlays() final;
 
     void reset_runtime() final;
     void pause_runtime() noexcept final;
@@ -81,8 +80,6 @@ namespace prune {
     first_free_view_center_spawn_position(const GameObject& object) const;
     [[nodiscard]] bool
     is_space_free(const GameObject& candidate) const noexcept;
-
-    void draw_debug_tools();
 
     virtual void on_scene_enter() {}
     virtual void update_runtime(float dt, const Input& input,

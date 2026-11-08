@@ -58,13 +58,16 @@ add_executable(Prune
         src/prune/scene/collision.cpp
 
         src/prune/scene/scene_factory.cpp
+        src/prune/scene/scene_editor_factory.cpp
         src/prune/scene/scene_renderer.cpp
         src/prune/scene/scene_camera.cpp
         src/prune/scene/world_scene.cpp
+        src/prune/scene/world_scene_editor.cpp
         src/prune/scene/scene_interaction.cpp
         src/prune/scene/scene_serializer.cpp
 
         src/prune/scene/simple_shooter/simple_shooter_scene.cpp
+        src/prune/scene/simple_shooter/simple_shooter_editor.cpp
         src/prune/scene/simple_shooter/simple_shooter_factory.cpp
         src/prune/scene/simple_shooter/simple_shooter_behaviour.cpp
         src/prune/scene/simple_shooter/simple_shooter_player_controller.cpp
@@ -72,12 +75,14 @@ add_executable(Prune
         src/prune/scene/simple_shooter/simple_shooter_serializer.cpp
 
         src/prune/scene/platformer/platformer_scene.cpp
+        src/prune/scene/platformer/platformer_editor.cpp
         src/prune/scene/platformer/platformer_factory.cpp
         src/prune/scene/platformer/platformer_behaviour.cpp
         src/prune/scene/platformer/platformer_concepts.cpp
         src/prune/scene/platformer/platformer_serializer.cpp
 
         src/prune/scene/artillery/artillery_scene.cpp
+        src/prune/scene/artillery/artillery_editor.cpp
         src/prune/scene/artillery/artillery_factory.cpp
         src/prune/scene/artillery/artillery_behaviour.cpp
         src/prune/scene/artillery/artillery_concepts.cpp
