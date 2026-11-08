@@ -136,8 +136,11 @@ handle, `GameObject*` is frame-local). Write it alongside A3, not separately.
 
 ### Checklist
 
-- [ ] Draft the ADR as part of A3.
-- [ ] Cross-reference it from A3 and from DECISIONS.md.
+- [x] Draft the ADR as part of A3. — written after the fact rather than alongside, once A3's
+      shape had settled; see `DECISIONS.md`, "GameObjectId is the durable handle, GameObject* is
+      frame-local" (under Architecture decisions).
+- [x] Cross-reference it from A3 and from DECISIONS.md. — A3's checklist below links to it; the
+      DECISIONS.md entry itself references A3 as where the rule is implemented.
 
 ### Deferred (not Phase 0)
 
@@ -327,6 +330,11 @@ authored copy silently drifts from what will be saved.
 `normalize_editor_command` then re-reads the current authored object before recording, to make
 undo/redo target authored state rather than whatever the live object looked like. This is a
 lot of implicit bookkeeping concentrated in one place, and it grows with every field.
+
+See `DECISIONS.md`, "GameObjectId is the durable handle, GameObject* is frame-local" (P0.4):
+this phase is what makes that rule load-bearing rather than incidental — the authored/live
+projection rebuilds and command replay below all rely on no one holding a stale pointer across
+them.
 
 ### Current state
 
@@ -523,18 +531,28 @@ headlessly after A3, that is a signal A3 did not go far enough.
 
 ### Checklist
 
-- [ ] Make `AuthoredWorld` + command application testable without a full scene runtime
-      (construct a minimal scene or a test double).
-- [ ] `edit → runtime mutation → undo` restores the authored value.
-- [ ] `edit → runtime mutation → reset` produces the authored value.
-- [ ] `edit → save → mutate → undo → save` round-trips correctly.
-- [ ] `create → undo → redo → reset`.
-- [ ] `delete → runtime continues → undo` restores the object.
-- [ ] `multi-move → reset`.
-- [ ] `z-index change → undo → save → load`.
-- [ ] `scene setting change → dirty → undo → redo → save → load`.
-- [ ] `pause → save → load` does **not** persist or restore a paused runtime.
-- [ ] Wire into `tests/CMakeLists.txt`.
+- [x] Make `AuthoredWorld` + command application testable without a full scene runtime
+      (construct a minimal scene or a test double). — `AuthoringTestScene` in
+      `tests/authoring_contract_tests.cpp`: a minimal `WorldScene` subclass with no
+      scene-specific gameplay, just enough to exercise the shared authoring contract. Note on
+      "without SDL or ImGui": B2 (ImGui out of runtime scene classes) hasn't landed yet, so
+      `world_scene.cpp`'s own `draw_debug_tools`/`draw_viewport_overlays` still pull in the real
+      ImGui sources and SDL2/SDL2_image at *link* time — tests never initialise a window or
+      call into ImGui at runtime, but the dependency is still there at build time until B2.
+- [x] `edit → runtime mutation → undo` restores the authored value.
+- [x] `edit → runtime mutation → reset` produces the authored value.
+- [x] `edit → save → mutate → undo → save` round-trips correctly.
+- [x] `create → undo → redo → reset`.
+- [x] `delete → runtime continues → undo` restores the object.
+- [x] `multi-move → reset`.
+- [x] `z-index change → undo → save → load`.
+- [x] `scene setting change → dirty → undo → redo → save → load`.
+- [x] `pause → save → load` does **not** persist or restore a paused runtime.
+- [x] Wire into `tests/CMakeLists.txt`. — `authoring_contract_tests.cpp` plus the
+      `WorldScene` dependency chain it needs to link (world/camera/renderer/interaction/
+      serializer, game object + collision, sprites metadata, the ImGui property-table/layout
+      wrappers and ImGui's own core sources). `PruneTests` now has 21 test cases / 139
+      assertions, all passing.
 
 ### Out of scope
 

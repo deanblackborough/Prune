@@ -449,6 +449,56 @@ A fully generic serializer would either miss scene meaning or become filled with
 
 ---
 
+## GameObjectId is the durable handle, GameObject* is frame-local
+
+### Status
+
+Formalises a rule the authoring-model refactor (see `REFACTORING.md`, phase A3) already
+implements. This entry documents why the rule exists, not a new design choice.
+
+### Decision
+
+`GameObjectId` is the only identity that may be held across a frame, a command, undo/redo,
+reset, or scene load. A `GameObject*`/`GameObject&` obtained from `GameObjectManager::get_by_id`
+(or `selected_object()`, `objects()`, etc.) is valid only for the immediate operation that
+fetched it and must never be stored in a member variable, captured in a lambda that outlives the
+current call, or dereferenced again after any call that can mutate the object collection.
+
+### Why
+
+`GameObjectManager` stores objects in a plain `std::vector<GameObject>`. `create_object` calls
+`push_back`, which can reallocate and invalidate every existing pointer/reference into the
+vector. The various `remove_*` methods use the erase-remove idiom, which invalidates pointers
+from the erased element onward. On top of that, `WorldScene::enter_stopped_state()` and
+`record_editor_command`/`undo_editor_command`/`redo_editor_command` can wholesale-replace
+`m_state.objects` (`m_state.objects = m_authored_objects;`), which invalidates every pointer into
+the old storage outright.
+
+This is why every call site that needs to touch an object again after one of those operations
+re-fetches it with `get_by_id(id)` rather than reusing a pointer from before, and why
+`EditorCommand` payloads hold `GameObject` by value, never by pointer: the inspector/tooling
+pattern is capture `before` as a value copy, mutate the live object through its (short-lived)
+pointer, then record a command carrying value copies.
+
+### Consequences
+
+- Never cache a `GameObject*`/`GameObject&` past the current operation. If something needs to
+  refer to an object "later," store its `GameObjectId` and re-resolve it each time.
+- `EditorCommand` payloads, drag-state snapshots, and anything else that needs to survive past
+  the current call hold `GameObject` by value.
+- A pointer from `get_by_id` is safe to use immediately, and across calls that are known not to
+  mutate `GameObjectManager`'s storage, but never across `record_editor_command`,
+  `undo_editor_command`, `redo_editor_command`, `reset_runtime`, `stop_runtime`, or scene
+  load/save.
+
+### Revisit when
+
+- `GameObjectManager`'s storage changes to something pointer-stable (a slot map, a node-based
+  container). Even then, `GameObjectId` would likely stay the preferred API for clarity; this
+  would only relax the "pointers are frame-local" restriction, not remove the id.
+
+---
+
 # Tooling decisions
 
 ## Editor tooling before more complete games
