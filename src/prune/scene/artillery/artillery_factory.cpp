@@ -12,6 +12,7 @@ namespace prune::artillery_factory {
     tank.identity.name = name;
     tank.identity.type = GameObjectType::Authored;
     tank.runtime.behaviour = artillery_ids::tank_behaviour;
+    tank.semantics.concept_id = artillery_ids::tank_concept;
     tank.editor.renameable = false;
     tank.editor.deletable = false;
     tank.editor.cloneable = false;
@@ -34,6 +35,7 @@ namespace prune::artillery_factory {
     terrain.identity.name = name;
     terrain.identity.type = GameObjectType::Authored;
     terrain.runtime.behaviour = artillery_ids::terrain_behaviour;
+    terrain.semantics.concept_id = artillery_ids::terrain_concept;
     terrain.transform.x = x;
     terrain.transform.y = y;
     terrain.size.width = width;
@@ -53,6 +55,7 @@ namespace prune::artillery_factory {
     projectile.identity.name = "Projectile";
     projectile.identity.type = GameObjectType::Runtime;
     projectile.runtime.behaviour = artillery_ids::projectile_behaviour;
+    projectile.semantics.concept_id = artillery_ids::projectile_concept;
     projectile.runtime.persistent = false;
     projectile.editor.selectable = false;
     projectile.editor.renameable = false;

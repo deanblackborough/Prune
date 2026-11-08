@@ -79,6 +79,15 @@ namespace prune {
     GameObjectType type = GameObjectType::Authored;
   };
 
+  // The authored concept this object represents (e.g. "platformer.player"),
+  // set once by the owning scene's factory. Distinct from runtime.behaviour:
+  // this answers "what is this object", not "what runtime behaviour does it
+  // currently run" — the two happen to share values today, but behaviour
+  // toggles will need them to vary independently.
+  struct ObjectSemantics {
+    std::string concept_id;
+  };
+
   struct ObjectMotion {
     Velocity velocity{};
     Direction facing = Direction::Right;
@@ -91,6 +100,7 @@ namespace prune {
 
   struct GameObject {
     ObjectIdentity identity{};
+    ObjectSemantics semantics{};
 
     Transform transform{};
     ObjectMotion motion{};

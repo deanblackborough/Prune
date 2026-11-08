@@ -599,14 +599,31 @@ system.
 
 ### Checklist
 
-- [ ] Add `concept_id` (or `ObjectSemantics`) to `GameObject`.
-- [ ] Scene factories set it explicitly.
-- [ ] `*_concepts.cpp` match on `concept_id`, not `runtime.behaviour`.
-- [ ] Serializers persist and load it.
-- [ ] Restore/validation logic (`restore_loaded_*_concepts`) keys off it.
-- [ ] Old save files without the key: derive `concept_id` from `runtime.behaviour` on load as a
-      one-time fallback.
-- [ ] Do this before behaviour toggles or authored events.
+- [x] Add `concept_id` (or `ObjectSemantics`) to `GameObject`. — `ObjectSemantics { std::string
+      concept_id; }`, a new `semantics` member on `GameObject` (`game_object.hpp`).
+- [x] Scene factories set it explicitly. — every `*_factory::create_*` sets
+      `semantics.concept_id` alongside `runtime.behaviour`, using new `*_concept` constants in
+      each scene's `*_ids.hpp` (same string values as the existing `*_behaviour` constants,
+      deliberately kept as separate names/constants for when they diverge).
+- [x] `*_concepts.cpp` match on `concept_id`, not `runtime.behaviour`. — `is_*`/`kind_for` in all
+      three scenes now read `object.semantics.concept_id`; `describe()`/`describe_object()` reuse
+      the same `*_ids.hpp` constants instead of duplicating the string literals.
+- [x] Serializers persist and load it. — generic `scene_serializer.cpp` (`semantics.concept_id`
+      is shared GameObject data, not scene-specific, so it lives in the generic save/load, not
+      the per-scene serializers). Required on load, no fallback — see below.
+- [x] Restore/validation logic (`restore_loaded_*_concepts`) keys off it. — no direct changes
+      needed: these already call `kind_for`/`is_*`, which now read `concept_id` themselves.
+- [x] Old save files without the key: ~~derive `concept_id` from `runtime.behaviour` on load as a
+      one-time fallback~~ — explicitly dropped. Per the Save compatibility decision in
+      `DECISIONS.md`, save files are not a contract yet; `load_object_from_node` requires
+      `semantics.concept_id` and errors if it's missing, same as every other required object
+      field. While here, also deleted Simple Shooter's pre-existing `restore_legacy_wall_concepts`
+      and the empty-`runtime.behaviour` player fallback in `restore_loaded_shooter_concepts` —
+      the same category of legacy-save shim, now redundant now that every path creating a
+      `GameObject` runs through a factory (verified: every `create_object` call site either
+      calls a `*_factory::create_*` or copies/clones an existing object).
+- [x] Do this before behaviour toggles or authored events. — followed; no behaviour-toggle or
+      authored-event work has started.
 
 ---
 

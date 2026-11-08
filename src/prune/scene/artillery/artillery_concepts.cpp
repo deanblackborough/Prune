@@ -5,15 +5,15 @@
 namespace prune::artillery_concepts {
 
   ObjectKind kind_for(const GameObject& object) noexcept {
-    if (object.runtime.behaviour == artillery_ids::tank_behaviour) {
+    if (object.semantics.concept_id == artillery_ids::tank_concept) {
       return ObjectKind::Tank;
     }
 
-    if (object.runtime.behaviour == artillery_ids::terrain_behaviour) {
+    if (object.semantics.concept_id == artillery_ids::terrain_concept) {
       return ObjectKind::TerrainLine;
     }
 
-    if (object.runtime.behaviour == artillery_ids::projectile_behaviour) {
+    if (object.semantics.concept_id == artillery_ids::projectile_concept) {
       return ObjectKind::Projectile;
     }
 
@@ -35,7 +35,7 @@ namespace prune::artillery_concepts {
   ObjectConcept describe_object(const GameObject& object) noexcept {
     switch (kind_for(object)) {
     case ObjectKind::Tank:
-      return ObjectConcept{"artillery.tank",
+      return ObjectConcept{artillery_ids::tank_concept,
                            "Tank",
                            "Turn-based artillery player object.",
                            "Can be hit by an artillery projectile.",
@@ -44,7 +44,7 @@ namespace prune::artillery_concepts {
                            true};
 
     case ObjectKind::TerrainLine:
-      return ObjectConcept{"artillery.terrain_line",
+      return ObjectConcept{artillery_ids::terrain_concept,
                            "Terrain Line",
                            "Generated authored terrain segment.",
                            "Stops artillery projectiles.",
@@ -53,7 +53,7 @@ namespace prune::artillery_concepts {
                            true};
 
     case ObjectKind::Projectile:
-      return ObjectConcept{"artillery.projectile",
+      return ObjectConcept{artillery_ids::projectile_concept,
                            "Projectile",
                            "Runtime projectile created by firing.",
                            "Destroyed when it hits terrain or a tank.",

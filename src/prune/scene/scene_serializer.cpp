@@ -127,6 +127,8 @@ namespace prune {
       node["type"] = to_string(object.identity.type);
       node["active"] = object.lifecycle.active;
 
+      node["semantics"]["concept_id"] = object.semantics.concept_id;
+
       node["transform"]["x"] = object.transform.x;
       node["transform"]["y"] = object.transform.y;
 
@@ -181,6 +183,19 @@ namespace prune {
         return false;
       }
 
+      return true;
+    }
+
+    bool load_object_semantics_from_node(const YAML::Node& node,
+                                         GameObject& object,
+                                         std::string& error) {
+      const YAML::Node semantics = node["semantics"];
+      if (!semantics || !semantics.IsMap() || !semantics["concept_id"]) {
+        error = "Object is missing semantics.concept_id.";
+        return false;
+      }
+
+      object.semantics.concept_id = semantics["concept_id"].as<std::string>();
       return true;
     }
 
@@ -332,6 +347,10 @@ namespace prune {
 
       if (!read_required_bool(node, "active", object.lifecycle.active)) {
         error = "Object active flag is missing.";
+        return false;
+      }
+
+      if (!load_object_semantics_from_node(node, object, error)) {
         return false;
       }
 

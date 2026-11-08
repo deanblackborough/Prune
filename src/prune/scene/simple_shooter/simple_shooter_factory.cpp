@@ -11,6 +11,7 @@ namespace prune::simple_shooter_factory {
     player.identity.name = "Player";
     player.identity.type = GameObjectType::Authored;
     player.runtime.behaviour = simple_shooter_ids::player_behaviour;
+    player.semantics.concept_id = simple_shooter_ids::player_concept;
     player.editor.renameable = false;
     player.editor.movable = false;
     player.editor.deletable = false;
@@ -44,6 +45,7 @@ namespace prune::simple_shooter_factory {
     wall.identity.name = name;
     wall.identity.type = GameObjectType::Authored;
     wall.runtime.behaviour = simple_shooter_ids::wall_behaviour;
+    wall.semantics.concept_id = simple_shooter_ids::wall_concept;
     wall.transform.x = x;
     wall.transform.y = y;
     wall.size.width = width;
@@ -64,6 +66,7 @@ namespace prune::simple_shooter_factory {
     enemy.identity.name = "Enemy";
     enemy.identity.type = GameObjectType::Authored;
     enemy.runtime.behaviour = simple_shooter_ids::enemy_behaviour;
+    enemy.semantics.concept_id = simple_shooter_ids::enemy_concept;
     enemy.transform.x = 256.0f;
     enemy.transform.y = 128.0f;
     enemy.size.width = k_default_object_size;
@@ -87,6 +90,7 @@ namespace prune::simple_shooter_factory {
     spawn.identity.name = "Enemy Spawn";
     spawn.identity.type = GameObjectType::Authored;
     spawn.runtime.behaviour = simple_shooter_ids::spawn_behaviour;
+    spawn.semantics.concept_id = simple_shooter_ids::spawn_concept;
     spawn.editor.renameable = false;
     spawn.editor.deletable = false;
     spawn.editor.cloneable = false;
@@ -112,6 +116,7 @@ namespace prune::simple_shooter_factory {
     projectile.identity.name = "Projectile";
     projectile.identity.type = GameObjectType::Runtime;
     projectile.runtime.behaviour = simple_shooter_ids::projectile_behaviour;
+    projectile.semantics.concept_id = simple_shooter_ids::projectile_concept;
     projectile.runtime.persistent = false;
 
     projectile.editor.selectable = false;

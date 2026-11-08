@@ -62,26 +62,12 @@ namespace prune {
       return object && simple_shooter_concepts::kind_for(*object) == kind;
     }
 
-    void restore_legacy_wall_concepts(SceneState& state) {
-      for (auto& object : state.objects.objects()) {
-        if (object.runtime.behaviour.empty() && object.collision.solid) {
-          object.runtime.behaviour = simple_shooter_ids::wall_behaviour;
-        }
-      }
-    }
-
     void restore_loaded_shooter_concepts(SceneState& state,
                                          SimpleShooterState& shooter_state) {
       if (GameObject* player =
               state.objects.get_by_id(shooter_state.player_id)) {
-        if (player->runtime.behaviour.empty()) {
-          player->runtime.behaviour = simple_shooter_ids::player_behaviour;
-        }
-
         player->editor.movable = true;
       }
-
-      restore_legacy_wall_concepts(state);
 
       if (!object_has_kind(state, shooter_state.player_id,
                            simple_shooter_concepts::ObjectKind::Player)) {
