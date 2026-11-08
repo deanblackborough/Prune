@@ -14,6 +14,12 @@ namespace prune {
   struct PlatformerRuntime {
     bool paused = false;
     bool player_grounded = false;
+
+    // Coyote time: seconds left where a jump still counts as grounded after
+    // leaving a platform. Jump buffer: seconds left where a jump pressed
+    // just before landing still fires once grounded.
+    float coyote_time_remaining = 0.0f;
+    float jump_buffer_remaining = 0.0f;
   };
 
   struct PlatformerState {

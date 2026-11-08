@@ -6,10 +6,9 @@ namespace prune {
                                           YAML::Node& root) {
     root["platformer"]["player_id"] = state.player_id;
     root["platformer"]["player_start_id"] = state.player_start_id;
-    root["platformer"]["move_speed"] = state.settings.move_speed;
-    root["platformer"]["jump_velocity"] = state.settings.jump_velocity;
-    root["platformer"]["gravity"] = state.settings.gravity;
-    root["platformer"]["max_fall_speed"] = state.settings.max_fall_speed;
+
+    YAML::Node platformer = root["platformer"];
+    save_settings_to_node(state.settings, platformer);
   }
 
   bool PlatformerSerializer::load_from_node(const YAML::Node& root,
@@ -33,23 +32,37 @@ namespace prune {
       state.player_start_id = platformer["player_start_id"].as<GameObjectId>();
     }
 
-    if (platformer["move_speed"]) {
-      state.settings.move_speed = platformer["move_speed"].as<float>();
-    }
-
-    if (platformer["jump_velocity"]) {
-      state.settings.jump_velocity = platformer["jump_velocity"].as<float>();
-    }
-
-    if (platformer["gravity"]) {
-      state.settings.gravity = platformer["gravity"].as<float>();
-    }
-
-    if (platformer["max_fall_speed"]) {
-      state.settings.max_fall_speed = platformer["max_fall_speed"].as<float>();
-    }
+    load_settings_from_node(platformer, state.settings);
 
     return true;
+  }
+
+  void PlatformerSerializer::save_settings_to_node(
+      const PlatformerSettings& settings, YAML::Node& node) {
+    node["move_speed"] = settings.move_speed;
+    node["jump_velocity"] = settings.jump_velocity;
+    node["gravity"] = settings.gravity;
+    node["max_fall_speed"] = settings.max_fall_speed;
+  }
+
+  void
+  PlatformerSerializer::load_settings_from_node(const YAML::Node& node,
+                                                PlatformerSettings& settings) {
+    if (node["move_speed"]) {
+      settings.move_speed = node["move_speed"].as<float>();
+    }
+
+    if (node["jump_velocity"]) {
+      settings.jump_velocity = node["jump_velocity"].as<float>();
+    }
+
+    if (node["gravity"]) {
+      settings.gravity = node["gravity"].as<float>();
+    }
+
+    if (node["max_fall_speed"]) {
+      settings.max_fall_speed = node["max_fall_speed"].as<float>();
+    }
   }
 
 } // namespace prune

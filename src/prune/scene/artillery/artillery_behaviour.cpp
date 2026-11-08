@@ -167,11 +167,15 @@ namespace prune {
     aim.power = std::clamp(aim.power, artillery_state.settings.min_power,
                            artillery_state.settings.max_power);
 
-    if (input.was_key_pressed(SDL_SCANCODE_SPACE)) {
+    // was_key_pressed_for_update, not was_key_pressed: this runs from a
+    // fixed-timestep tick, and was_key_pressed's edge is cleared every
+    // render frame regardless of whether a tick ran that frame — on a
+    // render-only frame the press would be dropped before any tick saw it.
+    if (input.was_key_pressed_for_update(SDL_SCANCODE_SPACE)) {
       fire_projectile(state, artillery_state);
     }
 
-    if (input.was_key_pressed(SDL_SCANCODE_R)) {
+    if (input.was_key_pressed_for_update(SDL_SCANCODE_R)) {
       reset_round(state, artillery_state);
     }
   }

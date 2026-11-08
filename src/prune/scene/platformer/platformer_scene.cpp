@@ -183,7 +183,7 @@ namespace prune {
 
       ImGui::Separator();
 
-      m_platformer_tools.draw(m_platformer_state);
+      m_platformer_tools.draw(*this, m_platformer_state);
     }
 
     ImGui::End();
@@ -285,6 +285,11 @@ namespace prune {
 
     m_platformer_state = loaded_platformer_state;
     return true;
+  }
+
+  void PlatformerScene::apply_scene_settings_snapshot(const YAML::Node& node) {
+    PlatformerSerializer::load_settings_from_node(node,
+                                                  m_platformer_state.settings);
   }
 
   bool PlatformerScene::restore_loaded_scene(SceneState& state,

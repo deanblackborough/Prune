@@ -12,8 +12,25 @@ namespace prune {
     void begin_frame();
     void process_event(const SDL_Event& event);
 
+    // Clears the fixed-update press edges (see was_key_pressed_for_update).
+    // Call once a fixed-timestep update has actually run and had the chance
+    // to see them — not every render frame.
+    void consume_fixed_update_presses();
+
     [[nodiscard]] bool is_key_down(SDL_Scancode key) const;
     [[nodiscard]] bool was_key_pressed(SDL_Scancode key) const;
+
+    // Like was_key_pressed, but for code driven by the fixed-timestep loop
+    // rather than the render loop. The render loop can run more than one
+    // frame per fixed-timestep tick (e.g. a high refresh-rate display vs a
+    // 60Hz tick), and begin_frame() resets was_key_pressed() every one of
+    // those render frames. A key pressed on a render frame where no fixed
+    // update runs would be cleared before any gameplay code ever saw it.
+    // This edge instead persists across render frames until
+    // consume_fixed_update_presses() clears it, which App::update() calls
+    // right after each fixed-timestep tick.
+    [[nodiscard]] bool was_key_pressed_for_update(SDL_Scancode key) const;
+
     [[nodiscard]] bool was_key_released(SDL_Scancode key) const;
 
     [[nodiscard]] bool is_mouse_button_down(std::uint8_t button) const;
@@ -31,6 +48,7 @@ namespace prune {
 
     std::array<bool, SDL_NUM_SCANCODES> m_keys_down{};
     std::array<bool, SDL_NUM_SCANCODES> m_keys_pressed{};
+    std::array<bool, SDL_NUM_SCANCODES> m_keys_pressed_for_update{};
     std::array<bool, SDL_NUM_SCANCODES> m_keys_released{};
 
     std::array<bool, kMouseButtonCount> m_mouse_down{};

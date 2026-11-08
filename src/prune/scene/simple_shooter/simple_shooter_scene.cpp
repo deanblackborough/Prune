@@ -140,7 +140,7 @@ namespace prune {
 
       ImGui::Separator();
 
-      m_simple_shooter_tools.draw(m_simple_shooter_state);
+      m_simple_shooter_tools.draw(*this, m_simple_shooter_state);
     }
 
     ImGui::End();
@@ -283,6 +283,15 @@ namespace prune {
 
     m_simple_shooter_state = loaded_simple_shooter_state;
     return true;
+  }
+
+  void
+  SimpleShooterScene::apply_scene_settings_snapshot(const YAML::Node& node) {
+    std::string error;
+    if (!SimpleShooterSerializer::load_settings_from_node(
+            node, m_simple_shooter_state.settings, error)) {
+      return;
+    }
   }
 
   bool SimpleShooterScene::restore_loaded_scene(SceneState& state,

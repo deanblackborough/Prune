@@ -63,8 +63,7 @@ TEST_CASE("make_object_create produces an ObjectCreate payload",
       prune::make_object_create(make_object(2), "Box");
 
   REQUIRE(std::holds_alternative<prune::ObjectCreate>(command.payload));
-  CHECK(std::get<prune::ObjectCreate>(command.payload).object.identity.id ==
-        2);
+  CHECK(std::get<prune::ObjectCreate>(command.payload).object.identity.id == 2);
   CHECK(prune::affected_ids(command) == std::vector<prune::GameObjectId>{2});
 }
 
@@ -74,8 +73,7 @@ TEST_CASE("make_object_delete produces an ObjectDelete payload",
       prune::make_object_delete(make_object(3), "Box");
 
   REQUIRE(std::holds_alternative<prune::ObjectDelete>(command.payload));
-  CHECK(std::get<prune::ObjectDelete>(command.payload).object.identity.id ==
-        3);
+  CHECK(std::get<prune::ObjectDelete>(command.payload).object.identity.id == 3);
   CHECK(prune::affected_ids(command) == std::vector<prune::GameObjectId>{3});
 }
 
@@ -90,22 +88,20 @@ TEST_CASE("make_objects_change produces an ObjectsChange payload",
 
   REQUIRE(std::holds_alternative<prune::ObjectsChange>(command.payload));
   CHECK(std::get<prune::ObjectsChange>(command.payload).after.size() == 2);
-  CHECK(prune::affected_ids(command) ==
-        std::vector<prune::GameObjectId>{4, 5});
+  CHECK(prune::affected_ids(command) == std::vector<prune::GameObjectId>{4, 5});
 }
 
 TEST_CASE("make_objects_delete produces an ObjectsDelete payload",
           "[editor][command-payload]") {
   const std::vector<prune::GameObject> deleted = {make_object(6),
-                                                   make_object(7)};
+                                                  make_object(7)};
 
   const prune::EditorCommand command =
       prune::make_objects_delete(deleted, "2 objects");
 
   REQUIRE(std::holds_alternative<prune::ObjectsDelete>(command.payload));
   CHECK(std::get<prune::ObjectsDelete>(command.payload).objects.size() == 2);
-  CHECK(prune::affected_ids(command) ==
-        std::vector<prune::GameObjectId>{6, 7});
+  CHECK(prune::affected_ids(command) == std::vector<prune::GameObjectId>{6, 7});
 }
 
 TEST_CASE("make_viewport_change produces a ViewportChange payload and does "
@@ -121,6 +117,28 @@ TEST_CASE("make_viewport_change produces a ViewportChange payload and does "
   REQUIRE(std::holds_alternative<prune::ViewportChange>(command.payload));
   CHECK_FALSE(command.makes_dirty);
   CHECK(std::get<prune::ViewportChange>(command.payload).after.x == 100.0f);
+  CHECK(prune::affected_ids(command).empty());
+}
+
+TEST_CASE("make_scene_settings_change produces a SceneSettingsChange payload",
+          "[editor][command-payload]") {
+  YAML::Node before;
+  before["gravity"] = 860.0f;
+  YAML::Node after;
+  after["gravity"] = 1000.0f;
+
+  const prune::EditorCommand command = prune::make_scene_settings_change(
+      "Change gravity", before, after, "detail");
+
+  CHECK(command.label == "Change gravity");
+  CHECK(command.detail == "detail");
+  CHECK(command.makes_dirty);
+  REQUIRE(std::holds_alternative<prune::SceneSettingsChange>(command.payload));
+
+  const auto& payload = std::get<prune::SceneSettingsChange>(command.payload);
+  CHECK(payload.before["gravity"].as<float>() == 860.0f);
+  CHECK(payload.after["gravity"].as<float>() == 1000.0f);
+
   CHECK(prune::affected_ids(command).empty());
 }
 

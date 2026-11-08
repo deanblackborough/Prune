@@ -1,5 +1,6 @@
 #include "imgui.h"
 
+#include "prune/scene/artillery/artillery_serializer.hpp"
 #include "prune/tooling/artillery/artillery.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
@@ -10,9 +11,16 @@ namespace prune {
     [[nodiscard]] const char* turn_label(ArtilleryTurn turn) noexcept {
       return turn == ArtilleryTurn::PlayerTwo ? "Player Two" : "Player One";
     }
+
+    [[nodiscard]] YAML::Node
+    settings_snapshot(const ArtillerySettings& settings) {
+      YAML::Node node;
+      ArtillerySerializer::save_settings_to_node(settings, node);
+      return node;
+    }
   } // namespace
 
-  void Artillery::draw(ArtilleryState& state) {
+  void Artillery::draw(Scene& scene, ArtilleryState& state) {
     if (tooling::imgui::layout::collapsing_header("Game")) {
       if (tooling::imgui::property_table::begin("##artillery_game")) {
         tooling::imgui::property_table::text(
@@ -20,31 +28,47 @@ namespace prune {
         tooling::imgui::property_table::text(
             "Projectile Active",
             state.runtime.projectile_active ? "Yes" : "No");
-        tooling::imgui::property_table::slider_float(
-            "Gravity", "##artillery_gravity", state.settings.gravity, 60.0f,
-            360.0f, "%.1f");
+
+        tooling::editor::tracked_settings_table::slider_float(
+            m_settings_tracker, scene,
+            [&state] { return settings_snapshot(state.settings); },
+            "Change gravity", "Gravity", "##artillery_gravity",
+            state.settings.gravity, 60.0f, 360.0f, "%.1f");
+
         tooling::imgui::property_table::end();
       }
     }
 
     if (tooling::imgui::layout::collapsing_header("Player Aims")) {
       if (tooling::imgui::property_table::begin("##artillery_player_aims")) {
-        tooling::imgui::property_table::slider_float(
-            "P1 Angle", "##artillery_p1_angle",
+        tooling::editor::tracked_settings_table::slider_float(
+            m_settings_tracker, scene,
+            [&state] { return settings_snapshot(state.settings); },
+            "Change P1 angle", "P1 Angle", "##artillery_p1_angle",
             state.settings.initial_player_one_aim.angle_degrees, 5.0f, 85.0f,
             "%.1f");
-        tooling::imgui::property_table::slider_float(
-            "P1 Power", "##artillery_p1_power",
+
+        tooling::editor::tracked_settings_table::slider_float(
+            m_settings_tracker, scene,
+            [&state] { return settings_snapshot(state.settings); },
+            "Change P1 power", "P1 Power", "##artillery_p1_power",
             state.settings.initial_player_one_aim.power,
             state.settings.min_power, state.settings.max_power, "%.1f");
-        tooling::imgui::property_table::slider_float(
-            "P2 Angle", "##artillery_p2_angle",
+
+        tooling::editor::tracked_settings_table::slider_float(
+            m_settings_tracker, scene,
+            [&state] { return settings_snapshot(state.settings); },
+            "Change P2 angle", "P2 Angle", "##artillery_p2_angle",
             state.settings.initial_player_two_aim.angle_degrees, 5.0f, 85.0f,
             "%.1f");
-        tooling::imgui::property_table::slider_float(
-            "P2 Power", "##artillery_p2_power",
+
+        tooling::editor::tracked_settings_table::slider_float(
+            m_settings_tracker, scene,
+            [&state] { return settings_snapshot(state.settings); },
+            "Change P2 power", "P2 Power", "##artillery_p2_power",
             state.settings.initial_player_two_aim.power,
             state.settings.min_power, state.settings.max_power, "%.1f");
+
         tooling::imgui::property_table::end();
       }
     }

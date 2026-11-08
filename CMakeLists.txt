@@ -92,6 +92,7 @@ add_executable(Prune
         src/prune/tooling/command_history.cpp
         src/prune/tooling/sprite_picker.cpp
         src/prune/tooling/editor/tracked_property_table.cpp
+        src/prune/tooling/editor/tracked_settings_table.cpp
         src/prune/tooling/controls.cpp
         src/prune/tooling/options.cpp
         src/prune/tooling/stats.cpp

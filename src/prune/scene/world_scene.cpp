@@ -399,6 +399,7 @@ namespace prune {
               }
             },
             [](const ViewportChange&) {},
+            [](const SceneSettingsChange&) {},
             [&](const ObjectChange& payload) {
               restore_authored(use_after_state ? payload.after
                                                : payload.before);
@@ -466,6 +467,10 @@ namespace prune {
               m_camera.editor() =
                   use_after_state ? payload.after : payload.before;
               m_camera.activate_editor();
+            },
+            [&](const SceneSettingsChange& payload) {
+              apply_scene_settings_snapshot(use_after_state ? payload.after
+                                                            : payload.before);
             },
             [&](const ObjectChange& payload) {
               restore_object_snapshot(use_after_state ? payload.after

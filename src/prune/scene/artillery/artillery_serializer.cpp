@@ -25,16 +25,7 @@ namespace prune {
 
     artillery["player_one_id"] = state.player_one_id;
     artillery["player_two_id"] = state.player_two_id;
-    save_aim(artillery["initial_player_one_aim"],
-             state.settings.initial_player_one_aim);
-    save_aim(artillery["initial_player_two_aim"],
-             state.settings.initial_player_two_aim);
-    artillery["gravity"] = state.settings.gravity;
-    artillery["projectile_lifetime"] = state.settings.projectile_lifetime;
-    artillery["min_power"] = state.settings.min_power;
-    artillery["max_power"] = state.settings.max_power;
-    artillery["angle_step"] = state.settings.angle_step;
-    artillery["power_step"] = state.settings.power_step;
+    save_settings_to_node(state.settings, artillery);
   }
 
   bool ArtillerySerializer::load_from_node(const YAML::Node& root,
@@ -47,18 +38,7 @@ namespace prune {
       return false;
     }
 
-    const YAML::Node player_one_aim = artillery["initial_player_one_aim"]
-                                          ? artillery["initial_player_one_aim"]
-                                          : artillery["player_one_aim"];
-    const YAML::Node player_two_aim = artillery["initial_player_two_aim"]
-                                          ? artillery["initial_player_two_aim"]
-                                          : artillery["player_two_aim"];
-
-    if (!artillery["player_one_id"] || !artillery["player_two_id"] ||
-        !player_one_aim || !player_two_aim || !artillery["gravity"] ||
-        !artillery["projectile_lifetime"] || !artillery["min_power"] ||
-        !artillery["max_power"] || !artillery["angle_step"] ||
-        !artillery["power_step"]) {
+    if (!artillery["player_one_id"] || !artillery["player_two_id"]) {
       error = "artillery options are incomplete.";
       return false;
     }
@@ -66,21 +46,57 @@ namespace prune {
     state.player_one_id = artillery["player_one_id"].as<GameObjectId>();
     state.player_two_id = artillery["player_two_id"].as<GameObjectId>();
 
-    if (!load_aim(player_one_aim, state.settings.initial_player_one_aim) ||
-        !load_aim(player_two_aim, state.settings.initial_player_two_aim)) {
+    if (!load_settings_from_node(artillery, state.settings, error)) {
+      return false;
+    }
+
+    state.runtime = fresh_runtime(state.settings);
+
+    return true;
+  }
+
+  void
+  ArtillerySerializer::save_settings_to_node(const ArtillerySettings& settings,
+                                             YAML::Node& node) {
+    save_aim(node["initial_player_one_aim"], settings.initial_player_one_aim);
+    save_aim(node["initial_player_two_aim"], settings.initial_player_two_aim);
+    node["gravity"] = settings.gravity;
+    node["projectile_lifetime"] = settings.projectile_lifetime;
+    node["min_power"] = settings.min_power;
+    node["max_power"] = settings.max_power;
+    node["angle_step"] = settings.angle_step;
+    node["power_step"] = settings.power_step;
+  }
+
+  bool ArtillerySerializer::load_settings_from_node(const YAML::Node& node,
+                                                    ArtillerySettings& settings,
+                                                    std::string& error) {
+    const YAML::Node player_one_aim = node["initial_player_one_aim"]
+                                          ? node["initial_player_one_aim"]
+                                          : node["player_one_aim"];
+    const YAML::Node player_two_aim = node["initial_player_two_aim"]
+                                          ? node["initial_player_two_aim"]
+                                          : node["player_two_aim"];
+
+    if (!player_one_aim || !player_two_aim || !node["gravity"] ||
+        !node["projectile_lifetime"] || !node["min_power"] ||
+        !node["max_power"] || !node["angle_step"] || !node["power_step"]) {
+      error = "artillery options are incomplete.";
+      return false;
+    }
+
+    if (!load_aim(player_one_aim, settings.initial_player_one_aim) ||
+        !load_aim(player_two_aim, settings.initial_player_two_aim)) {
       error = "artillery aim settings are incomplete.";
       return false;
     }
 
-    state.settings.gravity = artillery["gravity"].as<float>();
-    state.settings.projectile_lifetime =
-        artillery["projectile_lifetime"].as<float>();
-    state.settings.min_power = artillery["min_power"].as<float>();
-    state.settings.max_power = artillery["max_power"].as<float>();
-    state.settings.angle_step = artillery["angle_step"].as<float>();
-    state.settings.power_step = artillery["power_step"].as<float>();
-
-    state.runtime = fresh_runtime(state.settings);
+    settings.gravity = node["gravity"].as<float>();
+    settings.projectile_lifetime = node["projectile_lifetime"].as<float>();
+    settings.min_power = node["min_power"].as<float>();
+    settings.max_power = node["max_power"].as<float>();
+    settings.angle_step = node["angle_step"].as<float>();
+    settings.power_step = node["power_step"].as<float>();
 
     return true;
   }

@@ -12,6 +12,7 @@ target_include_directories(PruneTests PRIVATE
 target_link_libraries(PruneTests PRIVATE
     Catch2::Catch2WithMain
     SDL2::SDL2
+    yaml-cpp::yaml-cpp
 )
 
 if(MSVC)

@@ -7,6 +7,8 @@
 #include <variant>
 #include <vector>
 
+#include <yaml-cpp/yaml.h>
+
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/scene_camera.hpp"
 
@@ -39,9 +41,18 @@ namespace prune {
     Camera after;
   };
 
+  // Two snapshots of a scene's authored settings section (gravity, speeds,
+  // cooldowns, aim/power, ...), produced by the owning scene's serializer.
+  // One payload covers every scene type's settings; apply/undo call back
+  // into the scene to load the relevant snapshot.
+  struct SceneSettingsChange {
+    YAML::Node before;
+    YAML::Node after;
+  };
+
   using EditorCommandPayload =
       std::variant<ObjectChange, ObjectsChange, ObjectCreate, ObjectDelete,
-                   ObjectsDelete, ViewportChange>;
+                   ObjectsDelete, ViewportChange, SceneSettingsChange>;
 
   struct EditorCommand {
     std::string label;
@@ -76,20 +87,19 @@ namespace prune {
   affected_ids(const EditorCommand& command);
 
   [[nodiscard]] EditorCommand make_object_change(std::string_view label,
-                                                  const GameObject& before,
-                                                  const GameObject& after,
-                                                  std::string_view detail = {});
+                                                 const GameObject& before,
+                                                 const GameObject& after,
+                                                 std::string_view detail = {});
 
-  [[nodiscard]] EditorCommand
-  make_object_create(const GameObject& created, std::string_view detail = {});
+  [[nodiscard]] EditorCommand make_object_create(const GameObject& created,
+                                                 std::string_view detail = {});
 
-  [[nodiscard]] EditorCommand
-  make_object_delete(const GameObject& deleted, std::string_view detail = {});
+  [[nodiscard]] EditorCommand make_object_delete(const GameObject& deleted,
+                                                 std::string_view detail = {});
 
-  [[nodiscard]] EditorCommand
-  make_objects_change(std::string_view label, std::span<const GameObject> before,
-                      std::span<const GameObject> after,
-                      std::string_view detail = {});
+  [[nodiscard]] EditorCommand make_objects_change(
+      std::string_view label, std::span<const GameObject> before,
+      std::span<const GameObject> after, std::string_view detail = {});
 
   [[nodiscard]] EditorCommand
   make_objects_delete(std::span<const GameObject> deleted,
@@ -98,5 +108,10 @@ namespace prune {
   [[nodiscard]] EditorCommand
   make_viewport_change(std::string_view label, const Camera& before,
                        const Camera& after, std::string_view detail = {});
+
+  [[nodiscard]] EditorCommand
+  make_scene_settings_change(std::string_view label, const YAML::Node& before,
+                             const YAML::Node& after,
+                             std::string_view detail = {});
 
 } // namespace prune

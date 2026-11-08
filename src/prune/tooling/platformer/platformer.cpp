@@ -1,28 +1,53 @@
 #include "imgui.h"
 
+#include "prune/scene/platformer/platformer_serializer.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
 #include "prune/tooling/platformer/platformer.hpp"
 
 namespace prune {
 
-  void Platformer::draw(PlatformerState& state) {
+  namespace {
+    [[nodiscard]] YAML::Node
+    settings_snapshot(const PlatformerSettings& settings) {
+      YAML::Node node;
+      PlatformerSerializer::save_settings_to_node(settings, node);
+      return node;
+    }
+  } // namespace
+
+  void Platformer::draw(Scene& scene, PlatformerState& state) {
     if (tooling::imgui::layout::collapsing_header("Game")) {
       if (tooling::imgui::property_table::begin("##platformer_game")) {
         tooling::imgui::property_table::text(
             "Grounded", state.runtime.player_grounded ? "Yes" : "No");
-        tooling::imgui::property_table::slider_float(
-            "Move Speed", "##platformer_move_speed", state.settings.move_speed,
-            40.0f, 220.0f, "%.2f");
-        tooling::imgui::property_table::slider_float(
-            "Jump Velocity", "##platformer_jump_velocity",
-            state.settings.jump_velocity, 120.0f, 420.0f, "%.2f");
-        tooling::imgui::property_table::slider_float(
-            "Gravity", "##platformer_gravity", state.settings.gravity, 300.0f,
-            1400.0f, "%.2f");
-        tooling::imgui::property_table::slider_float(
-            "Max Fall Speed", "##platformer_max_fall_speed",
-            state.settings.max_fall_speed, 160.0f, 720.0f, "%.2f");
+
+        tooling::editor::tracked_settings_table::slider_float(
+            m_settings_tracker, scene,
+            [&state] { return settings_snapshot(state.settings); },
+            "Change move speed", "Move Speed", "##platformer_move_speed",
+            state.settings.move_speed, 40.0f, 220.0f, "%.2f");
+
+        tooling::editor::tracked_settings_table::slider_float(
+            m_settings_tracker, scene,
+            [&state] { return settings_snapshot(state.settings); },
+            "Change jump velocity", "Jump Velocity",
+            "##platformer_jump_velocity", state.settings.jump_velocity, 120.0f,
+            420.0f, "%.2f");
+
+        tooling::editor::tracked_settings_table::slider_float(
+            m_settings_tracker, scene,
+            [&state] { return settings_snapshot(state.settings); },
+            "Change gravity", "Gravity", "##platformer_gravity",
+            state.settings.gravity, 300.0f, 1400.0f, "%.2f");
+
+        tooling::editor::tracked_settings_table::slider_float(
+            m_settings_tracker, scene,
+            [&state] { return settings_snapshot(state.settings); },
+            "Change max fall speed", "Max Fall Speed",
+            "##platformer_max_fall_speed", state.settings.max_fall_speed,
+            160.0f, 720.0f, "%.2f");
+
         tooling::imgui::property_table::end();
       }
     }

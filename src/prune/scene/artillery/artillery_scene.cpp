@@ -183,7 +183,7 @@ namespace prune {
 
       ImGui::Separator();
 
-      m_artillery_tools.draw(m_artillery_state);
+      m_artillery_tools.draw(*this, m_artillery_state);
     }
 
     ImGui::End();
@@ -270,6 +270,14 @@ namespace prune {
 
     m_artillery_state = loaded_artillery_state;
     return true;
+  }
+
+  void ArtilleryScene::apply_scene_settings_snapshot(const YAML::Node& node) {
+    std::string error;
+    if (!ArtillerySerializer::load_settings_from_node(
+            node, m_artillery_state.settings, error)) {
+      return;
+    }
   }
 
   bool ArtilleryScene::restore_loaded_scene(SceneState& state,

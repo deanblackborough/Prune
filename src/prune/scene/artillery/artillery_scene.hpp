@@ -45,6 +45,7 @@ namespace prune {
     void save_scene_data(YAML::Node& root) const override;
     [[nodiscard]] bool load_scene_data(const YAML::Node& root,
                                        std::string& error) override;
+    void apply_scene_settings_snapshot(const YAML::Node& node) override;
     [[nodiscard]] bool restore_loaded_scene(SceneState& state,
                                             std::string& error) override;
     void render_overlay(SDL_Renderer* renderer) override;

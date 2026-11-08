@@ -14,6 +14,10 @@ namespace prune {
     m_mouse_wheel_delta = 0.0f;
   }
 
+  void Input::consume_fixed_update_presses() {
+    m_keys_pressed_for_update.fill(false);
+  }
+
   void Input::process_event(const SDL_Event& event) {
     switch (event.type) {
     case SDL_KEYDOWN: {
@@ -21,6 +25,7 @@ namespace prune {
         const auto scancode = event.key.keysym.scancode;
         m_keys_down[scancode] = true;
         m_keys_pressed[scancode] = true;
+        m_keys_pressed_for_update[scancode] = true;
       }
       break;
     }
@@ -78,6 +83,10 @@ namespace prune {
 
   bool Input::was_key_pressed(SDL_Scancode key) const {
     return m_keys_pressed[key];
+  }
+
+  bool Input::was_key_pressed_for_update(SDL_Scancode key) const {
+    return m_keys_pressed_for_update[key];
   }
 
   bool Input::was_key_released(SDL_Scancode key) const {

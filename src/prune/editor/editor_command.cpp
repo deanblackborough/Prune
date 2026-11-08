@@ -95,6 +95,8 @@ namespace prune {
               ids.push_back(object.identity.id);
             }
             return ids;
+          } else if constexpr (std::is_same_v<Payload, SceneSettingsChange>) {
+            return {};
           } else {
             static_assert(std::is_same_v<Payload, ViewportChange>);
             return {};
@@ -142,9 +144,9 @@ namespace prune {
     EditorCommand command{};
     command.label = std::string(label);
     command.detail = std::string(detail);
-    command.payload = ObjectsChange{
-        std::vector<GameObject>(before.begin(), before.end()),
-        std::vector<GameObject>(after.begin(), after.end())};
+    command.payload =
+        ObjectsChange{std::vector<GameObject>(before.begin(), before.end()),
+                      std::vector<GameObject>(after.begin(), after.end())};
 
     return command;
   }
@@ -168,6 +170,18 @@ namespace prune {
     command.label = std::string(label);
     command.detail = std::string(detail);
     command.payload = ViewportChange{before, after};
+
+    return command;
+  }
+
+  EditorCommand make_scene_settings_change(std::string_view label,
+                                           const YAML::Node& before,
+                                           const YAML::Node& after,
+                                           std::string_view detail) {
+    EditorCommand command{};
+    command.label = std::string(label);
+    command.detail = std::string(detail);
+    command.payload = SceneSettingsChange{before, after};
 
     return command;
   }

@@ -477,18 +477,28 @@ for free.
 
 ### Checklist
 
-- [ ] Add a scene settings edit tracker analogous to `ObjectEditTracker`: capture the settings
+- [x] Add a scene settings edit tracker analogous to `ObjectEditTracker`: capture the settings
       YAML snapshot when a control becomes active, commit a `SceneSettingsChange` when it
-      deactivates after a change.
-- [ ] `WorldScene` handles `SceneSettingsChange` by calling a virtual
+      deactivates after a change. — `SceneSettingsEditTracker` in
+      `tooling/editor/tracked_settings_table.{hpp,cpp}`, plus templated `slider_float`/
+      `slider_int` wrappers parameterised over a snapshot callable (the settings struct has no
+      per-field enum the way `GameObject` has `TrackedField`; the before/after comparison is a
+      full-struct YAML re-serialize + string compare instead).
+- [x] `WorldScene` handles `SceneSettingsChange` by calling a virtual
       `apply_scene_settings_snapshot(const YAML::Node&)` on the scene (reusing the
-      A1 authored-settings serializer).
-- [ ] Convert Platformer scene tooling to the tracked path.
-- [ ] Convert Simple Shooter scene tooling to the tracked path.
-- [ ] Convert Artillery scene tooling to the tracked path; delete the ad-hoc `m_authored_*_aim`
-      bookkeeping.
-- [ ] Confirm: editing a scene setting marks dirty, is in the undo history with a readable
-      label, and survives save/load; undo restores the previous value.
+      A1 authored-settings serializer). — each scene's serializer gained
+      `save_settings_to_node`/`load_settings_from_node` (settings fields only, no object ids),
+      shared by the full save/load path and by the command snapshot path.
+- [x] Convert Platformer scene tooling to the tracked path.
+- [x] Convert Simple Shooter scene tooling to the tracked path.
+- [x] Convert Artillery scene tooling to the tracked path; delete the ad-hoc `m_authored_*_aim`
+      bookkeeping. — that bookkeeping was already removed in A1 once `ArtillerySettings` held
+      the initial aims directly; nothing left to delete here.
+- [x] Confirm: editing a scene setting marks dirty, is in the undo history with a readable
+      label, and survives save/load; undo restores the previous value. — traced through
+      `record_editor_command`/`undo_editor_command`/`save_to_file`/`load_from_file` and covered
+      the payload construction with a `PruneTests` case; full app + tests built and the test
+      suite passes locally (`out/build/mac-debug`).
 
 ### Out of scope
 

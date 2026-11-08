@@ -93,6 +93,12 @@ namespace prune {
     virtual void save_scene_data(YAML::Node& root) const = 0;
     [[nodiscard]] virtual bool load_scene_data(const YAML::Node& root,
                                                std::string& error) = 0;
+
+    // Loads a scene-settings snapshot (one produced by the scene's own
+    // serializer) back into the authored settings struct. Used by
+    // SceneSettingsChange apply/undo; never touches objects or runtime state.
+    virtual void apply_scene_settings_snapshot(const YAML::Node& node) = 0;
+
     [[nodiscard]] virtual bool restore_loaded_scene(SceneState& state,
                                                     std::string& error) = 0;
 
