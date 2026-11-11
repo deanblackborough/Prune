@@ -37,20 +37,24 @@ namespace prune {
                                     std::string& error) final;
     [[nodiscard]] bool load_from_file(std::string_view path,
                                       std::string& error) final;
-    [[nodiscard]] bool is_dirty() const noexcept final { return m_state.dirty; }
+    [[nodiscard]] bool is_dirty() const noexcept final {
+      return m_state.editor.dirty;
+    }
 
     void set_viewport(const SceneViewport& viewport) noexcept final;
     [[nodiscard]] const SceneViewport& get_viewport() const noexcept final {
-      return m_state.viewport;
+      return m_state.editor.viewport;
     }
     [[nodiscard]] int get_viewport_width() const noexcept final {
-      return m_state.viewport.width;
+      return m_state.editor.viewport.width;
     }
     [[nodiscard]] int get_viewport_height() const noexcept final {
-      return m_state.viewport.height;
+      return m_state.editor.viewport.height;
     }
 
     GameObjectManager& get_object_manager() final;
+    [[nodiscard]] EditorSelection& selection() noexcept final;
+    [[nodiscard]] const EditorSelection& selection() const noexcept final;
     void record_editor_command(EditorCommand command) final;
     [[nodiscard]] const EditorCommandHistory&
     editor_command_history() const noexcept final;
@@ -82,7 +86,7 @@ namespace prune {
     is_space_free(const GameObject& candidate) const noexcept;
 
     virtual void on_scene_enter() {}
-    virtual void update_runtime(float dt, const Input& input,
+    virtual void update_runtime(WorldState& world, float dt, const Input& input,
                                 bool keyboard_input_enabled) = 0;
     virtual void restart_runtime() = 0;
     virtual void set_runtime_paused(bool paused) noexcept = 0;

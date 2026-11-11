@@ -5,6 +5,7 @@
 #include "prune/editor/editor_tool.hpp"
 #include "prune/editor/grid_options.hpp"
 #include "prune/editor/tools/transform_gizmo.hpp"
+#include "prune/scene/editor_selection.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
 #include "prune/scene/scene_event.hpp"
@@ -61,16 +62,30 @@ namespace prune {
         editor::tools::transform_gizmo::ScaleHandle::None;
   };
 
-  struct SceneState {
+  // World simulation state: what scene behaviour is allowed to see and
+  // mutate. No editor/session concept (selection, dirty, undo history,
+  // viewport, active tool) belongs here.
+  struct WorldState {
+    SceneEventQueue events;
+    GameObjectManager objects;
+  };
+
+  // Editor/session state layered over a WorldState: everything that exists
+  // for the editor UI rather than for the simulation, and that gameplay code
+  // must not be able to reach.
+  struct EditorSceneState {
     bool dirty = false;
     SceneViewport viewport{};
     DragState drag_state{};
     SceneOptions scene_options{};
     EditorTool editor_tool = EditorTool::Select;
-    SceneEventQueue events;
-
-    GameObjectManager objects;
     EditorCommandHistory editor_commands;
+    EditorSelection selection;
+  };
+
+  struct SceneState {
+    WorldState world;
+    EditorSceneState editor;
   };
 
 } // namespace prune

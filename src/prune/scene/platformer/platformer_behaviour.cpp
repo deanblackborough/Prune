@@ -23,7 +23,7 @@ namespace prune {
 
   } // namespace
 
-  void PlatformerBehaviour::update(SceneState& state, SceneCamera& camera,
+  void PlatformerBehaviour::update(WorldState& state, SceneCamera& camera,
                                    PlatformerState& platformer_state, float dt,
                                    const Input& input,
                                    bool keyboard_input_enabled) {
@@ -36,7 +36,7 @@ namespace prune {
   }
 
   GameObject* PlatformerBehaviour::player_object(
-      SceneState& state,
+      WorldState& state,
       const PlatformerState& platformer_state) const noexcept {
     GameObject* object = state.objects.get_by_id(platformer_state.player_id);
     if (!object || !platformer_concepts::is_player(*object)) {
@@ -47,7 +47,7 @@ namespace prune {
   }
 
   const GameObject* PlatformerBehaviour::player_object(
-      const SceneState& state,
+      const WorldState& state,
       const PlatformerState& platformer_state) const noexcept {
     const GameObject* object =
         state.objects.get_by_id(platformer_state.player_id);
@@ -59,7 +59,7 @@ namespace prune {
   }
 
   const GameObject* PlatformerBehaviour::player_start_object(
-      const SceneState& state,
+      const WorldState& state,
       const PlatformerState& platformer_state) const noexcept {
     const GameObject* object =
         state.objects.get_by_id(platformer_state.player_start_id);
@@ -70,7 +70,7 @@ namespace prune {
     return object;
   }
 
-  void PlatformerBehaviour::update_player(SceneState& state,
+  void PlatformerBehaviour::update_player(WorldState& state,
                                           SceneCamera& camera,
                                           PlatformerState& platformer_state,
                                           float dt, const Input& input,
@@ -174,7 +174,7 @@ namespace prune {
     }
   }
 
-  void PlatformerBehaviour::move_player_axis(SceneState& state,
+  void PlatformerBehaviour::move_player_axis(WorldState& state,
                                              GameObject& player, float delta_x,
                                              float delta_y,
                                              bool& grounded) const {
@@ -215,7 +215,7 @@ namespace prune {
   }
 
   bool PlatformerBehaviour::is_resting_on_solid(
-      const SceneState& state, const GameObject& player) const noexcept {
+      const WorldState& state, const GameObject& player) const noexcept {
     GameObject probe = player;
     probe.transform.y += 1.0f;
 
@@ -234,7 +234,7 @@ namespace prune {
   }
 
   bool
-  PlatformerBehaviour::touches_hazard(const SceneState& state,
+  PlatformerBehaviour::touches_hazard(const WorldState& state,
                                       const GameObject& player) const noexcept {
     for (const auto& object : state.objects.objects()) {
       if (!is_active_platformer_hazard(object)) {
@@ -250,7 +250,7 @@ namespace prune {
   }
 
   void PlatformerBehaviour::reset_player(
-      SceneState& state, PlatformerState& platformer_state) const noexcept {
+      WorldState& state, PlatformerState& platformer_state) const noexcept {
     GameObject* player = player_object(state, platformer_state);
     if (!player) {
       return;

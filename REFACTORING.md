@@ -720,11 +720,35 @@ gameplay code from casually depending on editor state.
 
 ### Checklist
 
-- [ ] Define `WorldState` (or reuse the A1 runtime struct + `GameObjectManager`).
-- [ ] `update_runtime` and scene behaviour take `WorldState&`, not `SceneState&`.
-- [ ] Move `dirty`, `drag_state`, `editor_tool`, `editor_commands`, `viewport` into an editor
-      session container.
-- [ ] `scene_options` / debug overlays go with editor session state.
+- [x] Define `WorldState` (or reuse the A1 runtime struct + `GameObjectManager`). —
+      `WorldState { SceneEventQueue events; GameObjectManager objects; }` in `scene_state.hpp`,
+      with the same member names `SceneState` used to have, so every existing `state.objects.*`
+      / `state.events.*` call inside the three `*_behaviour.cpp` files kept compiling unchanged
+      once the parameter type changed.
+- [x] `update_runtime` and scene behaviour take `WorldState&`, not `SceneState&`. —
+      `WorldScene::update_runtime` and all three `*Behaviour::update` (plus their private
+      helpers: `move_player_axis`, `reset_player`, `reset_round`, `fire_projectile`, etc.) now
+      take `WorldState&`. Verified none of the three behaviour `.cpp` files ever touched
+      `dirty`/`drag_state`/`editor_tool`/`editor_commands`/`scene_options`/`viewport` before
+      this change — confirmed by grep before retyping, so the split is a pure narrowing, not a
+      behaviour change. One real fix fell out of it: `ArtilleryBehaviour::reset_round` (runtime,
+      mid-play) used to call `GameObjectManager::remove_object` while destroying old terrain,
+      which — before B4 — also ran the selection-reselect fallback below; that coupling (an
+      editor-UI concern reachable from gameplay) is exactly what this phase removes, and it
+      can no longer happen now that `WorldState` carries no `EditorSelection`.
+- [x] Move `dirty`, `drag_state`, `editor_tool`, `editor_commands`, `viewport` into an editor
+      session container. — `EditorSceneState` in `scene_state.hpp`; `SceneState` is now
+      `{ WorldState world; EditorSceneState editor; }`. Every `m_state.<field>` /
+      `state.<field>` access across `world_scene.cpp`, the three `*_scene.cpp` files,
+      `scene_interaction.cpp`, `scene_renderer.cpp`, and `scene_serializer.cpp` was updated to
+      `.world.<field>` or `.editor.<field>` accordingly (SceneInteraction/SceneRenderer/
+      SceneSerializer keep taking the full `SceneState&` — they are editor-facing helpers that
+      legitimately need both world and session state, not gameplay code).
+- [x] `scene_options` / debug overlays go with editor session state. — `scene_options` is a
+      field on `EditorSceneState`, as above.
+
+Build and the full `PruneTests` suite (139 assertions / 21 cases) verified green after the
+change (`out/build/mac-debug`).
 
 ---
 
@@ -747,10 +771,42 @@ EditorSelection     selected IDs, primary selection, selection operations
 
 ### Checklist
 
-- [ ] Introduce `EditorSelection`, move the selection state and methods.
-- [ ] `GameObjectManager` keeps only storage/access.
-- [ ] Update `scene_interaction`, tooling, and `WorldScene` call sites.
-- [ ] Do this together with B3.
+- [x] Introduce `EditorSelection`, move the selection state and methods. — new
+      `src/prune/scene/editor_selection.{hpp,cpp}`. Selection methods that need to validate
+      against storage (`select`, `select_many`, `toggle_selected`, `set_selected_id`,
+      `selected_object`) take a `const GameObjectManager&` parameter rather than owning one, so
+      `EditorSelection` stays a plain "which ids are selected" value type with no dependency on
+      which `GameObjectManager` it was last used with — it pairs with the live
+      `m_state.world.objects` (via `SceneState::editor.selection`), never with the authored
+      store (`WorldScene::m_authored_objects`, which has no selection concept and never did:
+      confirmed its only use of the old `GameObjectManager` selection API was an incidental
+      side effect of copy-assignment from the live manager, always overwritten immediately
+      after by `enter_stopped_state()`'s explicit `select_many`).
+- [x] `GameObjectManager` keeps only storage/access. — `m_selected_ids` and all
+      `select*`/`toggle_selected`/`clear_selection`/`is_selected`/`selected_*` methods removed.
+      `create_object` no longer auto-selects the first selectable object: every real call site
+      either explicitly selects afterward (clone, add-platform/-hazard/-wall/-terrain, every
+      scene's `restore_defaults`) or is covered by `WorldScene::sanitize_loaded_selection` on
+      load, or creates a `Runtime`-typed object for which the old auto-select predicate was
+      already false — so dropping it changes no observable behaviour. `remove_object`'s
+      "select the next, else previous, selectable object" fallback moved to
+      `EditorSelection::object_removed(objects, id, erased_index)`, called explicitly by the
+      two call sites that relied on it (`editor_actions::delete_selected_objects`'s single- and
+      multi-delete loop, and `WorldScene::apply_editor_command`'s `ObjectDelete`/`ObjectsDelete`
+      redo/undo-apply branches) with the index captured via a new public
+      `GameObjectManager::index_of(id)` (renamed from the old private `find_index_by_id`) taken
+      just before the removal.
+- [x] Update `scene_interaction`, tooling, and `WorldScene` call sites. — `Scene` gained
+      `selection()` / `const selection()` accessors (implemented by `WorldScene` as
+      `m_state.editor.selection`); every former `objects.select*(...)` call in
+      `scene_interaction.cpp`, `scene_renderer.cpp`, `scene_serializer.cpp`, `editor_actions.cpp`,
+      and the tooling panels (`inspector`, `outliner`, `stats`) now goes through
+      `scene.selection()` / an explicitly threaded `EditorSelection&` parameter instead.
+- [x] Do this together with B3. — done in the same pass; `EditorSelection` lives on
+      `EditorSceneState` (B3), so the two were inseparable in practice.
+
+Build and the full `PruneTests` suite (139 assertions / 21 cases) verified green
+(`out/build/mac-debug`).
 
 ---
 

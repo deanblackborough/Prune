@@ -9,7 +9,8 @@
 
 namespace prune {
 
-  void Outliner::draw(GameObjectManager& objects, const Scene& scene) {
+  void Outliner::draw(GameObjectManager& objects, EditorSelection& selection,
+                      const Scene& scene) {
     ImGui::PushStyleColor(ImGuiCol_Button,
                           ImVec4(0.4f, 0.2f, 0.6f, 1.0f)); // Normal state
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
@@ -43,7 +44,7 @@ namespace prune {
           continue;
         }
 
-        const bool is_selected = objects.is_selected(object.identity.id);
+        const bool is_selected = selection.is_selected(object.identity.id);
 
         if (!object_concept.selectable || !object.editor.selectable) {
           ImGui::BeginDisabled();
@@ -57,9 +58,9 @@ namespace prune {
           const bool shift_down = io.KeyShift;
 
           if (shift_down) {
-            objects.toggle_selected(object.identity.id);
+            selection.toggle_selected(objects, object.identity.id);
           } else {
-            objects.select(object.identity.id);
+            selection.select(objects, object.identity.id);
           }
         }
       }

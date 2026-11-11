@@ -37,13 +37,13 @@ namespace prune {
       : m_grid_options(&grid_options) {}
 
   void WorldScene::update(float dt, const Input& input) {
-    update_runtime(dt, input, scene_keyboard_input_enabled());
-    m_camera.update_game_camera(m_state.viewport, game_camera_target());
+    update_runtime(m_state.world, dt, input, scene_keyboard_input_enabled());
+    m_camera.update_game_camera(m_state.editor.viewport, game_camera_target());
   }
 
   void WorldScene::update_editor(float dt, const Input& input) {
     m_interaction.update(*this, m_state, m_camera, *m_grid_options, dt, input);
-    m_camera.update_game_camera(m_state.viewport, game_camera_target());
+    m_camera.update_game_camera(m_state.editor.viewport, game_camera_target());
   }
 
   void WorldScene::render(SDL_Renderer* renderer) {
@@ -59,18 +59,18 @@ namespace prune {
 
   void WorldScene::enter_stopped_state() {
     const std::vector<GameObjectId> selected_ids(
-        m_state.objects.selected_ids().begin(),
-        m_state.objects.selected_ids().end());
+        m_state.editor.selection.selected_ids().begin(),
+        m_state.editor.selection.selected_ids().end());
 
-    m_state.objects = m_authored_objects;
-    m_state.objects.select_many(selected_ids);
-    m_state.events.clear();
-    m_state.drag_state = {};
+    m_state.world.objects = m_authored_objects;
+    m_state.editor.selection.select_many(m_state.world.objects, selected_ids);
+    m_state.world.events.clear();
+    m_state.editor.drag_state = {};
 
     restart_runtime();
     set_runtime_paused(true);
     m_stopped = true;
-    m_camera.update_game_camera(m_state.viewport, game_camera_target());
+    m_camera.update_game_camera(m_state.editor.viewport, game_camera_target());
   }
 
   void WorldScene::reset_runtime() {
@@ -104,7 +104,7 @@ namespace prune {
         return false;
       }
 
-      const GameObject* created = m_state.objects.get_by_id(created_id);
+      const GameObject* created = m_state.world.objects.get_by_id(created_id);
       if (!created) {
         return false;
       }
@@ -122,7 +122,7 @@ namespace prune {
       root["scene_type"] = std::string(scene_type_id());
 
       SceneState authored_state = m_state;
-      authored_state.objects = m_authored_objects;
+      authored_state.world.objects = m_authored_objects;
       SceneSerializer::save_to_node(authored_state, root);
       save_scene_data(root);
 
@@ -140,7 +140,7 @@ namespace prune {
         return false;
       }
 
-      m_state.dirty = false;
+      m_state.editor.dirty = false;
       return true;
     } catch (const YAML::Exception& ex) {
       error = ex.what();
@@ -162,7 +162,7 @@ namespace prune {
       }
 
       SceneState loaded_state = m_state;
-      loaded_state.events.clear();
+      loaded_state.world.events.clear();
 
       if (!SceneSerializer::load_from_node(loaded_state, root, error)) {
         return false;
@@ -177,10 +177,10 @@ namespace prune {
       }
 
       m_state = std::move(loaded_state);
-      m_state.events.clear();
-      m_state.drag_state = {};
-      m_state.editor_commands.clear();
-      m_state.dirty = false;
+      m_state.world.events.clear();
+      m_state.editor.drag_state = {};
+      m_state.editor.editor_commands.clear();
+      m_state.editor.dirty = false;
 
       sanitize_loaded_selection();
       m_camera.reset();
@@ -198,46 +198,58 @@ namespace prune {
   }
 
   void WorldScene::sanitize_loaded_selection() noexcept {
-    if (GameObject* selected = m_state.objects.selected_object();
+    if (GameObject* selected =
+            m_state.editor.selection.selected_object(m_state.world.objects);
         selected != nullptr && object_is_selectable(*selected)) {
       return;
     }
 
-    for (const auto& object : m_state.objects.objects()) {
+    for (const auto& object : m_state.world.objects.objects()) {
       if (object_is_selectable(object)) {
-        m_state.objects.set_selected_id(object.identity.id);
+        m_state.editor.selection.set_selected_id(m_state.world.objects,
+                                                 object.identity.id);
         return;
       }
     }
 
-    m_state.objects.set_selected_id(k_invalid_game_object_id);
+    m_state.editor.selection.set_selected_id(m_state.world.objects,
+                                             k_invalid_game_object_id);
   }
 
   void WorldScene::set_viewport(const SceneViewport& viewport) noexcept {
-    m_state.viewport = viewport;
+    m_state.editor.viewport = viewport;
   }
 
   GameObjectManager& WorldScene::get_object_manager() {
-    return m_state.objects;
+    return m_state.world.objects;
+  }
+
+  EditorSelection& WorldScene::selection() noexcept {
+    return m_state.editor.selection;
+  }
+
+  const EditorSelection& WorldScene::selection() const noexcept {
+    return m_state.editor.selection;
   }
 
   void WorldScene::record_editor_command(EditorCommand command) {
     apply_editor_command_to_authored_objects(command, true);
 
     if (command.makes_dirty) {
-      m_state.dirty = true;
+      m_state.editor.dirty = true;
     }
 
-    m_state.editor_commands.record(std::move(command));
+    m_state.editor.editor_commands.record(std::move(command));
   }
 
   const EditorCommandHistory&
   WorldScene::editor_command_history() const noexcept {
-    return m_state.editor_commands;
+    return m_state.editor.editor_commands;
   }
 
   bool WorldScene::undo_editor_command() {
-    const EditorCommand* command = m_state.editor_commands.undo_command();
+    const EditorCommand* command =
+        m_state.editor.editor_commands.undo_command();
     if (!command) {
       return false;
     }
@@ -245,13 +257,14 @@ namespace prune {
     apply_editor_command(*command, false);
     apply_editor_command_to_authored_objects(*command, false);
     if (command->makes_dirty) {
-      m_state.dirty = true;
+      m_state.editor.dirty = true;
     }
     return true;
   }
 
   bool WorldScene::redo_editor_command() {
-    const EditorCommand* command = m_state.editor_commands.redo_command();
+    const EditorCommand* command =
+        m_state.editor.editor_commands.redo_command();
     if (!command) {
       return false;
     }
@@ -259,28 +272,30 @@ namespace prune {
     apply_editor_command(*command, true);
     apply_editor_command_to_authored_objects(*command, true);
     if (command->makes_dirty) {
-      m_state.dirty = true;
+      m_state.editor.dirty = true;
     }
     return true;
   }
 
   SceneOptions& WorldScene::get_scene_options() {
-    return m_state.scene_options;
+    return m_state.editor.scene_options;
   }
 
   std::span<const SceneEvent>
   WorldScene::pending_scene_events() const noexcept {
-    return m_state.events.pending();
+    return m_state.world.events.pending();
   }
 
-  void WorldScene::clear_scene_events() noexcept { m_state.events.clear(); }
+  void WorldScene::clear_scene_events() noexcept {
+    m_state.world.events.clear();
+  }
 
   EditorTool WorldScene::current_editor_tool() const noexcept {
-    return m_state.editor_tool;
+    return m_state.editor.editor_tool;
   }
 
   void WorldScene::set_current_editor_tool(EditorTool tool) noexcept {
-    m_state.editor_tool = tool;
+    m_state.editor.editor_tool = tool;
   }
 
   WorldSceneContext WorldScene::world_scene_context() noexcept {
@@ -292,7 +307,7 @@ namespace prune {
   }
 
   void WorldScene::capture_authored_objects() {
-    m_authored_objects = m_state.objects;
+    m_authored_objects = m_state.world.objects;
     m_authored_objects.remove_runtime_objects();
   }
 
@@ -347,10 +362,11 @@ namespace prune {
 
   void WorldScene::restore_object_snapshot(const GameObject& object,
                                            bool select_restored) {
-    restore_object_in_id_order(m_state.objects, object);
+    restore_object_in_id_order(m_state.world.objects, object);
 
     if (select_restored) {
-      m_state.objects.select(object.identity.id);
+      m_state.editor.selection.select(m_state.world.objects,
+                                      object.identity.id);
     }
   }
 
@@ -364,7 +380,7 @@ namespace prune {
       restored_ids.push_back(object.identity.id);
     }
 
-    m_state.objects.select_many(restored_ids);
+    m_state.editor.selection.select_many(m_state.world.objects, restored_ids);
   }
 
   void WorldScene::apply_editor_command(const EditorCommand& command,
@@ -375,12 +391,17 @@ namespace prune {
               if (use_after_state) {
                 restore_object_snapshot(payload.object);
               } else {
-                m_state.objects.remove_object(payload.object.identity.id);
+                m_state.world.objects.remove_object(payload.object.identity.id);
               }
             },
             [&](const ObjectDelete& payload) {
               if (use_after_state) {
-                m_state.objects.remove_object(payload.object.identity.id);
+                const GameObjectId id = payload.object.identity.id;
+                const std::size_t erased_index =
+                    m_state.world.objects.index_of(id);
+                m_state.world.objects.remove_object(id);
+                m_state.editor.selection.object_removed(m_state.world.objects,
+                                                        id, erased_index);
               } else {
                 restore_object_snapshot(payload.object);
               }
@@ -388,10 +409,15 @@ namespace prune {
             [&](const ObjectsDelete& payload) {
               if (use_after_state) {
                 for (const GameObject& object : payload.objects) {
-                  m_state.objects.remove_object(object.identity.id);
+                  const GameObjectId id = object.identity.id;
+                  const std::size_t erased_index =
+                      m_state.world.objects.index_of(id);
+                  m_state.world.objects.remove_object(id);
+                  m_state.editor.selection.object_removed(m_state.world.objects,
+                                                          id, erased_index);
                 }
 
-                m_state.objects.clear_selection();
+                m_state.editor.selection.clear_selection();
               } else {
                 restore_object_snapshots(payload.objects);
               }
@@ -418,12 +444,13 @@ namespace prune {
   }
 
   bool WorldScene::scene_keyboard_input_enabled() const noexcept {
-    return m_state.viewport.keyboard_input_enabled &&
-           m_state.viewport.has_area();
+    return m_state.editor.viewport.keyboard_input_enabled &&
+           m_state.editor.viewport.has_area();
   }
 
   bool WorldScene::scene_mouse_input_enabled() const noexcept {
-    return m_state.viewport.hovered && m_state.viewport.has_area();
+    return m_state.editor.viewport.hovered &&
+           m_state.editor.viewport.has_area();
   }
 
   Transform WorldScene::view_center_spawn_position(int width,
@@ -432,10 +459,12 @@ namespace prune {
 
     const float view_center_x =
         camera.x +
-        (static_cast<float>(m_state.viewport.width) / camera.zoom) * 0.5f;
+        (static_cast<float>(m_state.editor.viewport.width) / camera.zoom) *
+            0.5f;
     const float view_center_y =
         camera.y +
-        (static_cast<float>(m_state.viewport.height) / camera.zoom) * 0.5f;
+        (static_cast<float>(m_state.editor.viewport.height) / camera.zoom) *
+            0.5f;
 
     Transform transform{};
     transform.x = view_center_x - (static_cast<float>(width) * 0.5f);
@@ -484,7 +513,7 @@ namespace prune {
   }
 
   bool WorldScene::is_space_free(const GameObject& candidate) const noexcept {
-    for (const auto& object : m_state.objects.objects()) {
+    for (const auto& object : m_state.world.objects.objects()) {
       if (!object.lifecycle.active) {
         continue;
       }

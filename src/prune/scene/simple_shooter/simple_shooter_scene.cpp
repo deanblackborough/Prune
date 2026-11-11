@@ -21,7 +21,7 @@ namespace prune {
     [[nodiscard]] GameObjectId first_object_id_for_kind(
         const SceneState& state,
         simple_shooter_concepts::ObjectKind kind) noexcept {
-      for (const auto& object : state.objects.objects()) {
+      for (const auto& object : state.world.objects.objects()) {
         if (simple_shooter_concepts::kind_for(object) == kind) {
           return object.identity.id;
         }
@@ -33,14 +33,14 @@ namespace prune {
     [[nodiscard]] bool
     object_has_kind(const SceneState& state, GameObjectId id,
                     simple_shooter_concepts::ObjectKind kind) noexcept {
-      const GameObject* object = state.objects.get_by_id(id);
+      const GameObject* object = state.world.objects.get_by_id(id);
       return object && simple_shooter_concepts::kind_for(*object) == kind;
     }
 
     void restore_loaded_shooter_concepts(SceneState& state,
                                          SimpleShooterState& shooter_state) {
       if (GameObject* player =
-              state.objects.get_by_id(shooter_state.player_id)) {
+              state.world.objects.get_by_id(shooter_state.player_id)) {
         player->editor.movable = true;
       }
 
@@ -51,7 +51,7 @@ namespace prune {
       }
 
       if (shooter_state.player_id == k_invalid_game_object_id) {
-        shooter_state.player_id = state.objects.create_object(
+        shooter_state.player_id = state.world.objects.create_object(
             simple_shooter_factory::create_player());
       }
 
@@ -62,7 +62,7 @@ namespace prune {
       }
 
       if (shooter_state.enemy_spawn_id == k_invalid_game_object_id) {
-        shooter_state.enemy_spawn_id = state.objects.create_object(
+        shooter_state.enemy_spawn_id = state.world.objects.create_object(
             simple_shooter_factory::create_enemy_spawn());
       }
 
@@ -73,8 +73,8 @@ namespace prune {
       }
 
       if (shooter_state.enemy_id == k_invalid_game_object_id) {
-        shooter_state.enemy_id =
-            state.objects.create_object(simple_shooter_factory::create_enemy());
+        shooter_state.enemy_id = state.world.objects.create_object(
+            simple_shooter_factory::create_enemy());
       }
     }
   } // namespace
@@ -82,12 +82,12 @@ namespace prune {
   SimpleShooterScene::SimpleShooterScene(int window_width, int window_height,
                                          GridOptions& grid_options)
       : WorldScene(grid_options) {
-    m_state.viewport.width = window_width;
-    m_state.viewport.height = window_height;
+    m_state.editor.viewport.width = window_width;
+    m_state.editor.viewport.height = window_height;
   }
 
   void SimpleShooterScene::on_exit() {
-    m_state.objects.clear();
+    m_state.world.objects.clear();
     m_simple_shooter_state.player_id = k_invalid_game_object_id;
     m_simple_shooter_state.enemy_id = k_invalid_game_object_id;
     m_simple_shooter_state.enemy_spawn_id = k_invalid_game_object_id;
@@ -115,10 +115,11 @@ namespace prune {
     return k_invalid_game_object_id;
   }
 
-  void SimpleShooterScene::update_runtime(float dt, const Input& input,
+  void SimpleShooterScene::update_runtime(WorldState& world, float dt,
+                                          const Input& input,
                                           bool keyboard_input_enabled) {
-    m_simple_shooter.update(m_state, m_camera, m_simple_shooter_state, dt,
-                            input, keyboard_input_enabled);
+    m_simple_shooter.update(world, m_camera, m_simple_shooter_state, dt, input,
+                            keyboard_input_enabled);
   }
 
   void SimpleShooterScene::restart_runtime() {
@@ -142,25 +143,25 @@ namespace prune {
   }
 
   GameObject* SimpleShooterScene::player_object() noexcept {
-    return m_state.objects.get_by_id(m_simple_shooter_state.player_id);
+    return m_state.world.objects.get_by_id(m_simple_shooter_state.player_id);
   }
 
   const GameObject* SimpleShooterScene::player_object() const noexcept {
-    return m_state.objects.get_by_id(m_simple_shooter_state.player_id);
+    return m_state.world.objects.get_by_id(m_simple_shooter_state.player_id);
   }
 
   void SimpleShooterScene::reset_runtime_state() {
-    m_state.objects.clear();
+    m_state.world.objects.clear();
     m_simple_shooter_state.player_id = k_invalid_game_object_id;
     m_simple_shooter_state.enemy_id = k_invalid_game_object_id;
     m_simple_shooter_state.enemy_spawn_id = k_invalid_game_object_id;
 
     m_camera.reset();
 
-    m_state.scene_options = {};
-    m_state.drag_state = {};
-    m_state.editor_tool = EditorTool::Select;
-    m_state.editor_commands.clear();
+    m_state.editor.scene_options = {};
+    m_state.editor.drag_state = {};
+    m_state.editor.editor_tool = EditorTool::Select;
+    m_state.editor.editor_commands.clear();
 
     m_simple_shooter_state = {};
   }
@@ -168,31 +169,32 @@ namespace prune {
   void SimpleShooterScene::restore_defaults() {
     reset_runtime_state();
 
-    m_simple_shooter_state.player_id =
-        m_state.objects.create_object(simple_shooter_factory::create_player());
+    m_simple_shooter_state.player_id = m_state.world.objects.create_object(
+        simple_shooter_factory::create_player());
 
-    m_state.objects.create_object(simple_shooter_factory::create_wall(
+    m_state.world.objects.create_object(simple_shooter_factory::create_wall(
         176.0f, 96.0f, 16, 64, "Central Wall"));
-    m_state.objects.create_object(simple_shooter_factory::create_wall(
+    m_state.world.objects.create_object(simple_shooter_factory::create_wall(
         80.0f, 192.0f, 96, 16, "Lower Cover"));
-    m_state.objects.create_object(simple_shooter_factory::create_wall(
+    m_state.world.objects.create_object(simple_shooter_factory::create_wall(
         224.0f, 64.0f, 96, 16, "Upper Cover"));
 
-    m_simple_shooter_state.enemy_spawn_id = m_state.objects.create_object(
+    m_simple_shooter_state.enemy_spawn_id = m_state.world.objects.create_object(
         simple_shooter_factory::create_enemy_spawn());
 
-    m_simple_shooter_state.enemy_id =
-        m_state.objects.create_object(simple_shooter_factory::create_enemy());
+    m_simple_shooter_state.enemy_id = m_state.world.objects.create_object(
+        simple_shooter_factory::create_enemy());
 
-    m_simple_shooter.reset(m_state, m_simple_shooter_state);
+    m_simple_shooter.reset(m_state.world, m_simple_shooter_state);
 
-    m_state.objects.select(m_simple_shooter_state.player_id);
+    m_state.editor.selection.select(m_state.world.objects,
+                                    m_simple_shooter_state.player_id);
 
     establish_game_camera();
   }
 
   void SimpleShooterScene::establish_game_camera() {
-    m_camera.update_game_camera(m_state.viewport, player_object());
+    m_camera.update_game_camera(m_state.editor.viewport, player_object());
   }
 
   void SimpleShooterScene::new_scene() { restore_defaults(); }
@@ -244,7 +246,7 @@ namespace prune {
   bool SimpleShooterScene::restore_loaded_scene(SceneState& state,
                                                 std::string&) {
     restore_loaded_shooter_concepts(state, m_simple_shooter_state);
-    m_simple_shooter.reset(state, m_simple_shooter_state);
+    m_simple_shooter.reset(state.world, m_simple_shooter_state);
     return true;
   }
 
@@ -253,13 +255,13 @@ namespace prune {
 
     wall.transform = first_free_view_center_spawn_position(wall);
 
-    const GameObjectId id = m_state.objects.create_object(wall);
+    const GameObjectId id = m_state.world.objects.create_object(wall);
 
-    if (GameObject* created = m_state.objects.get_by_id(id)) {
+    if (GameObject* created = m_state.world.objects.get_by_id(id)) {
       created->identity.name = "Wall " + std::to_string(id);
     }
 
-    m_state.objects.select(id);
+    m_state.editor.selection.select(m_state.world.objects, id);
 
     return id;
   }

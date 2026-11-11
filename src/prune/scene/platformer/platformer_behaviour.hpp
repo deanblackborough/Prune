@@ -10,33 +10,33 @@ namespace prune {
 
   class PlatformerBehaviour {
   public:
-    void update(SceneState& state, SceneCamera& camera,
+    void update(WorldState& state, SceneCamera& camera,
                 PlatformerState& platformer_state, float dt, const Input& input,
                 bool keyboard_input_enabled);
 
-    void reset_player(SceneState& state,
+    void reset_player(WorldState& state,
                       PlatformerState& platformer_state) const noexcept;
 
   private:
     [[nodiscard]] GameObject*
-    player_object(SceneState& state,
+    player_object(WorldState& state,
                   const PlatformerState& platformer_state) const noexcept;
     [[nodiscard]] const GameObject*
-    player_object(const SceneState& state,
+    player_object(const WorldState& state,
                   const PlatformerState& platformer_state) const noexcept;
     [[nodiscard]] const GameObject*
-    player_start_object(const SceneState& state,
+    player_start_object(const WorldState& state,
                         const PlatformerState& platformer_state) const noexcept;
 
-    void update_player(SceneState& state, SceneCamera& camera,
+    void update_player(WorldState& state, SceneCamera& camera,
                        PlatformerState& platformer_state, float dt,
                        const Input& input, bool keyboard_input_enabled) const;
-    void move_player_axis(SceneState& state, GameObject& player, float delta_x,
+    void move_player_axis(WorldState& state, GameObject& player, float delta_x,
                           float delta_y, bool& grounded) const;
     [[nodiscard]] bool
-    is_resting_on_solid(const SceneState& state,
+    is_resting_on_solid(const WorldState& state,
                         const GameObject& player) const noexcept;
-    [[nodiscard]] bool touches_hazard(const SceneState& state,
+    [[nodiscard]] bool touches_hazard(const WorldState& state,
                                       const GameObject& player) const noexcept;
   };
 

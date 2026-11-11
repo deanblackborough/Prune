@@ -68,7 +68,8 @@ namespace prune {
     [[nodiscard]] virtual bool runtime_paused() const noexcept = 0;
 
     // Rebuilds runtime state from the authored baseline and holds it paused,
-    // entering the editable state. A freshly created or loaded scene starts here.
+    // entering the editable state. A freshly created or loaded scene starts
+    // here.
     virtual void stop_runtime() = 0;
     [[nodiscard]] virtual bool runtime_stopped() const noexcept = 0;
 
@@ -141,6 +142,8 @@ namespace prune {
     scene_tools_label() const noexcept = 0;
 
     virtual GameObjectManager& get_object_manager() = 0;
+    [[nodiscard]] virtual EditorSelection& selection() noexcept = 0;
+    [[nodiscard]] virtual const EditorSelection& selection() const noexcept = 0;
     virtual void record_editor_command(EditorCommand command) = 0;
     [[nodiscard]] virtual const EditorCommandHistory&
     editor_command_history() const noexcept = 0;

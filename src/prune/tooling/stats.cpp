@@ -7,8 +7,9 @@
 
 namespace prune {
 
-  void Stats::draw(GameObjectManager& objects, const SceneViewport& viewport,
-                   const SceneCamera& camera) {
+  void Stats::draw(const GameObjectManager& objects,
+                   const EditorSelection& selection,
+                   const SceneViewport& viewport, const SceneCamera& camera) {
     const CameraState& cameras = camera.state();
 
     ImGuiIO& io = ImGui::GetIO();
@@ -30,7 +31,7 @@ namespace prune {
       tooling::imgui::property_table::text(
           "Object count", std::to_string(objects.count()).c_str());
       tooling::imgui::property_table::text(
-          "Selected id", std::to_string(objects.selected_id()).c_str());
+          "Selected id", std::to_string(selection.selected_id()).c_str());
       tooling::imgui::property_table::end();
     }
 

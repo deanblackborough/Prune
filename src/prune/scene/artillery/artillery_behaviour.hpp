@@ -9,30 +9,30 @@ namespace prune {
 
   class ArtilleryBehaviour {
   public:
-    void update(SceneState& state, SceneCamera&,
+    void update(WorldState& state, SceneCamera&,
                 ArtilleryState& artillery_state, float dt, const Input& input,
                 bool keyboard_input_enabled) const;
-    void reset_round(SceneState& state, ArtilleryState& artillery_state) const;
+    void reset_round(WorldState& state, ArtilleryState& artillery_state) const;
 
   private:
-    void update_controls(SceneState& state, ArtilleryState& artillery_state,
+    void update_controls(WorldState& state, ArtilleryState& artillery_state,
                          float dt, const Input& input,
                          bool keyboard_input_enabled) const;
-    void update_projectile(SceneState& state, ArtilleryState& artillery_state,
+    void update_projectile(WorldState& state, ArtilleryState& artillery_state,
                            float dt) const;
-    void fire_projectile(SceneState& state,
+    void fire_projectile(WorldState& state,
                          ArtilleryState& artillery_state) const;
-    void end_turn(SceneState& state,
+    void end_turn(WorldState& state,
                   ArtilleryState& artillery_state) const noexcept;
 
     [[nodiscard]] GameObject*
-    current_tank(SceneState& state,
+    current_tank(WorldState& state,
                  const ArtilleryState& artillery_state) const noexcept;
     [[nodiscard]] const GameObject*
-    current_tank(const SceneState& state,
+    current_tank(const WorldState& state,
                  const ArtilleryState& artillery_state) const noexcept;
     [[nodiscard]] bool
-    projectile_hit_solid(const SceneState& state, const GameObject& projectile,
+    projectile_hit_solid(const WorldState& state, const GameObject& projectile,
                          GameObjectId ignored_object_id,
                          GameObjectId& hit_id) const noexcept;
   };

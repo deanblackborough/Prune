@@ -45,7 +45,7 @@ namespace prune {
     }
 
   protected:
-    void update_runtime(float dt, const Input& input,
+    void update_runtime(WorldState& world, float dt, const Input& input,
                         bool keyboard_input_enabled) override;
     void restart_runtime() override;
     void set_runtime_paused(bool paused) noexcept override;

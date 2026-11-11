@@ -16,7 +16,7 @@ namespace prune {
     [[nodiscard]] GameObjectId
     first_object_id_for_kind(const SceneState& state,
                              platformer_concepts::ObjectKind kind) noexcept {
-      for (const auto& object : state.objects.objects()) {
+      for (const auto& object : state.world.objects.objects()) {
         if (platformer_concepts::kind_for(object) == kind) {
           return object.identity.id;
         }
@@ -28,7 +28,7 @@ namespace prune {
     [[nodiscard]] bool
     object_has_kind(const SceneState& state, GameObjectId id,
                     platformer_concepts::ObjectKind kind) noexcept {
-      const GameObject* object = state.objects.get_by_id(id);
+      const GameObject* object = state.world.objects.get_by_id(id);
       return object && platformer_concepts::kind_for(*object) == kind;
     }
 
@@ -41,7 +41,7 @@ namespace prune {
       }
 
       if (GameObject* player =
-              state.objects.get_by_id(platformer_state.player_id)) {
+              state.world.objects.get_by_id(platformer_state.player_id)) {
         player->editor.movable = true;
       }
 
@@ -52,7 +52,7 @@ namespace prune {
       }
 
       if (platformer_state.player_start_id == k_invalid_game_object_id) {
-        platformer_state.player_start_id = state.objects.create_object(
+        platformer_state.player_start_id = state.world.objects.create_object(
             platformer_factory::create_player_start(32.0f, 112.0f));
       }
     }
@@ -61,19 +61,20 @@ namespace prune {
   PlatformerScene::PlatformerScene(int window_width, int window_height,
                                    GridOptions& grid_options)
       : WorldScene(grid_options) {
-    m_state.viewport.width = window_width;
-    m_state.viewport.height = window_height;
+    m_state.editor.viewport.width = window_width;
+    m_state.editor.viewport.height = window_height;
   }
 
   void PlatformerScene::on_exit() {
-    m_state.objects.clear();
+    m_state.world.objects.clear();
     m_platformer_state.player_id = k_invalid_game_object_id;
     m_platformer_state.player_start_id = k_invalid_game_object_id;
   }
 
-  void PlatformerScene::update_runtime(float dt, const Input& input,
+  void PlatformerScene::update_runtime(WorldState& world, float dt,
+                                       const Input& input,
                                        bool keyboard_input_enabled) {
-    m_platformer.update(m_state, m_camera, m_platformer_state, dt, input,
+    m_platformer.update(world, m_camera, m_platformer_state, dt, input,
                         keyboard_input_enabled);
   }
 
@@ -92,39 +93,40 @@ namespace prune {
   }
 
   void PlatformerScene::reset_runtime_state() {
-    m_state.objects.clear();
+    m_state.world.objects.clear();
     m_platformer_state = {};
     m_camera.reset();
-    m_state.scene_options = {};
-    m_state.drag_state = {};
-    m_state.editor_tool = EditorTool::Select;
-    m_state.editor_commands.clear();
+    m_state.editor.scene_options = {};
+    m_state.editor.drag_state = {};
+    m_state.editor.editor_tool = EditorTool::Select;
+    m_state.editor.editor_commands.clear();
   }
 
   void PlatformerScene::restore_defaults() {
     reset_runtime_state();
 
-    m_platformer_state.player_start_id = m_state.objects.create_object(
+    m_platformer_state.player_start_id = m_state.world.objects.create_object(
         platformer_factory::create_player_start(32.0f, 112.0f));
 
-    m_platformer_state.player_id =
-        m_state.objects.create_object(platformer_factory::create_player());
+    m_platformer_state.player_id = m_state.world.objects.create_object(
+        platformer_factory::create_player());
 
-    m_state.objects.create_object(platformer_factory::create_platform(
+    m_state.world.objects.create_object(platformer_factory::create_platform(
         0.0f, 176.0f, 400, 16, "Main Platform"));
-    m_state.objects.create_object(platformer_factory::create_platform(
+    m_state.world.objects.create_object(platformer_factory::create_platform(
         96.0f, 144.0f, 80, 16, "Lower Step"));
-    m_state.objects.create_object(platformer_factory::create_platform(
+    m_state.world.objects.create_object(platformer_factory::create_platform(
         208.0f, 112.0f, 80, 16, "Mid Platform"));
-    m_state.objects.create_object(platformer_factory::create_platform(
+    m_state.world.objects.create_object(platformer_factory::create_platform(
         320.0f, 80.0f, 64, 16, "High Platform"));
-    m_state.objects.create_object(
+    m_state.world.objects.create_object(
         platformer_factory::create_hazard(144.0f, 160.0f, 32, 16, "Spike Pit"));
-    m_state.objects.create_object(platformer_factory::create_hazard(
+    m_state.world.objects.create_object(platformer_factory::create_hazard(
         288.0f, 160.0f, 32, 16, "Second Spike Pit"));
 
-    m_platformer.reset_player(m_state, m_platformer_state);
-    m_state.objects.select(m_platformer_state.player_id);
+    m_platformer.reset_player(m_state.world, m_platformer_state);
+    m_state.editor.selection.select(m_state.world.objects,
+                                    m_platformer_state.player_id);
 
     establish_game_camera();
   }
@@ -132,7 +134,7 @@ namespace prune {
   void PlatformerScene::establish_game_camera() {
     m_camera.game().zoom = 3.0f;
     m_camera.editor().zoom = 3.0f;
-    m_camera.update_game_camera(m_state.viewport, player_object());
+    m_camera.update_game_camera(m_state.editor.viewport, player_object());
     m_camera.editor().x = m_camera.game().x;
     m_camera.editor().y = m_camera.game().y;
   }
@@ -218,11 +220,11 @@ namespace prune {
   }
 
   GameObject* PlatformerScene::player_object() noexcept {
-    return m_state.objects.get_by_id(m_platformer_state.player_id);
+    return m_state.world.objects.get_by_id(m_platformer_state.player_id);
   }
 
   const GameObject* PlatformerScene::player_object() const noexcept {
-    return m_state.objects.get_by_id(m_platformer_state.player_id);
+    return m_state.world.objects.get_by_id(m_platformer_state.player_id);
   }
 
   GameObjectId PlatformerScene::add_platform_at_view_center() {
@@ -230,12 +232,12 @@ namespace prune {
         platformer_factory::create_platform(0.0f, 0.0f, 64, 16, "Platform");
     platform.transform = first_free_view_center_spawn_position(platform);
 
-    const GameObjectId id = m_state.objects.create_object(platform);
-    if (GameObject* created = m_state.objects.get_by_id(id)) {
+    const GameObjectId id = m_state.world.objects.create_object(platform);
+    if (GameObject* created = m_state.world.objects.get_by_id(id)) {
       created->identity.name = "Platform " + std::to_string(id);
     }
 
-    m_state.objects.select(id);
+    m_state.editor.selection.select(m_state.world.objects, id);
     return id;
   }
 
@@ -243,12 +245,12 @@ namespace prune {
     GameObject hazard = platformer_factory::create_hazard(0.0f, 0.0f);
     hazard.transform = first_free_view_center_spawn_position(hazard);
 
-    const GameObjectId id = m_state.objects.create_object(hazard);
-    if (GameObject* created = m_state.objects.get_by_id(id)) {
+    const GameObjectId id = m_state.world.objects.create_object(hazard);
+    if (GameObject* created = m_state.world.objects.get_by_id(id)) {
       created->identity.name = "Hazard " + std::to_string(id);
     }
 
-    m_state.objects.select(id);
+    m_state.editor.selection.select(m_state.world.objects, id);
     return id;
   }
 

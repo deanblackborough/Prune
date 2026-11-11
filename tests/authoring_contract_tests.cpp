@@ -58,7 +58,7 @@ namespace prune {
       }
 
     protected:
-      void update_runtime(float, const Input&, bool) override {}
+      void update_runtime(WorldState&, float, const Input&, bool) override {}
       void restart_runtime() override {}
       void set_runtime_paused(bool paused) noexcept override {
         m_paused = paused;

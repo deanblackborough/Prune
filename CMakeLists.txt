@@ -55,6 +55,7 @@ add_executable(Prune
 
         src/prune/scene/game_object.cpp
         src/prune/scene/game_object_manager.cpp
+        src/prune/scene/editor_selection.cpp
         src/prune/scene/collision.cpp
 
         src/prune/scene/scene_factory.cpp

@@ -10,7 +10,7 @@
 
 namespace prune {
 
-  void SimpleShooterBehaviour::update(SceneState& state, SceneCamera& camera,
+  void SimpleShooterBehaviour::update(WorldState& state, SceneCamera& camera,
                                       SimpleShooterState& shooter_state,
                                       float dt, const Input& input,
                                       bool keyboard_input_enabled) {
@@ -33,7 +33,7 @@ namespace prune {
     ensure_enemy_count(state, shooter_state);
   }
 
-  void SimpleShooterBehaviour::reset(SceneState& state,
+  void SimpleShooterBehaviour::reset(WorldState& state,
                                      SimpleShooterState& shooter_state) {
     shooter_state.runtime.fire_cooldown_remaining = 0.0f;
 
@@ -63,7 +63,7 @@ namespace prune {
   }
 
   int SimpleShooterBehaviour::projectile_count(
-      const SceneState& state) const noexcept {
+      const WorldState& state) const noexcept {
     int count = 0;
 
     for (const auto& object : state.objects.objects()) {
@@ -77,7 +77,7 @@ namespace prune {
   }
 
   int SimpleShooterBehaviour::enemy_count(
-      const SceneState& state) const noexcept {
+      const WorldState& state) const noexcept {
     int count = 0;
 
     for (const auto& object : state.objects.objects()) {
@@ -91,42 +91,42 @@ namespace prune {
   }
 
   GameObject* SimpleShooterBehaviour::enemy_object(
-      SceneState& state,
+      WorldState& state,
       const SimpleShooterState& shooter_state) const noexcept {
     return state.objects.get_by_id(shooter_state.enemy_id);
   }
 
   const GameObject* SimpleShooterBehaviour::enemy_object(
-      const SceneState& state,
+      const WorldState& state,
       const SimpleShooterState& shooter_state) const noexcept {
     return state.objects.get_by_id(shooter_state.enemy_id);
   }
 
   GameObject* SimpleShooterBehaviour::enemy_spawn_object(
-      SceneState& state,
+      WorldState& state,
       const SimpleShooterState& shooter_state) const noexcept {
     return state.objects.get_by_id(shooter_state.enemy_spawn_id);
   }
 
   const GameObject* SimpleShooterBehaviour::enemy_spawn_object(
-      const SceneState& state,
+      const WorldState& state,
       const SimpleShooterState& shooter_state) const noexcept {
     return state.objects.get_by_id(shooter_state.enemy_spawn_id);
   }
 
   GameObject* SimpleShooterBehaviour::player_object(
-      SceneState& state,
+      WorldState& state,
       const SimpleShooterState& shooter_state) const noexcept {
     return state.objects.get_by_id(shooter_state.player_id);
   }
 
   const GameObject* SimpleShooterBehaviour::player_object(
-      const SceneState& state,
+      const WorldState& state,
       const SimpleShooterState& shooter_state) const noexcept {
     return state.objects.get_by_id(shooter_state.player_id);
   }
 
-  void SimpleShooterBehaviour::update_player(SceneState& state,
+  void SimpleShooterBehaviour::update_player(WorldState& state,
                                              SceneCamera& camera,
                                              SimpleShooterState& shooter_state,
                                              float dt, const Input& input,
@@ -156,7 +156,7 @@ namespace prune {
                 player->motion.velocity.y * dt, true);
   }
 
-  void SimpleShooterBehaviour::move_object(SceneState& state,
+  void SimpleShooterBehaviour::move_object(WorldState& state,
                                            GameObject& object, float delta_x,
                                            float delta_y,
                                            bool resolve_wall_collisions) {
@@ -184,7 +184,7 @@ namespace prune {
   }
 
   void SimpleShooterBehaviour::handle_player_shooting(
-      SceneState& state, SimpleShooterState& shooter_state, const Input& input,
+      WorldState& state, SimpleShooterState& shooter_state, const Input& input,
       bool keyboard_input_enabled) {
     if (!keyboard_input_enabled) {
       return;
@@ -211,7 +211,7 @@ namespace prune {
   }
 
   void SimpleShooterBehaviour::update_enemies(
-      SceneState& state, const SimpleShooterState& shooter_state, float dt) {
+      WorldState& state, const SimpleShooterState& shooter_state, float dt) {
     const GameObject* player = player_object(state, shooter_state);
     if (!player) {
       return;
@@ -256,7 +256,7 @@ namespace prune {
     }
   }
 
-  void SimpleShooterBehaviour::update_projectiles(SceneState& state, float dt) {
+  void SimpleShooterBehaviour::update_projectiles(WorldState& state, float dt) {
     for (auto& object : state.objects.objects()) {
       if (!simple_shooter_concepts::is_projectile(object) ||
           !object.lifecycle.active) {
@@ -274,7 +274,7 @@ namespace prune {
   }
 
   void
-  SimpleShooterBehaviour::handle_projectile_wall_collisions(SceneState& state) {
+  SimpleShooterBehaviour::handle_projectile_wall_collisions(WorldState& state) {
     for (auto& projectile : state.objects.objects()) {
       if (!simple_shooter_concepts::is_projectile(projectile) ||
           !projectile.lifecycle.active) {
@@ -296,7 +296,7 @@ namespace prune {
   }
 
   void SimpleShooterBehaviour::handle_projectile_enemy_collisions(
-      SceneState& state) {
+      WorldState& state) {
     for (auto& projectile : state.objects.objects()) {
       if (!simple_shooter_concepts::is_projectile(projectile) ||
           !projectile.lifecycle.active) {
@@ -324,7 +324,7 @@ namespace prune {
   }
 
   void SimpleShooterBehaviour::ensure_enemy_count(
-      SceneState& state, const SimpleShooterState& shooter_state) {
+      WorldState& state, const SimpleShooterState& shooter_state) {
     const int target_enemy_count = shooter_state.settings.max_live_enemies;
     int live_enemy_count = 0;
 
@@ -369,7 +369,7 @@ namespace prune {
   }
 
   void SimpleShooterBehaviour::create_runtime_enemy(
-      SceneState& state, const SimpleShooterState& shooter_state) {
+      WorldState& state, const SimpleShooterState& shooter_state) {
     GameObject enemy = simple_shooter_factory::create_enemy();
     enemy.identity.name =
         state.objects.make_unique_name("Enemy", k_invalid_game_object_id);
@@ -386,7 +386,7 @@ namespace prune {
   }
 
   void
-  SimpleShooterBehaviour::respawn_enemy(SceneState& state,
+  SimpleShooterBehaviour::respawn_enemy(WorldState& state,
                                         const SimpleShooterState& shooter_state,
                                         GameObject& enemy) const noexcept {
     const GameObject* spawn = enemy_spawn_object(state, shooter_state);
@@ -404,7 +404,7 @@ namespace prune {
     enemy.render.visible = true;
   }
 
-  void SimpleShooterBehaviour::cleanup_runtime_objects(SceneState& state) {
+  void SimpleShooterBehaviour::cleanup_runtime_objects(WorldState& state) {
     state.objects.remove_inactive_runtime_objects(
         simple_shooter_ids::projectile_behaviour);
     state.objects.remove_inactive_runtime_objects(

@@ -396,14 +396,14 @@ namespace prune {
 
   void SceneSerializer::save_to_node(const SceneState& state,
                                      YAML::Node& root) {
-    root["scene"]["next_object_id"] = state.objects.next_id();
+    root["scene"]["next_object_id"] = state.world.objects.next_id();
 
     root["options"]["highlight_selected"] =
-        state.scene_options.highlight_selected;
+        state.editor.scene_options.highlight_selected;
 
     YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
 
-    for (const auto& object : state.objects.objects()) {
+    for (const auto& object : state.world.objects.objects()) {
       if (!object_is_persistable(object)) {
         continue;
       }
@@ -482,10 +482,10 @@ namespace prune {
       loaded.selected_id = loaded.objects.objects().front().identity.id;
     }
 
-    loaded.objects.set_selected_id(loaded.selected_id);
-
-    state.objects = std::move(loaded.objects);
-    state.scene_options = loaded.scene_options;
+    state.world.objects = std::move(loaded.objects);
+    state.editor.selection.set_selected_id(state.world.objects,
+                                           loaded.selected_id);
+    state.editor.scene_options = loaded.scene_options;
 
     return true;
   }

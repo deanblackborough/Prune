@@ -19,7 +19,7 @@ namespace prune {
     [[nodiscard]] GameObjectId
     first_object_id_for_kind(const SceneState& state,
                              artillery_concepts::ObjectKind kind) noexcept {
-      for (const auto& object : state.objects.objects()) {
+      for (const auto& object : state.world.objects.objects()) {
         if (artillery_concepts::kind_for(object) == kind) {
           return object.identity.id;
         }
@@ -31,7 +31,7 @@ namespace prune {
     [[nodiscard]] bool
     object_has_kind(const SceneState& state, GameObjectId id,
                     artillery_concepts::ObjectKind kind) noexcept {
-      const GameObject* object = state.objects.get_by_id(id);
+      const GameObject* object = state.world.objects.get_by_id(id);
       return object && artillery_concepts::kind_for(*object) == kind;
     }
 
@@ -48,7 +48,7 @@ namespace prune {
           artillery_state.player_two_id == artillery_state.player_one_id) {
         artillery_state.player_two_id = k_invalid_game_object_id;
 
-        for (const auto& object : state.objects.objects()) {
+        for (const auto& object : state.world.objects.objects()) {
           if (!artillery_concepts::is_tank(object)) {
             continue;
           }
@@ -67,18 +67,19 @@ namespace prune {
   ArtilleryScene::ArtilleryScene(int window_width, int window_height,
                                  GridOptions& grid_options)
       : WorldScene(grid_options) {
-    m_state.viewport.width = window_width;
-    m_state.viewport.height = window_height;
+    m_state.editor.viewport.width = window_width;
+    m_state.editor.viewport.height = window_height;
   }
 
   void ArtilleryScene::on_exit() {
-    m_state.objects.clear();
+    m_state.world.objects.clear();
     m_artillery_state = {};
   }
 
-  void ArtilleryScene::update_runtime(float dt, const Input& input,
+  void ArtilleryScene::update_runtime(WorldState& world, float dt,
+                                      const Input& input,
                                       bool keyboard_input_enabled) {
-    m_artillery.update(m_state, m_camera, m_artillery_state, dt, input,
+    m_artillery.update(world, m_camera, m_artillery_state, dt, input,
                        keyboard_input_enabled);
   }
 
@@ -95,34 +96,35 @@ namespace prune {
   }
 
   void ArtilleryScene::reset_runtime_state() {
-    m_state.objects.clear();
+    m_state.world.objects.clear();
     m_artillery_state = {};
     m_camera.reset();
-    m_state.scene_options = {};
-    m_state.drag_state = {};
-    m_state.editor_tool = EditorTool::Select;
-    m_state.editor_commands.clear();
+    m_state.editor.scene_options = {};
+    m_state.editor.drag_state = {};
+    m_state.editor.editor_tool = EditorTool::Select;
+    m_state.editor.editor_commands.clear();
   }
 
   void ArtilleryScene::restore_defaults() {
     reset_runtime_state();
 
     m_artillery_state.player_one_id =
-        m_state.objects.create_object(artillery_factory::create_tank(
+        m_state.world.objects.create_object(artillery_factory::create_tank(
             40.0f, 152.0f, "Player One Tank", "tank-green"));
 
     m_artillery_state.player_two_id =
-        m_state.objects.create_object(artillery_factory::create_tank(
+        m_state.world.objects.create_object(artillery_factory::create_tank(
             328.0f, 128.0f, "Player Two Tank", "tank-red"));
 
     if (GameObject* player_two =
-            m_state.objects.get_by_id(m_artillery_state.player_two_id)) {
+            m_state.world.objects.get_by_id(m_artillery_state.player_two_id)) {
       player_two->render.sprite.flip_x = true;
     }
 
-    m_artillery.reset_round(m_state, m_artillery_state);
+    m_artillery.reset_round(m_state.world, m_artillery_state);
 
-    m_state.objects.select(m_artillery_state.player_one_id);
+    m_state.editor.selection.select(m_state.world.objects,
+                                    m_artillery_state.player_one_id);
 
     establish_game_camera();
   }
@@ -257,12 +259,12 @@ namespace prune {
         0.0f, 0.0f, 80, 16, "Terrain Line");
     terrain.transform = first_free_view_center_spawn_position(terrain);
 
-    const GameObjectId id = m_state.objects.create_object(terrain);
-    if (GameObject* created = m_state.objects.get_by_id(id)) {
+    const GameObjectId id = m_state.world.objects.create_object(terrain);
+    if (GameObject* created = m_state.world.objects.get_by_id(id)) {
       created->identity.name = "Terrain Line " + std::to_string(id);
     }
 
-    m_state.objects.select(id);
+    m_state.editor.selection.select(m_state.world.objects, id);
     return id;
   }
 
@@ -272,7 +274,7 @@ namespace prune {
             ? m_artillery_state.player_one_id
             : m_artillery_state.player_two_id;
 
-    return m_state.objects.get_by_id(id);
+    return m_state.world.objects.get_by_id(id);
   }
 
   const GameObject* ArtilleryScene::current_tank() const noexcept {
@@ -281,7 +283,7 @@ namespace prune {
             ? m_artillery_state.player_one_id
             : m_artillery_state.player_two_id;
 
-    return m_state.objects.get_by_id(id);
+    return m_state.world.objects.get_by_id(id);
   }
 
 } // namespace prune

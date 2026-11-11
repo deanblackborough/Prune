@@ -13,6 +13,7 @@ add_executable(PruneTests
     ${PROJECT_SOURCE_DIR}/src/prune/scene/scene_serializer.cpp
     ${PROJECT_SOURCE_DIR}/src/prune/scene/game_object.cpp
     ${PROJECT_SOURCE_DIR}/src/prune/scene/game_object_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/prune/scene/editor_selection.cpp
     ${PROJECT_SOURCE_DIR}/src/prune/scene/collision.cpp
     ${PROJECT_SOURCE_DIR}/src/prune/resources/sprites.cpp
 )

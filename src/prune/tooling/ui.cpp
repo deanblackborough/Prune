@@ -433,7 +433,7 @@ namespace prune {
       tooling::EditorLayout::outliner();
 
       if (ImGui::Begin("Outliner", &m_show_outliner)) {
-        m_outliner.draw(scene.get_object_manager(), scene);
+        m_outliner.draw(scene.get_object_manager(), scene.selection(), scene);
       }
       ImGui::End();
     }
@@ -448,7 +448,7 @@ namespace prune {
         }
 
         if (GameObject* selected =
-                scene.get_object_manager().selected_object()) {
+                scene.selection().selected_object(scene.get_object_manager())) {
           scene_editor.draw_scene_inspector(scene, *selected);
         }
       }
@@ -484,8 +484,8 @@ namespace prune {
       if (ImGui::Begin("Stats", &m_show_stats)) {
         WorldSceneContext context = scene.world_scene_context();
         if (context.available()) {
-          m_stats.draw(scene.get_object_manager(), scene.get_viewport(),
-                       *context.camera);
+          m_stats.draw(scene.get_object_manager(), scene.selection(),
+                       scene.get_viewport(), *context.camera);
         } else {
           ImGui::TextUnformatted(
               "This scene does not expose generic world stats.");

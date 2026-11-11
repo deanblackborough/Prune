@@ -19,7 +19,7 @@ namespace prune {
                                 const Input& input) {
     handle_object_drag(scene, state, camera, grid_options, input);
 
-    if (!state.drag_state.active) {
+    if (!state.editor.drag_state.active) {
       update_editor_camera(scene, state, camera, dt, input);
       handle_scene_click(scene, state, camera, input);
       handle_keyboard_nudge(scene, state, grid_options, input);
@@ -29,12 +29,13 @@ namespace prune {
 
   bool SceneInteraction::scene_keyboard_input_enabled(
       const SceneState& state) noexcept {
-    return state.viewport.keyboard_input_enabled && state.viewport.has_area();
+    return state.editor.viewport.keyboard_input_enabled &&
+           state.editor.viewport.has_area();
   }
 
   bool SceneInteraction::scene_mouse_input_enabled(
       const SceneState& state) noexcept {
-    return state.viewport.hovered && state.viewport.has_area();
+    return state.editor.viewport.hovered && state.editor.viewport.has_area();
   }
 
   void SceneInteraction::update_editor_camera(Scene& scene, SceneState& state,
@@ -83,7 +84,7 @@ namespace prune {
       return;
     }
 
-    if (!state.viewport.contains(input.mouse_x(), input.mouse_y())) {
+    if (!state.editor.viewport.contains(input.mouse_x(), input.mouse_y())) {
       return;
     }
 
@@ -95,33 +96,35 @@ namespace prune {
 
     if (picked && scene.object_is_selectable(*picked)) {
       if (shift_down) {
-        state.objects.toggle_selected(picked->identity.id);
+        state.editor.selection.toggle_selected(state.world.objects,
+                                               picked->identity.id);
       } else {
-        state.objects.select(picked->identity.id);
+        state.editor.selection.select(state.world.objects, picked->identity.id);
       }
       return;
     }
 
-    state.objects.clear_selection();
+    state.editor.selection.clear_selection();
   }
 
   void SceneInteraction::handle_object_drag(Scene& scene, SceneState& state,
                                             SceneCamera& camera,
                                             const GridOptions& grid_options,
                                             const Input& input) {
-    if (state.drag_state.active) {
+    if (state.editor.drag_state.active) {
       if (!input.is_mouse_button_down(SDL_BUTTON_LEFT) ||
-          !state.viewport.has_area()) {
-        switch (state.drag_state.mode) {
+          !state.editor.viewport.has_area()) {
+        switch (state.editor.drag_state.mode) {
         case DragMode::MoveObjects: {
           std::vector<GameObject> before_objects;
           std::vector<GameObject> after_objects;
 
-          before_objects.reserve(state.drag_state.object_starts.size());
-          after_objects.reserve(state.drag_state.object_starts.size());
+          before_objects.reserve(state.editor.drag_state.object_starts.size());
+          after_objects.reserve(state.editor.drag_state.object_starts.size());
 
-          for (const DragObjectStart& start : state.drag_state.object_starts) {
-            GameObject* object = state.objects.get_by_id(start.object_id);
+          for (const DragObjectStart& start :
+               state.editor.drag_state.object_starts) {
+            GameObject* object = state.world.objects.get_by_id(start.object_id);
             if (!object) {
               continue;
             }
@@ -137,9 +140,9 @@ namespace prune {
           }
 
           if (before_objects.size() == 1) {
-            scene.record_editor_command(make_object_change(
-                "Move object", before_objects.front(), after_objects.front(),
-                "Mouse drag"));
+            scene.record_editor_command(
+                make_object_change("Move object", before_objects.front(),
+                                   after_objects.front(), "Mouse drag"));
           } else if (!before_objects.empty()) {
             scene.record_editor_command(make_objects_change(
                 "Move objects", before_objects, after_objects,
@@ -149,9 +152,9 @@ namespace prune {
         } break;
 
         case DragMode::ScaleObject:
-          if (GameObject* object =
-                  state.objects.get_by_id(state.drag_state.object_id)) {
-            const GameObject& before = state.drag_state.object_start;
+          if (GameObject* object = state.world.objects.get_by_id(
+                  state.editor.drag_state.object_id)) {
+            const GameObject& before = state.editor.drag_state.object_start;
             const bool changed = before.transform.x != object->transform.x ||
                                  before.transform.y != object->transform.y ||
                                  before.size.width != object->size.width ||
@@ -168,21 +171,22 @@ namespace prune {
           break;
         }
 
-        state.drag_state = {};
+        state.editor.drag_state = {};
         return;
       }
 
       const Transform mouse_world = camera.screen_to_world(
-          state.viewport, input.mouse_x(), input.mouse_y());
+          state.editor.viewport, input.mouse_x(), input.mouse_y());
       const float delta_x =
-          mouse_world.x - state.drag_state.mouse_start_world.x;
+          mouse_world.x - state.editor.drag_state.mouse_start_world.x;
       const float delta_y =
-          mouse_world.y - state.drag_state.mouse_start_world.y;
+          mouse_world.y - state.editor.drag_state.mouse_start_world.y;
 
-      switch (state.drag_state.mode) {
+      switch (state.editor.drag_state.mode) {
       case DragMode::MoveObjects:
-        for (const DragObjectStart& start : state.drag_state.object_starts) {
-          GameObject* object = state.objects.get_by_id(start.object_id);
+        for (const DragObjectStart& start :
+             state.editor.drag_state.object_starts) {
+          GameObject* object = state.world.objects.get_by_id(start.object_id);
           if (!object || !scene.object_is_movable(*object)) {
             continue;
           }
@@ -197,11 +201,12 @@ namespace prune {
         break;
 
       case DragMode::ScaleObject:
-        if (GameObject* object =
-                state.objects.get_by_id(state.drag_state.object_id);
+        if (GameObject* object = state.world.objects.get_by_id(
+                state.editor.drag_state.object_id);
             object && scene.object_is_scalable(*object)) {
-          apply_scale_drag(*object, state.drag_state.object_start,
-                           state.drag_state.scale_handle, delta_x, delta_y);
+          apply_scale_drag(*object, state.editor.drag_state.object_start,
+                           state.editor.drag_state.scale_handle, delta_x,
+                           delta_y);
         }
         break;
 
@@ -220,26 +225,27 @@ namespace prune {
       return;
     }
 
-    if (!state.viewport.contains(input.mouse_x(), input.mouse_y())) {
+    if (!state.editor.viewport.contains(input.mouse_x(), input.mouse_y())) {
       return;
     }
 
     const auto scale_handle = scale_handle_from_scale_tool_at_screen(
         scene, state, camera, input.mouse_x(), input.mouse_y());
     if (scale_handle != editor::tools::transform_gizmo::ScaleHandle::None) {
-      GameObject* selected = state.objects.selected_object();
+      GameObject* selected =
+          state.editor.selection.selected_object(state.world.objects);
       if (!selected || !scene.object_is_scalable(*selected)) {
         return;
       }
 
-      state.drag_state = {};
-      state.drag_state.active = true;
-      state.drag_state.mode = DragMode::ScaleObject;
-      state.drag_state.object_id = selected->identity.id;
-      state.drag_state.object_start = *selected;
-      state.drag_state.mouse_start_world = camera.screen_to_world(
-          state.viewport, input.mouse_x(), input.mouse_y());
-      state.drag_state.scale_handle = scale_handle;
+      state.editor.drag_state = {};
+      state.editor.drag_state.active = true;
+      state.editor.drag_state.mode = DragMode::ScaleObject;
+      state.editor.drag_state.object_id = selected->identity.id;
+      state.editor.drag_state.object_start = *selected;
+      state.editor.drag_state.mouse_start_world = camera.screen_to_world(
+          state.editor.viewport, input.mouse_x(), input.mouse_y());
+      state.editor.drag_state.scale_handle = scale_handle;
       return;
     }
 
@@ -250,26 +256,27 @@ namespace prune {
       return;
     }
 
-    state.drag_state = {};
-    state.drag_state.active = true;
-    state.drag_state.mode = DragMode::MoveObjects;
-    state.drag_state.object_id = movable_ids.front();
-    state.drag_state.mouse_start_world = camera.screen_to_world(
-        state.viewport, input.mouse_x(), input.mouse_y());
-    state.drag_state.object_starts.reserve(movable_ids.size());
+    state.editor.drag_state = {};
+    state.editor.drag_state.active = true;
+    state.editor.drag_state.mode = DragMode::MoveObjects;
+    state.editor.drag_state.object_id = movable_ids.front();
+    state.editor.drag_state.mouse_start_world = camera.screen_to_world(
+        state.editor.viewport, input.mouse_x(), input.mouse_y());
+    state.editor.drag_state.object_starts.reserve(movable_ids.size());
 
     for (const GameObjectId id : movable_ids) {
-      const GameObject* object = state.objects.get_by_id(id);
+      const GameObject* object = state.world.objects.get_by_id(id);
       if (!object) {
         continue;
       }
 
-      state.drag_state.object_starts.push_back(DragObjectStart{id, *object});
+      state.editor.drag_state.object_starts.push_back(
+          DragObjectStart{id, *object});
     }
 
     if (const GameObject* object =
-            state.objects.get_by_id(state.drag_state.object_id)) {
-      state.drag_state.object_start = *object;
+            state.world.objects.get_by_id(state.editor.drag_state.object_id)) {
+      state.editor.drag_state.object_start = *object;
     }
   }
 
@@ -320,13 +327,13 @@ namespace prune {
       step *= grid_options.shift_nudge_steps;
     }
 
-    if (state.objects.selected_count() == 0) {
+    if (state.editor.selection.selected_count() == 0) {
       return;
     }
 
-    if (state.objects.selected_count() > 1) {
-      for (const GameObjectId id : state.objects.selected_ids()) {
-        const GameObject* object = state.objects.get_by_id(id);
+    if (state.editor.selection.selected_count() > 1) {
+      for (const GameObjectId id : state.editor.selection.selected_ids()) {
+        const GameObject* object = state.world.objects.get_by_id(id);
         if (!object || !scene.object_is_movable(*object)) {
           return;
         }
@@ -336,11 +343,11 @@ namespace prune {
     std::vector<GameObject> before_objects;
     std::vector<GameObject> after_objects;
 
-    before_objects.reserve(state.objects.selected_count());
-    after_objects.reserve(state.objects.selected_count());
+    before_objects.reserve(state.editor.selection.selected_count());
+    after_objects.reserve(state.editor.selection.selected_count());
 
-    for (const GameObjectId id : state.objects.selected_ids()) {
-      GameObject* object = state.objects.get_by_id(id);
+    for (const GameObjectId id : state.editor.selection.selected_ids()) {
+      GameObject* object = state.world.objects.get_by_id(id);
       if (!object || !scene.object_is_movable(*object)) {
         continue;
       }
@@ -364,9 +371,9 @@ namespace prune {
     }
 
     if (before_objects.size() == 1) {
-      scene.record_editor_command(make_object_change(
-          "Move object", before_objects.front(), after_objects.front(),
-          "Keyboard nudge"));
+      scene.record_editor_command(
+          make_object_change("Move object", before_objects.front(),
+                             after_objects.front(), "Keyboard nudge"));
     } else if (!before_objects.empty()) {
       scene.record_editor_command(make_objects_change(
           "Move objects", before_objects, after_objects,
@@ -401,8 +408,8 @@ namespace prune {
                                                       int screen_x,
                                                       int screen_y) noexcept {
     const Transform world =
-        camera.screen_to_world(state.viewport, screen_x, screen_y);
-    auto& objects = state.objects.objects();
+        camera.screen_to_world(state.editor.viewport, screen_x, screen_y);
+    auto& objects = state.world.objects.objects();
 
     for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
       GameObject& object = *it;
@@ -430,27 +437,28 @@ namespace prune {
   SceneInteraction::scale_handle_from_scale_tool_at_screen(
       Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x,
       int screen_y) noexcept {
-    if (!editor_tool_allows_scale(state.editor_tool)) {
+    if (!editor_tool_allows_scale(state.editor.editor_tool)) {
       return editor::tools::transform_gizmo::ScaleHandle::None;
     }
 
-    if (!state.scene_options.highlight_selected ||
-        state.objects.selected_count() != 1) {
+    if (!state.editor.scene_options.highlight_selected ||
+        state.editor.selection.selected_count() != 1) {
       return editor::tools::transform_gizmo::ScaleHandle::None;
     }
 
-    GameObject* selected = state.objects.selected_object();
+    GameObject* selected =
+        state.editor.selection.selected_object(state.world.objects);
     if (!selected || !scene.object_is_scalable(*selected)) {
       return editor::tools::transform_gizmo::ScaleHandle::None;
     }
 
     const SDL_Rect object_rect = camera.world_to_screen_rect(*selected);
-    if (!rect_visible(state.viewport, object_rect)) {
+    if (!rect_visible(state.editor.viewport, object_rect)) {
       return editor::tools::transform_gizmo::ScaleHandle::None;
     }
 
-    const int local_mouse_x = screen_x - state.viewport.screen_x;
-    const int local_mouse_y = screen_y - state.viewport.screen_y;
+    const int local_mouse_x = screen_x - state.editor.viewport.screen_x;
+    const int local_mouse_y = screen_y - state.editor.viewport.screen_y;
 
     const SDL_Rect selected_outline =
         editor::tools::transform_gizmo::selected_outline_rect(object_rect);
@@ -462,7 +470,7 @@ namespace prune {
   SceneInteraction::movable_objects_from_drag_start_at_screen(
       Scene& scene, SceneState& state, const SceneCamera& camera, int screen_x,
       int screen_y) {
-    if (editor_tool_allows_body_move(state.editor_tool)) {
+    if (editor_tool_allows_body_move(state.editor.editor_tool)) {
       std::vector<GameObjectId> body_move_ids =
           movable_objects_from_move_tool_at_screen(scene, state, camera,
                                                    screen_x, screen_y);
@@ -471,7 +479,7 @@ namespace prune {
       }
     }
 
-    if (editor_tool_allows_scale(state.editor_tool)) {
+    if (editor_tool_allows_scale(state.editor.editor_tool)) {
       return {};
     }
 
@@ -489,20 +497,20 @@ namespace prune {
       return {};
     }
 
-    if (!state.objects.is_selected(picked->identity.id)) {
-      state.objects.select(picked->identity.id);
+    if (!state.editor.selection.is_selected(picked->identity.id)) {
+      state.editor.selection.select(state.world.objects, picked->identity.id);
       return {picked->identity.id};
     }
 
-    if (state.objects.selected_count() <= 1) {
+    if (state.editor.selection.selected_count() <= 1) {
       return {picked->identity.id};
     }
 
     std::vector<GameObjectId> movable_ids;
-    movable_ids.reserve(state.objects.selected_count());
+    movable_ids.reserve(state.editor.selection.selected_count());
 
-    for (const GameObjectId id : state.objects.selected_ids()) {
-      const GameObject* object = state.objects.get_by_id(id);
+    for (const GameObjectId id : state.editor.selection.selected_ids()) {
+      const GameObject* object = state.world.objects.get_by_id(id);
       if (!object || !scene.object_is_movable(*object)) {
         return {};
       }
@@ -519,14 +527,14 @@ namespace prune {
       int screen_y) {
     std::vector<GameObjectId> movable_ids;
 
-    if (!state.scene_options.highlight_selected) {
+    if (!state.editor.scene_options.highlight_selected) {
       return movable_ids;
     }
 
-    const int local_mouse_x = screen_x - state.viewport.screen_x;
-    const int local_mouse_y = screen_y - state.viewport.screen_y;
+    const int local_mouse_x = screen_x - state.editor.viewport.screen_x;
+    const int local_mouse_y = screen_y - state.editor.viewport.screen_y;
 
-    if (state.objects.selected_count() > 1) {
+    if (state.editor.selection.selected_count() > 1) {
       SDL_Rect bounds{};
       if (!selected_screen_bounds(state, camera, bounds)) {
         return movable_ids;
@@ -542,9 +550,9 @@ namespace prune {
         return movable_ids;
       }
 
-      movable_ids.reserve(state.objects.selected_count());
-      for (const GameObjectId id : state.objects.selected_ids()) {
-        const GameObject* object = state.objects.get_by_id(id);
+      movable_ids.reserve(state.editor.selection.selected_count());
+      for (const GameObjectId id : state.editor.selection.selected_ids()) {
+        const GameObject* object = state.world.objects.get_by_id(id);
         if (!object || !scene.object_is_movable(*object)) {
           return {};
         }
@@ -555,7 +563,8 @@ namespace prune {
       return movable_ids;
     }
 
-    GameObject* selected = state.objects.selected_object();
+    GameObject* selected =
+        state.editor.selection.selected_object(state.world.objects);
     if (!selected || !scene.object_is_movable(*selected)) {
       return movable_ids;
     }
@@ -584,14 +593,14 @@ namespace prune {
     int max_x = 0;
     int max_y = 0;
 
-    for (const GameObjectId id : state.objects.selected_ids()) {
-      const GameObject* object = state.objects.get_by_id(id);
+    for (const GameObjectId id : state.editor.selection.selected_ids()) {
+      const GameObject* object = state.world.objects.get_by_id(id);
       if (!object || !object->lifecycle.active || !object->render.visible) {
         continue;
       }
 
       const SDL_Rect object_rect = camera.world_to_screen_rect(*object);
-      if (!rect_visible(state.viewport, object_rect)) {
+      if (!rect_visible(state.editor.viewport, object_rect)) {
         continue;
       }
 
