@@ -93,6 +93,26 @@ Out of scope for the first pass:
 
 ## Follow on development targets
 
+### Carried over from the architecture refactor
+
+`REFACTORING.md` is done (Phases 0, A, B, and C2) and is kept as a historical record, not a
+live backlog. Two items from it were deliberately deferred rather than completed — they are
+feature-triggered, and their triggers haven't fired yet. Tracking them here instead, so the
+context isn't lost once `REFACTORING.md` stops being read day to day:
+
+* **Concept policy vs. authored locks** (`REFACTORING.md` C1). Before "Object locking and
+  protection" (below) is built, decide whether an operation is forbidden because the *scene
+  concept* forbids it, or because *this authored object* was locked by the author — and keep
+  those two policies conceptually distinct rather than letting the lock feature reuse/overload
+  the existing `object.editor.selectable` / `ObjectConcept` machinery. Trigger: starting that
+  feature.
+* **`GameObject` authored vs. runtime field ownership** (`REFACTORING.md` C3). `GameObject` mixes
+  authored data (`transform`, `size`, `render`, `collision`) and transient runtime data
+  (`motion.velocity`, `motion.facing`, `lifecycle.remaining`) in one struct. Make that ownership
+  explicit before "Behaviour toggles", "Authored event management", "Grouping", or
+  "Prefabs/templates" (below) build relationships on top of it. Do not pre-emptively redesign
+  `GameObject` or reach for an ECS. Trigger: starting any one of those four features.
+
 ### Build, portability, and CI
 
 Prune currently only builds and is verified on Windows/MSVC. Portable, sanitizer-clean C++ is a credibility signal worth having, and Linux-first contributors cannot try Prune at all today.

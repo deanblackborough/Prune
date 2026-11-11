@@ -38,4 +38,12 @@ namespace prune {
     std::vector<GameObject> m_objects;
     GameObjectId m_next_id = 1;
   };
+
+  // Inserts `object` into `objects`, replacing any existing object with the
+  // same id, or adding it while keeping `objects` ordered by id. Used to
+  // restore a snapshot captured before a create/delete/change, so replaying
+  // commands leaves objects in a stable, deterministic order.
+  void restore_object_in_id_order(GameObjectManager& objects,
+                                  const GameObject& object);
+
 } // namespace prune

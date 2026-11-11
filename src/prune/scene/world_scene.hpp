@@ -9,6 +9,7 @@
 
 #include "prune/core/input.hpp"
 #include "prune/editor/editor_command.hpp"
+#include "prune/scene/authored_store.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/scene.hpp"
 #include "prune/scene/scene_camera.hpp"
@@ -115,10 +116,7 @@ namespace prune {
 
   private:
     void sanitize_loaded_selection() noexcept;
-    void capture_authored_objects();
     void enter_stopped_state();
-    void apply_editor_command_to_authored_objects(const EditorCommand& command,
-                                                  bool use_after_state);
     void restore_object_snapshot(const GameObject& object,
                                  bool select_restored = true);
     void restore_object_snapshots(const std::vector<GameObject>& objects);
@@ -127,7 +125,7 @@ namespace prune {
 
     SceneRenderer m_renderer;
     SceneInteraction m_interaction;
-    GameObjectManager m_authored_objects;
+    AuthoredStore m_authored_store;
     bool m_stopped = true;
   };
 } // namespace prune

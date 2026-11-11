@@ -1,5 +1,11 @@
 # Architecture Refactoring — Authoring model and runtime/editor boundary
 
+**Status: complete.** Phases 0, A, B, and C2 are all done (see *Sequencing summary* below). C1
+and C3 are feature-triggered and neither trigger has happened yet, so they now live on in
+`NOTES.md`'s "Carried over from the architecture refactor" section instead of here. This
+document stays as the historical record of how the authoring model and the runtime/editor
+boundary were restructured, and of the decisions made along the way.
+
 ## Goal
 
 Make the seam between **authored state**, **live runtime state**, and **editor/session state**
@@ -887,7 +893,48 @@ largely dissolve or extract it already. After Phase A, review what is left
 (`capture_authored_objects`, spawn positioning, `is_space_free`, creation actions, debug UI)
 and extract only if a cohesive concern remains. Refactor by responsibility, not line count.
 
-- [ ] Trigger: after Phase A, as a review checkpoint.
+- [x] Trigger: after Phase A, as a review checkpoint. — reviewed post-B5 instead (Phase A's own
+      checkpoint came before B2–B5 landed, and those changed `WorldScene` enough that reviewing
+      sooner would have been reviewing a shape that no longer existed).
+
+### Review
+
+Went through every remaining `WorldScene` member and method by responsibility:
+
+- **Lifecycle/mode state machine** (`on_enter`, `update`, `update_editor`, `render`,
+  `reset_runtime`, `pause_runtime`, `play_runtime`, `stop_runtime`, `enter_stopped_state`, the
+  `m_stopped` flag) — this *is* `WorldScene`'s reason to exist, not accumulated baggage. Left
+  alone.
+- **Command-application + authored-state cluster** — exactly what this item predicted. Extracted
+  to a new `AuthoredStore` (`src/prune/scene/authored_store.{hpp,cpp}`): owns the authored
+  `GameObjectManager`, `capture(const GameObjectManager&)` (was `capture_authored_objects`), and
+  `apply(const EditorCommand&, bool)` (was `apply_editor_command_to_authored_objects`).
+  `WorldScene` now holds an `AuthoredStore m_authored_store` member instead of a bare
+  `GameObjectManager m_authored_objects`, and calls `capture`/`apply` instead of its own private
+  methods. The live-side visitor (`WorldScene::apply_editor_command`) stays in `WorldScene` —
+  unlike the authored one, it also touches selection, the editor camera, and the
+  `apply_scene_settings_snapshot` virtual, which are genuinely `WorldScene`'s (the live
+  projection + editor session) concern, not the authored store's. A3's decision not to merge the
+  two visitors (see A3's checklist note) is unchanged — this only relocates the authored-side
+  one, it doesn't rewrite it.
+- **`restore_object_in_id_order`** (insert-or-replace an object while keeping a manager ordered
+  by id) — used by both the authored store and `WorldScene`'s live-side restore. It only touches
+  `GameObjectManager`, so it moved there as a free function (`game_object_manager.{hpp,cpp}`)
+  rather than staying private to either call site.
+- **The `overloaded` visitor-lambda-set helper** — generic, zero dependencies, now needed by two
+  translation units instead of one. Moved to `src/prune/core/overloaded.hpp` (header-only).
+- **Spawn positioning** (`view_center_spawn_position`, `first_free_view_center_spawn_position`,
+  `is_space_free`) and **`execute_scene_creation_action`** — reviewed and left in place. Both are
+  small, already self-contained, read-only over `m_camera`/`m_state.editor.viewport`/
+  `m_grid_options`/`m_state.world.objects`, and are inherent to "`WorldScene` places new objects
+  in the world" rather than bolted-on responsibility. Extracting them would move ~75 lines
+  sideways for no behavioural or readability gain — refactoring by responsibility, not line
+  count, means leaving them.
+- **Debug UI** — already gone; B2 moved it to `WorldSceneEditor`. Nothing left to extract.
+
+Net effect: `world_scene.cpp` dropped from 532 to 456 lines; `world_scene.hpp` from 133 to 131.
+Verified: `Prune` and `PruneTests` build clean, all 139 assertions pass, and the app launches
+without crashing (`out/build/mac-debug`).
 
 ## C3. Make `GameObject` authored vs runtime field ownership explicit
 

@@ -125,6 +125,19 @@ namespace prune {
     return m_objects;
   }
 
+  void restore_object_in_id_order(GameObjectManager& objects,
+                                  const GameObject& object) {
+    if (GameObject* existing = objects.get_by_id(object.identity.id)) {
+      *existing = object;
+      return;
+    }
+
+    objects.add_loaded_object(object);
+    std::ranges::stable_sort(
+        objects.objects(), {},
+        [](const GameObject& candidate) { return candidate.identity.id; });
+  }
+
   std::string
   GameObjectManager::make_unique_name(std::string desired,
                                       GameObjectId ignore_id) const {

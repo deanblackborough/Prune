@@ -1,37 +1,15 @@
 #include "prune/scene/world_scene.hpp"
 
-#include <algorithm>
 #include <cmath>
 #include <fstream>
-#include <iterator>
 #include <string>
 #include <utility>
 
+#include "prune/core/overloaded.hpp"
 #include "prune/scene/collision.hpp"
 #include "prune/scene/scene_serializer.hpp"
 
 namespace prune {
-
-  namespace {
-    template <class... Visitors> struct overloaded : Visitors... {
-      using Visitors::operator()...;
-    };
-    template <class... Visitors>
-    overloaded(Visitors...) -> overloaded<Visitors...>;
-
-    void restore_object_in_id_order(GameObjectManager& objects,
-                                    const GameObject& object) {
-      if (GameObject* existing = objects.get_by_id(object.identity.id)) {
-        *existing = object;
-        return;
-      }
-
-      objects.add_loaded_object(object);
-      std::ranges::stable_sort(
-          objects.objects(), {},
-          [](const GameObject& candidate) { return candidate.identity.id; });
-    }
-  } // namespace
 
   WorldScene::WorldScene(GridOptions& grid_options) noexcept
       : m_grid_options(&grid_options) {}
@@ -52,7 +30,7 @@ namespace prune {
   }
 
   void WorldScene::on_enter() {
-    capture_authored_objects();
+    m_authored_store.capture(m_state.world.objects);
     on_scene_enter();
     enter_stopped_state();
   }
@@ -62,7 +40,7 @@ namespace prune {
         m_state.editor.selection.selected_ids().begin(),
         m_state.editor.selection.selected_ids().end());
 
-    m_state.world.objects = m_authored_objects;
+    m_state.world.objects = m_authored_store.objects();
     m_state.editor.selection.select_many(m_state.world.objects, selected_ids);
     m_state.world.events.clear();
     m_state.editor.drag_state = {};
@@ -122,7 +100,7 @@ namespace prune {
       root["scene_type"] = std::string(scene_type_id());
 
       SceneState authored_state = m_state;
-      authored_state.world.objects = m_authored_objects;
+      authored_state.world.objects = m_authored_store.objects();
       SceneSerializer::save_to_node(authored_state, root);
       save_scene_data(root);
 
@@ -185,7 +163,7 @@ namespace prune {
       sanitize_loaded_selection();
       m_camera.reset();
       establish_game_camera();
-      capture_authored_objects();
+      m_authored_store.capture(m_state.world.objects);
 
       return true;
     } catch (const YAML::Exception& ex) {
@@ -233,7 +211,7 @@ namespace prune {
   }
 
   void WorldScene::record_editor_command(EditorCommand command) {
-    apply_editor_command_to_authored_objects(command, true);
+    m_authored_store.apply(command, true);
 
     if (command.makes_dirty) {
       m_state.editor.dirty = true;
@@ -255,7 +233,7 @@ namespace prune {
     }
 
     apply_editor_command(*command, false);
-    apply_editor_command_to_authored_objects(*command, false);
+    m_authored_store.apply(*command, false);
     if (command->makes_dirty) {
       m_state.editor.dirty = true;
     }
@@ -270,7 +248,7 @@ namespace prune {
     }
 
     apply_editor_command(*command, true);
-    apply_editor_command_to_authored_objects(*command, true);
+    m_authored_store.apply(*command, true);
     if (command->makes_dirty) {
       m_state.editor.dirty = true;
     }
@@ -304,60 +282,6 @@ namespace prune {
 
   ConstWorldSceneContext WorldScene::world_scene_context() const noexcept {
     return ConstWorldSceneContext{m_grid_options, &m_camera};
-  }
-
-  void WorldScene::capture_authored_objects() {
-    m_authored_objects = m_state.world.objects;
-    m_authored_objects.remove_runtime_objects();
-  }
-
-  void WorldScene::apply_editor_command_to_authored_objects(
-      const EditorCommand& command, bool use_after_state) {
-    const auto restore_authored = [this](const GameObject& object) {
-      restore_object_in_id_order(m_authored_objects, object);
-    };
-
-    std::visit(
-        overloaded{
-            [&](const ObjectCreate& payload) {
-              if (use_after_state) {
-                restore_authored(payload.object);
-              } else {
-                m_authored_objects.remove_object(payload.object.identity.id);
-              }
-            },
-            [&](const ObjectDelete& payload) {
-              if (use_after_state) {
-                m_authored_objects.remove_object(payload.object.identity.id);
-              } else {
-                restore_authored(payload.object);
-              }
-            },
-            [&](const ObjectsDelete& payload) {
-              if (use_after_state) {
-                for (const GameObject& object : payload.objects) {
-                  m_authored_objects.remove_object(object.identity.id);
-                }
-              } else {
-                for (const GameObject& object : payload.objects) {
-                  restore_authored(object);
-                }
-              }
-            },
-            [&](const ObjectsChange& payload) {
-              for (const GameObject& object :
-                   use_after_state ? payload.after : payload.before) {
-                restore_authored(object);
-              }
-            },
-            [](const ViewportChange&) {},
-            [](const SceneSettingsChange&) {},
-            [&](const ObjectChange& payload) {
-              restore_authored(use_after_state ? payload.after
-                                               : payload.before);
-            },
-        },
-        command.payload);
   }
 
   void WorldScene::restore_object_snapshot(const GameObject& object,
