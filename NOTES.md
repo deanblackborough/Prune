@@ -101,7 +101,7 @@ Prune currently only builds and is verified on Windows/MSVC. Portable, sanitizer
 
 * **Done (P0.3):** Linux build with GCC 13 and Clang 18 alongside Windows/MSVC (app + tests, system dependencies), and `build.yml` extended to a `windows-msvc` + `linux` (`gcc` / `clang`) matrix. CI pins `ubuntu-24.04` with explicit `gcc-13` / `clang-18` packages so the documented versions are guaranteed. Running the app under a Linux display (WSLg) is deferred.
 * **Done (P0.2):** AddressSanitizer + UndefinedBehaviorSanitizer build (`PRUNE_SANITIZE`), with the test suite run under it in CI — ASan on Windows and Linux, UBSan on the Linux/Clang leg.
-* Add a scripted headless run of the app under sanitizers (needs a smoke/headless mode or a dummy SDL video driver). Blocked until `REFACTORING.md` B2 removes ImGui from the runtime scene layer and B5 provides a `prune_runtime` target.
+* Add a scripted headless run of the app under sanitizers (needs a smoke/headless mode or a dummy SDL video driver). No longer blocked — `REFACTORING.md` B2 (ImGui out of the runtime scene layer) and B5 (`prune_runtime` target) are both done — but still needs the smoke/headless mode or dummy SDL video driver itself.
 * **Done (P0.1):** `.clang-format` config enforced in CI.
 * Add a `clang-tidy` pass (better after the architecture refactor settles).
 * **Done (P0.3):** portability issues the Linux port surfaced — near-clean. Three pre-existing warnings the second compiler flagged are fixed: two `ImGui::TextWrapped(runtime_string)` format-string-security calls, one `switch` missing the `MoveObjects` / `DeleteObjects` cases. `std::filesystem` use was already portable (`.string()` throughout); SDL include paths resolved unchanged under system packages.

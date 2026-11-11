@@ -35,15 +35,22 @@ function(prune_enable_sanitizers target)
     endif()
 endfunction()
 
+function(prune_set_warnings target)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4 /permissive-)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endfunction()
+
 find_package(SDL2 REQUIRED CONFIG)
 find_package(SDL2_image REQUIRED CONFIG)
 find_package(yaml-cpp REQUIRED CONFIG)
 
-add_executable(Prune
-        src/main.cpp
-
-        src/prune/app/app.cpp
-
+# Runtime + scene behaviour. No Dear ImGui: this is the half of the app that
+# a headless build, a sanitizer smoke run, or a future playable export can
+# link without pulling in editor presentation.
+add_library(prune_runtime STATIC
         src/prune/core/window.cpp
         src/prune/core/time.cpp
         src/prune/core/input.cpp
@@ -59,16 +66,13 @@ add_executable(Prune
         src/prune/scene/collision.cpp
 
         src/prune/scene/scene_factory.cpp
-        src/prune/scene/scene_editor_factory.cpp
         src/prune/scene/scene_renderer.cpp
         src/prune/scene/scene_camera.cpp
         src/prune/scene/world_scene.cpp
-        src/prune/scene/world_scene_editor.cpp
         src/prune/scene/scene_interaction.cpp
         src/prune/scene/scene_serializer.cpp
 
         src/prune/scene/simple_shooter/simple_shooter_scene.cpp
-        src/prune/scene/simple_shooter/simple_shooter_editor.cpp
         src/prune/scene/simple_shooter/simple_shooter_factory.cpp
         src/prune/scene/simple_shooter/simple_shooter_behaviour.cpp
         src/prune/scene/simple_shooter/simple_shooter_player_controller.cpp
@@ -76,20 +80,41 @@ add_executable(Prune
         src/prune/scene/simple_shooter/simple_shooter_serializer.cpp
 
         src/prune/scene/platformer/platformer_scene.cpp
-        src/prune/scene/platformer/platformer_editor.cpp
         src/prune/scene/platformer/platformer_factory.cpp
         src/prune/scene/platformer/platformer_behaviour.cpp
         src/prune/scene/platformer/platformer_concepts.cpp
         src/prune/scene/platformer/platformer_serializer.cpp
 
         src/prune/scene/artillery/artillery_scene.cpp
-        src/prune/scene/artillery/artillery_editor.cpp
         src/prune/scene/artillery/artillery_factory.cpp
         src/prune/scene/artillery/artillery_behaviour.cpp
         src/prune/scene/artillery/artillery_concepts.cpp
         src/prune/scene/artillery/artillery_serializer.cpp
 
         src/prune/resources/sprites.cpp
+)
+
+target_include_directories(prune_runtime PUBLIC
+        src
+)
+
+target_link_libraries(prune_runtime PUBLIC
+        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+        $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
+        yaml-cpp::yaml-cpp
+)
+
+prune_set_warnings(prune_runtime)
+prune_enable_sanitizers(prune_runtime)
+
+# Editor shell, tooling panels, and scene editors. Links Dear ImGui and
+# depends on prune_runtime; nothing in prune_runtime may depend back on this.
+add_library(prune_editor STATIC
+        src/prune/scene/scene_editor_factory.cpp
+        src/prune/scene/world_scene_editor.cpp
+        src/prune/scene/simple_shooter/simple_shooter_editor.cpp
+        src/prune/scene/platformer/platformer_editor.cpp
+        src/prune/scene/artillery/artillery_editor.cpp
 
         src/prune/tooling/theme.cpp
         src/prune/tooling/ui.cpp
@@ -120,16 +145,28 @@ add_executable(Prune
         external/imgui/backends/imgui_impl_sdlrenderer2.cpp
 )
 
-target_include_directories(Prune PRIVATE
-        src
+target_include_directories(prune_editor PUBLIC
         external/imgui
         external/imgui/backends
 )
 
+target_link_libraries(prune_editor PUBLIC
+        prune_runtime
+)
+
+prune_set_warnings(prune_editor)
+prune_enable_sanitizers(prune_editor)
+
+# Thin executable: wires the runtime scenes to the editor shell. Nothing
+# scene- or tooling-specific belongs here.
+add_executable(Prune
+        src/main.cpp
+        src/prune/app/app.cpp
+)
+
 target_link_libraries(Prune PRIVATE
-        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
-        $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
-        yaml-cpp::yaml-cpp
+        # prune_editor links prune_runtime PUBLIC, so this pulls in both.
+        prune_editor
 )
 
 add_custom_command(TARGET Prune POST_BUILD
@@ -138,12 +175,7 @@ add_custom_command(TARGET Prune POST_BUILD
     $<TARGET_FILE_DIR:Prune>/assets
 )
 
-if(MSVC)
-    target_compile_options(Prune PRIVATE /W4 /permissive-)
-else()
-    target_compile_options(Prune PRIVATE -Wall -Wextra -Wpedantic)
-endif()
-
+prune_set_warnings(Prune)
 prune_enable_sanitizers(Prune)
 
 if(BUILD_TESTING)

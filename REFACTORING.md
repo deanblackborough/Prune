@@ -144,8 +144,9 @@ handle, `GameObject*` is frame-local). Write it alongside A3, not separately.
 
 ### Deferred (not Phase 0)
 
-- **Scripted headless run of the app under sanitizers** — blocked until B2 removes ImGui from
-  the runtime scene layer and B5 gives a `prune_runtime` target. Tracked in NOTES.md.
+- **Scripted headless run of the app under sanitizers** — B2 and B5 are both done, so this is
+  no longer blocked; still needs the smoke/headless mode or dummy SDL video driver itself.
+  Tracked in NOTES.md.
 - **clang-tidy pass** — better after the architecture settles, so lint effort is not spent on
   code A2/A3 delete or move.
 
@@ -833,10 +834,32 @@ inside these targets rather than being split further.
 
 ### Checklist
 
-- [ ] After B2: create `prune_runtime` with no ImGui link.
-- [ ] Move editor/tooling/scene-editor code into `prune_editor`.
-- [ ] `Prune` links both; `PruneTests` can link `prune_runtime` alone for headless tests.
-- [ ] Verify `prune_runtime` does not transitively pull in ImGui.
+- [x] After B2: create `prune_runtime` with no ImGui link. — `CMakeLists.txt`: static library with
+      core/audio, `editor_command`/`editor_actions` (no ImGui dependency, confirmed by grep —
+      "editor" here means the undo/redo and selection model, not presentation), the scene layer
+      (`game_object*`, `editor_selection`, `collision`, `scene_factory`, `scene_renderer`,
+      `scene_camera`, `world_scene`, `scene_interaction`, `scene_serializer`), all three scenes'
+      `*_scene`/`*_factory`/`*_behaviour`/`*_concepts`/`*_serializer.cpp` (not their `*_editor.cpp`
+      — those are presentation), and `resources/sprites`. Publicly links SDL2/SDL2_image/yaml-cpp
+      and exposes `src` as a public include dir.
+- [x] Move editor/tooling/scene-editor code into `prune_editor`. — `scene_editor_factory.cpp`,
+      `world_scene_editor.cpp`, the three `*_editor.cpp` files, everything under `tooling/`
+      (including `tooling/editor/*`, `tooling/imgui/*`), and the ImGui/backends sources. Links
+      `prune_runtime` `PUBLIC` and exposes `external/imgui` + `external/imgui/backends` as public
+      include dirs (so `Prune`'s own `app.cpp`, which includes the ImGui backend headers directly,
+      gets them without restating the include path).
+- [x] `Prune` links both; `PruneTests` can link `prune_runtime` alone for headless tests. — `Prune`
+      is now just `main.cpp` + `app/app.cpp` (the only files that legitimately need both halves —
+      `app.cpp` owns a `Scene` and a `Ui`), linking `prune_editor` (which transitively carries
+      `prune_runtime`). `tests/CMakeLists.txt` dropped its hand-picked list of runtime `.cpp` files
+      — `PruneTests` now just links `prune_runtime` directly, so the tests build and run against
+      the exact same compiled runtime code as the app rather than a parallel copy of the sources.
+- [x] Verify `prune_runtime` does not transitively pull in ImGui. — `nm libprune_runtime.a | grep
+      -i imgui` returns nothing across all 34 object files.
+
+Verified: `Prune` and `PruneTests` both build clean from scratch (CMake reconfigure included),
+`PruneTests` passes (139 assertions / 21 cases), and the app launches without crashing
+(`out/build/mac-debug`).
 
 ---
 
