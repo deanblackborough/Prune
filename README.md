@@ -100,7 +100,7 @@ That means a scene type should not need to reimplement generic viewport access, 
 
 The current architecture is intentionally not a plugin system, not an ECS, and not a general-purpose engine API. The code is still being shaped around concrete scene slices first.
 
-Authored objects now carry an explicit z-index so render order can be edited deliberately and persisted with the scene. With that in place the short-term editor/runtime hardening phase is complete; the next focus is picked up in [NOTES.md](NOTES.md).
+Authored objects carry an explicit z-index so render order can be edited deliberately and persisted with the scene, and an architecture pass has since made the authoring boundary explicit: the authored store is the single source of truth for saved data, the live world is rebuilt from it, editing is only possible while a scene is Stopped, and editor presentation (Dear ImGui, tooling, scene editors) is structurally separated from runtime/scene code down to the CMake target level (`prune_runtime` has no ImGui dependency at all). See [DECISIONS.md](DECISIONS.md) for the reasoning. With that in place, the next focus is picked up in [NOTES.md](NOTES.md).
 
 ## Where we are now
 
@@ -127,11 +127,16 @@ Prune currently has:
 - Scene factory creation and scene-type loading from save files
 - Rectangle and sprite rendering
 - Basic sprite resource map
-- Shared Reset and Pause/Play runtime controls across all three scene slices
+- Shared Reset and Pause/Play runtime controls across all three scene slices, plus an explicit Stop state that is the only state in which authored fields can be edited
 - Explicit authored-object render ordering (z-index) with a Z Index field and +1/-1 step buttons, persisted per scene; runtime-only objects always draw on top in spawn order
 - Basic code-driven audio playback and scene event hooks; authored audio UI is deferred until the broader effects/reaction workflow is designed
 - Shared scene renderer, interaction, camera, state, collision, serialization, and audio foundations
 - Shared `WorldScene` foundation for scene types
+- An authored store that is the single source of truth for saved scene data; the live world and all editor-session state (selection, undo/redo history, dirty flag, active tool, viewport, debug overlays) are built from it and never leak into the save file
+- Typed `EditorCommand` payloads (a `std::variant`, not a type enum plus optional fields) so most new per-object edits reuse an existing payload rather than adding a new command type
+- Explicit authored object concept identity, independent of runtime behaviour
+- Editor presentation (Dear ImGui, tooling panels, scene editors) structurally separated from runtime/scene code, enforced at the CMake level: `prune_runtime` (no ImGui) and `prune_editor` are separate build targets, and the test suite links only `prune_runtime`
+- Linux build (GCC 13 and Clang 18) alongside Windows/MSVC, both verified in CI, with the test suite run under AddressSanitizer (Windows and Linux) and UndefinedBehaviorSanitizer (Linux)
 - Platformer scene slice
 - Artillery game slice
 - Simple Shooter scene slice
@@ -193,9 +198,12 @@ The Simple Shooter slice currently proves:
 
 ## Near-term focus
 
-Dirty-state tracking, Ctrl+S, shared Reset/Pause/Play controls, and authored-object render ordering are now implemented. The short-term hardening phase is complete.
+Two phases are complete: the short-term hardening pass below, and a follow-on architecture
+refactor that made the authored/runtime/editor boundary explicit and enforced (see "Current
+architecture direction" above and [DECISIONS.md](DECISIONS.md)). Feature work resumes next,
+starting with a rotation tool.
 
-Current priorities:
+The hardening pass:
 
 - [x] Initial implementation of dirty-state tracking for persistent editor-authored changes.
 - [x] Keep editor command changes synchronised with the current authored state through execution, undo, redo, save, and runtime reset.
@@ -206,7 +214,7 @@ Current priorities:
 - [x] Persist and restore object ordering through scene save files.
 - [x] Add basic editor actions for moving selected objects forward or backward in render order.
 
-My development plan is tracked in [NOTES.md](NOTES.md), check the file for more details on what each of these points mean as well as what is included - this is what I will be working on in my next development phase.
+My development plan is tracked in [NOTES.md](NOTES.md) — check the file for what's next and why.
 
 ## Ready for users when...
 
@@ -264,10 +272,10 @@ I will consider Prune ready for early external users when someone unfamiliar wit
 
 ### Build and portability
 
-- [ ] Build and run on Linux with GCC and Clang, not just Windows/MSVC.
-- [ ] Run CI across a GCC, Clang, and MSVC compiler matrix.
+- [x] Build and run on Linux with GCC and Clang, not just Windows/MSVC.
+- [x] Run CI across a GCC, Clang, and MSVC compiler matrix.
 - [x] Run the test suite under AddressSanitizer (Windows and Linux) and UndefinedBehaviorSanitizer (Linux) in CI.
-- [ ] Run a scripted headless session under the sanitizers (needs the runtime/editor split).
+- [ ] Run a scripted headless session under the sanitizers (the runtime/editor split this needed is done; still needs a smoke/headless mode or a dummy SDL video driver).
 - [x] Add a `.clang-format` config enforced in CI.
 - [ ] Add a `clang-tidy` pass.
 
@@ -295,42 +303,32 @@ The code is still moving too quickly. Documentation should help decision-making 
 
 ## Build
 
-Prune currently targets Windows and is built with CMake, vcpkg, and a C++23-capable compiler.
+Prune is built with CMake and a C++23-capable compiler. Windows/MSVC is the primary development
+platform; Linux (GCC 13 and Clang 18) is also built and tested in CI.
 
-The project may build on other platforms later, but Windows is the only platform currently verified.
-
-### Confirmed environment
-- Windows
-- Visual Studio 2022/2026 / MSVC
-- CMake
-- vcpkg
-- C++23
-- Ninja or the Visual Studio CMake generator
+### Confirmed environments
+- Windows, Visual Studio 2022/2026 / MSVC, CMake, vcpkg, C++23, Ninja or the Visual Studio CMake generator
+- Linux (Ubuntu 24.04), GCC 13 or Clang 18, CMake, Ninja, C++23, system packages instead of vcpkg (see below)
 
 ### Dependencies
 
-Dependencies are managed through vcpkg.json.
+Prune uses SDL2, SDL2_image, and yaml-cpp. Dear ImGui is included in the repository under
+`external/`.
 
-Prune currently uses:
+On Windows, dependencies are managed through `vcpkg.json` and resolved automatically via the
+vcpkg CMake toolchain file. On Linux, install them as system packages instead (this is what CI
+does, on Ubuntu 24.04):
 
-- SDL2
-- SDL2_image
-- Dear ImGui
-- yaml-cpp
+```bash
+sudo apt-get install -y ninja-build gcc-13 g++-13 \
+  libsdl2-dev libsdl2-image-dev libyaml-cpp-dev catch2
+```
 
-Dear ImGui is included in the repository under external/, while the remaining third-party libraries are resolved through vcpkg.
-
-### Configure
-
-From the repository root (Powershell examples):
+### Configure and build — Windows (PowerShell)
 
 ```powershell
 cmake -B build -S . `
   -DCMAKE_TOOLCHAIN_FILE=C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake
- ```
-
-### Build
-```powershell
 cmake --build build
 ```
 
@@ -340,28 +338,35 @@ For a release build:
 cmake --build build --config Release
 ```
 
+### Configure and build — Linux
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+```
+
 ### Run
 
-The executable is created in the CMake build output directory. The exact path depends on the generator used.
+The executable is created in the CMake build output directory. The exact path depends on the
+generator used.
 
-For Visual Studio generators, the executable will usually be under:
-
-```powershell
-build/Release/Prune.exe
-```
-
-or:
-
-```powershell
-build/Debug/Prune.exe
-```
+For Visual Studio generators, the executable will usually be under `build/Release/Prune.exe` or
+`build/Debug/Prune.exe`. On Linux with Ninja, it is `build/Prune`.
 
 ### Notes
 
-- The project is currently developed and tested on Windows.
-- GitHub Actions builds and tests the project on Windows, runs the test suite under sanitizers (AddressSanitizer on Windows, AddressSanitizer and UndefinedBehaviorSanitizer on Linux), and checks formatting.
-- Other platforms are not intentionally unsupported, but they are not verified yet.
-- If CMake cannot find SDL2, SDL2_image, or yaml-cpp, check that the vcpkg toolchain file path is correct.
+- Windows/MSVC is the primary development platform; Linux (GCC 13, Clang 18) is built and tested
+  in CI alongside it.
+- GitHub Actions builds and tests the project on both Windows and Linux (GCC and Clang), runs the
+  test suite under sanitizers (AddressSanitizer on Windows and Linux, UndefinedBehaviorSanitizer
+  on Linux), and checks formatting.
+- `Prune` links two internal static libraries, `prune_runtime` (scenes/behaviour, no ImGui) and
+  `prune_editor` (tooling, ImGui); `PruneTests` links only `prune_runtime`. Nothing in the build
+  invocation above changes because of this — it's handled inside `CMakeLists.txt`.
+- macOS is not CI-verified, but builds locally with Clang via vcpkg, the same as Windows; the
+  repository's `CMakePresets.json` has a `mac-debug` preset if you want one.
+- If CMake cannot find SDL2, SDL2_image, or yaml-cpp, check the vcpkg toolchain path (Windows) or
+  that the system packages above are installed (Linux).
 
 ## Acknowledgements
 
