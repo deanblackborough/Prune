@@ -138,6 +138,26 @@ namespace prune {
         [](const GameObject& candidate) { return candidate.identity.id; });
   }
 
+  void restore_objects_in_id_order(GameObjectManager& objects,
+                                   std::span<const GameObject> restored) {
+    bool added_new_object = false;
+
+    for (const GameObject& object : restored) {
+      if (GameObject* existing = objects.get_by_id(object.identity.id)) {
+        *existing = object;
+      } else {
+        objects.add_loaded_object(object);
+        added_new_object = true;
+      }
+    }
+
+    if (added_new_object) {
+      std::ranges::stable_sort(
+          objects.objects(), {},
+          [](const GameObject& candidate) { return candidate.identity.id; });
+    }
+  }
+
   std::string
   GameObjectManager::make_unique_name(std::string desired,
                                       GameObjectId ignore_id) const {

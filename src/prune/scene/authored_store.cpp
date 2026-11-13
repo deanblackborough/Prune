@@ -36,16 +36,13 @@ namespace prune {
                          m_objects.remove_object(object.identity.id);
                        }
                      } else {
-                       for (const GameObject& object : payload.objects) {
-                         restore(object);
-                       }
+                       restore_objects_in_id_order(m_objects, payload.objects);
                      }
                    },
                    [&](const ObjectsChange& payload) {
-                     for (const GameObject& object :
-                          use_after_state ? payload.after : payload.before) {
-                       restore(object);
-                     }
+                     restore_objects_in_id_order(
+                         m_objects,
+                         use_after_state ? payload.after : payload.before);
                    },
                    [](const ViewportChange&) {},
                    [](const SceneSettingsChange&) {},

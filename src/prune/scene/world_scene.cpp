@@ -296,11 +296,12 @@ namespace prune {
 
   void
   WorldScene::restore_object_snapshots(const std::vector<GameObject>& objects) {
+    restore_objects_in_id_order(m_state.world.objects, objects);
+
     std::vector<GameObjectId> restored_ids;
     restored_ids.reserve(objects.size());
 
     for (const GameObject& object : objects) {
-      restore_object_snapshot(object, false);
       restored_ids.push_back(object.identity.id);
     }
 

@@ -2,6 +2,7 @@
 
 #include "prune/scene/game_object.hpp"
 
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -45,5 +46,10 @@ namespace prune {
   // commands leaves objects in a stable, deterministic order.
   void restore_object_in_id_order(GameObjectManager& objects,
                                   const GameObject& object);
+
+  // Same as calling restore_object_in_id_order for each of `restored`, but
+  // sorts `objects` at most once instead of once per restored object.
+  void restore_objects_in_id_order(GameObjectManager& objects,
+                                   std::span<const GameObject> restored);
 
 } // namespace prune
