@@ -190,20 +190,17 @@ namespace prune {
       }
 
       ImGui::SameLine();
-      if (scene.runtime_stopped()) {
-        if (ImGui::Button("Play", ImVec2(k_tool_button_min_width, 0.0f))) {
+      const bool show_play = scene.runtime_stopped() || scene.runtime_paused();
+      if (ImGui::Button(show_play ? "Play" : "Pause",
+                        ImVec2(k_tool_button_min_width, 0.0f))) {
+        if (show_play) {
           scene.play_runtime();
-        }
-      } else {
-        if (scene.runtime_paused()) {
-          if (ImGui::Button("Play", ImVec2(k_tool_button_min_width, 0.0f))) {
-            scene.play_runtime();
-          }
-        } else if (ImGui::Button("Pause",
-                                 ImVec2(k_tool_button_min_width, 0.0f))) {
+        } else {
           scene.pause_runtime();
         }
+      }
 
+      if (!scene.runtime_stopped()) {
         ImGui::SameLine();
         if (ImGui::Button("Stop", ImVec2(k_tool_button_min_width, 0.0f))) {
           scene.stop_runtime();
