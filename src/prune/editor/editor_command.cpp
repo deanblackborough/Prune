@@ -105,6 +105,36 @@ namespace prune {
         command.payload);
   }
 
+  AffectedIdsSummary affected_ids_summary(const EditorCommand& command) {
+    return std::visit(
+        [](const auto& payload) -> AffectedIdsSummary {
+          using Payload = std::decay_t<decltype(payload)>;
+
+          if constexpr (std::is_same_v<Payload, ObjectChange>) {
+            return {1, payload.after.identity.id};
+          } else if constexpr (std::is_same_v<Payload, ObjectCreate>) {
+            return {1, payload.object.identity.id};
+          } else if constexpr (std::is_same_v<Payload, ObjectDelete>) {
+            return {1, payload.object.identity.id};
+          } else if constexpr (std::is_same_v<Payload, ObjectsChange>) {
+            return {payload.after.size(),
+                    payload.after.empty() ? k_invalid_game_object_id
+                                          : payload.after.front().identity.id};
+          } else if constexpr (std::is_same_v<Payload, ObjectsDelete>) {
+            return {payload.objects.size(),
+                    payload.objects.empty()
+                        ? k_invalid_game_object_id
+                        : payload.objects.front().identity.id};
+          } else if constexpr (std::is_same_v<Payload, SceneSettingsChange>) {
+            return {};
+          } else {
+            static_assert(std::is_same_v<Payload, ViewportChange>);
+            return {};
+          }
+        },
+        command.payload);
+  }
+
   EditorCommand make_object_change(std::string_view label,
                                    const GameObject& before,
                                    const GameObject& after,

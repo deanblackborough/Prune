@@ -86,6 +86,16 @@ namespace prune {
   [[nodiscard]] std::vector<GameObjectId>
   affected_ids(const EditorCommand& command);
 
+  // Cheap alternative to affected_ids() for callers that only need a count
+  // and (optionally) one id for display, without heap-allocating a vector.
+  struct AffectedIdsSummary {
+    std::size_t count = 0;
+    GameObjectId first = k_invalid_game_object_id;
+  };
+
+  [[nodiscard]] AffectedIdsSummary
+  affected_ids_summary(const EditorCommand& command);
+
   [[nodiscard]] EditorCommand make_object_change(std::string_view label,
                                                  const GameObject& before,
                                                  const GameObject& after,

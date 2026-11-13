@@ -60,13 +60,13 @@ namespace prune {
                       command.detail.c_str());
         }
 
-        const std::vector<GameObjectId> ids = affected_ids(command);
-        if (ids.size() > 1) {
+        const AffectedIdsSummary ids = affected_ids_summary(command);
+        if (ids.count > 1) {
           ImGui::SameLine();
-          ImGui::TextDisabled("%zu objects", ids.size());
-        } else if (!ids.empty() && ids.front() != k_invalid_game_object_id) {
+          ImGui::TextDisabled("%zu objects", ids.count);
+        } else if (ids.count == 1 && ids.first != k_invalid_game_object_id) {
           ImGui::SameLine();
-          ImGui::TextDisabled("#%u", static_cast<unsigned int>(ids.front()));
+          ImGui::TextDisabled("#%u", static_cast<unsigned int>(ids.first));
         }
 
         if (!applied) {
