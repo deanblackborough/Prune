@@ -42,7 +42,11 @@ namespace prune::tooling::editor::tracked_settings_table {
         imgui_label, id, value, min, max, format);
 
     tracker.capture_if_activated(before);
-    tracker.commit_if_deactivated_after_edit(scene, label, snapshot(), detail);
+
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+      tracker.commit_if_deactivated_after_edit(scene, label, snapshot(),
+                                               detail);
+    }
 
     return changed;
   }
@@ -57,7 +61,11 @@ namespace prune::tooling::editor::tracked_settings_table {
         imgui_label, id, value, min, max);
 
     tracker.capture_if_activated(before);
-    tracker.commit_if_deactivated_after_edit(scene, label, snapshot(), detail);
+
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+      tracker.commit_if_deactivated_after_edit(scene, label, snapshot(),
+                                               detail);
+    }
 
     return changed;
   }
