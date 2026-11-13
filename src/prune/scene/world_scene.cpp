@@ -16,6 +16,7 @@ namespace prune {
 
   void WorldScene::update(float dt, const Input& input) {
     update_runtime(m_state.world, dt, input, scene_keyboard_input_enabled());
+    m_state.editor.selection.sanitize(m_state.world.objects);
     m_camera.update_game_camera(m_state.editor.viewport, game_camera_target());
   }
 
