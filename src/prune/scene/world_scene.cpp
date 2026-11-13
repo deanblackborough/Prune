@@ -164,7 +164,6 @@ namespace prune {
       sanitize_loaded_selection();
       m_camera.reset();
       establish_game_camera();
-      m_authored_store.capture(m_state.world.objects);
 
       return true;
     } catch (const YAML::Exception& ex) {
