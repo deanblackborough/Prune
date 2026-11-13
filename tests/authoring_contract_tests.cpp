@@ -53,19 +53,9 @@ namespace prune {
         return node;
       }
 
-      [[nodiscard]] bool was_runtime_paused_at_last_pause() const noexcept {
-        return m_paused;
-      }
-
     protected:
       void update_runtime(WorldState&, float, const Input&, bool) override {}
       void restart_runtime() override {}
-      void set_runtime_paused(bool paused) noexcept override {
-        m_paused = paused;
-      }
-      [[nodiscard]] bool is_runtime_paused() const noexcept override {
-        return m_paused;
-      }
 
       void save_scene_data(YAML::Node& root) const override {
         root["authoring_test"]["value"] = m_setting_value;
@@ -92,7 +82,6 @@ namespace prune {
       }
 
     private:
-      bool m_paused = false;
       float m_setting_value = 0.0f;
       std::string m_file_path = "authoring_test_scene.yaml";
     };

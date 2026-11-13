@@ -125,7 +125,7 @@ namespace prune {
                                   ArtilleryState& artillery_state, float dt,
                                   const Input& input,
                                   bool keyboard_input_enabled) const {
-    if (artillery_state.runtime.paused) {
+    if (state.paused) {
       return;
     }
 

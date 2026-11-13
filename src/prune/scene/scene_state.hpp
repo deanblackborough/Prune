@@ -68,6 +68,7 @@ namespace prune {
   struct WorldState {
     SceneEventQueue events;
     GameObjectManager objects;
+    bool paused = false;
   };
 
   // Editor/session state layered over a WorldState: everything that exists

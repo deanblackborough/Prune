@@ -25,7 +25,6 @@ namespace prune {
   };
 
   struct ArtilleryRuntime {
-    bool paused = false;
     ArtilleryTurn current_turn = ArtilleryTurn::PlayerOne;
     ArtilleryAim player_one_aim{};
     ArtilleryAim player_two_aim{};

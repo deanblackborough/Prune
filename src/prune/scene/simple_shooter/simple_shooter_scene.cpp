@@ -126,14 +126,6 @@ namespace prune {
     m_simple_shooter_state.runtime = {};
   }
 
-  void SimpleShooterScene::set_runtime_paused(bool paused) noexcept {
-    m_simple_shooter_state.runtime.paused = paused;
-  }
-
-  bool SimpleShooterScene::is_runtime_paused() const noexcept {
-    return m_simple_shooter_state.runtime.paused;
-  }
-
   GameObject* SimpleShooterScene::game_camera_target() noexcept {
     return player_object();
   }

@@ -47,7 +47,7 @@ namespace prune {
     m_state.editor.drag_state = {};
 
     restart_runtime();
-    set_runtime_paused(true);
+    m_state.world.paused = true;
     m_stopped = true;
     m_camera.update_game_camera(m_state.editor.viewport, game_camera_target());
   }
@@ -57,15 +57,15 @@ namespace prune {
     play_runtime();
   }
 
-  void WorldScene::pause_runtime() noexcept { set_runtime_paused(true); }
+  void WorldScene::pause_runtime() noexcept { m_state.world.paused = true; }
 
   void WorldScene::play_runtime() noexcept {
-    set_runtime_paused(false);
+    m_state.world.paused = false;
     m_stopped = false;
   }
 
   bool WorldScene::runtime_paused() const noexcept {
-    return is_runtime_paused();
+    return m_state.world.paused;
   }
 
   void WorldScene::stop_runtime() { enter_stopped_state(); }

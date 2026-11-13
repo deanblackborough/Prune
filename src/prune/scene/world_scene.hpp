@@ -90,8 +90,6 @@ namespace prune {
     virtual void update_runtime(WorldState& world, float dt, const Input& input,
                                 bool keyboard_input_enabled) = 0;
     virtual void restart_runtime() = 0;
-    virtual void set_runtime_paused(bool paused) noexcept = 0;
-    [[nodiscard]] virtual bool is_runtime_paused() const noexcept = 0;
     virtual void save_scene_data(YAML::Node& root) const = 0;
     [[nodiscard]] virtual bool load_scene_data(const YAML::Node& root,
                                                std::string& error) = 0;

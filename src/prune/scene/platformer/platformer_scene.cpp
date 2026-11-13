@@ -80,14 +80,6 @@ namespace prune {
 
   void PlatformerScene::restart_runtime() { m_platformer_state.runtime = {}; }
 
-  void PlatformerScene::set_runtime_paused(bool paused) noexcept {
-    m_platformer_state.runtime.paused = paused;
-  }
-
-  bool PlatformerScene::is_runtime_paused() const noexcept {
-    return m_platformer_state.runtime.paused;
-  }
-
   GameObject* PlatformerScene::game_camera_target() noexcept {
     return player_object();
   }

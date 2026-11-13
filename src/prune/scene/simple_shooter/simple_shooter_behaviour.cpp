@@ -14,7 +14,7 @@ namespace prune {
                                       SimpleShooterState& shooter_state,
                                       float dt, const Input& input,
                                       bool keyboard_input_enabled) {
-    if (shooter_state.runtime.paused) {
+    if (state.paused) {
       return;
     }
 

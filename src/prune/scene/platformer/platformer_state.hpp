@@ -20,7 +20,6 @@ namespace prune {
   };
 
   struct PlatformerRuntime {
-    bool paused = false;
     bool player_grounded = false;
 
     // Coyote time: seconds left where a jump still counts as grounded after

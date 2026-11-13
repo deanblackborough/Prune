@@ -27,7 +27,7 @@ namespace prune {
                                    PlatformerState& platformer_state, float dt,
                                    const Input& input,
                                    bool keyboard_input_enabled) {
-    if (platformer_state.runtime.paused) {
+    if (state.paused) {
       return;
     }
 

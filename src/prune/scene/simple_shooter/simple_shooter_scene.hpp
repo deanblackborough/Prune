@@ -48,8 +48,6 @@ namespace prune {
     void update_runtime(WorldState& world, float dt, const Input& input,
                         bool keyboard_input_enabled) override;
     void restart_runtime() override;
-    void set_runtime_paused(bool paused) noexcept override;
-    [[nodiscard]] bool is_runtime_paused() const noexcept override;
     void save_scene_data(YAML::Node& root) const override;
     [[nodiscard]] bool load_scene_data(const YAML::Node& root,
                                        std::string& error) override;

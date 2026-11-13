@@ -87,14 +87,6 @@ namespace prune {
     m_artillery_state.runtime = fresh_runtime(m_artillery_state.settings);
   }
 
-  void ArtilleryScene::set_runtime_paused(bool paused) noexcept {
-    m_artillery_state.runtime.paused = paused;
-  }
-
-  bool ArtilleryScene::is_runtime_paused() const noexcept {
-    return m_artillery_state.runtime.paused;
-  }
-
   void ArtilleryScene::reset_runtime_state() {
     m_state.world.objects.clear();
     m_artillery_state = {};
