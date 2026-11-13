@@ -31,8 +31,8 @@ namespace prune {
   }
 
   void WorldScene::on_enter() {
-    m_authored_store.capture(m_state.world.objects);
     on_scene_enter();
+    m_authored_store.capture(m_state.world.objects);
     enter_stopped_state();
   }
 
