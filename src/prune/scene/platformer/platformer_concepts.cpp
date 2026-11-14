@@ -24,19 +24,19 @@ namespace prune::platformer_concepts {
   }
 
   bool is_player(const GameObject& object) noexcept {
-    return object.runtime.behaviour == platformer_ids::player_behaviour;
+    return object.semantics.concept_id == platformer_ids::player_concept;
   }
 
   bool is_player_start(const GameObject& object) noexcept {
-    return object.runtime.behaviour == platformer_ids::player_start_behaviour;
+    return object.semantics.concept_id == platformer_ids::player_start_concept;
   }
 
   bool is_platform(const GameObject& object) noexcept {
-    return object.runtime.behaviour == platformer_ids::platform_behaviour;
+    return object.semantics.concept_id == platformer_ids::platform_concept;
   }
 
   bool is_hazard(const GameObject& object) noexcept {
-    return object.runtime.behaviour == platformer_ids::hazard_behaviour;
+    return object.semantics.concept_id == platformer_ids::hazard_concept;
   }
 
   const char* label(ObjectKind kind) noexcept {
@@ -96,7 +96,7 @@ namespace prune::platformer_concepts {
   ObjectConcept describe(ObjectKind kind) noexcept {
     switch (kind) {
     case ObjectKind::Player:
-      return {"platformer.player",
+      return {platformer_ids::player_concept,
               "Player",
               "The single controlled actor for the Platformer slice. The game "
               "camera follows this object.",
@@ -105,7 +105,7 @@ namespace prune::platformer_concepts {
               true,
               true};
     case ObjectKind::PlayerStart:
-      return {"platformer.player_start",
+      return {platformer_ids::player_start_concept,
               "Player Start",
               "Authored reset marker used when the player hits a hazard or "
               "falls out of the level.",
@@ -115,7 +115,7 @@ namespace prune::platformer_concepts {
               true};
     case ObjectKind::Platform:
       return {
-          "platformer.platform",
+          platformer_ids::platform_concept,
           "Platform",
           "An authored solid surface the player can stand on or collide with.",
           "Solid. Blocks horizontal movement and provides grounded state when "
@@ -125,7 +125,7 @@ namespace prune::platformer_concepts {
           true};
     case ObjectKind::Hazard:
       return {
-          "platformer.hazard",
+          platformer_ids::hazard_concept,
           "Hazard",
           "An authored trigger that resets the player to the player start "
           "marker on contact.",

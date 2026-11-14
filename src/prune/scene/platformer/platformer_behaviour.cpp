@@ -23,11 +23,11 @@ namespace prune {
 
   } // namespace
 
-  void PlatformerBehaviour::update(SceneState& state, SceneCamera& camera,
+  void PlatformerBehaviour::update(WorldState& state, SceneCamera& camera,
                                    PlatformerState& platformer_state, float dt,
                                    const Input& input,
                                    bool keyboard_input_enabled) {
-    if (platformer_state.runtime.paused) {
+    if (state.paused) {
       return;
     }
 
@@ -36,7 +36,7 @@ namespace prune {
   }
 
   GameObject* PlatformerBehaviour::player_object(
-      SceneState& state,
+      WorldState& state,
       const PlatformerState& platformer_state) const noexcept {
     GameObject* object = state.objects.get_by_id(platformer_state.player_id);
     if (!object || !platformer_concepts::is_player(*object)) {
@@ -47,7 +47,7 @@ namespace prune {
   }
 
   const GameObject* PlatformerBehaviour::player_object(
-      const SceneState& state,
+      const WorldState& state,
       const PlatformerState& platformer_state) const noexcept {
     const GameObject* object =
         state.objects.get_by_id(platformer_state.player_id);
@@ -59,7 +59,7 @@ namespace prune {
   }
 
   const GameObject* PlatformerBehaviour::player_start_object(
-      const SceneState& state,
+      const WorldState& state,
       const PlatformerState& platformer_state) const noexcept {
     const GameObject* object =
         state.objects.get_by_id(platformer_state.player_start_id);
@@ -70,7 +70,7 @@ namespace prune {
     return object;
   }
 
-  void PlatformerBehaviour::update_player(SceneState& state,
+  void PlatformerBehaviour::update_player(WorldState& state,
                                           SceneCamera& camera,
                                           PlatformerState& platformer_state,
                                           float dt, const Input& input,
@@ -81,6 +81,7 @@ namespace prune {
     }
 
     float horizontal = 0.0f;
+    bool jump_pressed = false;
 
     if (keyboard_input_enabled) {
       if (input.is_key_down(SDL_SCANCODE_A)) {
@@ -97,13 +98,42 @@ namespace prune {
         player->motion.facing = Direction::Right;
       }
 
-      if ((input.was_key_pressed(SDL_SCANCODE_W) ||
-           input.was_key_pressed(SDL_SCANCODE_SPACE)) &&
-          platformer_state.runtime.player_grounded) {
-        player->motion.velocity.y = -platformer_state.settings.jump_velocity;
-        platformer_state.runtime.player_grounded = false;
-        state.events.emit(scene_events::player_jumped);
+      // was_key_pressed_for_update (not was_key_pressed): the render loop
+      // can run more render frames than fixed-timestep ticks, and this
+      // method call is reached only from a fixed-timestep tick. A plain
+      // was_key_pressed edge gets cleared every render frame regardless of
+      // whether a tick ran, so a press landing on a render-only frame would
+      // be silently dropped before any tick ever saw it.
+      jump_pressed = input.was_key_pressed_for_update(SDL_SCANCODE_W) ||
+                     input.was_key_pressed_for_update(SDL_SCANCODE_SPACE);
+
+      // Only buffer a press made while falling (or resting) toward a
+      // landing. A press made while still rising from an earlier jump is
+      // not "about to land" — buffering it too would let a jump taken
+      // mid-air get remembered and silently replayed on some later,
+      // unrelated landing.
+      if (jump_pressed && player->motion.velocity.y >= 0.0f) {
+        platformer_state.runtime.jump_buffer_remaining =
+            platformer_state.settings.jump_buffer_seconds;
       }
+    }
+
+    PlatformerRuntime& runtime = platformer_state.runtime;
+
+    const bool can_jump =
+        runtime.player_grounded || runtime.coyote_time_remaining > 0.0f;
+
+    if (((jump_pressed && player->motion.velocity.y >= 0.0f) ||
+         runtime.jump_buffer_remaining > 0.0f) &&
+        can_jump) {
+      player->motion.velocity.y = -platformer_state.settings.jump_velocity;
+      runtime.player_grounded = false;
+      runtime.coyote_time_remaining = 0.0f;
+      runtime.jump_buffer_remaining = 0.0f;
+      state.events.emit(scene_events::player_jumped);
+    } else if (runtime.jump_buffer_remaining > 0.0f) {
+      runtime.jump_buffer_remaining =
+          std::max(0.0f, runtime.jump_buffer_remaining - dt);
     }
 
     player->motion.velocity.x =
@@ -119,7 +149,16 @@ namespace prune {
     move_player_axis(state, *player, 0.0f, player->motion.velocity.y * dt,
                      grounded);
 
-    platformer_state.runtime.player_grounded = grounded;
+    grounded = grounded || is_resting_on_solid(state, *player);
+    runtime.player_grounded = grounded;
+
+    if (grounded) {
+      runtime.coyote_time_remaining =
+          platformer_state.settings.coyote_time_seconds;
+    } else if (runtime.coyote_time_remaining > 0.0f) {
+      runtime.coyote_time_remaining =
+          std::max(0.0f, runtime.coyote_time_remaining - dt);
+    }
 
     if (grounded && player->motion.velocity.y > 0.0f) {
       player->motion.velocity.y = 0.0f;
@@ -135,7 +174,7 @@ namespace prune {
     }
   }
 
-  void PlatformerBehaviour::move_player_axis(SceneState& state,
+  void PlatformerBehaviour::move_player_axis(WorldState& state,
                                              GameObject& player, float delta_x,
                                              float delta_y,
                                              bool& grounded) const {
@@ -175,8 +214,27 @@ namespace prune {
     }
   }
 
+  bool PlatformerBehaviour::is_resting_on_solid(
+      const WorldState& state, const GameObject& player) const noexcept {
+    GameObject probe = player;
+    probe.transform.y += 1.0f;
+
+    for (const auto& object : state.objects.objects()) {
+      if (object.identity.id == player.identity.id ||
+          !is_active_solid_platformer_block(object)) {
+        continue;
+      }
+
+      if (collision::are_active_overlapping(probe, object)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   bool
-  PlatformerBehaviour::touches_hazard(const SceneState& state,
+  PlatformerBehaviour::touches_hazard(const WorldState& state,
                                       const GameObject& player) const noexcept {
     for (const auto& object : state.objects.objects()) {
       if (!is_active_platformer_hazard(object)) {
@@ -192,7 +250,7 @@ namespace prune {
   }
 
   void PlatformerBehaviour::reset_player(
-      SceneState& state, PlatformerState& platformer_state) const noexcept {
+      WorldState& state, PlatformerState& platformer_state) const noexcept {
     GameObject* player = player_object(state, platformer_state);
     if (!player) {
       return;
@@ -210,5 +268,7 @@ namespace prune {
     player->motion.velocity = {};
     player->motion.facing = Direction::Right;
     platformer_state.runtime.player_grounded = false;
+    platformer_state.runtime.coyote_time_remaining = 0.0f;
+    platformer_state.runtime.jump_buffer_remaining = 0.0f;
   }
 } // namespace prune

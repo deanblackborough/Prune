@@ -22,14 +22,15 @@ namespace prune {
   SelectedObjectActionAvailability
   selected_object_action_availability(Scene& scene) {
     GameObjectManager& objects = scene.get_object_manager();
+    EditorSelection& selection = scene.selection();
 
     SelectedObjectActionAvailability availability{};
-    if (GameObject* active = objects.selected_object()) {
+    if (GameObject* active = selection.selected_object(objects)) {
       availability.can_clone_active =
           scene.object_is_editable(*active) && active->editor.cloneable;
     }
 
-    for (const GameObjectId id : objects.selected_ids()) {
+    for (const GameObjectId id : selection.selected_ids()) {
       const GameObject* object = objects.get_by_id(id);
       if (!object || !scene.object_is_editable(*object) ||
           !object->editor.deletable) {
@@ -46,7 +47,8 @@ namespace prune {
   bool clone_active_selected_object(Scene& scene,
                                     const GridOptions& grid_options) {
     GameObjectManager& objects = scene.get_object_manager();
-    const GameObject* selected = objects.selected_object();
+    EditorSelection& selection = scene.selection();
+    const GameObject* selected = selection.selected_object(objects);
 
     if (!selected || !scene.object_is_editable(*selected) ||
         !selected->editor.cloneable) {
@@ -67,18 +69,19 @@ namespace prune {
       return false;
     }
 
-    objects.select(clone_id);
+    selection.select(objects, clone_id);
     scene.record_editor_command(
-        make_create_object_command(*created, created->identity.name));
+        make_object_create(*created, created->identity.name));
     return true;
   }
 
   bool delete_selected_objects(Scene& scene) {
     GameObjectManager& objects = scene.get_object_manager();
+    EditorSelection& selection = scene.selection();
     std::vector<GameObject> deleted_objects;
-    deleted_objects.reserve(objects.selected_count());
+    deleted_objects.reserve(selection.selected_count());
 
-    for (const GameObjectId id : objects.selected_ids()) {
+    for (const GameObjectId id : selection.selected_ids()) {
       const GameObject* object = objects.get_by_id(id);
       if (!object || !scene.object_is_editable(*object) ||
           !object->editor.deletable) {
@@ -93,18 +96,19 @@ namespace prune {
     }
 
     for (const GameObject& object : deleted_objects) {
-      objects.remove_object(object.identity.id);
+      remove_object_and_update_selection(objects, selection,
+                                         object.identity.id);
     }
 
     if (deleted_objects.size() > 1) {
-      objects.clear_selection();
+      selection.clear_selection();
     }
 
     if (deleted_objects.size() == 1) {
-      scene.record_editor_command(make_delete_object_command(
+      scene.record_editor_command(make_object_delete(
           deleted_objects.front(), deleted_objects.front().identity.name));
     } else {
-      scene.record_editor_command(make_multi_delete_object_command(
+      scene.record_editor_command(make_objects_delete(
           deleted_objects,
           std::to_string(deleted_objects.size()) + " objects"));
     }
@@ -118,7 +122,7 @@ namespace prune {
     }
 
     GameObjectManager& objects = scene.get_object_manager();
-    GameObject* selected = objects.selected_object();
+    GameObject* selected = scene.selection().selected_object(objects);
 
     if (!selected || !scene.object_is_editable(*selected)) {
       return false;
@@ -137,10 +141,9 @@ namespace prune {
     const GameObject before = *selected;
     selected->render.z_index = current + delta;
 
-    scene.record_editor_command(make_object_command(
-        EditorCommandType::ChangeObjectZIndex,
-        editor_command_type_label(EditorCommandType::ChangeObjectZIndex),
-        before, *selected, std::to_string(selected->render.z_index)));
+    scene.record_editor_command(
+        make_object_change("Change render order", before, *selected,
+                           std::to_string(selected->render.z_index)));
 
     return true;
   }

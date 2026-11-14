@@ -1,8 +1,39 @@
 #include "prune/editor/editor_command.hpp"
 
+#include <type_traits>
 #include <utility>
 
 namespace prune {
+
+  namespace {
+    template <typename IdSink>
+    void for_each_affected_id(const EditorCommand& command, IdSink&& sink) {
+      std::visit(
+          [&sink](const auto& payload) {
+            using Payload = std::decay_t<decltype(payload)>;
+
+            if constexpr (std::is_same_v<Payload, ObjectChange>) {
+              sink(payload.after.identity.id);
+            } else if constexpr (std::is_same_v<Payload, ObjectCreate>) {
+              sink(payload.object.identity.id);
+            } else if constexpr (std::is_same_v<Payload, ObjectDelete>) {
+              sink(payload.object.identity.id);
+            } else if constexpr (std::is_same_v<Payload, ObjectsChange>) {
+              for (const GameObject& object : payload.after) {
+                sink(object.identity.id);
+              }
+            } else if constexpr (std::is_same_v<Payload, ObjectsDelete>) {
+              for (const GameObject& object : payload.objects) {
+                sink(object.identity.id);
+              }
+            } else if constexpr (std::is_same_v<Payload, SceneSettingsChange>) {
+            } else {
+              static_assert(std::is_same_v<Payload, ViewportChange>);
+            }
+          },
+          command.payload);
+    }
+  } // namespace
 
   void EditorCommandHistory::clear() noexcept {
     m_commands.clear();
@@ -70,131 +101,101 @@ namespace prune {
     return &m_commands[m_next_command_index++];
   }
 
-  const char* editor_command_type_label(EditorCommandType type) noexcept {
-    switch (type) {
-    case EditorCommandType::MoveObject:
-      return "Move object";
-    case EditorCommandType::CreateObject:
-      return "Create object";
-    case EditorCommandType::DeleteObject:
-      return "Delete object";
-    case EditorCommandType::RenameObject:
-      return "Rename object";
-    case EditorCommandType::ChangeObjectPosition:
-      return "Change object position";
-    case EditorCommandType::ChangeObjectSize:
-      return "Change object size";
-    case EditorCommandType::ChangeObjectRenderType:
-      return "Change object rendering type";
-    case EditorCommandType::ChangeObjectColour:
-      return "Change object colour";
-    case EditorCommandType::ChangeObjectZIndex:
-      return "Change render order";
-    case EditorCommandType::ChangeObjectFlag:
-      return "Change object flag";
-    case EditorCommandType::ChangeSprite:
-      return "Change sprite";
-    case EditorCommandType::MoveViewport:
-      return "Move viewport";
-    case EditorCommandType::MoveObjects:
-      return "Move objects";
-    case EditorCommandType::DeleteObjects:
-      return "Delete objects";
-    }
-
-    return "Unknown editor command";
+  std::vector<GameObjectId> affected_ids(const EditorCommand& command) {
+    std::vector<GameObjectId> ids;
+    for_each_affected_id(command,
+                         [&ids](GameObjectId id) { ids.push_back(id); });
+    return ids;
   }
 
-  EditorCommand make_object_command(EditorCommandType type,
-                                    std::string_view label,
-                                    const GameObject& before,
-                                    const GameObject& after,
-                                    std::string_view detail) {
-    EditorCommand command{};
-    command.type = type;
-    command.label = std::string(label);
-    command.detail = std::string(detail);
-    command.object_id = after.identity.id;
-    command.object_ids.push_back(after.identity.id);
-    command.before_object = before;
-    command.after_object = after;
-
-    return command;
+  AffectedIdsSummary affected_ids_summary(const EditorCommand& command) {
+    AffectedIdsSummary summary{};
+    for_each_affected_id(command, [&summary](GameObjectId id) {
+      if (summary.count == 0) {
+        summary.first = id;
+      }
+      ++summary.count;
+    });
+    return summary;
   }
 
-  EditorCommand make_create_object_command(const GameObject& created,
-                                           std::string_view detail) {
-    EditorCommand command{};
-    command.type = EditorCommandType::CreateObject;
-    command.label = editor_command_type_label(EditorCommandType::CreateObject);
-    command.detail = std::string(detail);
-    command.object_id = created.identity.id;
-    command.object_ids.push_back(created.identity.id);
-    command.after_object = created;
-
-    return command;
-  }
-
-  EditorCommand make_delete_object_command(const GameObject& deleted,
-                                           std::string_view detail) {
-    EditorCommand command{};
-    command.type = EditorCommandType::DeleteObject;
-    command.label = editor_command_type_label(EditorCommandType::DeleteObject);
-    command.detail = std::string(detail);
-    command.object_id = deleted.identity.id;
-    command.object_ids.push_back(deleted.identity.id);
-    command.before_object = deleted;
-
-    return command;
-  }
-
-  EditorCommand make_multi_object_command(EditorCommandType type,
-                                          std::string_view label,
-                                          std::span<const GameObject> before,
-                                          std::span<const GameObject> after,
-                                          std::string_view detail) {
-    EditorCommand command{};
-    command.type = type;
-    command.label = std::string(label);
-    command.detail = std::string(detail);
-    command.before_objects.assign(before.begin(), before.end());
-    command.after_objects.assign(after.begin(), after.end());
-
-    command.object_ids.reserve(command.after_objects.size());
-    for (const GameObject& object : command.after_objects) {
-      command.object_ids.push_back(object.identity.id);
-    }
-
-    return command;
-  }
-
-  EditorCommand
-  make_multi_delete_object_command(std::span<const GameObject> deleted,
+  EditorCommand make_object_change(std::string_view label,
+                                   const GameObject& before,
+                                   const GameObject& after,
                                    std::string_view detail) {
     EditorCommand command{};
-    command.type = EditorCommandType::DeleteObjects;
-    command.label = editor_command_type_label(EditorCommandType::DeleteObjects);
+    command.label = std::string(label);
     command.detail = std::string(detail);
-    command.before_objects.assign(deleted.begin(), deleted.end());
-
-    command.object_ids.reserve(command.before_objects.size());
-    for (const GameObject& object : command.before_objects) {
-      command.object_ids.push_back(object.identity.id);
-    }
+    command.payload = ObjectChange{before, after};
 
     return command;
   }
 
-  EditorCommand make_viewport_command(std::string_view label,
-                                      const Camera& before, const Camera& after,
-                                      std::string_view detail) {
+  EditorCommand make_object_create(const GameObject& created,
+                                   std::string_view detail) {
     EditorCommand command{};
-    command.type = EditorCommandType::MoveViewport;
+    command.label = "Create object";
+    command.detail = std::string(detail);
+    command.payload = ObjectCreate{created};
+
+    return command;
+  }
+
+  EditorCommand make_object_delete(const GameObject& deleted,
+                                   std::string_view detail) {
+    EditorCommand command{};
+    command.label = "Delete object";
+    command.detail = std::string(detail);
+    command.payload = ObjectDelete{deleted};
+
+    return command;
+  }
+
+  EditorCommand make_objects_change(std::string_view label,
+                                    std::span<const GameObject> before,
+                                    std::span<const GameObject> after,
+                                    std::string_view detail) {
+    EditorCommand command{};
+    command.label = std::string(label);
+    command.detail = std::string(detail);
+    command.payload =
+        ObjectsChange{std::vector<GameObject>(before.begin(), before.end()),
+                      std::vector<GameObject>(after.begin(), after.end())};
+
+    return command;
+  }
+
+  EditorCommand make_objects_delete(std::span<const GameObject> deleted,
+                                    std::string_view detail) {
+    EditorCommand command{};
+    command.label = "Delete objects";
+    command.detail = std::string(detail);
+    command.payload =
+        ObjectsDelete{std::vector<GameObject>(deleted.begin(), deleted.end())};
+
+    return command;
+  }
+
+  EditorCommand make_viewport_change(std::string_view label,
+                                     const Camera& before, const Camera& after,
+                                     std::string_view detail) {
+    EditorCommand command{};
     command.makes_dirty = false;
     command.label = std::string(label);
     command.detail = std::string(detail);
-    command.before_camera = before;
-    command.after_camera = after;
+    command.payload = ViewportChange{before, after};
+
+    return command;
+  }
+
+  EditorCommand make_scene_settings_change(std::string_view label,
+                                           const YAML::Node& before,
+                                           const YAML::Node& after,
+                                           std::string_view detail) {
+    EditorCommand command{};
+    command.label = std::string(label);
+    command.detail = std::string(detail);
+    command.payload = SceneSettingsChange{before, after};
 
     return command;
   }

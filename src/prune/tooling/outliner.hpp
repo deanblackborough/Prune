@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 
+#include "prune/scene/editor_selection.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
 
@@ -13,7 +14,8 @@ namespace prune {
 
   class Outliner {
   public:
-    void draw(GameObjectManager& objects, const Scene& scene);
+    void draw(GameObjectManager& objects, EditorSelection& selection,
+              const Scene& scene);
 
   private:
     static std::string object_label(const GameObject& object,

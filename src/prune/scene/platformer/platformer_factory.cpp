@@ -11,6 +11,7 @@ namespace prune::platformer_factory {
     player.identity.name = "Platformer Player";
     player.identity.type = GameObjectType::Authored;
     player.runtime.behaviour = platformer_ids::player_behaviour;
+    player.semantics.concept_id = platformer_ids::player_concept;
     player.editor.renameable = false;
     player.editor.movable = false;
     player.editor.deletable = false;
@@ -34,6 +35,7 @@ namespace prune::platformer_factory {
     start.identity.name = "Player Start";
     start.identity.type = GameObjectType::Authored;
     start.runtime.behaviour = platformer_ids::player_start_behaviour;
+    start.semantics.concept_id = platformer_ids::player_start_concept;
     start.transform.x = x;
     start.transform.y = y;
     start.size.width = k_default_object_size;
@@ -54,6 +56,7 @@ namespace prune::platformer_factory {
     platform.identity.name = name;
     platform.identity.type = GameObjectType::Authored;
     platform.runtime.behaviour = platformer_ids::platform_behaviour;
+    platform.semantics.concept_id = platformer_ids::platform_concept;
     platform.transform.x = x;
     platform.transform.y = y;
     platform.size.width = width;
@@ -79,6 +82,7 @@ namespace prune::platformer_factory {
     hazard.identity.name = name;
     hazard.identity.type = GameObjectType::Authored;
     hazard.runtime.behaviour = platformer_ids::hazard_behaviour;
+    hazard.semantics.concept_id = platformer_ids::hazard_concept;
     hazard.transform.x = x;
     hazard.transform.y = y;
     hazard.size.width = width;

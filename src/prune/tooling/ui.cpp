@@ -10,6 +10,7 @@
 #include "prune/editor/editor_actions.hpp"
 #include "prune/editor/editor_tool.hpp"
 #include "prune/scene/scene.hpp"
+#include "prune/scene/scene_editor_factory.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/imgui/shortcut.hpp"
 #include "prune/tooling/ui.hpp"
@@ -189,13 +190,21 @@ namespace prune {
       }
 
       ImGui::SameLine();
-      if (scene.runtime_paused()) {
-        if (ImGui::Button("Play", ImVec2(k_tool_button_min_width, 0.0f))) {
+      const bool show_play = scene.runtime_stopped() || scene.runtime_paused();
+      if (ImGui::Button(show_play ? "Play" : "Pause",
+                        ImVec2(k_tool_button_min_width, 0.0f))) {
+        if (show_play) {
           scene.play_runtime();
+        } else {
+          scene.pause_runtime();
         }
-      } else if (ImGui::Button("Pause",
-                               ImVec2(k_tool_button_min_width, 0.0f))) {
-        scene.pause_runtime();
+      }
+
+      if (!scene.runtime_stopped()) {
+        ImGui::SameLine();
+        if (ImGui::Button("Stop", ImVec2(k_tool_button_min_width, 0.0f))) {
+          scene.stop_runtime();
+        }
       }
 
       ImGui::Separator();
@@ -238,6 +247,8 @@ namespace prune {
         ImGui::Separator();
         ImGui::TextUnformatted("Create");
 
+        ImGui::BeginDisabled(!scene.runtime_stopped());
+
         const std::span<const SceneCreationAction> actions =
             scene.scene_creation_actions();
         for (std::size_t index = 0; index < actions.size(); ++index) {
@@ -248,6 +259,8 @@ namespace prune {
           draw_scene_creation_action_button(scene, actions[index],
                                             layout.scene_creation_button_width);
         }
+
+        ImGui::EndDisabled();
       }
 
       ImGui::EndGroup();
@@ -255,6 +268,7 @@ namespace prune {
 
   } // namespace
 
+  Ui::Ui() = default;
   Ui::~Ui() { destroy_scene_render_target(); }
 
   void Ui::save_scene(Scene& scene) {
@@ -276,11 +290,30 @@ namespace prune {
     }
   }
 
+  SceneEditor& Ui::ensure_scene_editor(const Scene& scene) {
+    const SceneDescriptor* descriptor =
+        scene_descriptor_for_id(scene.scene_type_id());
+    const SceneType desired_type =
+        descriptor ? descriptor->type : SceneType::SimpleShooter;
+
+    if (!m_has_scene_editor || m_scene_editor_type != desired_type ||
+        m_scene_editor_scene != &scene) {
+      m_scene_editor = SceneEditorFactory::create(desired_type);
+      m_scene_editor_type = desired_type;
+      m_has_scene_editor = true;
+      m_scene_editor_scene = &scene;
+    }
+
+    return *m_scene_editor;
+  }
+
   void Ui::build(Scene& scene, SDL_Renderer* renderer,
                  bool& new_scene_requested, SceneType& new_scene_type,
                  bool& load_scene_requested, bool& audio_enabled,
                  bool audio_available) {
-    draw_scene_viewport(scene, renderer);
+    SceneEditor& scene_editor = ensure_scene_editor(scene);
+
+    draw_scene_viewport(scene, scene_editor, renderer);
 
     if (ImGui::BeginMainMenuBar()) {
       ImGui::Text("%.*s%s", static_cast<int>(scene.scene_name().size()),
@@ -322,12 +355,15 @@ namespace prune {
 
       if (ImGui::BeginMenu("Edit")) {
         const EditorCommandHistory& history = scene.editor_command_history();
+        const bool can_undo_redo = scene.runtime_stopped();
 
-        if (ImGui::MenuItem("Undo", "Ctrl+Z", false, history.can_undo())) {
+        if (ImGui::MenuItem("Undo", "Ctrl+Z", false,
+                            history.can_undo() && can_undo_redo)) {
           scene.undo_editor_command();
         }
 
-        if (ImGui::MenuItem("Redo", "Ctrl+Y", false, history.can_redo())) {
+        if (ImGui::MenuItem("Redo", "Ctrl+Y", false,
+                            history.can_redo() && can_undo_redo)) {
           scene.redo_editor_command();
         }
 
@@ -399,7 +435,7 @@ namespace prune {
       tooling::EditorLayout::outliner();
 
       if (ImGui::Begin("Outliner", &m_show_outliner)) {
-        m_outliner.draw(scene.get_object_manager(), scene);
+        m_outliner.draw(scene.get_object_manager(), scene.selection(), scene);
       }
       ImGui::End();
     }
@@ -414,8 +450,8 @@ namespace prune {
         }
 
         if (GameObject* selected =
-                scene.get_object_manager().selected_object()) {
-          scene.draw_scene_inspector(*selected);
+                scene.selection().selected_object(scene.get_object_manager())) {
+          scene_editor.draw_scene_inspector(scene, *selected);
         }
       }
 
@@ -423,7 +459,7 @@ namespace prune {
     }
 
     if (m_show_scene_tools) {
-      scene.draw_scene_tools(m_show_scene_tools);
+      scene_editor.draw_scene_tools(scene, m_show_scene_tools);
     }
 
     if (m_show_command_history) {
@@ -450,8 +486,8 @@ namespace prune {
       if (ImGui::Begin("Stats", &m_show_stats)) {
         WorldSceneContext context = scene.world_scene_context();
         if (context.available()) {
-          m_stats.draw(scene.get_object_manager(), scene.get_viewport(),
-                       *context.camera);
+          m_stats.draw(scene.get_object_manager(), scene.selection(),
+                       scene.get_viewport(), *context.camera);
         } else {
           ImGui::TextUnformatted(
               "This scene does not expose generic world stats.");
@@ -501,7 +537,8 @@ namespace prune {
     m_scene_render_target_height = height;
   }
 
-  void Ui::draw_scene_viewport(Scene& scene, SDL_Renderer* renderer) {
+  void Ui::draw_scene_viewport(Scene& scene, SceneEditor& scene_editor,
+                               SDL_Renderer* renderer) {
     if (!m_show_scene_viewport) {
       scene.set_viewport({});
       return;
@@ -572,7 +609,7 @@ namespace prune {
                           viewport_pos, viewport_max);
 
       scene.set_viewport(viewport);
-      scene.draw_viewport_overlays();
+      scene_editor.draw_viewport_overlays(scene);
       draw_editor_tool_palette(scene, tool_palette_layout, grid_options,
                                palette_min, palette_max);
     } else {

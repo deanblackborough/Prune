@@ -69,13 +69,15 @@ namespace prune::tooling::imgui::property_table {
   bool slider_float(const char* label, const char* id, float& value, float min,
                     float max, const char* format) {
     begin_row(label);
-    return ImGui::SliderFloat(id, &value, min, max, format);
+    return ImGui::SliderFloat(id, &value, min, max, format,
+                              ImGuiSliderFlags_AlwaysClamp);
   }
 
   bool slider_int(const char* label, const char* id, int& value, int min,
                   int max) {
     begin_row(label);
-    return ImGui::SliderInt(id, &value, min, max);
+    return ImGui::SliderInt(id, &value, min, max, "%d",
+                            ImGuiSliderFlags_AlwaysClamp);
   }
 
   bool drag_float(const char* label, const char* id, float& value, float speed,

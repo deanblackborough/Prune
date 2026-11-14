@@ -127,6 +127,8 @@ namespace prune {
       node["type"] = to_string(object.identity.type);
       node["active"] = object.lifecycle.active;
 
+      node["semantics"]["concept_id"] = object.semantics.concept_id;
+
       node["transform"]["x"] = object.transform.x;
       node["transform"]["y"] = object.transform.y;
 
@@ -181,6 +183,19 @@ namespace prune {
         return false;
       }
 
+      return true;
+    }
+
+    bool load_object_semantics_from_node(const YAML::Node& node,
+                                         GameObject& object,
+                                         std::string& error) {
+      const YAML::Node semantics = node["semantics"];
+      if (!semantics || !semantics.IsMap() || !semantics["concept_id"]) {
+        error = "Object is missing semantics.concept_id.";
+        return false;
+      }
+
+      object.semantics.concept_id = semantics["concept_id"].as<std::string>();
       return true;
     }
 
@@ -335,6 +350,10 @@ namespace prune {
         return false;
       }
 
+      if (!load_object_semantics_from_node(node, object, error)) {
+        return false;
+      }
+
       const YAML::Node transform = node["transform"];
       if (!transform || !transform.IsMap()) {
         error = "Object is missing transform.";
@@ -377,14 +396,14 @@ namespace prune {
 
   void SceneSerializer::save_to_node(const SceneState& state,
                                      YAML::Node& root) {
-    root["scene"]["next_object_id"] = state.objects.next_id();
+    root["scene"]["next_object_id"] = state.world.objects.next_id();
 
     root["options"]["highlight_selected"] =
-        state.scene_options.highlight_selected;
+        state.editor.scene_options.highlight_selected;
 
     YAML::Node objects = YAML::Node(YAML::NodeType::Sequence);
 
-    for (const auto& object : state.objects.objects()) {
+    for (const auto& object : state.world.objects.objects()) {
       if (!object_is_persistable(object)) {
         continue;
       }
@@ -463,10 +482,10 @@ namespace prune {
       loaded.selected_id = loaded.objects.objects().front().identity.id;
     }
 
-    loaded.objects.set_selected_id(loaded.selected_id);
-
-    state.objects = std::move(loaded.objects);
-    state.scene_options = loaded.scene_options;
+    state.world.objects = std::move(loaded.objects);
+    state.editor.selection.set_selected_id(state.world.objects,
+                                           loaded.selected_id);
+    state.editor.scene_options = loaded.scene_options;
 
     return true;
   }

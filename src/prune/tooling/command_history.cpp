@@ -1,5 +1,6 @@
 
 #include <cstddef>
+#include <vector>
 
 #include "imgui.h"
 
@@ -10,8 +11,9 @@ namespace prune {
 
   void CommandHistoryPanel::draw(Scene& scene) {
     const EditorCommandHistory& history = scene.editor_command_history();
+    const bool can_undo_redo = scene.runtime_stopped();
 
-    ImGui::BeginDisabled(!history.can_undo());
+    ImGui::BeginDisabled(!history.can_undo() || !can_undo_redo);
     if (ImGui::Button("Undo")) {
       scene.undo_editor_command();
     }
@@ -19,7 +21,7 @@ namespace prune {
 
     ImGui::SameLine();
 
-    ImGui::BeginDisabled(!history.can_redo());
+    ImGui::BeginDisabled(!history.can_redo() || !can_undo_redo);
     if (ImGui::Button("Redo")) {
       scene.redo_editor_command();
     }
@@ -48,9 +50,7 @@ namespace prune {
           ImGui::BeginDisabled();
         }
 
-        const char* label = command.label.empty()
-                                ? editor_command_type_label(command.type)
-                                : command.label.c_str();
+        const char* label = command.label.c_str();
 
         if (command.detail.empty()) {
           ImGui::Text("%s%zu. %s", applied ? "" : "redo: ", command_index + 1,
@@ -61,13 +61,13 @@ namespace prune {
                       command.detail.c_str());
         }
 
-        if (command.object_ids.size() > 1) {
+        const AffectedIdsSummary ids = affected_ids_summary(command);
+        if (ids.count > 1) {
           ImGui::SameLine();
-          ImGui::TextDisabled("%zu objects", command.object_ids.size());
-        } else if (command.object_id != k_invalid_game_object_id) {
+          ImGui::TextDisabled("%zu objects", ids.count);
+        } else if (ids.count == 1 && ids.first != k_invalid_game_object_id) {
           ImGui::SameLine();
-          ImGui::TextDisabled("#%u",
-                              static_cast<unsigned int>(command.object_id));
+          ImGui::TextDisabled("#%u", static_cast<unsigned int>(ids.first));
         }
 
         if (!applied) {

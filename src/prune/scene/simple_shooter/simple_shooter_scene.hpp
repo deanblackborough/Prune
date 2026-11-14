@@ -10,7 +10,6 @@
 #include "prune/scene/simple_shooter/simple_shooter_behaviour.hpp"
 #include "prune/scene/simple_shooter/simple_shooter_state.hpp"
 #include "prune/scene/world_scene.hpp"
-#include "prune/tooling/simple_shooter/simple_shooter.hpp"
 
 namespace prune {
 
@@ -37,19 +36,22 @@ namespace prune {
     [[nodiscard]] std::string_view scene_tools_label() const noexcept override {
       return "Simple Shooter";
     }
-    void draw_scene_tools(bool& open) override;
 
-    void draw_scene_inspector(GameObject& selected) override;
+    // Exposed for SimpleShooterEditor, which owns the ImGui-facing tools and
+    // inspector panels. The scene still owns the data; the editor just binds
+    // widgets to it.
+    [[nodiscard]] SimpleShooterState& simple_shooter_state() noexcept {
+      return m_simple_shooter_state;
+    }
 
   protected:
-    void update_runtime(float dt, const Input& input,
+    void update_runtime(WorldState& world, float dt, const Input& input,
                         bool keyboard_input_enabled) override;
     void restart_runtime() override;
-    void set_runtime_paused(bool paused) noexcept override;
-    [[nodiscard]] bool is_runtime_paused() const noexcept override;
     void save_scene_data(YAML::Node& root) const override;
     [[nodiscard]] bool load_scene_data(const YAML::Node& root,
                                        std::string& error) override;
+    void apply_scene_settings_snapshot(const YAML::Node& node) override;
     [[nodiscard]] bool restore_loaded_scene(SceneState& state,
                                             std::string& error) override;
     [[nodiscard]] GameObject* game_camera_target() noexcept override;
@@ -70,6 +72,5 @@ namespace prune {
     SimpleShooterState m_simple_shooter_state;
 
     SimpleShooterBehaviour m_simple_shooter;
-    SimpleShooter m_simple_shooter_tools;
   };
 } // namespace prune

@@ -449,6 +449,197 @@ A fully generic serializer would either miss scene meaning or become filled with
 
 ---
 
+## Authored state is authoritative; the live world is a projection of it
+
+### Decision
+
+The authored store holds the editor-authored *objects* that get saved; it is the single source
+of truth for persistent object data. Scene settings (gravity, speeds, cooldowns, ...) are a
+separate persisted source of truth: each scene owns its settings struct directly and saves it
+through its own serializer, kept in sync with undo/redo via `SceneSettingsChange` commands
+rather than living in the authored store.
+
+The live world — what actually runs when the scene plays — is rebuilt from the authored store
+(and the scene's settings struct) on load, on reset, and on Stop. A fresh edit (inspector,
+drag/scale, scene-settings slider, object creation) mutates the live world directly and then
+syncs that change into the authored store via `record_editor_command`; undo and redo replay a
+command's stored snapshot into both. The authored store (or settings struct) is never edited on
+its own expecting the live world to follow — only load, reset, and Stop rebuild the live world
+from them.
+
+Editing authored fields (inspector, drag/scale, scene-settings sliders) is only possible while
+the scene is **Stopped**: the live world is rebuilt from the authored baseline and held paused.
+**Play** runs the simulation from wherever it currently is; **Pause** freezes exactly the current
+frame without restoring the baseline or enabling editing; **Reset** rebuilds from the baseline
+and starts playing. A freshly created or loaded scene starts Stopped.
+
+Everything that exists only for the editor UI rather than the simulation — selection, dirty
+state, undo/redo history, the active tool, the viewport, debug-overlay toggles, both camera
+poses — is editor/session state, not authored data, and does not live in the save file. One
+named exception: `SceneOptions::highlight_selected` is a persisted per-scene editor preference
+and is saved/loaded by `SceneSerializer`; grid options and debug-overlay toggles are not.
+
+Selection, dirty state, undo/redo history, the active tool, the viewport, and debug-overlay
+toggles are kept out of the narrower view passed to runtime/behaviour code. Camera access was
+not folded into that split in this pass: `PlatformerBehaviour` and `SimpleShooterBehaviour`
+still take `SceneCamera&` directly today. Closing that gap is tracked as a follow-up, not implied
+by this decision.
+
+### Why
+
+Before this, `WorldScene` kept a live object collection and a separate authored collection and
+interpreted every command twice to keep them in sync by hand. Worse, scene settings (gravity,
+speeds, cooldowns) were mutated directly by tooling widgets and never passed through commands,
+dirty tracking, or undo/redo at all — editing a setting, pausing, and saving could silently
+persist `paused: true`, because nothing distinguished "authored" from "whatever the live struct
+currently holds."
+
+Gating authored edits to Stopped removes the hard alternative (reconciling an edit made to a
+mid-play, already-diverged live object back into the authored store) entirely: there is no
+diverged state to reconcile, because editing never targets live state directly.
+
+### Consequences
+
+- Camera state (both editor pose and game framing), grid snapping, the active selection, debug
+  overlays, and the active tool never appear in a save file. Scenes re-establish their game
+  camera framing from the factory/`restore_defaults` logic on both `new_scene` and load, not
+  from the file.
+- Selection lives in a dedicated `EditorSelection`, paired with the live world, never with
+  `GameObjectManager` itself and never with the authored store.
+- A scene must be Stopped before its authored fields are editable; Play and Pause never unlock
+  editing.
+- Loading an old save file that still has the removed keys (old camera/selection/overlay
+  sections) must not error — unknown keys are ignored rather than rejected.
+
+### Revisit when
+
+- A feature genuinely needs editing to work while the simulation keeps running (this has not
+  come up and is not expected to).
+
+---
+
+## `EditorCommand` carries typed payloads, not a type enum plus optional fields
+
+### Decision
+
+`EditorCommand` holds a `std::variant` of small payload structs (`ObjectChange`, `ObjectCreate`,
+`ObjectDelete`, `ObjectsChange`, `ObjectsDelete`, `ViewportChange`, `SceneSettingsChange`), not an
+`EditorCommandType` enum plus a bag of `std::optional`/`std::vector` fields whose validity
+depended on the enum value.
+
+### Why
+
+The enum-plus-bag shape let a command like `{ .type = MoveViewport, .before_object = obj }`
+compile while being meaningless, and roughly nine of fourteen command types carried exactly the
+same two fields (`before`/`after` object) and differed only in a label and which switch-case ran.
+Every new object-editing feature (rotation, future property edits) was another type to add to
+every switch. A typed payload lets most new edits reuse `ObjectChange` as-is — they add a label,
+not a type.
+
+### Consequences
+
+- Consumers `std::visit` (or `std::get_if`) the payload instead of switching on a type tag.
+- History labels describe the operation for the UI; they do not drive replay. "Change colour"
+  and "Move" are both an `ObjectChange`.
+- Rotation and other per-object edits are expected to land as a label plus reuse of
+  `ObjectChange`, not a new payload type.
+
+### Revisit when
+
+- A genuinely new *shape* of edit appears that doesn't fit the existing payload set (not just a
+  new object field).
+
+---
+
+## Editor presentation is structurally separated from runtime/scene code
+
+### Decision
+
+`Scene`/`WorldScene` and scene behaviour never depend on Dear ImGui or on anything under
+`tooling/`. Each scene's ImGui-facing tools, inspector sections, and overlays live in a matching
+`SceneEditor` subclass (`PlatformerEditor`, `SimpleShooterEditor`, `ArtilleryEditor`) that the
+editor shell constructs through a small explicit factory, mirroring `SceneFactory`. The build
+mirrors this: `prune_runtime` (scene/behaviour/editor-command code, no ImGui) and `prune_editor`
+(tooling, scene editors, Dear ImGui) are separate CMake targets, and `prune_editor` is the only
+one that links ImGui. `Prune` is a thin executable linking both; `PruneTests` links only
+`prune_runtime`.
+
+### Why
+
+A single `add_executable` could not reject a runtime file that happened to include ImGui or a
+`tooling/` header, so "runtime must not depend on editor presentation" was documentation, not
+something that could fail a build. Splitting the classes first, then the build targets, turns
+that rule into a compile error (a stray ImGui include inside `prune_runtime` fails to find the
+header) rather than something to catch in review.
+
+### Consequences
+
+- `prune_runtime` has zero ImGui symbols (checked directly: `nm libprune_runtime.a | grep -i
+  imgui` is empty).
+- The test binary builds and runs without touching ImGui or SDL rendering at all, which is what
+  a scripted headless sanitizer run needs.
+- A native or WebAssembly playable export only needs `prune_runtime`, not the whole editor.
+- Adding a file to the wrong CMake list is still possible, but it fails loudly on the next build
+  rather than silently compiling.
+
+### Revisit when
+
+- A playable-export or headless-sanitizer feature is actually built and needs more than this
+  (e.g. a dedicated headless/smoke entry point).
+
+---
+
+## GameObjectId is the durable handle, GameObject* is frame-local
+
+### Status
+
+Formalises a rule the authoring-model refactor already implements. This entry documents why the
+rule exists, not a new design choice.
+
+### Decision
+
+`GameObjectId` is the only identity that may be held across a frame, a command, undo/redo,
+reset, or scene load. A `GameObject*`/`GameObject&` obtained from `GameObjectManager::get_by_id`
+(or `objects()`, or `EditorSelection::selected_object()`, etc.) is valid only for the immediate
+operation that fetched it and must never be stored in a member variable, captured in a lambda
+that outlives the current call, or dereferenced again after any call that can mutate the object
+collection.
+
+### Why
+
+`GameObjectManager` stores objects in a plain `std::vector<GameObject>`. `create_object` calls
+`push_back`, which can reallocate and invalidate every existing pointer/reference into the
+vector. The various `remove_*` methods use the erase-remove idiom, which invalidates pointers
+from the erased element onward. On top of that, `WorldScene::enter_stopped_state()` and
+`record_editor_command`/`undo_editor_command`/`redo_editor_command` can wholesale-replace the
+live `GameObjectManager` from the authored store, which invalidates every pointer into the old
+storage outright.
+
+This is why every call site that needs to touch an object again after one of those operations
+re-fetches it with `get_by_id(id)` rather than reusing a pointer from before, and why
+`EditorCommand` payloads hold `GameObject` by value, never by pointer: the inspector/tooling
+pattern is capture `before` as a value copy, mutate the live object through its (short-lived)
+pointer, then record a command carrying value copies.
+
+### Consequences
+
+- Never cache a `GameObject*`/`GameObject&` past the current operation. If something needs to
+  refer to an object "later," store its `GameObjectId` and re-resolve it each time.
+- `EditorCommand` payloads, drag-state snapshots, and anything else that needs to survive past
+  the current call hold `GameObject` by value.
+- A pointer from `get_by_id` is safe to use immediately, and across calls that are known not to
+  mutate `GameObjectManager`'s storage, but never across `record_editor_command`,
+  `undo_editor_command`, `redo_editor_command`, `reset_runtime`, `stop_runtime`, or scene
+  load/save.
+
+### Revisit when
+
+- `GameObjectManager`'s storage changes to something pointer-stable (a slot map, a node-based
+  container). Even then, `GameObjectId` would likely stay the preferred API for clarity; this
+  would only relax the "pointers are frame-local" restriction, not remove the id.
+
+---
+
 # Tooling decisions
 
 ## Editor tooling before more complete games

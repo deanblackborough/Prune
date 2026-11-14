@@ -77,7 +77,7 @@ namespace prune {
       return k_terrain_layouts[distribution(rng)];
     }
 
-    void remove_existing_terrain(SceneState& state) {
+    void remove_existing_terrain(WorldState& state) {
       std::vector<GameObjectId> terrain_ids;
 
       for (const auto& object : state.objects.objects()) {
@@ -91,7 +91,7 @@ namespace prune {
       }
     }
 
-    void apply_terrain_layout(SceneState& state,
+    void apply_terrain_layout(WorldState& state,
                               ArtilleryState& artillery_state,
                               const TerrainLayout& layout) {
       remove_existing_terrain(state);
@@ -121,11 +121,11 @@ namespace prune {
     }
   } // namespace
 
-  void ArtilleryBehaviour::update(SceneState& state, SceneCamera&,
+  void ArtilleryBehaviour::update(WorldState& state, SceneCamera&,
                                   ArtilleryState& artillery_state, float dt,
                                   const Input& input,
                                   bool keyboard_input_enabled) const {
-    if (artillery_state.runtime.paused) {
+    if (state.paused) {
       return;
     }
 
@@ -133,7 +133,7 @@ namespace prune {
     update_projectile(state, artillery_state, dt);
   }
 
-  void ArtilleryBehaviour::update_controls(SceneState& state,
+  void ArtilleryBehaviour::update_controls(WorldState& state,
                                            ArtilleryState& artillery_state,
                                            float dt, const Input& input,
                                            bool keyboard_input_enabled) const {
@@ -163,21 +163,27 @@ namespace prune {
       aim.power -= artillery_state.settings.power_step * dt;
     }
 
-    aim.angle_degrees = std::clamp(aim.angle_degrees, 5.0f, 85.0f);
+    aim.angle_degrees = std::clamp(aim.angle_degrees,
+                                   artillery_state.settings.min_angle_degrees,
+                                   artillery_state.settings.max_angle_degrees);
     aim.power = std::clamp(aim.power, artillery_state.settings.min_power,
                            artillery_state.settings.max_power);
 
-    if (input.was_key_pressed(SDL_SCANCODE_SPACE)) {
+    // was_key_pressed_for_update, not was_key_pressed: this runs from a
+    // fixed-timestep tick, and was_key_pressed's edge is cleared every
+    // render frame regardless of whether a tick ran that frame — on a
+    // render-only frame the press would be dropped before any tick saw it.
+    if (input.was_key_pressed_for_update(SDL_SCANCODE_SPACE)) {
       fire_projectile(state, artillery_state);
     }
 
-    if (input.was_key_pressed(SDL_SCANCODE_R)) {
+    if (input.was_key_pressed_for_update(SDL_SCANCODE_R)) {
       reset_round(state, artillery_state);
     }
   }
 
   void
-  ArtilleryBehaviour::fire_projectile(SceneState& state,
+  ArtilleryBehaviour::fire_projectile(WorldState& state,
                                       ArtilleryState& artillery_state) const {
     const GameObject* tank = current_tank(state, artillery_state);
     if (!tank) {
@@ -213,7 +219,7 @@ namespace prune {
     state.events.emit(scene_events::player_fired);
   }
 
-  void ArtilleryBehaviour::update_projectile(SceneState& state,
+  void ArtilleryBehaviour::update_projectile(WorldState& state,
                                              ArtilleryState& artillery_state,
                                              float dt) const {
     if (!artillery_state.runtime.projectile_active) {
@@ -258,7 +264,7 @@ namespace prune {
   }
 
   bool ArtilleryBehaviour::projectile_hit_solid(
-      const SceneState& state, const GameObject& projectile,
+      const WorldState& state, const GameObject& projectile,
       GameObjectId ignored_object_id, GameObjectId& hit_id) const noexcept {
     for (const auto& object : state.objects.objects()) {
       if (object.identity.id == projectile.identity.id ||
@@ -277,7 +283,7 @@ namespace prune {
   }
 
   void
-  ArtilleryBehaviour::end_turn(SceneState&,
+  ArtilleryBehaviour::end_turn(WorldState&,
                                ArtilleryState& artillery_state) const noexcept {
     artillery_state.runtime.current_turn =
         artillery_state.runtime.current_turn == ArtilleryTurn::PlayerOne
@@ -285,7 +291,7 @@ namespace prune {
             : ArtilleryTurn::PlayerOne;
   }
 
-  void ArtilleryBehaviour::reset_round(SceneState& state,
+  void ArtilleryBehaviour::reset_round(WorldState& state,
                                        ArtilleryState& artillery_state) const {
     if (GameObject* projectile =
             state.objects.get_by_id(artillery_state.runtime.projectile_id)) {
@@ -304,7 +310,7 @@ namespace prune {
   }
 
   GameObject* ArtilleryBehaviour::current_tank(
-      SceneState& state, const ArtilleryState& artillery_state) const noexcept {
+      WorldState& state, const ArtilleryState& artillery_state) const noexcept {
     const GameObjectId id =
         artillery_state.runtime.current_turn == ArtilleryTurn::PlayerOne
             ? artillery_state.player_one_id
@@ -315,7 +321,7 @@ namespace prune {
   }
 
   const GameObject* ArtilleryBehaviour::current_tank(
-      const SceneState& state,
+      const WorldState& state,
       const ArtilleryState& artillery_state) const noexcept {
     const GameObjectId id =
         artillery_state.runtime.current_turn == ArtilleryTurn::PlayerOne

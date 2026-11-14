@@ -21,22 +21,11 @@ namespace prune {
 
     [[nodiscard]] std::size_t count() const noexcept;
     [[nodiscard]] bool empty() const noexcept;
+    [[nodiscard]] std::size_t removal_generation() const noexcept;
 
     [[nodiscard]] GameObject* get_by_id(GameObjectId id) noexcept;
     [[nodiscard]] const GameObject* get_by_id(GameObjectId id) const noexcept;
-
-    [[nodiscard]] GameObject* selected_object() noexcept;
-    [[nodiscard]] const GameObject* selected_object() const noexcept;
-
-    void select(GameObjectId id) noexcept;
-    void select_many(std::span<const GameObjectId> ids);
-    void toggle_selected(GameObjectId id) noexcept;
-    void clear_selection() noexcept;
-    void set_selected_id(GameObjectId id) noexcept;
-    [[nodiscard]] GameObjectId selected_id() const noexcept;
-    [[nodiscard]] bool is_selected(GameObjectId id) const noexcept;
-    [[nodiscard]] std::size_t selected_count() const noexcept;
-    [[nodiscard]] std::span<const GameObjectId> selected_ids() const noexcept;
+    [[nodiscard]] std::size_t index_of(GameObjectId id) const noexcept;
 
     void set_next_id(GameObjectId next_id) noexcept;
     [[nodiscard]] GameObjectId next_id() const noexcept;
@@ -48,14 +37,21 @@ namespace prune {
                                                GameObjectId ignore_id) const;
 
   private:
-    [[nodiscard]] std::size_t find_index_by_id(GameObjectId id) const noexcept;
-    [[nodiscard]] std::size_t
-    find_selected_index(GameObjectId id) const noexcept;
-    void remove_from_selection(GameObjectId id) noexcept;
-    void sanitize_selection() noexcept;
-
     std::vector<GameObject> m_objects;
-    std::vector<GameObjectId> m_selected_ids;
     GameObjectId m_next_id = 1;
+    std::size_t m_removal_generation = 0;
   };
+
+  // Inserts `object` into `objects`, replacing any existing object with the
+  // same id, or adding it while keeping `objects` ordered by id. Used to
+  // restore a snapshot captured before a create/delete/change, so replaying
+  // commands leaves objects in a stable, deterministic order.
+  void restore_object_in_id_order(GameObjectManager& objects,
+                                  const GameObject& object);
+
+  // Same as calling restore_object_in_id_order for each of `restored`, but
+  // sorts `objects` at most once instead of once per restored object.
+  void restore_objects_in_id_order(GameObjectManager& objects,
+                                   std::span<const GameObject> restored);
+
 } // namespace prune

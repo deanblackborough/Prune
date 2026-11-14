@@ -6,10 +6,9 @@ namespace prune {
                                           YAML::Node& root) {
     root["platformer"]["player_id"] = state.player_id;
     root["platformer"]["player_start_id"] = state.player_start_id;
-    root["platformer"]["move_speed"] = state.settings.move_speed;
-    root["platformer"]["jump_velocity"] = state.settings.jump_velocity;
-    root["platformer"]["gravity"] = state.settings.gravity;
-    root["platformer"]["max_fall_speed"] = state.settings.max_fall_speed;
+
+    YAML::Node platformer = root["platformer"];
+    save_settings_to_node(state.settings, platformer);
   }
 
   bool PlatformerSerializer::load_from_node(const YAML::Node& root,
@@ -33,20 +32,44 @@ namespace prune {
       state.player_start_id = platformer["player_start_id"].as<GameObjectId>();
     }
 
-    if (platformer["move_speed"]) {
-      state.settings.move_speed = platformer["move_speed"].as<float>();
+    if (!load_settings_from_node(platformer, state.settings, error)) {
+      return false;
     }
 
-    if (platformer["jump_velocity"]) {
-      state.settings.jump_velocity = platformer["jump_velocity"].as<float>();
+    return true;
+  }
+
+  void PlatformerSerializer::save_settings_to_node(
+      const PlatformerSettings& settings, YAML::Node& node) {
+    node["move_speed"] = settings.move_speed;
+    node["jump_velocity"] = settings.jump_velocity;
+    node["gravity"] = settings.gravity;
+    node["max_fall_speed"] = settings.max_fall_speed;
+    node["coyote_time_seconds"] = settings.coyote_time_seconds;
+    node["jump_buffer_seconds"] = settings.jump_buffer_seconds;
+  }
+
+  bool
+  PlatformerSerializer::load_settings_from_node(const YAML::Node& node,
+                                                PlatformerSettings& settings,
+                                                std::string& error) {
+    if (!node["move_speed"] || !node["jump_velocity"] || !node["gravity"] ||
+        !node["max_fall_speed"]) {
+      error = "platformer options are incomplete.";
+      return false;
     }
 
-    if (platformer["gravity"]) {
-      state.settings.gravity = platformer["gravity"].as<float>();
+    settings.move_speed = node["move_speed"].as<float>();
+    settings.jump_velocity = node["jump_velocity"].as<float>();
+    settings.gravity = node["gravity"].as<float>();
+    settings.max_fall_speed = node["max_fall_speed"].as<float>();
+
+    if (node["coyote_time_seconds"]) {
+      settings.coyote_time_seconds = node["coyote_time_seconds"].as<float>();
     }
 
-    if (platformer["max_fall_speed"]) {
-      state.settings.max_fall_speed = platformer["max_fall_speed"].as<float>();
+    if (node["jump_buffer_seconds"]) {
+      settings.jump_buffer_seconds = node["jump_buffer_seconds"].as<float>();
     }
 
     return true;

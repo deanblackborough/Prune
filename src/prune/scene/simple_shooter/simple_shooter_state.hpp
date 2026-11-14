@@ -15,7 +15,6 @@ namespace prune {
   };
 
   struct SimpleShooterRuntime {
-    bool paused = false;
     float fire_cooldown_remaining = 0.0f;
   };
 

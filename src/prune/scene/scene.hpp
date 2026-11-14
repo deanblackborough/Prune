@@ -67,6 +67,12 @@ namespace prune {
     virtual void play_runtime() noexcept = 0;
     [[nodiscard]] virtual bool runtime_paused() const noexcept = 0;
 
+    // Rebuilds runtime state from the authored baseline and holds it paused,
+    // entering the editable state. A freshly created or loaded scene starts
+    // here.
+    virtual void stop_runtime() = 0;
+    [[nodiscard]] virtual bool runtime_stopped() const noexcept = 0;
+
     [[nodiscard]] virtual bool save_to_file(std::string_view path,
                                             std::string& error) = 0;
     [[nodiscard]] virtual bool load_from_file(std::string_view path,
@@ -93,8 +99,8 @@ namespace prune {
     object_is_editable(const GameObject& object) const {
       const ObjectConcept concept_for = object_concept_for(object);
 
-      return object.editor.selectable && concept_for.editable &&
-             !concept_for.runtime_only &&
+      return runtime_stopped() && object.editor.selectable &&
+             concept_for.editable && !concept_for.runtime_only &&
              object.identity.type != GameObjectType::Runtime;
     }
 
@@ -134,10 +140,10 @@ namespace prune {
 
     [[nodiscard]] virtual std::string_view
     scene_tools_label() const noexcept = 0;
-    virtual void draw_scene_tools(bool& open) = 0;
-    virtual void draw_viewport_overlays() = 0;
 
     virtual GameObjectManager& get_object_manager() = 0;
+    [[nodiscard]] virtual EditorSelection& selection() noexcept = 0;
+    [[nodiscard]] virtual const EditorSelection& selection() const noexcept = 0;
     virtual void record_editor_command(EditorCommand command) = 0;
     [[nodiscard]] virtual const EditorCommandHistory&
     editor_command_history() const noexcept = 0;
@@ -162,8 +168,6 @@ namespace prune {
     world_scene_context() const noexcept {
       return {};
     }
-
-    virtual void draw_scene_inspector(GameObject& selected) = 0;
 
   protected:
     Scene() = default;

@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "prune/editor/editor_command.hpp"
+#include "prune/scene/editor_selection.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/game_object_manager.hpp"
 #include "prune/scene/scene.hpp"
@@ -18,9 +19,12 @@ namespace prune {
   private:
     void draw_selected(Scene& scene);
     void draw_scene_meaning(Scene& scene);
-    void draw_properties(Scene& scene, GameObjectManager& objects);
-    void draw_computed(GameObjectManager& objects, const Camera& camera);
-    void draw_flags(Scene& scene, GameObjectManager& objects);
+    void draw_properties(Scene& scene, GameObjectManager& objects,
+                         EditorSelection& selection);
+    void draw_computed(GameObjectManager& objects, EditorSelection& selection,
+                       const Camera& camera);
+    void draw_flags(Scene& scene, GameObjectManager& objects,
+                    EditorSelection& selection);
 
     void sync_rename_buffer(const GameObject* selected);
     std::optional<GameObjectId> m_rename_target_id;

@@ -1,49 +1,65 @@
 #pragma once
 
 #include <cstddef>
-#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
+#include <yaml-cpp/yaml.h>
+
+#include "prune/core/overloaded.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/scene_camera.hpp"
 
 namespace prune {
 
-  enum class EditorCommandType {
-    MoveObject = 0,
-    CreateObject,
-    DeleteObject,
-    RenameObject,
-    ChangeObjectPosition,
-    ChangeObjectSize,
-    ChangeObjectRenderType,
-    ChangeObjectColour,
-    ChangeObjectZIndex,
-    ChangeObjectFlag,
-    ChangeSprite,
-    MoveViewport,
-    MoveObjects,
-    DeleteObjects
+  struct ObjectChange {
+    GameObject before;
+    GameObject after;
   };
 
+  struct ObjectsChange {
+    std::vector<GameObject> before;
+    std::vector<GameObject> after;
+  };
+
+  struct ObjectCreate {
+    GameObject object;
+  };
+
+  struct ObjectDelete {
+    GameObject object;
+  };
+
+  struct ObjectsDelete {
+    std::vector<GameObject> objects;
+  };
+
+  struct ViewportChange {
+    Camera before;
+    Camera after;
+  };
+
+  // Two snapshots of a scene's authored settings section (gravity, speeds,
+  // cooldowns, aim/power, ...), produced by the owning scene's serializer.
+  // One payload covers every scene type's settings; apply/undo call back
+  // into the scene to load the relevant snapshot.
+  struct SceneSettingsChange {
+    YAML::Node before;
+    YAML::Node after;
+  };
+
+  using EditorCommandPayload =
+      std::variant<ObjectChange, ObjectsChange, ObjectCreate, ObjectDelete,
+                   ObjectsDelete, ViewportChange, SceneSettingsChange>;
+
   struct EditorCommand {
-    EditorCommandType type = EditorCommandType::MoveObject;
-    bool makes_dirty = true;
     std::string label;
     std::string detail;
-    GameObjectId object_id = k_invalid_game_object_id;
-
-    std::optional<GameObject> before_object;
-    std::optional<GameObject> after_object;
-    std::vector<GameObject> before_objects;
-    std::vector<GameObject> after_objects;
-    std::vector<GameObjectId> object_ids;
-
-    std::optional<Camera> before_camera;
-    std::optional<Camera> after_camera;
+    bool makes_dirty = true;
+    EditorCommandPayload payload;
   };
 
   class EditorCommandHistory {
@@ -68,35 +84,87 @@ namespace prune {
     std::size_t m_next_command_index = 0;
   };
 
-  [[nodiscard]] const char*
-  editor_command_type_label(EditorCommandType type) noexcept;
+  [[nodiscard]] std::vector<GameObjectId>
+  affected_ids(const EditorCommand& command);
 
-  [[nodiscard]] EditorCommand make_object_command(EditorCommandType type,
-                                                  std::string_view label,
-                                                  const GameObject& before,
-                                                  const GameObject& after,
-                                                  std::string_view detail = {});
+  // Cheap alternative to affected_ids() for callers that only need a count
+  // and (optionally) one id for display, without heap-allocating a vector.
+  struct AffectedIdsSummary {
+    std::size_t count = 0;
+    GameObjectId first = k_invalid_game_object_id;
+  };
+
+  [[nodiscard]] AffectedIdsSummary
+  affected_ids_summary(const EditorCommand& command);
+
+  template <typename Ops>
+  void apply_object_payload(const EditorCommand& command, bool use_after_state,
+                            Ops& ops) {
+    std::visit(overloaded{
+                   [&](const ObjectCreate& payload) {
+                     if (use_after_state) {
+                       ops.restore_one(payload.object);
+                     } else {
+                       ops.remove_one(payload.object.identity.id);
+                     }
+                   },
+                   [&](const ObjectDelete& payload) {
+                     if (use_after_state) {
+                       ops.remove_one(payload.object.identity.id);
+                     } else {
+                       ops.restore_one(payload.object);
+                     }
+                   },
+                   [&](const ObjectsDelete& payload) {
+                     if (use_after_state) {
+                       for (const GameObject& object : payload.objects) {
+                         ops.remove_one(object.identity.id);
+                       }
+                       ops.after_objects_removed();
+                     } else {
+                       ops.restore_many(payload.objects);
+                     }
+                   },
+                   [&](const ObjectsChange& payload) {
+                     ops.restore_many(use_after_state ? payload.after
+                                                      : payload.before);
+                   },
+                   [](const ViewportChange&) {},
+                   [](const SceneSettingsChange&) {},
+                   [&](const ObjectChange& payload) {
+                     ops.restore_one(use_after_state ? payload.after
+                                                     : payload.before);
+                   },
+               },
+               command.payload);
+  }
+
+  [[nodiscard]] EditorCommand make_object_change(std::string_view label,
+                                                 const GameObject& before,
+                                                 const GameObject& after,
+                                                 std::string_view detail = {});
+
+  [[nodiscard]] EditorCommand make_object_create(const GameObject& created,
+                                                 std::string_view detail = {});
+
+  [[nodiscard]] EditorCommand make_object_delete(const GameObject& deleted,
+                                                 std::string_view detail = {});
+
+  [[nodiscard]] EditorCommand make_objects_change(
+      std::string_view label, std::span<const GameObject> before,
+      std::span<const GameObject> after, std::string_view detail = {});
 
   [[nodiscard]] EditorCommand
-  make_create_object_command(const GameObject& created,
+  make_objects_delete(std::span<const GameObject> deleted,
+                      std::string_view detail = {});
+
+  [[nodiscard]] EditorCommand
+  make_viewport_change(std::string_view label, const Camera& before,
+                       const Camera& after, std::string_view detail = {});
+
+  [[nodiscard]] EditorCommand
+  make_scene_settings_change(std::string_view label, const YAML::Node& before,
+                             const YAML::Node& after,
                              std::string_view detail = {});
-
-  [[nodiscard]] EditorCommand
-  make_delete_object_command(const GameObject& deleted,
-                             std::string_view detail = {});
-
-  [[nodiscard]] EditorCommand
-  make_multi_object_command(EditorCommandType type, std::string_view label,
-                            std::span<const GameObject> before,
-                            std::span<const GameObject> after,
-                            std::string_view detail = {});
-
-  [[nodiscard]] EditorCommand
-  make_multi_delete_object_command(std::span<const GameObject> deleted,
-                                   std::string_view detail = {});
-
-  [[nodiscard]] EditorCommand
-  make_viewport_command(std::string_view label, const Camera& before,
-                        const Camera& after, std::string_view detail = {});
 
 } // namespace prune

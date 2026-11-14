@@ -24,16 +24,9 @@ namespace prune {
     root["simple_shooter"]["player_id"] = state.player_id;
     root["simple_shooter"]["enemy_id"] = state.enemy_id;
     root["simple_shooter"]["enemy_spawn_id"] = state.enemy_spawn_id;
-    root["simple_shooter"]["player_speed"] = state.settings.player_speed;
 
-    root["simple_shooter"]["enemy_speed"] = state.settings.enemy_speed;
-    root["simple_shooter"]["projectile_speed"] =
-        state.settings.projectile_speed;
-    root["simple_shooter"]["projectile_lifetime"] =
-        state.settings.projectile_lifetime;
-    root["simple_shooter"]["fire_cooldown"] = state.settings.fire_cooldown;
-    root["simple_shooter"]["max_live_enemies"] =
-        state.settings.max_live_enemies;
+    YAML::Node simple_shooter = root["simple_shooter"];
+    save_settings_to_node(state.settings, simple_shooter);
   }
 
   bool SimpleShooterSerializer::load_from_node(const YAML::Node& root,
@@ -46,10 +39,7 @@ namespace prune {
       return false;
     }
 
-    if (!simple_shooter["player_id"] || !simple_shooter["player_speed"] ||
-        !simple_shooter["enemy_speed"] ||
-        (!has_projectile_options(simple_shooter) &&
-         !has_legacy_bullet_options(simple_shooter))) {
+    if (!simple_shooter["player_id"]) {
       error = "simple_shooter options are incomplete.";
       return false;
     }
@@ -62,31 +52,46 @@ namespace prune {
         simple_shooter["enemy_spawn_id"]
             ? simple_shooter["enemy_spawn_id"].as<GameObjectId>()
             : k_invalid_game_object_id;
-    state.settings.player_speed =
-        std::max(0.0f, simple_shooter["player_speed"].as<float>());
 
-    state.settings.enemy_speed = simple_shooter["enemy_speed"].as<float>();
+    return load_settings_from_node(simple_shooter, state.settings, error);
+  }
 
-    if (has_projectile_options(simple_shooter)) {
-      state.settings.projectile_speed =
-          simple_shooter["projectile_speed"].as<float>();
-      state.settings.projectile_lifetime =
-          simple_shooter["projectile_lifetime"].as<float>();
+  void SimpleShooterSerializer::save_settings_to_node(
+      const SimpleShooterSettings& settings, YAML::Node& node) {
+    node["player_speed"] = settings.player_speed;
+    node["enemy_speed"] = settings.enemy_speed;
+    node["projectile_speed"] = settings.projectile_speed;
+    node["projectile_lifetime"] = settings.projectile_lifetime;
+    node["fire_cooldown"] = settings.fire_cooldown;
+    node["max_live_enemies"] = settings.max_live_enemies;
+  }
+
+  bool SimpleShooterSerializer::load_settings_from_node(
+      const YAML::Node& node, SimpleShooterSettings& settings,
+      std::string& error) {
+    if (!node["player_speed"] || !node["enemy_speed"] ||
+        (!has_projectile_options(node) && !has_legacy_bullet_options(node))) {
+      error = "simple_shooter options are incomplete.";
+      return false;
+    }
+
+    settings.player_speed = std::max(0.0f, node["player_speed"].as<float>());
+    settings.enemy_speed = node["enemy_speed"].as<float>();
+
+    if (has_projectile_options(node)) {
+      settings.projectile_speed = node["projectile_speed"].as<float>();
+      settings.projectile_lifetime = node["projectile_lifetime"].as<float>();
     } else {
-      state.settings.projectile_speed =
-          simple_shooter["bullet_speed"].as<float>();
-      state.settings.projectile_lifetime =
-          simple_shooter["bullet_lifetime"].as<float>();
+      settings.projectile_speed = node["bullet_speed"].as<float>();
+      settings.projectile_lifetime = node["bullet_lifetime"].as<float>();
     }
 
-    if (simple_shooter["fire_cooldown"]) {
-      state.settings.fire_cooldown =
-          simple_shooter["fire_cooldown"].as<float>();
+    if (node["fire_cooldown"]) {
+      settings.fire_cooldown = node["fire_cooldown"].as<float>();
     }
 
-    if (simple_shooter["max_live_enemies"]) {
-      state.settings.max_live_enemies =
-          simple_shooter["max_live_enemies"].as<int>();
+    if (node["max_live_enemies"]) {
+      settings.max_live_enemies = node["max_live_enemies"].as<int>();
     }
 
     return true;

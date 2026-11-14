@@ -4,17 +4,12 @@
 
 namespace prune {
 
-  namespace {
-    [[nodiscard]] bool
-    can_select_automatically(const GameObject& object) noexcept {
-      return object.identity.type != GameObjectType::Runtime &&
-             object.editor.selectable;
-    }
-  } // namespace
-
   void GameObjectManager::clear() noexcept {
+    if (!m_objects.empty()) {
+      ++m_removal_generation;
+    }
+
     m_objects.clear();
-    m_selected_ids.clear();
     m_next_id = 1;
   }
 
@@ -23,11 +18,6 @@ namespace prune {
     copy.identity.id = m_next_id++;
 
     m_objects.push_back(copy);
-
-    if (m_selected_ids.empty() && can_select_automatically(copy)) {
-      m_selected_ids.push_back(copy.identity.id);
-    }
-
     return copy.identity.id;
   }
 
@@ -41,8 +31,12 @@ namespace prune {
                                    }),
                     m_objects.end());
 
-    sanitize_selection();
-    return before - m_objects.size();
+    const std::size_t removed = before - m_objects.size();
+    if (removed > 0) {
+      ++m_removal_generation;
+    }
+
+    return removed;
   }
 
   std::size_t GameObjectManager::remove_inactive_runtime_objects(
@@ -60,9 +54,12 @@ namespace prune {
                                    }),
                     m_objects.end());
 
-    sanitize_selection();
+    const std::size_t removed = before - m_objects.size();
+    if (removed > 0) {
+      ++m_removal_generation;
+    }
 
-    return before - m_objects.size();
+    return removed;
   }
 
   bool GameObjectManager::add_loaded_object(const GameObject& object) {
@@ -79,10 +76,6 @@ namespace prune {
     return true;
   }
 
-  void GameObjectManager::set_selected_id(GameObjectId id) noexcept {
-    select(id);
-  }
-
   void GameObjectManager::set_next_id(GameObjectId next_id) noexcept {
     m_next_id = std::max<GameObjectId>(1, next_id);
   }
@@ -90,35 +83,13 @@ namespace prune {
   GameObjectId GameObjectManager::next_id() const noexcept { return m_next_id; }
 
   bool GameObjectManager::remove_object(GameObjectId id) noexcept {
-    const std::size_t index = find_index_by_id(id);
+    const std::size_t index = index_of(id);
     if (index >= m_objects.size()) {
       return false;
     }
 
-    const bool was_active_selection = selected_id() == id;
-
     m_objects.erase(m_objects.begin() + static_cast<std::ptrdiff_t>(index));
-    remove_from_selection(id);
-
-    if (was_active_selection && m_selected_ids.empty()) {
-      const auto next = std::find_if(
-          m_objects.begin() +
-              static_cast<std::ptrdiff_t>(std::min(index, m_objects.size())),
-          m_objects.end(), can_select_automatically);
-
-      if (next != m_objects.end()) {
-        m_selected_ids.push_back(next->identity.id);
-      } else {
-        const auto previous = std::find_if(m_objects.rbegin(), m_objects.rend(),
-                                           can_select_automatically);
-
-        if (previous != m_objects.rend()) {
-          m_selected_ids.push_back(previous->identity.id);
-        }
-      }
-    }
-
-    sanitize_selection();
+    ++m_removal_generation;
     return true;
   }
 
@@ -128,8 +99,12 @@ namespace prune {
 
   bool GameObjectManager::empty() const noexcept { return m_objects.empty(); }
 
+  std::size_t GameObjectManager::removal_generation() const noexcept {
+    return m_removal_generation;
+  }
+
   GameObject* GameObjectManager::get_by_id(GameObjectId id) noexcept {
-    const std::size_t index = find_index_by_id(id);
+    const std::size_t index = index_of(id);
     if (index >= m_objects.size()) {
       return nullptr;
     }
@@ -139,7 +114,7 @@ namespace prune {
 
   const GameObject*
   GameObjectManager::get_by_id(GameObjectId id) const noexcept {
-    const std::size_t index = find_index_by_id(id);
+    const std::size_t index = index_of(id);
     if (index >= m_objects.size()) {
       return nullptr;
     }
@@ -147,75 +122,18 @@ namespace prune {
     return &m_objects[index];
   }
 
-  GameObject* GameObjectManager::selected_object() noexcept {
-    return get_by_id(selected_id());
-  }
-
-  const GameObject* GameObjectManager::selected_object() const noexcept {
-    return get_by_id(selected_id());
-  }
-
-  void GameObjectManager::select(GameObjectId id) noexcept {
-    m_selected_ids.clear();
-
+  std::size_t GameObjectManager::index_of(GameObjectId id) const noexcept {
     if (id == k_invalid_game_object_id) {
-      return;
+      return m_objects.size();
     }
 
-    if (get_by_id(id) != nullptr) {
-      m_selected_ids.push_back(id);
-    }
-  }
-
-  void GameObjectManager::select_many(std::span<const GameObjectId> ids) {
-    m_selected_ids.clear();
-
-    for (const GameObjectId id : ids) {
-      if (id == k_invalid_game_object_id || get_by_id(id) == nullptr ||
-          is_selected(id)) {
-        continue;
+    for (std::size_t index = 0; index < m_objects.size(); ++index) {
+      if (m_objects[index].identity.id == id) {
+        return index;
       }
-
-      m_selected_ids.push_back(id);
-    }
-  }
-
-  void GameObjectManager::toggle_selected(GameObjectId id) noexcept {
-    if (id == k_invalid_game_object_id || get_by_id(id) == nullptr) {
-      return;
     }
 
-    const std::size_t index = find_selected_index(id);
-    if (index < m_selected_ids.size()) {
-      m_selected_ids.erase(m_selected_ids.begin() +
-                           static_cast<std::ptrdiff_t>(index));
-      return;
-    }
-
-    m_selected_ids.push_back(id);
-  }
-
-  void GameObjectManager::clear_selection() noexcept { m_selected_ids.clear(); }
-
-  GameObjectId GameObjectManager::selected_id() const noexcept {
-    if (m_selected_ids.empty()) {
-      return k_invalid_game_object_id;
-    }
-
-    return m_selected_ids.back();
-  }
-
-  bool GameObjectManager::is_selected(GameObjectId id) const noexcept {
-    return find_selected_index(id) < m_selected_ids.size();
-  }
-
-  std::size_t GameObjectManager::selected_count() const noexcept {
-    return m_selected_ids.size();
-  }
-
-  std::span<const GameObjectId>
-  GameObjectManager::selected_ids() const noexcept {
-    return m_selected_ids;
+    return m_objects.size();
   }
 
   std::vector<GameObject>& GameObjectManager::objects() noexcept {
@@ -224,6 +142,39 @@ namespace prune {
 
   const std::vector<GameObject>& GameObjectManager::objects() const noexcept {
     return m_objects;
+  }
+
+  void restore_object_in_id_order(GameObjectManager& objects,
+                                  const GameObject& object) {
+    if (GameObject* existing = objects.get_by_id(object.identity.id)) {
+      *existing = object;
+      return;
+    }
+
+    objects.add_loaded_object(object);
+    std::ranges::stable_sort(
+        objects.objects(), {},
+        [](const GameObject& candidate) { return candidate.identity.id; });
+  }
+
+  void restore_objects_in_id_order(GameObjectManager& objects,
+                                   std::span<const GameObject> restored) {
+    bool added_new_object = false;
+
+    for (const GameObject& object : restored) {
+      if (GameObject* existing = objects.get_by_id(object.identity.id)) {
+        *existing = object;
+      } else {
+        objects.add_loaded_object(object);
+        added_new_object = true;
+      }
+    }
+
+    if (added_new_object) {
+      std::ranges::stable_sort(
+          objects.objects(), {},
+          [](const GameObject& candidate) { return candidate.identity.id; });
+    }
   }
 
   std::string
@@ -254,47 +205,6 @@ namespace prune {
     } while (is_taken(candidate));
 
     return candidate;
-  }
-
-  std::size_t
-  GameObjectManager::find_index_by_id(GameObjectId id) const noexcept {
-    if (id == k_invalid_game_object_id) {
-      return m_objects.size();
-    }
-
-    for (std::size_t index = 0; index < m_objects.size(); ++index) {
-      if (m_objects[index].identity.id == id) {
-        return index;
-      }
-    }
-
-    return m_objects.size();
-  }
-
-  std::size_t
-  GameObjectManager::find_selected_index(GameObjectId id) const noexcept {
-    for (std::size_t index = 0; index < m_selected_ids.size(); ++index) {
-      if (m_selected_ids[index] == id) {
-        return index;
-      }
-    }
-
-    return m_selected_ids.size();
-  }
-
-  void GameObjectManager::remove_from_selection(GameObjectId id) noexcept {
-    m_selected_ids.erase(
-        std::remove(m_selected_ids.begin(), m_selected_ids.end(), id),
-        m_selected_ids.end());
-  }
-
-  void GameObjectManager::sanitize_selection() noexcept {
-    m_selected_ids.erase(std::remove_if(m_selected_ids.begin(),
-                                        m_selected_ids.end(),
-                                        [this](GameObjectId id) {
-                                          return get_by_id(id) == nullptr;
-                                        }),
-                         m_selected_ids.end());
   }
 
 } // namespace prune

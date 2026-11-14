@@ -152,7 +152,7 @@ namespace prune {
                                             const GameObject& object) const {
     SDL_Rect rect = camera.world_to_screen_rect(object);
 
-    if (!is_rect_visible(state.viewport, rect)) {
+    if (!is_rect_visible(state.editor.viewport, rect)) {
       return;
     }
 
@@ -170,7 +170,7 @@ namespace prune {
                                          const GameObject& object) {
     SDL_Rect rect = camera.world_to_screen_rect(object);
 
-    if (!is_rect_visible(state.viewport, rect)) {
+    if (!is_rect_visible(state.editor.viewport, rect)) {
       return;
     }
 
@@ -189,16 +189,16 @@ namespace prune {
   void SceneRenderer::render(SDL_Renderer* renderer, const Scene& scene,
                              const SceneState& state, const SceneCamera& camera,
                              const GridOptions& grid_options) {
-    if (!state.viewport.has_area()) {
+    if (!state.editor.viewport.has_area()) {
       return;
     }
 
-    draw_grid(renderer, state.viewport, camera, grid_options);
+    draw_grid(renderer, state.editor.viewport, camera, grid_options);
 
     std::vector<const GameObject*> draw_order;
-    draw_order.reserve(state.objects.objects().size());
+    draw_order.reserve(state.world.objects.objects().size());
 
-    for (const auto& object : state.objects.objects()) {
+    for (const auto& object : state.world.objects.objects()) {
       if (!object.lifecycle.active || !object.render.visible) {
         continue;
       }
@@ -229,10 +229,10 @@ namespace prune {
       draw_debug_overlays(renderer, state, camera, *object);
     }
 
-    if (state.scene_options.highlight_selected) {
-      for (const auto& object : state.objects.objects()) {
+    if (state.editor.scene_options.highlight_selected) {
+      for (const auto& object : state.world.objects.objects()) {
         if (!object.lifecycle.active || !object.render.visible ||
-            !state.objects.is_selected(object.identity.id)) {
+            !state.editor.selection.is_selected(object.identity.id)) {
           continue;
         }
 
@@ -247,7 +247,8 @@ namespace prune {
                                           const SceneState& state,
                                           const SceneCamera& camera,
                                           const GameObject& object) const {
-    const DebugOverlayOptions& overlays = state.scene_options.debug_overlays;
+    const DebugOverlayOptions& overlays =
+        state.editor.scene_options.debug_overlays;
 
     if (!overlays.show_collision_bounds && !overlays.show_runtime_markers) {
       return;
@@ -255,7 +256,7 @@ namespace prune {
 
     const SDL_Rect rect = camera.world_to_screen_rect(object);
 
-    if (!is_rect_visible(state.viewport, rect)) {
+    if (!is_rect_visible(state.editor.viewport, rect)) {
       return;
     }
 
@@ -335,14 +336,15 @@ namespace prune {
                                             const SceneCamera& camera,
                                             const GameObject& object) const {
     const SDL_Rect object_rect = camera.world_to_screen_rect(object);
-    if (!is_rect_visible(state.viewport, object_rect)) {
+    if (!is_rect_visible(state.editor.viewport, object_rect)) {
       return;
     }
 
     const SDL_Rect selected_outline =
         editor::tools::transform_gizmo::selected_outline_rect(object_rect);
-    const bool show_object_handle = state.objects.selected_count() == 1;
-    draw_selected_gizmo(renderer, selected_outline, state.editor_tool,
+    const bool show_object_handle =
+        state.editor.selection.selected_count() == 1;
+    draw_selected_gizmo(renderer, selected_outline, state.editor.editor_tool,
                         show_object_handle && scene.object_is_movable(object),
                         show_object_handle && scene.object_is_scalable(object));
   }
@@ -350,7 +352,7 @@ namespace prune {
   void SceneRenderer::draw_multi_selection_bounds(
       SDL_Renderer* renderer, const Scene& scene, const SceneState& state,
       const SceneCamera& camera) const {
-    if (state.objects.selected_count() <= 1) {
+    if (state.editor.selection.selected_count() <= 1) {
       return;
     }
 
@@ -364,7 +366,7 @@ namespace prune {
     SDL_SetRenderDrawColor(renderer, 120, 190, 255, 230);
     SDL_RenderDrawRect(renderer, &outline);
 
-    if (state.editor_tool == EditorTool::Scale) {
+    if (state.editor.editor_tool == EditorTool::Scale) {
       return;
     }
 
@@ -382,12 +384,12 @@ namespace prune {
   bool
   SceneRenderer::multi_selection_is_movable(const Scene& scene,
                                             const SceneState& state) const {
-    if (state.objects.selected_count() <= 1) {
+    if (state.editor.selection.selected_count() <= 1) {
       return false;
     }
 
-    for (const GameObjectId id : state.objects.selected_ids()) {
-      const GameObject* object = state.objects.get_by_id(id);
+    for (const GameObjectId id : state.editor.selection.selected_ids()) {
+      const GameObject* object = state.world.objects.get_by_id(id);
       if (!object || !scene.object_is_movable(*object)) {
         return false;
       }
@@ -405,14 +407,14 @@ namespace prune {
     int max_x = 0;
     int max_y = 0;
 
-    for (const GameObjectId id : state.objects.selected_ids()) {
-      const GameObject* object = state.objects.get_by_id(id);
+    for (const GameObjectId id : state.editor.selection.selected_ids()) {
+      const GameObject* object = state.world.objects.get_by_id(id);
       if (!object || !object->lifecycle.active || !object->render.visible) {
         continue;
       }
 
       const SDL_Rect object_rect = camera.world_to_screen_rect(*object);
-      if (!is_rect_visible(state.viewport, object_rect)) {
+      if (!is_rect_visible(state.editor.viewport, object_rect)) {
         continue;
       }
 

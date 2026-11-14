@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -9,6 +10,7 @@
 
 #include "prune/core/input.hpp"
 #include "prune/editor/editor_command.hpp"
+#include "prune/scene/authored_store.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/scene.hpp"
 #include "prune/scene/scene_camera.hpp"
@@ -25,31 +27,36 @@ namespace prune {
     void update(float dt, const Input& input) final;
     void update_editor(float dt, const Input& input) final;
     void render(SDL_Renderer* renderer) final;
-    void draw_viewport_overlays() final;
 
     void reset_runtime() final;
     void pause_runtime() noexcept final;
     void play_runtime() noexcept final;
     [[nodiscard]] bool runtime_paused() const noexcept final;
+    void stop_runtime() final;
+    [[nodiscard]] bool runtime_stopped() const noexcept final;
 
     [[nodiscard]] bool save_to_file(std::string_view path,
                                     std::string& error) final;
     [[nodiscard]] bool load_from_file(std::string_view path,
                                       std::string& error) final;
-    [[nodiscard]] bool is_dirty() const noexcept final { return m_state.dirty; }
+    [[nodiscard]] bool is_dirty() const noexcept final {
+      return m_state.editor.dirty;
+    }
 
     void set_viewport(const SceneViewport& viewport) noexcept final;
     [[nodiscard]] const SceneViewport& get_viewport() const noexcept final {
-      return m_state.viewport;
+      return m_state.editor.viewport;
     }
     [[nodiscard]] int get_viewport_width() const noexcept final {
-      return m_state.viewport.width;
+      return m_state.editor.viewport.width;
     }
     [[nodiscard]] int get_viewport_height() const noexcept final {
-      return m_state.viewport.height;
+      return m_state.editor.viewport.height;
     }
 
     GameObjectManager& get_object_manager() final;
+    [[nodiscard]] EditorSelection& selection() noexcept final;
+    [[nodiscard]] const EditorSelection& selection() const noexcept final;
     void record_editor_command(EditorCommand command) final;
     [[nodiscard]] const EditorCommandHistory&
     editor_command_history() const noexcept final;
@@ -80,19 +87,23 @@ namespace prune {
     [[nodiscard]] bool
     is_space_free(const GameObject& candidate) const noexcept;
 
-    void draw_debug_tools();
-
     virtual void on_scene_enter() {}
-    virtual void update_runtime(float dt, const Input& input,
+    virtual void update_runtime(WorldState& world, float dt, const Input& input,
                                 bool keyboard_input_enabled) = 0;
     virtual void restart_runtime() = 0;
-    virtual void set_runtime_paused(bool paused) noexcept = 0;
-    [[nodiscard]] virtual bool is_runtime_paused() const noexcept = 0;
     virtual void save_scene_data(YAML::Node& root) const = 0;
     [[nodiscard]] virtual bool load_scene_data(const YAML::Node& root,
                                                std::string& error) = 0;
+
+    // Loads a scene-settings snapshot (one produced by the scene's own
+    // serializer) back into the authored settings struct. Used by
+    // SceneSettingsChange apply/undo; never touches objects or runtime state.
+    virtual void apply_scene_settings_snapshot(const YAML::Node& node) = 0;
+
     [[nodiscard]] virtual bool restore_loaded_scene(SceneState& state,
                                                     std::string& error) = 0;
+
+    void capture_authored_baseline(const GameObjectManager& objects);
 
     [[nodiscard]] virtual GameObject* game_camera_target() noexcept {
       return nullptr;
@@ -106,18 +117,14 @@ namespace prune {
 
   private:
     void sanitize_loaded_selection() noexcept;
-    void capture_authored_objects();
-    void normalize_editor_command(EditorCommand& command) const;
-    void apply_editor_command_to_authored_objects(const EditorCommand& command,
-                                                  bool use_after_state);
-    void restore_object_snapshot(const GameObject& object,
-                                 bool select_restored = true);
-    void restore_object_snapshots(const std::vector<GameObject>& objects);
+    void enter_stopped_state();
     void apply_editor_command(const EditorCommand& command,
                               bool use_after_state);
 
     SceneRenderer m_renderer;
     SceneInteraction m_interaction;
-    GameObjectManager m_authored_objects;
+    AuthoredStore m_authored_store;
+    bool m_stopped = true;
+    std::size_t m_last_sanitized_removal_generation = 0;
   };
 } // namespace prune

@@ -205,6 +205,8 @@ namespace prune {
       m_scene->update(dt, *m_input);
       dispatch_scene_events();
     }
+
+    m_input->consume_fixed_update_presses();
   }
 
   void App::init_audio() {

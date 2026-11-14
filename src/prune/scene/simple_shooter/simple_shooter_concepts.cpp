@@ -28,23 +28,24 @@ namespace prune::simple_shooter_concepts {
   }
 
   bool is_player(const GameObject& object) noexcept {
-    return object.runtime.behaviour == simple_shooter_ids::player_behaviour;
+    return object.semantics.concept_id == simple_shooter_ids::player_concept;
   }
 
   bool is_enemy(const GameObject& object) noexcept {
-    return object.runtime.behaviour == simple_shooter_ids::enemy_behaviour;
+    return object.semantics.concept_id == simple_shooter_ids::enemy_concept;
   }
 
   bool is_projectile(const GameObject& object) noexcept {
-    return object.runtime.behaviour == simple_shooter_ids::projectile_behaviour;
+    return object.semantics.concept_id ==
+           simple_shooter_ids::projectile_concept;
   }
 
   bool is_wall(const GameObject& object) noexcept {
-    return object.runtime.behaviour == simple_shooter_ids::wall_behaviour;
+    return object.semantics.concept_id == simple_shooter_ids::wall_concept;
   }
 
   bool is_spawn(const GameObject& object) noexcept {
-    return object.runtime.behaviour == simple_shooter_ids::spawn_behaviour;
+    return object.semantics.concept_id == simple_shooter_ids::spawn_concept;
   }
 
   const char* label(ObjectKind kind) noexcept {
@@ -106,7 +107,7 @@ namespace prune::simple_shooter_concepts {
   ObjectConcept describe(ObjectKind kind) noexcept {
     switch (kind) {
     case ObjectKind::Player:
-      return {"simple_shooter.player",
+      return {simple_shooter_ids::player_concept,
               "Player",
               "The single controlled actor for the Simple Shooter slice.",
               "Movement is blocked by solid wall objects.",
@@ -114,7 +115,7 @@ namespace prune::simple_shooter_concepts {
               true,
               true};
     case ObjectKind::Enemy:
-      return {"simple_shooter.enemy",
+      return {simple_shooter_ids::enemy_concept,
               "Enemy",
               "A target that moves toward the player and respawns when hit.",
               "Projectile hits reset the enemy. Enemy/player contact is not "
@@ -123,7 +124,7 @@ namespace prune::simple_shooter_concepts {
               true,
               true};
     case ObjectKind::Projectile:
-      return {"simple_shooter.projectile",
+      return {simple_shooter_ids::projectile_concept,
               "Projectile",
               "A runtime projectile fired by the player.",
               "Hits enemies, stops at walls, and expires after its lifetime.",
@@ -131,7 +132,7 @@ namespace prune::simple_shooter_concepts {
               false,
               false};
     case ObjectKind::Wall:
-      return {"simple_shooter.wall",
+      return {simple_shooter_ids::wall_concept,
               "Wall",
               "An authored solid obstacle used for player and projectile "
               "collision.",
@@ -140,7 +141,7 @@ namespace prune::simple_shooter_concepts {
               true,
               true};
     case ObjectKind::Spawn:
-      return {"simple_shooter.enemy_spawn",
+      return {simple_shooter_ids::spawn_concept,
               "Enemy Spawn",
               "The authored reset position used when the enemy respawns.",
               "Marker only. It does not collide.",
