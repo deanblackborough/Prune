@@ -21,6 +21,7 @@ namespace prune {
 
     [[nodiscard]] std::size_t count() const noexcept;
     [[nodiscard]] bool empty() const noexcept;
+    [[nodiscard]] std::size_t removal_generation() const noexcept;
 
     [[nodiscard]] GameObject* get_by_id(GameObjectId id) noexcept;
     [[nodiscard]] const GameObject* get_by_id(GameObjectId id) const noexcept;
@@ -38,6 +39,7 @@ namespace prune {
   private:
     std::vector<GameObject> m_objects;
     GameObjectId m_next_id = 1;
+    std::size_t m_removal_generation = 0;
   };
 
   // Inserts `object` into `objects`, replacing any existing object with the

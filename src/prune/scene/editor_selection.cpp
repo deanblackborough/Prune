@@ -93,6 +93,14 @@ namespace prune {
     return objects.get_by_id(selected_id());
   }
 
+  void remove_object_and_update_selection(GameObjectManager& objects,
+                                          EditorSelection& selection,
+                                          GameObjectId id) noexcept {
+    const std::size_t erased_index = objects.index_of(id);
+    objects.remove_object(id);
+    selection.object_removed(objects, id, erased_index);
+  }
+
   void EditorSelection::object_removed(const GameObjectManager& objects,
                                        GameObjectId id,
                                        std::size_t erased_index) noexcept {

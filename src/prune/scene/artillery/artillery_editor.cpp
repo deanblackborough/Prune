@@ -6,6 +6,7 @@
 #include "prune/scene/artillery/artillery_concepts.hpp"
 #include "prune/scene/artillery/artillery_editor.hpp"
 #include "prune/scene/artillery/artillery_scene.hpp"
+#include "prune/scene/scene_editor.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
@@ -25,7 +26,7 @@ namespace prune {
   } // namespace
 
   void ArtilleryEditor::draw_scene_tools(Scene& scene, bool& open) {
-    auto& artillery_scene = static_cast<ArtilleryScene&>(scene);
+    auto& artillery_scene = checked_scene_cast<ArtilleryScene>(scene);
 
     tooling::EditorLayout::scene_panel();
 
@@ -43,7 +44,7 @@ namespace prune {
   void ArtilleryEditor::draw_scene_inspector(Scene& scene,
                                              GameObject& selected) {
     const ArtilleryState& state =
-        static_cast<ArtilleryScene&>(scene).artillery_state();
+        checked_scene_cast<ArtilleryScene>(scene).artillery_state();
 
     if (!tooling::imgui::layout::collapsing_header("Artillery", true)) {
       return;

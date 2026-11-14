@@ -6,6 +6,7 @@
 #include "prune/scene/simple_shooter/simple_shooter_concepts.hpp"
 #include "prune/scene/simple_shooter/simple_shooter_editor.hpp"
 #include "prune/scene/simple_shooter/simple_shooter_scene.hpp"
+#include "prune/scene/scene_editor.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
@@ -36,7 +37,7 @@ namespace prune {
   } // namespace
 
   void SimpleShooterEditor::draw_scene_tools(Scene& scene, bool& open) {
-    auto& shooter_scene = static_cast<SimpleShooterScene&>(scene);
+    auto& shooter_scene = checked_scene_cast<SimpleShooterScene>(scene);
 
     tooling::EditorLayout::scene_panel();
 
@@ -54,7 +55,7 @@ namespace prune {
   void SimpleShooterEditor::draw_scene_inspector(Scene& scene,
                                                  GameObject& selected) {
     const SimpleShooterState& state =
-        static_cast<SimpleShooterScene&>(scene).simple_shooter_state();
+        checked_scene_cast<SimpleShooterScene>(scene).simple_shooter_state();
 
     if (!tooling::imgui::layout::collapsing_header("Simple Shooter", true)) {
       return;

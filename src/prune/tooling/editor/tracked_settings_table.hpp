@@ -1,11 +1,11 @@
 #pragma once
 
-#include <optional>
 #include <string_view>
 
 #include <yaml-cpp/yaml.h>
 
 #include "prune/editor/editor_command.hpp"
+#include "prune/tooling/editor/edit_tracker.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
 
 namespace prune {
@@ -28,7 +28,7 @@ namespace prune::tooling::editor::tracked_settings_table {
     void reset() noexcept;
 
   private:
-    std::optional<YAML::Node> m_before;
+    EditTracker<YAML::Node> m_tracker;
   };
 
   template <typename Snapshot>
@@ -37,11 +37,12 @@ namespace prune::tooling::editor::tracked_settings_table {
                     const char* imgui_label, const char* id, float& value,
                     float min, float max, const char* format = "%.2f",
                     std::string_view detail = {}) {
-    const YAML::Node before = snapshot();
     const bool changed = ::prune::tooling::imgui::property_table::slider_float(
         imgui_label, id, value, min, max, format);
 
-    tracker.capture_if_activated(before);
+    if (ImGui::IsItemActivated()) {
+      tracker.capture_if_activated(snapshot());
+    }
 
     if (ImGui::IsItemDeactivatedAfterEdit()) {
       tracker.commit_if_deactivated_after_edit(scene, label, snapshot(),
@@ -56,11 +57,12 @@ namespace prune::tooling::editor::tracked_settings_table {
                   Snapshot&& snapshot, std::string_view label,
                   const char* imgui_label, const char* id, int& value, int min,
                   int max, std::string_view detail = {}) {
-    const YAML::Node before = snapshot();
     const bool changed = ::prune::tooling::imgui::property_table::slider_int(
         imgui_label, id, value, min, max);
 
-    tracker.capture_if_activated(before);
+    if (ImGui::IsItemActivated()) {
+      tracker.capture_if_activated(snapshot());
+    }
 
     if (ImGui::IsItemDeactivatedAfterEdit()) {
       tracker.commit_if_deactivated_after_edit(scene, label, snapshot(),

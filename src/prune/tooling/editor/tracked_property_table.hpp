@@ -1,11 +1,11 @@
 #pragma once
 
-#include <optional>
 #include <string>
 #include <string_view>
 
 #include "prune/editor/editor_command.hpp"
 #include "prune/scene/game_object.hpp"
+#include "prune/tooling/editor/edit_tracker.hpp"
 
 namespace prune {
   class Scene;
@@ -36,7 +36,7 @@ namespace prune::tooling::editor::tracked_property_table {
     void reset() noexcept;
 
   private:
-    std::optional<GameObject> m_before;
+    EditTracker<GameObject> m_tracker;
   };
 
   bool drag_float(ObjectEditTracker& tracker, Scene& scene, TrackedField field,

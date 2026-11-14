@@ -1,8 +1,39 @@
 #include "prune/editor/editor_command.hpp"
 
+#include <type_traits>
 #include <utility>
 
 namespace prune {
+
+  namespace {
+    template <typename IdSink>
+    void for_each_affected_id(const EditorCommand& command, IdSink&& sink) {
+      std::visit(
+          [&sink](const auto& payload) {
+            using Payload = std::decay_t<decltype(payload)>;
+
+            if constexpr (std::is_same_v<Payload, ObjectChange>) {
+              sink(payload.after.identity.id);
+            } else if constexpr (std::is_same_v<Payload, ObjectCreate>) {
+              sink(payload.object.identity.id);
+            } else if constexpr (std::is_same_v<Payload, ObjectDelete>) {
+              sink(payload.object.identity.id);
+            } else if constexpr (std::is_same_v<Payload, ObjectsChange>) {
+              for (const GameObject& object : payload.after) {
+                sink(object.identity.id);
+              }
+            } else if constexpr (std::is_same_v<Payload, ObjectsDelete>) {
+              for (const GameObject& object : payload.objects) {
+                sink(object.identity.id);
+              }
+            } else if constexpr (std::is_same_v<Payload, SceneSettingsChange>) {
+            } else {
+              static_assert(std::is_same_v<Payload, ViewportChange>);
+            }
+          },
+          command.payload);
+    }
+  } // namespace
 
   void EditorCommandHistory::clear() noexcept {
     m_commands.clear();
@@ -71,68 +102,21 @@ namespace prune {
   }
 
   std::vector<GameObjectId> affected_ids(const EditorCommand& command) {
-    return std::visit(
-        [](const auto& payload) -> std::vector<GameObjectId> {
-          using Payload = std::decay_t<decltype(payload)>;
-
-          if constexpr (std::is_same_v<Payload, ObjectChange>) {
-            return {payload.after.identity.id};
-          } else if constexpr (std::is_same_v<Payload, ObjectCreate>) {
-            return {payload.object.identity.id};
-          } else if constexpr (std::is_same_v<Payload, ObjectDelete>) {
-            return {payload.object.identity.id};
-          } else if constexpr (std::is_same_v<Payload, ObjectsChange>) {
-            std::vector<GameObjectId> ids;
-            ids.reserve(payload.after.size());
-            for (const GameObject& object : payload.after) {
-              ids.push_back(object.identity.id);
-            }
-            return ids;
-          } else if constexpr (std::is_same_v<Payload, ObjectsDelete>) {
-            std::vector<GameObjectId> ids;
-            ids.reserve(payload.objects.size());
-            for (const GameObject& object : payload.objects) {
-              ids.push_back(object.identity.id);
-            }
-            return ids;
-          } else if constexpr (std::is_same_v<Payload, SceneSettingsChange>) {
-            return {};
-          } else {
-            static_assert(std::is_same_v<Payload, ViewportChange>);
-            return {};
-          }
-        },
-        command.payload);
+    std::vector<GameObjectId> ids;
+    for_each_affected_id(command,
+                         [&ids](GameObjectId id) { ids.push_back(id); });
+    return ids;
   }
 
   AffectedIdsSummary affected_ids_summary(const EditorCommand& command) {
-    return std::visit(
-        [](const auto& payload) -> AffectedIdsSummary {
-          using Payload = std::decay_t<decltype(payload)>;
-
-          if constexpr (std::is_same_v<Payload, ObjectChange>) {
-            return {1, payload.after.identity.id};
-          } else if constexpr (std::is_same_v<Payload, ObjectCreate>) {
-            return {1, payload.object.identity.id};
-          } else if constexpr (std::is_same_v<Payload, ObjectDelete>) {
-            return {1, payload.object.identity.id};
-          } else if constexpr (std::is_same_v<Payload, ObjectsChange>) {
-            return {payload.after.size(),
-                    payload.after.empty() ? k_invalid_game_object_id
-                                          : payload.after.front().identity.id};
-          } else if constexpr (std::is_same_v<Payload, ObjectsDelete>) {
-            return {payload.objects.size(),
-                    payload.objects.empty()
-                        ? k_invalid_game_object_id
-                        : payload.objects.front().identity.id};
-          } else if constexpr (std::is_same_v<Payload, SceneSettingsChange>) {
-            return {};
-          } else {
-            static_assert(std::is_same_v<Payload, ViewportChange>);
-            return {};
-          }
-        },
-        command.payload);
+    AffectedIdsSummary summary{};
+    for_each_affected_id(command, [&summary](GameObjectId id) {
+      if (summary.count == 0) {
+        summary.first = id;
+      }
+      ++summary.count;
+    });
+    return summary;
   }
 
   EditorCommand make_object_change(std::string_view label,

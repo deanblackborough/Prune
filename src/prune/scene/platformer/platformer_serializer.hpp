@@ -17,8 +17,9 @@ namespace prune {
 
     static void save_settings_to_node(const PlatformerSettings& settings,
                                       YAML::Node& node);
-    static void load_settings_from_node(const YAML::Node& node,
-                                        PlatformerSettings& settings);
+    [[nodiscard]] static bool
+    load_settings_from_node(const YAML::Node& node,
+                            PlatformerSettings& settings, std::string& error);
   };
 
 } // namespace prune

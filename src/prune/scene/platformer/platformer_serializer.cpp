@@ -32,7 +32,9 @@ namespace prune {
       state.player_start_id = platformer["player_start_id"].as<GameObjectId>();
     }
 
-    load_settings_from_node(platformer, state.settings);
+    if (!load_settings_from_node(platformer, state.settings, error)) {
+      return false;
+    }
 
     return true;
   }
@@ -47,24 +49,20 @@ namespace prune {
     node["jump_buffer_seconds"] = settings.jump_buffer_seconds;
   }
 
-  void
+  bool
   PlatformerSerializer::load_settings_from_node(const YAML::Node& node,
-                                                PlatformerSettings& settings) {
-    if (node["move_speed"]) {
-      settings.move_speed = node["move_speed"].as<float>();
+                                                PlatformerSettings& settings,
+                                                std::string& error) {
+    if (!node["move_speed"] || !node["jump_velocity"] || !node["gravity"] ||
+        !node["max_fall_speed"]) {
+      error = "platformer options are incomplete.";
+      return false;
     }
 
-    if (node["jump_velocity"]) {
-      settings.jump_velocity = node["jump_velocity"].as<float>();
-    }
-
-    if (node["gravity"]) {
-      settings.gravity = node["gravity"].as<float>();
-    }
-
-    if (node["max_fall_speed"]) {
-      settings.max_fall_speed = node["max_fall_speed"].as<float>();
-    }
+    settings.move_speed = node["move_speed"].as<float>();
+    settings.jump_velocity = node["jump_velocity"].as<float>();
+    settings.gravity = node["gravity"].as<float>();
+    settings.max_fall_speed = node["max_fall_speed"].as<float>();
 
     if (node["coyote_time_seconds"]) {
       settings.coyote_time_seconds = node["coyote_time_seconds"].as<float>();
@@ -73,6 +71,8 @@ namespace prune {
     if (node["jump_buffer_seconds"]) {
       settings.jump_buffer_seconds = node["jump_buffer_seconds"].as<float>();
     }
+
+    return true;
   }
 
 } // namespace prune

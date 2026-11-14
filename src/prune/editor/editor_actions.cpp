@@ -96,10 +96,8 @@ namespace prune {
     }
 
     for (const GameObject& object : deleted_objects) {
-      const GameObjectId id = object.identity.id;
-      const std::size_t erased_index = objects.index_of(id);
-      objects.remove_object(id);
-      selection.object_removed(objects, id, erased_index);
+      remove_object_and_update_selection(objects, selection,
+                                        object.identity.id);
     }
 
     if (deleted_objects.size() > 1) {

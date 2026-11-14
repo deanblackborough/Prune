@@ -6,6 +6,7 @@
 #include "prune/scene/platformer/platformer_concepts.hpp"
 #include "prune/scene/platformer/platformer_editor.hpp"
 #include "prune/scene/platformer/platformer_scene.hpp"
+#include "prune/scene/scene_editor.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
@@ -21,7 +22,7 @@ namespace prune {
   } // namespace
 
   void PlatformerEditor::draw_scene_tools(Scene& scene, bool& open) {
-    auto& platformer_scene = static_cast<PlatformerScene&>(scene);
+    auto& platformer_scene = checked_scene_cast<PlatformerScene>(scene);
 
     tooling::EditorLayout::scene_panel();
 
@@ -39,7 +40,7 @@ namespace prune {
   void PlatformerEditor::draw_scene_inspector(Scene& scene,
                                               GameObject& selected) {
     const PlatformerState& state =
-        static_cast<PlatformerScene&>(scene).platformer_state();
+        checked_scene_cast<PlatformerScene>(scene).platformer_state();
 
     if (!tooling::imgui::layout::collapsing_header("Platformer", true)) {
       return;

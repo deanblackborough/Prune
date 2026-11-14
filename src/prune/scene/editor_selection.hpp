@@ -52,4 +52,8 @@ namespace prune {
     std::vector<GameObjectId> m_selected_ids;
   };
 
+  void remove_object_and_update_selection(GameObjectManager& objects,
+                                          EditorSelection& selection,
+                                          GameObjectId id) noexcept;
+
 } // namespace prune

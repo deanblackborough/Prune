@@ -1,8 +1,24 @@
 #include "prune/scene/authored_store.hpp"
 
-#include "prune/core/overloaded.hpp"
-
 namespace prune {
+
+  namespace {
+    struct AuthoredStoreOps {
+      GameObjectManager& objects;
+
+      void restore_one(const GameObject& object) {
+        restore_object_in_id_order(objects, object);
+      }
+
+      void remove_one(GameObjectId id) { objects.remove_object(id); }
+
+      void restore_many(std::span<const GameObject> batch) {
+        restore_objects_in_id_order(objects, batch);
+      }
+
+      void after_objects_removed() {}
+    };
+  } // namespace
 
   void AuthoredStore::capture(const GameObjectManager& live) {
     m_objects = live;
@@ -11,46 +27,8 @@ namespace prune {
 
   void AuthoredStore::apply(const EditorCommand& command,
                             bool use_after_state) {
-    const auto restore = [this](const GameObject& object) {
-      restore_object_in_id_order(m_objects, object);
-    };
-
-    std::visit(overloaded{
-                   [&](const ObjectCreate& payload) {
-                     if (use_after_state) {
-                       restore(payload.object);
-                     } else {
-                       m_objects.remove_object(payload.object.identity.id);
-                     }
-                   },
-                   [&](const ObjectDelete& payload) {
-                     if (use_after_state) {
-                       m_objects.remove_object(payload.object.identity.id);
-                     } else {
-                       restore(payload.object);
-                     }
-                   },
-                   [&](const ObjectsDelete& payload) {
-                     if (use_after_state) {
-                       for (const GameObject& object : payload.objects) {
-                         m_objects.remove_object(object.identity.id);
-                       }
-                     } else {
-                       restore_objects_in_id_order(m_objects, payload.objects);
-                     }
-                   },
-                   [&](const ObjectsChange& payload) {
-                     restore_objects_in_id_order(
-                         m_objects,
-                         use_after_state ? payload.after : payload.before);
-                   },
-                   [](const ViewportChange&) {},
-                   [](const SceneSettingsChange&) {},
-                   [&](const ObjectChange& payload) {
-                     restore(use_after_state ? payload.after : payload.before);
-                   },
-               },
-               command.payload);
+    AuthoredStoreOps ops{m_objects};
+    apply_object_payload(command, use_after_state, ops);
   }
 
 } // namespace prune

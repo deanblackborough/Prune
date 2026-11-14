@@ -1,4 +1,5 @@
 #include <array>
+#include <stdexcept>
 #include <string>
 
 #include <yaml-cpp/yaml.h>
@@ -195,8 +196,11 @@ namespace prune {
   }
 
   void PlatformerScene::apply_scene_settings_snapshot(const YAML::Node& node) {
-    PlatformerSerializer::load_settings_from_node(node,
-                                                  m_platformer_state.settings);
+    std::string error;
+    if (!PlatformerSerializer::load_settings_from_node(
+            node, m_platformer_state.settings, error)) {
+      throw std::runtime_error(error);
+    }
   }
 
   bool PlatformerScene::restore_loaded_scene(SceneState& state,

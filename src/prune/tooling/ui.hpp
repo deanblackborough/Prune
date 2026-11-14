@@ -54,6 +54,7 @@ namespace prune {
     std::unique_ptr<SceneEditor> m_scene_editor;
     SceneType m_scene_editor_type = SceneType::SimpleShooter;
     bool m_has_scene_editor = false;
+    const Scene* m_scene_editor_scene = nullptr;
 
     std::string m_file_status;
     bool m_file_status_is_error = false;

@@ -9,6 +9,7 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "prune/core/overloaded.hpp"
 #include "prune/scene/game_object.hpp"
 #include "prune/scene/scene_camera.hpp"
 
@@ -95,6 +96,48 @@ namespace prune {
 
   [[nodiscard]] AffectedIdsSummary
   affected_ids_summary(const EditorCommand& command);
+
+  template <typename Ops>
+  void apply_object_payload(const EditorCommand& command, bool use_after_state,
+                            Ops& ops) {
+    std::visit(overloaded{
+                   [&](const ObjectCreate& payload) {
+                     if (use_after_state) {
+                       ops.restore_one(payload.object);
+                     } else {
+                       ops.remove_one(payload.object.identity.id);
+                     }
+                   },
+                   [&](const ObjectDelete& payload) {
+                     if (use_after_state) {
+                       ops.remove_one(payload.object.identity.id);
+                     } else {
+                       ops.restore_one(payload.object);
+                     }
+                   },
+                   [&](const ObjectsDelete& payload) {
+                     if (use_after_state) {
+                       for (const GameObject& object : payload.objects) {
+                         ops.remove_one(object.identity.id);
+                       }
+                       ops.after_objects_removed();
+                     } else {
+                       ops.restore_many(payload.objects);
+                     }
+                   },
+                   [&](const ObjectsChange& payload) {
+                     ops.restore_many(use_after_state ? payload.after
+                                                      : payload.before);
+                   },
+                   [](const ViewportChange&) {},
+                   [](const SceneSettingsChange&) {},
+                   [&](const ObjectChange& payload) {
+                     ops.restore_one(use_after_state ? payload.after
+                                                     : payload.before);
+                   },
+               },
+               command.payload);
+  }
 
   [[nodiscard]] EditorCommand make_object_change(std::string_view label,
                                                  const GameObject& before,

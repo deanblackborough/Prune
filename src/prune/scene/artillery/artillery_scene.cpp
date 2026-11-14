@@ -1,6 +1,7 @@
 #include <array>
 #include <cmath>
 #include <numbers>
+#include <stdexcept>
 #include <string>
 
 #include <SDL2/SDL.h>
@@ -195,7 +196,7 @@ namespace prune {
     std::string error;
     if (!ArtillerySerializer::load_settings_from_node(
             node, m_artillery_state.settings, error)) {
-      return;
+      throw std::runtime_error(error);
     }
   }
 

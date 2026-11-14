@@ -5,6 +5,10 @@
 namespace prune {
 
   void GameObjectManager::clear() noexcept {
+    if (!m_objects.empty()) {
+      ++m_removal_generation;
+    }
+
     m_objects.clear();
     m_next_id = 1;
   }
@@ -27,7 +31,12 @@ namespace prune {
                                    }),
                     m_objects.end());
 
-    return before - m_objects.size();
+    const std::size_t removed = before - m_objects.size();
+    if (removed > 0) {
+      ++m_removal_generation;
+    }
+
+    return removed;
   }
 
   std::size_t GameObjectManager::remove_inactive_runtime_objects(
@@ -45,7 +54,12 @@ namespace prune {
                                    }),
                     m_objects.end());
 
-    return before - m_objects.size();
+    const std::size_t removed = before - m_objects.size();
+    if (removed > 0) {
+      ++m_removal_generation;
+    }
+
+    return removed;
   }
 
   bool GameObjectManager::add_loaded_object(const GameObject& object) {
@@ -75,6 +89,7 @@ namespace prune {
     }
 
     m_objects.erase(m_objects.begin() + static_cast<std::ptrdiff_t>(index));
+    ++m_removal_generation;
     return true;
   }
 
@@ -83,6 +98,10 @@ namespace prune {
   }
 
   bool GameObjectManager::empty() const noexcept { return m_objects.empty(); }
+
+  std::size_t GameObjectManager::removal_generation() const noexcept {
+    return m_removal_generation;
+  }
 
   GameObject* GameObjectManager::get_by_id(GameObjectId id) noexcept {
     const std::size_t index = index_of(id);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -115,9 +116,6 @@ namespace prune {
   private:
     void sanitize_loaded_selection() noexcept;
     void enter_stopped_state();
-    void restore_object_snapshot(const GameObject& object,
-                                 bool select_restored = true);
-    void restore_object_snapshots(const std::vector<GameObject>& objects);
     void apply_editor_command(const EditorCommand& command,
                               bool use_after_state);
 
@@ -125,5 +123,6 @@ namespace prune {
     SceneInteraction m_interaction;
     AuthoredStore m_authored_store;
     bool m_stopped = true;
+    std::size_t m_last_sanitized_removal_generation = 0;
   };
 } // namespace prune

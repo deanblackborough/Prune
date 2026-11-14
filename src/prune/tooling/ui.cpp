@@ -296,10 +296,12 @@ namespace prune {
     const SceneType desired_type =
         descriptor ? descriptor->type : SceneType::SimpleShooter;
 
-    if (!m_has_scene_editor || m_scene_editor_type != desired_type) {
+    if (!m_has_scene_editor || m_scene_editor_type != desired_type ||
+        m_scene_editor_scene != &scene) {
       m_scene_editor = SceneEditorFactory::create(desired_type);
       m_scene_editor_type = desired_type;
       m_has_scene_editor = true;
+      m_scene_editor_scene = &scene;
     }
 
     return *m_scene_editor;

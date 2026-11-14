@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <stdexcept>
 #include <string>
 
 #include <SDL2/SDL.h>
@@ -231,7 +232,7 @@ namespace prune {
     std::string error;
     if (!SimpleShooterSerializer::load_settings_from_node(
             node, m_simple_shooter_state.settings, error)) {
-      return;
+      throw std::runtime_error(error);
     }
   }
 

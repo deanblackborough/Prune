@@ -467,9 +467,13 @@ and starts playing. A freshly created or loaded scene starts Stopped.
 
 Everything that exists only for the editor UI rather than the simulation — selection, dirty
 state, undo/redo history, the active tool, the viewport, debug-overlay toggles, both camera
-poses — is editor/session state. It is never authored data: it does not live in the save file,
-and runtime/behaviour code cannot reach it (it is passed a narrower view that only has the world
-data).
+poses — is editor/session state. It is never authored data: it does not live in the save file.
+
+Selection, dirty state, undo/redo history, the active tool, the viewport, and debug-overlay
+toggles are kept out of the narrower view passed to runtime/behaviour code. Camera access was
+not folded into that split in this pass: `PlatformerBehaviour` and `SimpleShooterBehaviour`
+still take `SceneCamera&` directly today. Closing that gap is tracked as a follow-up, not implied
+by this decision.
 
 ### Why
 

@@ -5,7 +5,6 @@
 #include <string>
 #include <utility>
 
-#include "prune/core/overloaded.hpp"
 #include "prune/scene/collision.hpp"
 #include "prune/scene/scene_serializer.hpp"
 
@@ -16,7 +15,14 @@ namespace prune {
 
   void WorldScene::update(float dt, const Input& input) {
     update_runtime(m_state.world, dt, input, scene_keyboard_input_enabled());
-    m_state.editor.selection.sanitize(m_state.world.objects);
+
+    const std::size_t removal_generation =
+        m_state.world.objects.removal_generation();
+    if (removal_generation != m_last_sanitized_removal_generation) {
+      m_state.editor.selection.sanitize(m_state.world.objects);
+      m_last_sanitized_removal_generation = removal_generation;
+    }
+
     m_camera.update_game_camera(m_state.editor.viewport, game_camera_target());
   }
 
@@ -73,6 +79,10 @@ namespace prune {
   bool WorldScene::runtime_stopped() const noexcept { return m_stopped; }
 
   bool WorldScene::execute_scene_creation_action(std::string_view action_id) {
+    if (!runtime_stopped()) {
+      return false;
+    }
+
     for (const SceneCreationAction& action : scene_creation_actions()) {
       if (action.id != action_id) {
         continue;
@@ -292,92 +302,53 @@ namespace prune {
     return ConstWorldSceneContext{m_grid_options, &m_camera};
   }
 
-  void WorldScene::restore_object_snapshot(const GameObject& object,
-                                           bool select_restored) {
-    restore_object_in_id_order(m_state.world.objects, object);
+  namespace {
+    struct WorldSceneCommandOps {
+      GameObjectManager& objects;
+      EditorSelection& selection;
 
-    if (select_restored) {
-      m_state.editor.selection.select(m_state.world.objects,
-                                      object.identity.id);
-    }
-  }
+      void restore_one(const GameObject& object) {
+        restore_object_in_id_order(objects, object);
+        selection.select(objects, object.identity.id);
+      }
 
-  void
-  WorldScene::restore_object_snapshots(const std::vector<GameObject>& objects) {
-    restore_objects_in_id_order(m_state.world.objects, objects);
+      void remove_one(GameObjectId id) {
+        remove_object_and_update_selection(objects, selection, id);
+      }
 
-    std::vector<GameObjectId> restored_ids;
-    restored_ids.reserve(objects.size());
+      void restore_many(std::span<const GameObject> batch) {
+        restore_objects_in_id_order(objects, batch);
 
-    for (const GameObject& object : objects) {
-      restored_ids.push_back(object.identity.id);
-    }
+        std::vector<GameObjectId> restored_ids;
+        restored_ids.reserve(batch.size());
+        for (const GameObject& object : batch) {
+          restored_ids.push_back(object.identity.id);
+        }
 
-    m_state.editor.selection.select_many(m_state.world.objects, restored_ids);
-  }
+        selection.select_many(objects, restored_ids);
+      }
+
+      void after_objects_removed() { selection.clear_selection(); }
+    };
+  } // namespace
 
   void WorldScene::apply_editor_command(const EditorCommand& command,
                                         bool use_after_state) {
-    std::visit(overloaded{
-                   [&](const ObjectCreate& payload) {
-                     if (use_after_state) {
-                       restore_object_snapshot(payload.object);
-                     } else {
-                       const GameObjectId id = payload.object.identity.id;
-                       const std::size_t erased_index =
-                           m_state.world.objects.index_of(id);
-                       m_state.world.objects.remove_object(id);
-                       m_state.editor.selection.object_removed(
-                           m_state.world.objects, id, erased_index);
-                     }
-                   },
-                   [&](const ObjectDelete& payload) {
-                     if (use_after_state) {
-                       const GameObjectId id = payload.object.identity.id;
-                       const std::size_t erased_index =
-                           m_state.world.objects.index_of(id);
-                       m_state.world.objects.remove_object(id);
-                       m_state.editor.selection.object_removed(
-                           m_state.world.objects, id, erased_index);
-                     } else {
-                       restore_object_snapshot(payload.object);
-                     }
-                   },
-                   [&](const ObjectsDelete& payload) {
-                     if (use_after_state) {
-                       for (const GameObject& object : payload.objects) {
-                         const GameObjectId id = object.identity.id;
-                         const std::size_t erased_index =
-                             m_state.world.objects.index_of(id);
-                         m_state.world.objects.remove_object(id);
-                         m_state.editor.selection.object_removed(
-                             m_state.world.objects, id, erased_index);
-                       }
+    if (const auto* viewport = std::get_if<ViewportChange>(&command.payload)) {
+      m_camera.editor() = use_after_state ? viewport->after : viewport->before;
+      m_camera.activate_editor();
+      return;
+    }
 
-                       m_state.editor.selection.clear_selection();
-                     } else {
-                       restore_object_snapshots(payload.objects);
-                     }
-                   },
-                   [&](const ObjectsChange& payload) {
-                     restore_object_snapshots(use_after_state ? payload.after
-                                                              : payload.before);
-                   },
-                   [&](const ViewportChange& payload) {
-                     m_camera.editor() =
-                         use_after_state ? payload.after : payload.before;
-                     m_camera.activate_editor();
-                   },
-                   [&](const SceneSettingsChange& payload) {
-                     apply_scene_settings_snapshot(
-                         use_after_state ? payload.after : payload.before);
-                   },
-                   [&](const ObjectChange& payload) {
-                     restore_object_snapshot(use_after_state ? payload.after
-                                                             : payload.before);
-                   },
-               },
-               command.payload);
+    if (const auto* settings =
+            std::get_if<SceneSettingsChange>(&command.payload)) {
+      apply_scene_settings_snapshot(use_after_state ? settings->after
+                                                    : settings->before);
+      return;
+    }
+
+    WorldSceneCommandOps ops{m_state.world.objects, m_state.editor.selection};
+    apply_object_payload(command, use_after_state, ops);
   }
 
   bool WorldScene::scene_keyboard_input_enabled() const noexcept {
