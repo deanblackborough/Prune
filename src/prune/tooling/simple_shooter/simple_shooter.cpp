@@ -71,5 +71,8 @@ namespace prune {
       ImGui::BulletText(
           "Enemy/player contact has no damage rule in this slice.");
     }
+
+    m_settings_tracker.commit_pending_if_abandoned(
+        scene, "Change settings", settings_snapshot(state.settings));
   }
 } // namespace prune

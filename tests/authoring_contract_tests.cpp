@@ -400,4 +400,32 @@ namespace prune {
     CHECK_FALSE(loaded.runtime_paused());
   }
 
+  TEST_CASE(
+      "direct load without on_enter keeps its objects through save and stop",
+      "[authoring]") {
+    GridOptions grid_options{};
+    AuthoringTestScene scene(grid_options);
+    scene.new_scene();
+    scene.on_enter();
+
+    create_authored_object(scene, "Box", 10.0f, 20.0f);
+
+    TempFile save_file("direct_load_baseline");
+    std::string error;
+    REQUIRE(scene.save_to_file(save_file.path, error));
+
+    AuthoringTestScene loaded(grid_options);
+    REQUIRE(loaded.load_from_file(save_file.path, error));
+
+    TempFile resaved_file("direct_load_resave");
+    REQUIRE(loaded.save_to_file(resaved_file.path, error));
+
+    AuthoringTestScene resaved(grid_options);
+    REQUIRE(resaved.load_from_file(resaved_file.path, error));
+    CHECK(resaved.get_object_manager().count() == 1);
+
+    loaded.stop_runtime();
+    CHECK(loaded.get_object_manager().count() == 1);
+  }
+
 } // namespace prune

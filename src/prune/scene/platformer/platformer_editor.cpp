@@ -62,8 +62,7 @@ namespace prune {
           "Grounded", bool_label(state.runtime.player_grounded));
       tooling::imgui::property_table::text(
           "Move Speed",
-          std::to_string(static_cast<int>(state.settings.move_speed))
-              .c_str());
+          std::to_string(static_cast<int>(state.settings.move_speed)).c_str());
       tooling::imgui::property_table::text(
           "Jump Velocity",
           std::to_string(static_cast<int>(state.settings.jump_velocity))

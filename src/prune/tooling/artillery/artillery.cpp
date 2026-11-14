@@ -138,6 +138,9 @@ namespace prune {
           "R resets the round with one of three fixed terrain layouts.");
       ImGui::BulletText("A tank hit resets the game immediately.");
     }
+
+    m_settings_tracker.commit_pending_if_abandoned(
+        scene, "Change settings", settings_snapshot(state.settings));
   }
 
 } // namespace prune

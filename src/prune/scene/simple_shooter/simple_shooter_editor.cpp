@@ -3,10 +3,10 @@
 
 #include "imgui.h"
 
+#include "prune/scene/scene_editor.hpp"
 #include "prune/scene/simple_shooter/simple_shooter_concepts.hpp"
 #include "prune/scene/simple_shooter/simple_shooter_editor.hpp"
 #include "prune/scene/simple_shooter/simple_shooter_scene.hpp"
-#include "prune/scene/scene_editor.hpp"
 #include "prune/tooling/editor_layout.hpp"
 #include "prune/tooling/imgui/layout.hpp"
 #include "prune/tooling/imgui/property_table.hpp"
@@ -85,12 +85,10 @@ namespace prune {
                                            cooldown_buffer);
     } else if (kind == simple_shooter_concepts::ObjectKind::Enemy) {
       tooling::imgui::property_table::text(
-          "Tracked Enemy",
-          bool_label(selected.identity.id == state.enemy_id));
+          "Tracked Enemy", bool_label(selected.identity.id == state.enemy_id));
       tooling::imgui::property_table::text(
           "Enemy Speed",
-          std::to_string(static_cast<int>(state.settings.enemy_speed))
-              .c_str());
+          std::to_string(static_cast<int>(state.settings.enemy_speed)).c_str());
       tooling::imgui::property_table::text(
           "Spawn Object Id", std::to_string(state.enemy_spawn_id).c_str());
       tooling::imgui::property_table::text(

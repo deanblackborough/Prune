@@ -97,7 +97,7 @@ namespace prune {
 
     for (const GameObject& object : deleted_objects) {
       remove_object_and_update_selection(objects, selection,
-                                        object.identity.id);
+                                         object.identity.id);
     }
 
     if (deleted_objects.size() > 1) {

@@ -25,6 +25,11 @@ namespace prune::tooling::editor::tracked_settings_table {
     void commit_if_deactivated_after_edit(Scene& scene, std::string_view label,
                                           const YAML::Node& after,
                                           std::string_view detail = {});
+
+    void commit_pending_if_abandoned(Scene& scene, std::string_view label,
+                                     const YAML::Node& current,
+                                     std::string_view detail = {});
+
     void reset() noexcept;
 
   private:
@@ -37,12 +42,11 @@ namespace prune::tooling::editor::tracked_settings_table {
                     const char* imgui_label, const char* id, float& value,
                     float min, float max, const char* format = "%.2f",
                     std::string_view detail = {}) {
+    const YAML::Node before = snapshot();
     const bool changed = ::prune::tooling::imgui::property_table::slider_float(
         imgui_label, id, value, min, max, format);
 
-    if (ImGui::IsItemActivated()) {
-      tracker.capture_if_activated(snapshot());
-    }
+    tracker.capture_if_activated(before);
 
     if (ImGui::IsItemDeactivatedAfterEdit()) {
       tracker.commit_if_deactivated_after_edit(scene, label, snapshot(),
@@ -57,12 +61,11 @@ namespace prune::tooling::editor::tracked_settings_table {
                   Snapshot&& snapshot, std::string_view label,
                   const char* imgui_label, const char* id, int& value, int min,
                   int max, std::string_view detail = {}) {
+    const YAML::Node before = snapshot();
     const bool changed = ::prune::tooling::imgui::property_table::slider_int(
         imgui_label, id, value, min, max);
 
-    if (ImGui::IsItemActivated()) {
-      tracker.capture_if_activated(snapshot());
-    }
+    tracker.capture_if_activated(before);
 
     if (ImGui::IsItemDeactivatedAfterEdit()) {
       tracker.commit_if_deactivated_after_edit(scene, label, snapshot(),

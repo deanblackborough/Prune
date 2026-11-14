@@ -105,7 +105,7 @@ namespace prune {
       // whether a tick ran, so a press landing on a render-only frame would
       // be silently dropped before any tick ever saw it.
       jump_pressed = input.was_key_pressed_for_update(SDL_SCANCODE_W) ||
-                    input.was_key_pressed_for_update(SDL_SCANCODE_SPACE);
+                     input.was_key_pressed_for_update(SDL_SCANCODE_SPACE);
 
       // Only buffer a press made while falling (or resting) toward a
       // landing. A press made while still rising from an earlier jump is

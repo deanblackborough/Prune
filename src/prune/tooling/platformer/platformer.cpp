@@ -75,6 +75,9 @@ namespace prune {
       ImGui::BulletText("Hazards and falling out of the level reset the player "
                         "to Player Start.");
     }
+
+    m_settings_tracker.commit_pending_if_abandoned(
+        scene, "Change settings", settings_snapshot(state.settings));
   }
 
 } // namespace prune

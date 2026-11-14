@@ -6,8 +6,7 @@
 
 namespace prune::tooling::editor {
 
-  template <typename T>
-  class EditTracker {
+  template <typename T> class EditTracker {
   public:
     void capture_if_activated(const T& before) {
       if (ImGui::IsItemActivated()) {
@@ -20,6 +19,12 @@ namespace prune::tooling::editor {
         return std::nullopt;
       }
 
+      std::optional<T> before = std::move(m_before);
+      m_before.reset();
+      return before;
+    }
+
+    [[nodiscard]] std::optional<T> take_pending() {
       std::optional<T> before = std::move(m_before);
       m_before.reset();
       return before;

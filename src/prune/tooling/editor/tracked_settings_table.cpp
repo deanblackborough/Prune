@@ -16,6 +16,17 @@ namespace prune::tooling::editor::tracked_settings_table {
       return std::string_view(emitter_a.c_str()) ==
              std::string_view(emitter_b.c_str());
     }
+
+    void commit_if_changed(Scene& scene, std::string_view label,
+                           const YAML::Node& before, const YAML::Node& after,
+                           std::string_view detail) {
+      if (yaml_nodes_equal(before, after)) {
+        return;
+      }
+
+      scene.record_editor_command(
+          make_scene_settings_change(label, before, after, detail));
+    }
   } // namespace
 
   void
@@ -32,12 +43,22 @@ namespace prune::tooling::editor::tracked_settings_table {
       return;
     }
 
-    if (yaml_nodes_equal(*before, after)) {
+    commit_if_changed(scene, label, *before, after, detail);
+  }
+
+  void SceneSettingsEditTracker::commit_pending_if_abandoned(
+      Scene& scene, std::string_view label, const YAML::Node& current,
+      std::string_view detail) {
+    if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
       return;
     }
 
-    scene.record_editor_command(
-        make_scene_settings_change(label, *before, after, detail));
+    const std::optional<YAML::Node> before = m_tracker.take_pending();
+    if (!before.has_value()) {
+      return;
+    }
+
+    commit_if_changed(scene, label, *before, current, detail);
   }
 
   void SceneSettingsEditTracker::reset() noexcept { m_tracker.reset(); }

@@ -9,9 +9,9 @@ namespace prune::tooling::editor::tracked_property_table {
 
   namespace {
 
-    [[nodiscard]] bool command_object_changed(TrackedField field,
-                                              const GameObject& before,
-                                              const GameObject& after) noexcept {
+    [[nodiscard]] bool
+    command_object_changed(TrackedField field, const GameObject& before,
+                           const GameObject& after) noexcept {
       switch (field) {
       case TrackedField::Position:
         return before.transform.x != after.transform.x ||
@@ -99,13 +99,11 @@ namespace prune::tooling::editor::tracked_property_table {
                   GameObject& object, const char* label, const char* id,
                   float& value, float speed, float min, float max,
                   const char* format, std::string_view detail) {
+    const GameObject before = object;
     const bool changed = ::prune::tooling::imgui::property_table::drag_float(
         label, id, value, speed, min, max, format);
 
-    if (ImGui::IsItemActivated()) {
-      tracker.capture_if_activated(object);
-    }
-
+    tracker.capture_if_activated(before);
     tracker.commit_if_deactivated_after_edit(scene, field, object, detail);
 
     return changed;
@@ -114,13 +112,11 @@ namespace prune::tooling::editor::tracked_property_table {
   bool slider_int(ObjectEditTracker& tracker, Scene& scene, TrackedField field,
                   GameObject& object, const char* label, const char* id,
                   int& value, int min, int max, std::string_view detail) {
+    const GameObject before = object;
     const bool changed = ::prune::tooling::imgui::property_table::slider_int(
         label, id, value, min, max);
 
-    if (ImGui::IsItemActivated()) {
-      tracker.capture_if_activated(object);
-    }
-
+    tracker.capture_if_activated(before);
     tracker.commit_if_deactivated_after_edit(scene, field, object, detail);
 
     return changed;
@@ -130,13 +126,11 @@ namespace prune::tooling::editor::tracked_property_table {
                 GameObject& object, const char* label, const char* id,
                 int& value, float speed, int min, int max,
                 std::string_view detail) {
+    const GameObject before = object;
     const bool changed = ::prune::tooling::imgui::property_table::drag_int(
         label, id, value, speed, min, max);
 
-    if (ImGui::IsItemActivated()) {
-      tracker.capture_if_activated(object);
-    }
-
+    tracker.capture_if_activated(before);
     tracker.commit_if_deactivated_after_edit(scene, field, object, detail);
 
     return changed;
@@ -145,13 +139,11 @@ namespace prune::tooling::editor::tracked_property_table {
   bool color3(ObjectEditTracker& tracker, Scene& scene, TrackedField field,
               GameObject& object, const char* label, const char* id,
               float color[3], std::string_view detail) {
+    const GameObject before = object;
     const bool changed =
         ::prune::tooling::imgui::property_table::color3(label, id, color);
 
-    if (ImGui::IsItemActivated()) {
-      tracker.capture_if_activated(object);
-    }
-
+    tracker.capture_if_activated(before);
     tracker.commit_if_deactivated_after_edit(scene, field, object, detail);
 
     return changed;
