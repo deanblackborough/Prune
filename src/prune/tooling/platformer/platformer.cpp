@@ -22,6 +22,8 @@ namespace prune {
         tooling::imgui::property_table::text(
             "Grounded", state.runtime.player_grounded ? "Yes" : "No");
 
+        ImGui::BeginDisabled(!scene.runtime_stopped());
+
         tooling::editor::tracked_settings_table::slider_float(
             m_settings_tracker, scene,
             [&state] { return settings_snapshot(state.settings); },
@@ -60,6 +62,7 @@ namespace prune {
             "Change jump buffer", "Jump Buffer (s)", "##platformer_jump_buffer",
             state.settings.jump_buffer_seconds, 0.0f, 0.3f, "%.3f");
 
+        ImGui::EndDisabled();
         tooling::imgui::property_table::end();
       }
     }

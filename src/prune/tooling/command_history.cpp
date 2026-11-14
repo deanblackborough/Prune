@@ -11,8 +11,9 @@ namespace prune {
 
   void CommandHistoryPanel::draw(Scene& scene) {
     const EditorCommandHistory& history = scene.editor_command_history();
+    const bool can_undo_redo = scene.runtime_stopped();
 
-    ImGui::BeginDisabled(!history.can_undo());
+    ImGui::BeginDisabled(!history.can_undo() || !can_undo_redo);
     if (ImGui::Button("Undo")) {
       scene.undo_editor_command();
     }
@@ -20,7 +21,7 @@ namespace prune {
 
     ImGui::SameLine();
 
-    ImGui::BeginDisabled(!history.can_redo());
+    ImGui::BeginDisabled(!history.can_redo() || !can_undo_redo);
     if (ImGui::Button("Redo")) {
       scene.redo_editor_command();
     }

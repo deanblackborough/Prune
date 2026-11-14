@@ -19,6 +19,8 @@ namespace prune {
   void SimpleShooter::draw(Scene& scene, SimpleShooterState& state) {
     if (tooling::imgui::layout::collapsing_header("Game")) {
       if (tooling::imgui::property_table::begin("##simple_shooter_game")) {
+        ImGui::BeginDisabled(!scene.runtime_stopped());
+
         tooling::editor::tracked_settings_table::slider_float(
             m_settings_tracker, scene,
             [&state] { return settings_snapshot(state.settings); },
@@ -56,6 +58,7 @@ namespace prune {
             "Change max live enemies", "Max Live Enemies", "##max_live_enemies",
             state.settings.max_live_enemies, 0, 8);
 
+        ImGui::EndDisabled();
         tooling::imgui::property_table::end();
       }
     }

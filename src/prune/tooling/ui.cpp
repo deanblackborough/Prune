@@ -353,12 +353,15 @@ namespace prune {
 
       if (ImGui::BeginMenu("Edit")) {
         const EditorCommandHistory& history = scene.editor_command_history();
+        const bool can_undo_redo = scene.runtime_stopped();
 
-        if (ImGui::MenuItem("Undo", "Ctrl+Z", false, history.can_undo())) {
+        if (ImGui::MenuItem("Undo", "Ctrl+Z", false,
+                            history.can_undo() && can_undo_redo)) {
           scene.undo_editor_command();
         }
 
-        if (ImGui::MenuItem("Redo", "Ctrl+Y", false, history.can_redo())) {
+        if (ImGui::MenuItem("Redo", "Ctrl+Y", false,
+                            history.can_redo() && can_undo_redo)) {
           scene.redo_editor_command();
         }
 

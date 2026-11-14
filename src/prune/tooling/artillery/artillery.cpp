@@ -23,6 +23,8 @@ namespace prune {
   void Artillery::draw(Scene& scene, ArtilleryState& state) {
     if (tooling::imgui::layout::collapsing_header("Game")) {
       if (tooling::imgui::property_table::begin("##artillery_game")) {
+        ImGui::BeginDisabled(!scene.runtime_stopped());
+
         tooling::imgui::property_table::text(
             "Current Player", turn_label(state.runtime.current_turn));
         tooling::imgui::property_table::text(
@@ -80,12 +82,15 @@ namespace prune {
             "Change power step", "Power Step", "##artillery_power_step",
             state.settings.power_step, 10.0f, 400.0f, "%.1f");
 
+        ImGui::EndDisabled();
         tooling::imgui::property_table::end();
       }
     }
 
     if (tooling::imgui::layout::collapsing_header("Player Aims")) {
       if (tooling::imgui::property_table::begin("##artillery_player_aims")) {
+        ImGui::BeginDisabled(!scene.runtime_stopped());
+
         tooling::editor::tracked_settings_table::slider_float(
             m_settings_tracker, scene,
             [&state] { return settings_snapshot(state.settings); },
@@ -116,6 +121,7 @@ namespace prune {
             state.settings.initial_player_two_aim.power,
             state.settings.min_power, state.settings.max_power, "%.1f");
 
+        ImGui::EndDisabled();
         tooling::imgui::property_table::end();
       }
     }

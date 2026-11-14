@@ -226,6 +226,10 @@ namespace prune {
   }
 
   bool WorldScene::undo_editor_command() {
+    if (!runtime_stopped()) {
+      return false;
+    }
+
     const EditorCommand* command =
         m_state.editor.editor_commands.undo_command();
     if (!command) {
@@ -241,6 +245,10 @@ namespace prune {
   }
 
   bool WorldScene::redo_editor_command() {
+    if (!runtime_stopped()) {
+      return false;
+    }
+
     const EditorCommand* command =
         m_state.editor.editor_commands.redo_command();
     if (!command) {
