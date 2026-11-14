@@ -81,6 +81,7 @@ namespace prune {
     }
 
     float horizontal = 0.0f;
+    bool jump_pressed = false;
 
     if (keyboard_input_enabled) {
       if (input.is_key_down(SDL_SCANCODE_A)) {
@@ -103,9 +104,8 @@ namespace prune {
       // was_key_pressed edge gets cleared every render frame regardless of
       // whether a tick ran, so a press landing on a render-only frame would
       // be silently dropped before any tick ever saw it.
-      const bool jump_pressed =
-          input.was_key_pressed_for_update(SDL_SCANCODE_W) ||
-          input.was_key_pressed_for_update(SDL_SCANCODE_SPACE);
+      jump_pressed = input.was_key_pressed_for_update(SDL_SCANCODE_W) ||
+                    input.was_key_pressed_for_update(SDL_SCANCODE_SPACE);
 
       // Only buffer a press made while falling (or resting) toward a
       // landing. A press made while still rising from an earlier jump is
@@ -120,20 +120,18 @@ namespace prune {
 
     PlatformerRuntime& runtime = platformer_state.runtime;
 
-    if (runtime.jump_buffer_remaining > 0.0f) {
-      runtime.jump_buffer_remaining =
-          std::max(0.0f, runtime.jump_buffer_remaining - dt);
-    }
-
     const bool can_jump =
         runtime.player_grounded || runtime.coyote_time_remaining > 0.0f;
 
-    if (runtime.jump_buffer_remaining > 0.0f && can_jump) {
+    if ((jump_pressed || runtime.jump_buffer_remaining > 0.0f) && can_jump) {
       player->motion.velocity.y = -platformer_state.settings.jump_velocity;
       runtime.player_grounded = false;
       runtime.coyote_time_remaining = 0.0f;
       runtime.jump_buffer_remaining = 0.0f;
       state.events.emit(scene_events::player_jumped);
+    } else if (runtime.jump_buffer_remaining > 0.0f) {
+      runtime.jump_buffer_remaining =
+          std::max(0.0f, runtime.jump_buffer_remaining - dt);
     }
 
     player->motion.velocity.x =

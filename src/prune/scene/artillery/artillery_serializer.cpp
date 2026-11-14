@@ -108,6 +108,16 @@ namespace prune {
       settings.max_angle_degrees = node["max_angle_degrees"].as<float>();
     }
 
+    if (settings.min_power > settings.max_power) {
+      error = "artillery min_power exceeds max_power.";
+      return false;
+    }
+
+    if (settings.min_angle_degrees > settings.max_angle_degrees) {
+      error = "artillery min_angle_degrees exceeds max_angle_degrees.";
+      return false;
+    }
+
     return true;
   }
 
