@@ -123,7 +123,9 @@ namespace prune {
     const bool can_jump =
         runtime.player_grounded || runtime.coyote_time_remaining > 0.0f;
 
-    if ((jump_pressed || runtime.jump_buffer_remaining > 0.0f) && can_jump) {
+    if (((jump_pressed && player->motion.velocity.y >= 0.0f) ||
+         runtime.jump_buffer_remaining > 0.0f) &&
+        can_jump) {
       player->motion.velocity.y = -platformer_state.settings.jump_velocity;
       runtime.player_grounded = false;
       runtime.coyote_time_remaining = 0.0f;

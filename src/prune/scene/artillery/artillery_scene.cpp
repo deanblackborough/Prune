@@ -213,6 +213,7 @@ namespace prune {
       return false;
     }
 
+    capture_authored_baseline(state.world.objects);
     m_artillery_state.runtime = fresh_runtime(m_artillery_state.settings);
     return true;
   }

@@ -103,6 +103,8 @@ namespace prune {
     [[nodiscard]] virtual bool restore_loaded_scene(SceneState& state,
                                                     std::string& error) = 0;
 
+    void capture_authored_baseline(const GameObjectManager& objects);
+
     [[nodiscard]] virtual GameObject* game_camera_target() noexcept {
       return nullptr;
     }

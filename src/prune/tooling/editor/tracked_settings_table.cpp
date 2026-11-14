@@ -49,7 +49,8 @@ namespace prune::tooling::editor::tracked_settings_table {
   void SceneSettingsEditTracker::commit_pending_if_abandoned(
       Scene& scene, std::string_view label, const YAML::Node& current,
       std::string_view detail) {
-    if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+    if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left) ||
+        ImGui::IsAnyItemActive()) {
       return;
     }
 

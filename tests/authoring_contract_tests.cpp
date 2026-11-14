@@ -70,8 +70,9 @@ namespace prune {
         return true;
       }
 
-      [[nodiscard]] bool restore_loaded_scene(SceneState&,
+      [[nodiscard]] bool restore_loaded_scene(SceneState& state,
                                               std::string&) override {
+        capture_authored_baseline(state.world.objects);
         return true;
       }
 

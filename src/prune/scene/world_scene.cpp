@@ -42,6 +42,10 @@ namespace prune {
     enter_stopped_state();
   }
 
+  void WorldScene::capture_authored_baseline(const GameObjectManager& objects) {
+    m_authored_store.capture(objects);
+  }
+
   void WorldScene::enter_stopped_state() {
     const std::vector<GameObjectId> selected_ids(
         m_state.editor.selection.selected_ids().begin(),
@@ -171,7 +175,6 @@ namespace prune {
       m_state.editor.editor_commands.clear();
       m_state.editor.dirty = false;
 
-      m_authored_store.capture(m_state.world.objects);
       sanitize_loaded_selection();
       m_camera.reset();
       establish_game_camera();

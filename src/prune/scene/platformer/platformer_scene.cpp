@@ -212,6 +212,7 @@ namespace prune {
       return false;
     }
 
+    capture_authored_baseline(state.world.objects);
     return true;
   }
 

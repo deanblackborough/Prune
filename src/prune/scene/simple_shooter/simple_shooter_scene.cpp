@@ -239,6 +239,7 @@ namespace prune {
   bool SimpleShooterScene::restore_loaded_scene(SceneState& state,
                                                 std::string&) {
     restore_loaded_shooter_concepts(state, m_simple_shooter_state);
+    capture_authored_baseline(state.world.objects);
     m_simple_shooter.reset(state.world, m_simple_shooter_state);
     return true;
   }

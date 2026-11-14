@@ -87,37 +87,40 @@ namespace prune {
       return false;
     }
 
-    if (!load_aim(player_one_aim, settings.initial_player_one_aim) ||
-        !load_aim(player_two_aim, settings.initial_player_two_aim)) {
+    ArtillerySettings loaded = settings;
+
+    if (!load_aim(player_one_aim, loaded.initial_player_one_aim) ||
+        !load_aim(player_two_aim, loaded.initial_player_two_aim)) {
       error = "artillery aim settings are incomplete.";
       return false;
     }
 
-    settings.gravity = node["gravity"].as<float>();
-    settings.projectile_lifetime = node["projectile_lifetime"].as<float>();
-    settings.min_power = node["min_power"].as<float>();
-    settings.max_power = node["max_power"].as<float>();
-    settings.angle_step = node["angle_step"].as<float>();
-    settings.power_step = node["power_step"].as<float>();
+    loaded.gravity = node["gravity"].as<float>();
+    loaded.projectile_lifetime = node["projectile_lifetime"].as<float>();
+    loaded.min_power = node["min_power"].as<float>();
+    loaded.max_power = node["max_power"].as<float>();
+    loaded.angle_step = node["angle_step"].as<float>();
+    loaded.power_step = node["power_step"].as<float>();
 
     if (node["min_angle_degrees"]) {
-      settings.min_angle_degrees = node["min_angle_degrees"].as<float>();
+      loaded.min_angle_degrees = node["min_angle_degrees"].as<float>();
     }
 
     if (node["max_angle_degrees"]) {
-      settings.max_angle_degrees = node["max_angle_degrees"].as<float>();
+      loaded.max_angle_degrees = node["max_angle_degrees"].as<float>();
     }
 
-    if (settings.min_power > settings.max_power) {
+    if (loaded.min_power > loaded.max_power) {
       error = "artillery min_power exceeds max_power.";
       return false;
     }
 
-    if (settings.min_angle_degrees > settings.max_angle_degrees) {
+    if (loaded.min_angle_degrees > loaded.max_angle_degrees) {
       error = "artillery min_angle_degrees exceeds max_angle_degrees.";
       return false;
     }
 
+    settings = loaded;
     return true;
   }
 
