@@ -453,11 +453,19 @@ A fully generic serializer would either miss scene meaning or become filled with
 
 ### Decision
 
-The authored store (the editor-authored objects and settings that get saved) is the single
-source of truth for persistent scene data. The live world — what actually runs when the scene
-plays — is rebuilt from the authored store on load, on reset, and on Stop, and every edit is
-applied to the authored store first and then reflected into the live world, never the other way
-around.
+The authored store holds the editor-authored *objects* that get saved; it is the single source
+of truth for persistent object data. Scene settings (gravity, speeds, cooldowns, ...) are a
+separate persisted source of truth: each scene owns its settings struct directly and saves it
+through its own serializer, kept in sync with undo/redo via `SceneSettingsChange` commands
+rather than living in the authored store.
+
+The live world — what actually runs when the scene plays — is rebuilt from the authored store
+(and the scene's settings struct) on load, on reset, and on Stop. A fresh edit (inspector,
+drag/scale, scene-settings slider, object creation) mutates the live world directly and then
+syncs that change into the authored store via `record_editor_command`; undo and redo replay a
+command's stored snapshot into both. The authored store (or settings struct) is never edited on
+its own expecting the live world to follow — only load, reset, and Stop rebuild the live world
+from them.
 
 Editing authored fields (inspector, drag/scale, scene-settings sliders) is only possible while
 the scene is **Stopped**: the live world is rebuilt from the authored baseline and held paused.
@@ -467,7 +475,9 @@ and starts playing. A freshly created or loaded scene starts Stopped.
 
 Everything that exists only for the editor UI rather than the simulation — selection, dirty
 state, undo/redo history, the active tool, the viewport, debug-overlay toggles, both camera
-poses — is editor/session state. It is never authored data: it does not live in the save file.
+poses — is editor/session state, not authored data, and does not live in the save file. One
+named exception: `SceneOptions::highlight_selected` is a persisted per-scene editor preference
+and is saved/loaded by `SceneSerializer`; grid options and debug-overlay toggles are not.
 
 Selection, dirty state, undo/redo history, the active tool, the viewport, and debug-overlay
 toggles are kept out of the narrower view passed to runtime/behaviour code. Camera access was

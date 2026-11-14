@@ -48,6 +48,19 @@
       "cacheVariables": {
         "PRUNE_SANITIZE": "ON"
       }
+    },
+    {
+      "name": "mac-debug",
+      "displayName": "macOS Debug",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
     }
   ],
   "buildPresets": [
@@ -65,6 +78,11 @@
       "name": "x64-asan-build",
       "displayName": "x64 Debug + Sanitizers Build",
       "configurePreset": "x64-asan"
+    },
+    {
+      "name": "mac-debug-build",
+      "displayName": "macOS Debug Build",
+      "configurePreset": "mac-debug"
     }
   ],
   "testPresets": [
@@ -88,6 +106,14 @@
       "name": "x64-asan-test",
       "displayName": "x64 Debug + Sanitizers Tests",
       "configurePreset": "x64-asan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "mac-debug-test",
+      "displayName": "macOS Debug Tests",
+      "configurePreset": "mac-debug",
       "output": {
         "outputOnFailure": true
       }
